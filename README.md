@@ -1,8 +1,7 @@
 ####RSOCKET-ANDROID
 
-Ongoing effort to make rsocket-java available pre java8. This project focus is client-server communication use case, and it complements original one - intended 
-mainly for server-server. The goal is to make rsocket practically useful for native mobile (support android 4.4+) while interacting with jvm based backends 
-(primary platform is Spring Boot). Backend is assumed to run original rsocket-java.  Interop with other tech stacks is not a goal of this project.
+Ongoing effort to make [rsocket-java](https://github.com/rsocket/rsocket-java) available pre java8. This project focus is client-server communication use case, and it complements original one - intended 
+mainly for server-server. The goal is to make rsocket practically useful for native mobile (support android 4.4+) while interacting with jvm based backends (primary platform is `Spring Boot`). Backend is assumed to run original `rsocket-java`.  Interop with other tech stacks is not a goal of this project.
    
    
    Done so far (to make runnable POC)
