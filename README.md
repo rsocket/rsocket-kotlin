@@ -20,5 +20,5 @@ mainly for server-server. The goal is to make rsocket practically useful for nat
    * Implement req-channel
    * Resurrect tests
    * Come up with Websockets transport with capabilities similar to Netty one, and minimal dependencies
-   * introduce rpc system assuming jvm only environment - it should be approachable for regular developer to use/extend 
+   * Introduce rpc system assuming jvm only environment - it should be approachable for regular developer to use/extend 
    * at least minimal integration with Spring Boot    
