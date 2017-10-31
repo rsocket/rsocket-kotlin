@@ -11,7 +11,7 @@ mainly for server-server. The goal is to make rsocket practically useful for nat
    * Replace jre8 specific types with kotlin or custom counterparts
    * Replace reactor types with rxjava2 ones
    * Added throw-away OkHttp based Websockets transport
-   * Sample server running rsocket-java, and mobile app running rsocket-backport to verify supported interactions: 
+   * Sample server running rsocket-java, and [mobile app](https://github.com/mostroverkhov/rsocket-backport-demo) running rsocket-backport to verify supported interactions: 
      req-reply, req-stream, fire-and-forget. req-channel is not ported for now as there is no obvious way to convert it 
      to rxjava2 with minimal efforts
        
