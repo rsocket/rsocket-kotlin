@@ -1,0 +1,198 @@
+/*
+ * Copyright 2016 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+plugins {
+    id "com.gradle.build-scan" version "1.9"
+    id 'com.jfrog.bintray' version '1.7.3'
+    id 'com.github.sherter.google-java-format' version '0.6'
+    id 'com.jfrog.artifactory' version '4.5.2'
+    id 'me.champeau.gradle.jmh' version '0.4.4'
+    id "org.jetbrains.kotlin.jvm" version "1.1.51"
+}
+
+repositories {
+    jcenter()
+}
+
+description = 'RSocket: stream oriented messaging passing with Reactive Stream semantics.'
+
+buildScan { licenseAgreementUrl = 'https://gradle.com/terms-of-service'; licenseAgree = 'yes' }
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'kotlin'
+    apply plugin: 'maven'
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.jfrog.bintray'
+    apply plugin: 'com.jfrog.artifactory'
+
+    group = 'io.rsocket'
+    version = mavenversion
+
+    compileJava {
+        sourceCompatibility = 1.7
+        targetCompatibility = 1.7
+        options.compilerArgs << "-Xlint:deprecation" // << "-Xlint:unchecked"
+    }
+
+    ext {
+        // common
+        jsr305Version = '3.0.2'
+        reactorVersion = '3.1.0.RELEASE'
+        nettyVersion = '4.1.15.Final'
+        reactiveStreamsVersion = '1.0.1'
+        slf4jVersion = '1.7.25'
+        // aeron
+        aeronVersion = '1.4.1'
+        // netty
+        reactorNettyVersion = '0.7.0.M2'
+        // spectator
+        spectatorVersion = '0.57.1'
+        hdrHistogramVersion = '2.1.9'
+        // tck-drivers
+        jacksonVersion = '2.9.1'
+        commonsLang3Version = '3.6'
+        airlineVersion = '0.8'
+        rxjavaVersion = '2.1.3'
+        // test
+        junitVersion = '4.12'
+        hamcrestVersion = '1.3'
+        mockitoVersion = '2.10.0'
+        jmhVersion = '1.19'
+    }
+
+    // custom tasks for creating source/javadoc jars
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    tasks.bintrayUpload.dependsOn tasks.jar, tasks.sourcesJar, tasks.javadocJar
+
+    // add javadoc/source jar tasks as artifacts
+    artifacts {
+        archives sourcesJar, javadocJar, jar
+    }
+
+    repositories {
+        maven { url 'http://repo.spring.io/milestone' }
+        maven { url 'https://oss.jfrog.org/libs-snapshot' }
+        jcenter()
+        mavenCentral()
+    }
+
+    dependencies {
+        compile "io.netty:netty-buffer:4.1.15.Final"
+        compile "org.reactivestreams:reactive-streams:1.0.1"
+        compile "org.slf4j:slf4j-api:1.7.25"
+        compile "com.google.code.findbugs:jsr305:3.0.2"
+        compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:1.1.51"
+        compile 'io.reactivex.rxjava2:rxjava:2.1.5'
+
+        testCompile "junit:junit:4.12"
+        testCompile "org.mockito:mockito-core:2.10.0"
+        testCompile "org.hamcrest:hamcrest-library:1.3"
+        testCompile "org.slf4j:slf4j-log4j12:1.7.25"
+        testCompile "io.projectreactor:reactor-test:3.1.0.RELEASE"
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+
+                artifact sourcesJar {
+                    classifier "sources"
+                }
+
+                artifact javadocJar {
+                    classifier "javadoc"
+                }
+            }
+        }
+    }
+
+    artifactory {
+        publish {
+            contextUrl = 'https://oss.jfrog.org'
+
+            repository {
+                repoKey = 'oss-snapshot-local' //The Artifactory repository key to publish to
+                //when using oss.jfrog.org the credentials are from Bintray. For local build we expect them to be found in
+                //~/.gradle/gradle.properties, otherwise to be set in the build server
+                // Conditionalize for the users who don't have bintray credentials setup
+                if (project.hasProperty('bintrayUser')) {
+                    username = project.property('bintrayUser')
+                    password = project.property('bintrayKey')
+                }
+            }
+
+            publications('mavenJava')
+
+            defaults {
+                // Reference to Gradle publications defined in the build script.
+                // This is how we tell the Artifactory Plugin which artifacts should be
+                // published to Artifactory.
+                publications('mavenJava')
+                publishArtifacts = true
+            }
+        }
+    }
+
+    artifactoryPublish {
+        dependsOn jar
+    }
+
+    bintray {
+        if (project.hasProperty('bintrayUser')) {
+            user = project.property('bintrayUser')
+            key = project.property('bintrayKey')
+        }
+        publications = ['mavenJava']
+        dryRun = false
+        publish = true
+        override = false
+        pkg {
+            repo = 'RSocket'
+            name = 'rsocket-java'
+            desc = 'RSocket'
+            websiteUrl = 'https://github.com/rsocket/rsocket-java'
+            issueTrackerUrl = 'https://github.com/rsocket/rsocket-java'
+            vcsUrl = 'https://github.com/rsocket/rsocket-java.git'
+            licenses = ['Apache-2.0']
+            githubRepo = 'rsocket/rsocket-java' //Optional Github repository
+            githubReleaseNotesFile = 'README.md' //Optional Github readme file
+            if (project.hasProperty('sonatypeUsername') && project.hasProperty('sonatypePassword')) {
+                def sonatypeUsername = project.property('sonatypeUsername')
+                def sonatypePassword = project.property('sonatypePassword')
+                version {
+                    name = "v${project.version}"
+                    vcsTag = "${project.version}"
+                    mavenCentralSync {
+                        sync = false
+                        user = sonatypeUsername
+                        password = sonatypePassword
+                    }
+                }
+            }
+        }
+    }
+}
