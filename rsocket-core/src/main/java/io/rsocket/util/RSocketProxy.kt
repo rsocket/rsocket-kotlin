@@ -23,7 +23,7 @@ import io.rsocket.RSocket
 import org.reactivestreams.Publisher
 
 /** Wrapper/Proxy for a RSocket. This is useful when we want to override a specific method.  */
-class RSocketProxy(protected val source: RSocket) : RSocket {
+open class RSocketProxy(protected val source: RSocket) : RSocket {
 
     override fun fireAndForget(payload: Payload): Completable {
         return source.fireAndForget(payload)
