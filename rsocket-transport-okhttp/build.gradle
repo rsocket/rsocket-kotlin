@@ -1,0 +1,13 @@
+apply plugin: 'java-library'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    api project(":rsocket-core")
+    api group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.9.0'
+    // https://mvnrepository.com/artifact/io.netty/netty-buffer
+    api group: 'io.netty', name: 'netty-buffer', version: '4.1.16.Final'
+
+}
+
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7"
