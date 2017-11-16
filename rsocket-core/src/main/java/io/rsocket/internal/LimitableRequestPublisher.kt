@@ -25,7 +25,7 @@ import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 
 /**  */
-class LimitedRequestPublisher<T> private constructor(private val source: Publisher<T>) : Flowable<T>(), Subscription,Disposable {
+class LimitableRequestPublisher<T> private constructor(private val source: Publisher<T>) : Flowable<T>(), Subscription,Disposable {
 
     private val canceled: AtomicBoolean
 
@@ -97,13 +97,13 @@ class LimitedRequestPublisher<T> private constructor(private val source: Publish
     private inner class InnerSubscriber internal constructor(internal var destination: Subscriber<in T>) : Subscriber<T> {
 
         override fun onSubscribe(s: Subscription) {
-            synchronized(this@LimitedRequestPublisher) {
-                this@LimitedRequestPublisher.internalSubscription = s
+            synchronized(this@LimitableRequestPublisher) {
+                this@LimitableRequestPublisher.internalSubscription = s
 
                 if (canceled.get()) {
                     s.cancel()
                     subscribed = false
-                    this@LimitedRequestPublisher.internalSubscription = null
+                    this@LimitableRequestPublisher.internalSubscription = null
                 }
             }
 
@@ -130,7 +130,7 @@ class LimitedRequestPublisher<T> private constructor(private val source: Publish
 
     private inner class InnerSubscription : Subscription {
         override fun request(n: Long) {
-            synchronized(this@LimitedRequestPublisher) {
+            synchronized(this@LimitableRequestPublisher) {
                 internalRequested = BackpressureHelper.addCap(n, internalRequested)
             }
 
@@ -138,14 +138,14 @@ class LimitedRequestPublisher<T> private constructor(private val source: Publish
         }
 
         override fun cancel() {
-            this@LimitedRequestPublisher.cancel()
+            this@LimitableRequestPublisher.cancel()
         }
     }
 
     companion object {
 
-        fun <T> wrap(source: Publisher<T>): LimitedRequestPublisher<T> {
-            return LimitedRequestPublisher(source)
+        fun <T> wrap(source: Publisher<T>): LimitableRequestPublisher<T> {
+            return LimitableRequestPublisher(source)
         }
     }
 }
