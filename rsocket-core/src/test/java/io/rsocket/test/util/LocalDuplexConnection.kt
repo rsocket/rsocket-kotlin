@@ -12,48 +12,51 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *//*
+ */
 
 
 package io.rsocket.test.util
 
+import io.reactivex.Completable
+import io.reactivex.Flowable
+import io.reactivex.processors.FlowableProcessor
+import io.reactivex.processors.PublishProcessor
+import io.rsocket.Availability
 import io.rsocket.DuplexConnection
 import io.rsocket.Frame
 import org.reactivestreams.Publisher
-import reactor.core.publisher.DirectProcessor
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
-import reactor.core.publisher.MonoProcessor
 
 class LocalDuplexConnection(
-    private val name: String, private val send: DirectProcessor<Frame>, private val receive: DirectProcessor<Frame>) : DuplexConnection {
-    private val closeNotifier: MonoProcessor<Void> = MonoProcessor.create()
+        private val name: String,
+        private val send: FlowableProcessor<Frame>,
+        private val receive: FlowableProcessor<Frame>) : DuplexConnection {
 
-    override fun send(frame: Publisher<Frame>): Mono<Void> {
-        return Flux.from(frame)
+    private val closeNotifier: PublishProcessor<Void> = PublishProcessor.create()
+    private var availability = 1.0
+
+    override fun send(frame: Publisher<Frame>): Completable {
+        return Flowable.fromPublisher(frame)
                 .doOnNext { f -> println(name + " - " + f.toString()) }
                 .doOnNext({ send.onNext(it) })
                 .doOnError({ send.onError(it) })
-                .then()
+                .ignoreElements()
     }
 
-    override fun receive(): Flux<Frame> {
-        return receive.doOnNext { f -> println(name + " - " + f.toString()) }
-    }
+    override fun receive(): Flowable<Frame> = receive.doOnNext { f -> println(name + " - " + f.toString()) }
 
-    override fun availability(): Double {
-        return 1.0
-    }
+    override fun availability(): Double = availability
 
-    override fun close(): Mono<Void> {
-        return Mono.defer {
+    override fun close(): Completable {
+        return Completable.defer {
             closeNotifier.onComplete()
-            Mono.empty<Void>()
+            Completable.complete()
         }
     }
 
-    override fun onClose(): Mono<Void> {
-        return closeNotifier
+    override fun onClose(): Completable = closeNotifier.ignoreElements()
+
+    fun setAvailability(availability: Double) {
+        this.availability = availability
     }
 }
-*/
+

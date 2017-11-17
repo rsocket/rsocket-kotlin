@@ -1,4 +1,3 @@
-/*
 package io.rsocket.test.util
 
 import org.mockito.ArgumentMatchers.any
@@ -10,10 +9,9 @@ import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 
 object TestSubscriber {
-    fun <T> create(): Subscriber<T>? {
-        return create(java.lang.Long.MAX_VALUE)
-    }
+    @JvmStatic fun <T> create(): Subscriber<T>? = create(java.lang.Long.MAX_VALUE)
 
+    @Suppress("UNCHECKED_CAST")
     fun <T> create(initialRequest: Long): Subscriber<T>? {
         val mock = mock(Subscriber::class.java) as Subscriber<T>
 
@@ -29,10 +27,11 @@ object TestSubscriber {
         return mock
     }
 
-    fun anyPayload(): Payload {
+    @JvmStatic fun anyPayload(): Payload {
         return any(Payload::class.java)
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun createCancelling(): Subscriber<Payload>? {
         val mock = mock(Subscriber::class.java) as Subscriber<Payload>
 
@@ -46,4 +45,3 @@ object TestSubscriber {
         return mock
     }
 }
-*/

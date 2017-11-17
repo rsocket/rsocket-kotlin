@@ -12,23 +12,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *//*
+ */
 
 
 package io.rsocket
 
-import org.hamcrest.Matchers.empty
-import org.hamcrest.Matchers.`is`
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.verify
-
-import io.rsocket.exceptions.ApplicationException
+import io.reactivex.Flowable
+import io.reactivex.Single
+import io.reactivex.processors.PublishProcessor
+import io.reactivex.subscribers.TestSubscriber
 import io.rsocket.test.util.LocalDuplexConnection
-import io.rsocket.test.util.TestSubscriber
 import io.rsocket.util.PayloadImpl
-import java.util.ArrayList
-import java.util.concurrent.CountDownLatch
-import org.hamcrest.MatcherAssert
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.*
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -36,60 +32,64 @@ import org.junit.rules.ExternalResource
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 import org.reactivestreams.Publisher
-import org.reactivestreams.Subscriber
-import reactor.core.publisher.DirectProcessor
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
+import java.util.*
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class RSocketTest {
 
-    @Rule @JvmField
+    @get:Rule
     val rule = SocketRule()
 
     @Test(timeout = 2000)
     fun testRequestReplyNoError() {
         val subscriber = TestSubscriber.create<Payload>()
-        rule.crs!!.requestResponse(PayloadImpl("hello")).subscribe(subscriber)
-        verify(subscriber)!!.onNext(TestSubscriber.anyPayload())
-        verify(subscriber)!!.onComplete()
+        rule.crs.requestResponse(PayloadImpl("hello")).toFlowable().blockingSubscribe(subscriber)
+        assertThat("unexpected errors", subscriber.errorCount(), `is`(0))
+        assertThat("unexpected payloads", subscriber.valueCount(), `is`(1))
+        assertThat("unexpected completions", subscriber.completions(), `is`(1L))
         rule.assertNoErrors()
     }
 
     @Test(timeout = 2000)
-    @Ignore
     fun testHandlerEmitsError() {
         rule.setRequestAcceptor(
                 object : AbstractRSocket() {
-                    override fun requestResponse(payload: Payload): Mono<Payload> {
-                        return Mono.error(NullPointerException("Deliberate exception."))
-                    }
+                    override fun requestResponse(payload: Payload): Single<Payload> =
+                            Single.error<Payload>(NullPointerException("Deliberate exception."))
+                                    .delay(100, TimeUnit.MILLISECONDS)
                 })
         val subscriber = TestSubscriber.create<Payload>()
-        rule.crs!!.requestResponse(PayloadImpl.EMPTY).subscribe(subscriber)
-        verify(subscriber)!!.onError(any(ApplicationException::class.java))
-        rule.assertNoErrors()
+        rule.crs.requestResponse(PayloadImpl.EMPTY).toFlowable().blockingSubscribe(subscriber)
+        assertThat("unexpected frames", subscriber.errorCount(), `is`(1))
+        assertThat("unexpected frames", subscriber.valueCount(), `is`(0))
+        assertThat("unexpected frames", subscriber.completions(), `is`(0L))
+
+        rule.assertNoClientErrors()
+        rule.assertServerErrorCount(1)
+
     }
 
     @Test(timeout = 2000)
     @Throws(Exception::class)
     fun testChannel() {
         val latch = CountDownLatch(10)
-        val requests = Flux.range(0, 10).map<Payload> { i -> PayloadImpl("streaming in -> " + i!!) }
+        val requests = Flowable.range(0, 10).map<Payload> { i -> PayloadImpl("streaming in -> " + i) }
 
-        val responses = rule.crs!!.requestChannel(requests)
+        val responses = rule.crs.requestChannel(requests)
 
-        responses.doOnNext { p -> latch.countDown() }.subscribe()
+        responses.doOnNext { latch.countDown() }.subscribe()
 
         latch.await()
     }
 
     class SocketRule : ExternalResource() {
 
-        internal var crs: RSocketClient? = null
-        private var srs: RSocketServer? = null
+        lateinit internal var crs: RSocketClient
+        lateinit var srs: RSocketServer
         private var requestAcceptor: RSocket? = null
-        lateinit private var serverProcessor: DirectProcessor<Frame>
-        lateinit private var clientProcessor: DirectProcessor<Frame>
+        lateinit private var serverProcessor: PublishProcessor<Frame>
+        lateinit private var clientProcessor: PublishProcessor<Frame>
         private val clientErrors = ArrayList<Throwable>()
         private val serverErrors = ArrayList<Throwable>()
 
@@ -103,9 +103,9 @@ class RSocketTest {
             }
         }
 
-        protected fun init() {
-            serverProcessor = DirectProcessor.create()
-            clientProcessor = DirectProcessor.create()
+        private fun init() {
+            serverProcessor = PublishProcessor.create()
+            clientProcessor = PublishProcessor.create()
 
             val serverConnection = LocalDuplexConnection("server", clientProcessor, serverProcessor)
             val clientConnection = LocalDuplexConnection("client", serverProcessor, clientProcessor)
@@ -114,17 +114,16 @@ class RSocketTest {
                 requestAcceptor
             else
                 object : AbstractRSocket() {
-                    override fun requestResponse(payload: Payload): Mono<Payload> {
-                        return Mono.just(payload)
-                    }
+                    override fun requestResponse(payload: Payload): Single<Payload> = Single.just(payload)
+                            .delay(100, TimeUnit.MILLISECONDS)
 
-                    override fun requestChannel(payloads: Publisher<Payload>): Flux<Payload> {
-                        Flux.from(payloads)
-                                .map<Any> { payload -> PayloadImpl("server got -> [" + payload.toString() + "]") }
+                    override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> {
+                        Flowable.fromPublisher(payloads)
+                                .map { payload -> PayloadImpl("server got -> [$payload]") }
                                 .subscribe()
 
-                        return Flux.range(1, 10)
-                                .map { payload -> PayloadImpl("server got -> [" + payload!!.toString() + "]") }
+                        return Flowable.range(1, 10)
+                                .map { payload -> PayloadImpl("server got -> [$payload]") }
                     }
                 }
 
@@ -139,15 +138,40 @@ class RSocketTest {
 
         fun setRequestAcceptor(requestAcceptor: RSocket) {
             this.requestAcceptor = requestAcceptor
+            close(srs, crs)
             init()
         }
 
+        private fun close(socket: RSocket) {
+            socket.close().subscribe()
+            socket.onClose().blockingAwait()
+        }
+
+        private fun close(vararg sockets: RSocket) = sockets.forEach { close(it) }
+
         fun assertNoErrors() {
-            MatcherAssert.assertThat(
-                    "Unexpected error on the client connection.", clientErrors, `is`(empty<Any>()))
-            MatcherAssert.assertThat(
-                    "Unexpected error on the server connection.", serverErrors, `is`(empty<Any>()))
+            assertNoClientErrors()
+            assertNoServerErrors()
+        }
+
+        fun assertNoClientErrors() {
+            assertThat(
+                    "Unexpected error on the client connection.",
+                    clientErrors,
+                    empty())
+        }
+
+        fun assertNoServerErrors() {
+            assertThat(
+                    "Unexpected error on the server connection.",
+                    serverErrors,
+                    empty())
+        }
+
+        fun assertServerErrorCount(count: Int) {
+            assertThat("Unexpected error count on the server connection.",
+                    serverErrors,
+                    hasSize(count))
         }
     }
 }
-*/

@@ -12,7 +12,7 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *//*
+ */
 
 
 package io.rsocket.internal
@@ -28,7 +28,7 @@ import org.junit.Test
 
 class ClientServerInputMultiplexerTest {
     private var source: TestDuplexConnection? = null
-    private var multiplexer: ClientServerInputMultiplexer? = null
+    private lateinit var multiplexer: ClientServerInputMultiplexer
 
     @Before
     fun setup() {
@@ -42,20 +42,20 @@ class ClientServerInputMultiplexerTest {
         val serverFrames = AtomicInteger()
         val connectionFrames = AtomicInteger()
 
-        multiplexer!!
+        multiplexer
                 .asClientConnection()
                 .receive()
-                .doOnNext { f -> clientFrames.incrementAndGet() }
+                .doOnNext { clientFrames.incrementAndGet() }
                 .subscribe()
-        multiplexer!!
+        multiplexer
                 .asServerConnection()
                 .receive()
-                .doOnNext { f -> serverFrames.incrementAndGet() }
+                .doOnNext { serverFrames.incrementAndGet() }
                 .subscribe()
-        multiplexer!!
+        multiplexer
                 .asStreamZeroConnection()
                 .receive()
-                .doOnNext { f -> connectionFrames.incrementAndGet() }
+                .doOnNext { connectionFrames.incrementAndGet() }
                 .subscribe()
 
         source!!.addToReceivedBuffer(Frame.Error.from(1, Exception()))
@@ -74,4 +74,4 @@ class ClientServerInputMultiplexerTest {
         assertEquals(0, connectionFrames.get().toLong())
     }
 }
-*/
+

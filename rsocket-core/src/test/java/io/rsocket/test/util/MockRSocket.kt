@@ -12,11 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *//*
+ */
 
 
 package io.rsocket.test.util
 
+import io.reactivex.Completable
+import io.reactivex.Flowable
+import io.reactivex.Single
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
 
@@ -24,58 +27,41 @@ import io.rsocket.Payload
 import io.rsocket.RSocket
 import java.util.concurrent.atomic.AtomicInteger
 import org.reactivestreams.Publisher
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 
 class MockRSocket(private val delegate: RSocket) : RSocket {
 
-    private val fnfCount: AtomicInteger
-    private val rrCount: AtomicInteger
-    private val rStreamCount: AtomicInteger
-    private val rSubCount: AtomicInteger
-    private val rChannelCount: AtomicInteger
-    private val pushCount: AtomicInteger
+    private val fnfCount: AtomicInteger = AtomicInteger()
+    private val rrCount: AtomicInteger = AtomicInteger()
+    private val rStreamCount: AtomicInteger = AtomicInteger()
+    private val rSubCount: AtomicInteger = AtomicInteger()
+    private val rChannelCount: AtomicInteger = AtomicInteger()
+    private val pushCount: AtomicInteger = AtomicInteger()
 
-    init {
-        fnfCount = AtomicInteger()
-        rrCount = AtomicInteger()
-        rStreamCount = AtomicInteger()
-        rSubCount = AtomicInteger()
-        rChannelCount = AtomicInteger()
-        pushCount = AtomicInteger()
+    override fun fireAndForget(payload: Payload): Completable {
+        return delegate.fireAndForget(payload).doOnSubscribe { fnfCount.incrementAndGet() }
     }
 
-    override fun fireAndForget(payload: Payload): Mono<Void> {
-        return delegate.fireAndForget(payload).doOnSubscribe { s -> fnfCount.incrementAndGet() }
+    override fun requestResponse(payload: Payload): Single<Payload> {
+        return delegate.requestResponse(payload).doOnSubscribe { rrCount.incrementAndGet() }
     }
 
-    override fun requestResponse(payload: Payload): Mono<Payload> {
-        return delegate.requestResponse(payload).doOnSubscribe { s -> rrCount.incrementAndGet() }
+    override fun requestStream(payload: Payload): Flowable<Payload> {
+        return delegate.requestStream(payload).doOnSubscribe { rStreamCount.incrementAndGet() }
     }
 
-    override fun requestStream(payload: Payload): Flux<Payload> {
-        return delegate.requestStream(payload).doOnSubscribe { s -> rStreamCount.incrementAndGet() }
+    override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> {
+        return delegate.requestChannel(payloads).doOnSubscribe { rChannelCount.incrementAndGet() }
     }
 
-    override fun requestChannel(payloads: Publisher<Payload>): Flux<Payload> {
-        return delegate.requestChannel(payloads).doOnSubscribe { s -> rChannelCount.incrementAndGet() }
+    override fun metadataPush(payload: Payload): Completable {
+        return delegate.metadataPush(payload).doOnSubscribe { pushCount.incrementAndGet() }
     }
 
-    override fun metadataPush(payload: Payload): Mono<Void> {
-        return delegate.metadataPush(payload).doOnSubscribe { s -> pushCount.incrementAndGet() }
-    }
+    override fun availability(): Double = delegate.availability()
 
-    override fun availability(): Double {
-        return delegate.availability()
-    }
+    override fun close(): Completable = delegate.close()
 
-    override fun close(): Mono<Void> {
-        return delegate.close()
-    }
-
-    override fun onClose(): Mono<Void> {
-        return delegate.onClose()
-    }
+    override fun onClose(): Completable = delegate.onClose()
 
     fun assertFireAndForgetCount(expected: Int) {
         assertCount(expected, "fire-and-forget", fnfCount)
@@ -105,4 +91,4 @@ class MockRSocket(private val delegate: RSocket) : RSocket {
         assertThat("Unexpected invocations for $type.", counter.get(), `is`(expected))
     }
 }
-*/
+

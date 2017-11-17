@@ -43,14 +43,14 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
 
 /** Client Side of a RSocket socket. Sends [Frame]s to a [RSocketServer]  */
-internal open class RSocketClient @JvmOverloads constructor(
+open class RSocketClient @JvmOverloads constructor(
         private val connection: DuplexConnection,
         private val errorConsumer: (Throwable) -> Unit,
         private val streamIdSupplier: StreamIdSupplier,
         tickPeriod: Duration = Duration.ZERO,
         ackTimeout: Duration = Duration.ZERO,
         missedAcks: Int = 0) : RSocket {
-    private val started: AsyncProcessor<Void> = AsyncProcessor.create()
+    private val started: PublishProcessor<Void> = PublishProcessor.create()
     private val completeOnStart = started.ignoreElements()
     private val senders: IntObjectHashMap<LimitableRequestPublisher<*>> = IntObjectHashMap(256, 0.9f)
     private val receivers: IntObjectHashMap<Subscriber<Payload>> = IntObjectHashMap(256, 0.9f)
@@ -68,8 +68,8 @@ internal open class RSocketClient @JvmOverloads constructor(
         if (Duration.ZERO != tickPeriod) {
             val ackTimeoutMs = ackTimeout.toMillis
 
-            this.keepAliveSendSub = started
-                    .flatMap{ _ -> Flowable.interval(tickPeriod.toMillis,TimeUnit.SECONDS)}
+            this.keepAliveSendSub = completeOnStart
+                    .andThen(Flowable.interval(tickPeriod.toMillis,TimeUnit.MILLISECONDS))
                     .doOnSubscribe({ _ -> timeLastTickSentMs = System.currentTimeMillis() })
                     .concatMap({ _ -> sendKeepAlive(ackTimeoutMs, missedAcks).toFlowable<Long>() })
                     .doOnError({ t:Throwable ->

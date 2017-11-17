@@ -12,125 +12,159 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *//*
+ */
 
 
 package io.rsocket
 
 import io.netty.buffer.Unpooled
-import io.rsocket.test.util.TestDuplexConnection
-import io.rsocket.test.util.TestSubscriber
+import io.reactivex.Completable
+import io.reactivex.Flowable
+import io.reactivex.Single
+import io.reactivex.processors.BehaviorProcessor
+import io.reactivex.processors.PublishProcessor
+import io.reactivex.subscribers.TestSubscriber
+import io.rsocket.test.util.LocalDuplexConnection
 import io.rsocket.util.PayloadImpl
+import io.rsocket.util.RSocketProxy
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.*
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import reactor.core.publisher.Mono
-import java.util.concurrent.ConcurrentLinkedQueue
+import org.junit.rules.ExternalResource
+import org.junit.runner.Description
+import org.junit.runners.model.Statement
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 class RSocketServerTest {
 
-    @Rule
-    internal val rule = ServerSocketRule()
+    @get:Rule
+    val rule = ServerSocketRule()
 
-    @Test(timeout = 2000)
-    @Ignore
+    @Test(timeout = 200000)
     @Throws(Exception::class)
     fun testHandleKeepAlive() {
-        rule.connection.addToReceivedBuffer(Frame.Keepalive.from(Unpooled.EMPTY_BUFFER, true))
-        val sent = rule.connection.awaitSend()
-        assertThat("Unexpected frame sent.", sent.type, `is`(FrameType.KEEPALIVE))
-        */
-/*Keep alive ack must not have respond flag else, it will result in infinite ping-pong of keep alive frames.*//*
 
+        Completable.timer(100, TimeUnit.MILLISECONDS).subscribe({
+            rule.receiver.onNext(Frame.Keepalive.from(Unpooled.EMPTY_BUFFER, true))
+        })
+
+        val sentFrame = rule.sender.firstOrError().blockingGet()
+
+        assertThat("Unexpected frame sent.", sentFrame.type, `is`(FrameType.KEEPALIVE))
         assertThat(
                 "Unexpected keep-alive frame respond flag.",
-                Frame.Keepalive.hasRespondFlag(sent),
+                Frame.Keepalive.hasRespondFlag(sentFrame),
                 `is`(false))
     }
 
     @Test(timeout = 2000)
-    @Ignore
     @Throws(Exception::class)
     fun testHandleResponseFrameNoError() {
-        val streamId = 4
-        rule.connection.clearSendReceiveBuffers()
+        Completable.timer(100, TimeUnit.MILLISECONDS).subscribe {
+            val streamId = 4
+            rule.sendRequest(streamId, FrameType.REQUEST_RESPONSE)
+        }
+        val subs = TestSubscriber.create<Frame>()
+        rule.sender.take(1).blockingSubscribe(subs)
 
-        rule.sendRequest(streamId, FrameType.REQUEST_RESPONSE)
-
-        val sendSubscribers = rule.connection.sendSubscribers
-        assertThat("Request not sent.", sendSubscribers, hasSize<Any>(1))
-        assertThat("Unexpected error.", rule.errors, `is`(empty<Any>()))
-        val sendSub = sendSubscribers.iterator().next()
+        assertThat("Unexpected error.", rule.errors, empty())
         assertThat(
                 "Unexpected frame sent.",
-                rule.connection.awaitSend().type,
+                subs.values()[0].type,
                 anyOf(`is`(FrameType.COMPLETE), `is`(FrameType.NEXT_COMPLETE)))
     }
 
     @Test(timeout = 2000)
-    @Ignore
-    @Throws(Exception::class)
     fun testHandlerEmitsError() {
-        val streamId = 4
-        rule.sendRequest(streamId, FrameType.REQUEST_STREAM)
+        Completable.timer(100, TimeUnit.MILLISECONDS).subscribe {
+            val streamId = 4
+            rule.sendRequest(streamId, FrameType.REQUEST_STREAM)
+        }
+        val frame = rule.sender.blockingFirst()
         assertThat("Unexpected error.", rule.errors, `is`(empty<Any>()))
         assertThat(
-                "Unexpected frame sent.", rule.connection.awaitSend().type, `is`(FrameType.ERROR))
+                "Unexpected frame sent.", frame.type, `is`(FrameType.ERROR))
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 10_000)
     fun testCancel() {
         val streamId = 4
         val cancelled = AtomicBoolean()
-        rule.setAcceptingSocket(
+        rule.setAccSocket(
                 object : AbstractRSocket() {
-                    override fun requestResponse(payload: Payload): Mono<Payload> {
-                        return Mono.never<Payload>().doOnCancel { cancelled.set(true) }
-                    }
+                    override fun requestResponse(payload: Payload): Single<Payload> =
+                            Single.never<Payload>().doOnDispose { cancelled.set(true) }
                 })
-        rule.sendRequest(streamId, FrameType.REQUEST_RESPONSE)
 
-        assertThat("Unexpected error.", rule.errors, `is`(empty<Any>()))
-        assertThat("Unexpected frame sent.", rule.connection.sent, `is`(empty<Any>()))
 
-        rule.connection.addToReceivedBuffer(Frame.Cancel.from(streamId))
-        assertThat("Unexpected frame sent.", rule.connection.sent, `is`(empty<Any>()))
+        val beforeSubs = TestSubscriber.create<Frame>()
+        Completable.timer(100, TimeUnit.MILLISECONDS).subscribe {
+            rule.sendRequest(streamId, FrameType.REQUEST_RESPONSE)
+        }
+
+        rule.sender.timeout(1000, TimeUnit.MILLISECONDS, Flowable.empty()).blockingSubscribe(beforeSubs)
+
+        assertThat("Unexpected error.", rule.errors, empty())
+        assertThat("Unexpected frame sent.", beforeSubs.valueCount(), `is`(0))
+        assertThat("Unexpected frame sent.", beforeSubs.errorCount(), `is`(0))
+
+        Completable.timer(100, TimeUnit.MILLISECONDS).subscribe {
+            rule.receiver.onNext(Frame.Cancel.from(streamId))
+        }
+
+        val afterSubs = TestSubscriber.create<Frame>()
+        rule.sender.timeout(1000, TimeUnit.MILLISECONDS, Flowable.empty()).blockingSubscribe(afterSubs)
+
+        assertThat("Unexpected frame sent.", afterSubs.valueCount(), `is`(0))
+        assertThat("Unexpected frame sent.", afterSubs.errorCount(), `is`(0))
         assertThat("Subscription not cancelled.", cancelled.get(), `is`(true))
     }
 
-   internal class ServerSocketRule : AbstractSocketRule<RSocketServer>() {
+    class ServerSocketRule : ExternalResource() {
 
-        private var acceptingSocket: RSocket? = null
+        var acceptingSocket: RSocket = object : AbstractRSocket() {
+            override fun requestResponse(payload: Payload): Single<Payload> = Single.just(payload)
+        }
 
-        override fun init() {
-            acceptingSocket = object : AbstractRSocket() {
-                override fun requestResponse(payload: Payload): Mono<Payload> {
-                    return Mono.just(payload)
+        lateinit var sender: PublishProcessor<Frame>
+        lateinit var receiver: PublishProcessor<Frame>
+        private lateinit var conn: LocalDuplexConnection
+        lateinit var errors:MutableList<Throwable>
+        lateinit var rsocket: RSocketServer
+
+        override fun apply(base: Statement, description: Description?): Statement {
+            return object : Statement() {
+                @Throws(Throwable::class)
+                override fun evaluate() {
+                    init()
+                    base.evaluate()
                 }
             }
-            super.init()
         }
 
-        fun setAcceptingSocket(acceptingSocket: RSocket) {
+        private fun init() {
+            sender = PublishProcessor.create<Frame>()
+            receiver = PublishProcessor.create<Frame>()
+            conn = LocalDuplexConnection("serverConn", sender, receiver)
+            errors = ArrayList()
+            rsocket = RSocketServer(conn, acceptingSocket) { throwable -> errors.add(throwable) }
+        }
+
+        fun setAccSocket(acceptingSocket: RSocket) {
             this.acceptingSocket = acceptingSocket
-            connection = TestDuplexConnection()
-            connectSub = TestSubscriber.create()!!
-            errors = ConcurrentLinkedQueue()
-            super.init()
+            acceptingSocket.close().subscribe()
+            acceptingSocket.onClose().blockingAwait()
+            init()
         }
 
-        override fun newRSocket(): RSocketServer {
-            return RSocketServer(connection, acceptingSocket!!) { throwable -> errors.add(throwable) }
-        }
-
-        internal fun sendRequest(streamId: Int, frameType: FrameType) {
+        fun sendRequest(streamId: Int, frameType: FrameType) {
             val request = Frame.Request.from(streamId, frameType, PayloadImpl.EMPTY, 1)
-            connection.addToReceivedBuffer(request)
-            connection.addToReceivedBuffer(Frame.RequestN.from(streamId, 2))
+            receiver.onNext(request)
+            receiver.onNext(Frame.RequestN.from(streamId, 2))
         }
     }
 }
-*/
+

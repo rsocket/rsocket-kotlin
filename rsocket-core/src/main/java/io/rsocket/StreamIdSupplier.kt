@@ -16,7 +16,7 @@
 
 package io.rsocket
 
-internal class StreamIdSupplier private constructor(private var streamId: Int) {
+class StreamIdSupplier private constructor(private var streamId: Int) {
 
     @Synchronized
     fun nextStreamId(): Int {

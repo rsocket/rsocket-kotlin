@@ -37,7 +37,7 @@ import org.reactivestreams.Subscription
 
 
 /** Server side RSocket. Receives [Frame]s from a [RSocketClient]  */
-internal class RSocketServer(
+ class RSocketServer(
         private val connection: DuplexConnection,
         private val requestHandler: RSocket,
         private val errorConsumer: (Throwable) -> Unit) : RSocket {
@@ -297,13 +297,13 @@ internal class RSocketServer(
         return handleStream(streamId, requestChannel(payloads), initialRequestN(firstFrame))
     }
 
-    private fun handleKeepAliveFrame(frame: Frame): Completable =
-            Completable.fromRunnable {
-                if (Frame.Keepalive.hasRespondFlag(frame)) {
-                    val data = Unpooled.wrappedBuffer(frame.data)
-                    sendProcessor.onNext(Frame.Keepalive.from(data, false))
-                }
-            }
+    private fun handleKeepAliveFrame(frame: Frame): Completable {
+        if (Frame.Keepalive.hasRespondFlag(frame)) {
+            val data = Unpooled.wrappedBuffer(frame.data)
+            sendProcessor.onNext(Frame.Keepalive.from(data, false))
+        }
+        return Completable.complete()
+    }
 
     private fun handleCancelFrame(streamId: Int): Completable =
             Completable.fromRunnable {
