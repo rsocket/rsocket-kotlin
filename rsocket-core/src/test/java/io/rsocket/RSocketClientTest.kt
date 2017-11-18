@@ -175,7 +175,7 @@ class RSocketClientTest {
         lateinit var sender: PublishProcessor<Frame>
         lateinit var receiver: PublishProcessor<Frame>
         lateinit var conn: LocalDuplexConnection
-        lateinit var client: RSocketClient
+        internal lateinit var client: RSocketClient
         val errors: MutableList<Throwable> = ArrayList()
 
         override fun apply(base: Statement, description: Description?): Statement {

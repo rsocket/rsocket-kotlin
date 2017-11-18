@@ -133,7 +133,7 @@ class RSocketServerTest {
         lateinit var receiver: PublishProcessor<Frame>
         private lateinit var conn: LocalDuplexConnection
         lateinit var errors:MutableList<Throwable>
-        lateinit var rsocket: RSocketServer
+        internal lateinit var rsocket: RSocketServer
 
         override fun apply(base: Statement, description: Description?): Statement {
             return object : Statement() {

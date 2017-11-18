@@ -43,7 +43,7 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
 
 /** Client Side of a RSocket socket. Sends [Frame]s to a [RSocketServer]  */
-open class RSocketClient @JvmOverloads constructor(
+internal class RSocketClient @JvmOverloads constructor(
         private val connection: DuplexConnection,
         private val errorConsumer: (Throwable) -> Unit,
         private val streamIdSupplier: StreamIdSupplier,

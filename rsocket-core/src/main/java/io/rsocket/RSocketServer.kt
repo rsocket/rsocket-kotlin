@@ -37,7 +37,7 @@ import org.reactivestreams.Subscription
 
 
 /** Server side RSocket. Receives [Frame]s from a [RSocketClient]  */
- class RSocketServer(
+ internal class RSocketServer(
         private val connection: DuplexConnection,
         private val requestHandler: RSocket,
         private val errorConsumer: (Throwable) -> Unit) : RSocket {

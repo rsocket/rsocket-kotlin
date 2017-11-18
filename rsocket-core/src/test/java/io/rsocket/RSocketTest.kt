@@ -86,7 +86,7 @@ class RSocketTest {
     class SocketRule : ExternalResource() {
 
         lateinit internal var crs: RSocketClient
-        lateinit var srs: RSocketServer
+        internal lateinit var srs: RSocketServer
         private var requestAcceptor: RSocket? = null
         lateinit private var serverProcessor: PublishProcessor<Frame>
         lateinit private var clientProcessor: PublishProcessor<Frame>
