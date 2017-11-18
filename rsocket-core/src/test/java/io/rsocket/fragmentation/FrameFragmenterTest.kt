@@ -16,13 +16,13 @@
 
 package io.rsocket.fragmentation
 
+import io.reactivex.subscribers.TestSubscriber
 import io.rsocket.Frame
 import io.rsocket.FrameType
 import io.rsocket.util.PayloadImpl
+import org.junit.Test
 import java.nio.ByteBuffer
 import java.util.concurrent.ThreadLocalRandom
-import org.junit.Test
-import reactor.test.StepVerifier
 
 class FrameFragmenterTest {
     @Test
@@ -34,8 +34,9 @@ class FrameFragmenterTest {
                 1, FrameType.REQUEST_RESPONSE, PayloadImpl(data, metadata), 1)
 
         val frameFragmenter = FrameFragmenter(2)
-
-        StepVerifier.create(frameFragmenter.fragment(from)).expectNextCount(16).verifyComplete()
+        val subs = TestSubscriber.create<Frame>()
+        frameFragmenter.fragment(from).blockingSubscribe(subs)
+        subs.assertValueCount(16).assertComplete().assertNoErrors()
     }
 
     @Test
@@ -47,8 +48,9 @@ class FrameFragmenterTest {
                 1, FrameType.REQUEST_RESPONSE, PayloadImpl(data, metadata), 1)
 
         val frameFragmenter = FrameFragmenter(2)
-
-        StepVerifier.create(frameFragmenter.fragment(from)).expectNextCount(17).verifyComplete()
+        val subs = TestSubscriber.create<Frame>()
+        frameFragmenter.fragment(from).blockingSubscribe(subs)
+        subs.assertValueCount(17).assertComplete().assertNoErrors()
     }
 
     @Test
@@ -60,8 +62,9 @@ class FrameFragmenterTest {
                 1, FrameType.REQUEST_RESPONSE, PayloadImpl(data, metadata), 1)
 
         val frameFragmenter = FrameFragmenter(2)
-
-        StepVerifier.create(frameFragmenter.fragment(from)).expectNextCount(8).verifyComplete()
+        val subs = TestSubscriber.create<Frame>()
+        frameFragmenter.fragment(from).blockingSubscribe(subs)
+        subs.assertValueCount(8).assertComplete().assertNoErrors()
     }
 
     @Test
@@ -73,8 +76,9 @@ class FrameFragmenterTest {
                 1, FrameType.REQUEST_RESPONSE, PayloadImpl(data, metadata), 1)
 
         val frameFragmenter = FrameFragmenter(2)
-
-        StepVerifier.create(frameFragmenter.fragment(from)).expectNextCount(8).verifyComplete()
+        val subs = TestSubscriber.create<Frame>()
+        frameFragmenter.fragment(from).blockingSubscribe(subs)
+        subs.assertValueCount(8).assertComplete().assertNoErrors()
     }
 
     private fun createRandomBytes(size: Int): ByteBuffer {
