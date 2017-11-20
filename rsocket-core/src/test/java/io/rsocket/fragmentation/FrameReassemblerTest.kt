@@ -19,12 +19,15 @@ package io.rsocket.fragmentation
 import io.rsocket.Frame
 import io.rsocket.FrameType
 import io.rsocket.util.PayloadImpl
+import org.junit.Ignore
 import java.nio.ByteBuffer
 import java.util.concurrent.ThreadLocalRandom
 import org.junit.Test
 
 /**  */
 class FrameReassemblerTest {
+
+    @Ignore("Same as original project - does not test anything")
     @Test
     fun testAppend() {
         val data = createRandomBytes(16)

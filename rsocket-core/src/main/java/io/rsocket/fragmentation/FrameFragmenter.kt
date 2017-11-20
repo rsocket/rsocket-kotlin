@@ -37,10 +37,7 @@ class FrameFragmenter(private val mtu: Int) {
         }
     }
 
-    fun fragment(frame: Frame): Flowable<Frame> {
-
-        return Flowable.generate {FragmentGenerator(frame)}
-    }
+    fun fragment(frame: Frame): Flowable<Frame> = Flowable.generate(FragmentGenerator(frame))
 
     private inner class FragmentGenerator(frame: Frame) : (Emitter<Frame>) -> Unit {
         private val frame: Frame = frame.retain()

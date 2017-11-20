@@ -12,36 +12,34 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *//*
+ */
 
 
 package io.rsocket.test.util
 
+import io.reactivex.Completable
+import io.reactivex.Flowable
+import io.reactivex.processors.PublishProcessor
 import io.rsocket.DuplexConnection
 import io.rsocket.Frame
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.LinkedBlockingQueue
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import reactor.core.publisher.DirectProcessor
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
-import reactor.core.publisher.MonoProcessor
 
-*/
+
 /**
  * An implementation of [DuplexConnection] that provides functionality to modify the behavior
  * dynamically.
- *//*
+ */
 
 class TestDuplexConnection : DuplexConnection {
 
     internal val sent: LinkedBlockingQueue<Frame> = LinkedBlockingQueue()
-    private val sentPublisher: DirectProcessor<Frame> = DirectProcessor.create()
-    private val received: DirectProcessor<Frame> = DirectProcessor.create()
-    private val close: MonoProcessor<Void> = MonoProcessor.create()
+    private val sentPublisher: PublishProcessor<Frame> = PublishProcessor.create()
+    private val received: PublishProcessor<Frame> = PublishProcessor.create()
+    private val close: PublishProcessor<Void> = PublishProcessor.create()
     internal val sendSubscribers: ConcurrentLinkedQueue<Subscriber<Frame>> = ConcurrentLinkedQueue()
     @Volatile private var availability = 1.0
     @Volatile private var initialSendRequestN = Integer.MAX_VALUE
@@ -49,13 +47,13 @@ class TestDuplexConnection : DuplexConnection {
     val sentAsPublisher: Publisher<Frame>
         get() = sentPublisher
 
-    override fun send(frames: Publisher<Frame>): Mono<Void> {
+    override fun send(frame: Publisher<Frame>): Completable {
         if (availability <= 0) {
-            return Mono.error(
+            return Completable.error(
                     IllegalStateException("RSocket not available. Availability: " + availability))
         }
         val subscriber = TestSubscriber.create<Frame>(initialSendRequestN.toLong())
-        Flux.from(frames)
+        Flowable.fromPublisher(frame)
                 .doOnNext { frame ->
                     sent.offer(frame)
                     sentPublisher.onNext(frame)
@@ -63,10 +61,10 @@ class TestDuplexConnection : DuplexConnection {
                 .doOnError { throwable -> logger.error("Error in send stream on test connection.", throwable) }
                 .subscribe(subscriber)
         sendSubscribers.add(subscriber)
-        return Mono.empty()
+        return Completable.complete()
     }
 
-    override fun receive(): Flux<Frame> {
+    override fun receive(): Flowable<Frame> {
         return received
     }
 
@@ -74,11 +72,11 @@ class TestDuplexConnection : DuplexConnection {
         return availability
     }
 
-    override fun close(): Mono<Void> {
-        return close
+    override fun close(): Completable {
+        return close.ignoreElements()
     }
 
-    override fun onClose(): Mono<Void> {
+    override fun onClose(): Completable {
         return close()
     }
 
@@ -119,4 +117,4 @@ class TestDuplexConnection : DuplexConnection {
         private val logger = LoggerFactory.getLogger(TestDuplexConnection::class.java)
     }
 }
-*/
+
