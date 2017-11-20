@@ -15,6 +15,6 @@
  */
 
 dependencies {
-    compile 'io.rsocket:rsocket-core:0.9.16'
+    compile 'io.rsocket:rsocket-core:0.9-SNAPSHOT'
     compile 'io.rsocket:rsocket-transport-netty:0.9-SNAPSHOT'
 }
