@@ -20,6 +20,8 @@ import io.rsocket.Frame;
 import io.rsocket.FrameType;
 import javax.annotation.Nullable;
 
+import static io.rsocket.android.frame.Utils.INTEGER_BYTES;
+
 public class RequestFrameFlyweight {
 
   private RequestFrameFlyweight() {}
@@ -33,7 +35,7 @@ public class RequestFrameFlyweight {
     int length = FrameHeaderFlyweight.computeFrameHeaderLength(type, metadataLength, dataLength);
 
     if (type.hasInitialRequestN()) {
-      length += Integer.BYTES;
+      length += INTEGER_BYTES;
     }
 
     return length;
@@ -59,7 +61,7 @@ public class RequestFrameFlyweight {
         FrameHeaderFlyweight.encodeFrameHeader(byteBuf, frameLength, flags, type, streamId);
 
     byteBuf.setInt(INITIAL_REQUEST_N_FIELD_OFFSET, initialRequestN);
-    length += Integer.BYTES;
+    length += INTEGER_BYTES;
 
     length += FrameHeaderFlyweight.encodeMetadata(byteBuf, type, length, metadata);
     length += FrameHeaderFlyweight.encodeData(byteBuf, length, data);
@@ -101,7 +103,7 @@ public class RequestFrameFlyweight {
     int result = FrameHeaderFlyweight.FRAME_HEADER_LENGTH;
 
     if (type.hasInitialRequestN()) {
-      result += Integer.BYTES;
+      result += INTEGER_BYTES;
     }
 
     return result;

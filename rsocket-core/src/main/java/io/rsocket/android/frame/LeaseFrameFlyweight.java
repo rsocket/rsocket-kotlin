@@ -18,17 +18,19 @@ package io.rsocket.android.frame;
 import io.netty.buffer.ByteBuf;
 import io.rsocket.FrameType;
 
+import static io.rsocket.android.frame.Utils.*;
+
 public class LeaseFrameFlyweight {
   private LeaseFrameFlyweight() {}
 
   // relative to start of passed offset
   private static final int TTL_FIELD_OFFSET = FrameHeaderFlyweight.FRAME_HEADER_LENGTH;
-  private static final int NUM_REQUESTS_FIELD_OFFSET = TTL_FIELD_OFFSET + Integer.BYTES;
-  private static final int PAYLOAD_OFFSET = NUM_REQUESTS_FIELD_OFFSET + Integer.BYTES;
+  private static final int NUM_REQUESTS_FIELD_OFFSET = TTL_FIELD_OFFSET + INTEGER_BYTES;
+  private static final int PAYLOAD_OFFSET = NUM_REQUESTS_FIELD_OFFSET + INTEGER_BYTES;
 
   public static int computeFrameLength(final int metadataLength) {
     int length = FrameHeaderFlyweight.computeFrameHeaderLength(FrameType.LEASE, metadataLength, 0);
-    return length + Integer.BYTES * 2;
+    return length + INTEGER_BYTES * 2;
   }
 
   public static int encode(
@@ -41,7 +43,7 @@ public class LeaseFrameFlyweight {
     byteBuf.setInt(TTL_FIELD_OFFSET, ttl);
     byteBuf.setInt(NUM_REQUESTS_FIELD_OFFSET, numRequests);
 
-    length += Integer.BYTES * 2;
+    length += INTEGER_BYTES * 2;
     length += FrameHeaderFlyweight.encodeMetadata(byteBuf, FrameType.LEASE, length, metadata);
 
     return length;

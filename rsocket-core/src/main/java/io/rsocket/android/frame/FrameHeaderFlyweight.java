@@ -22,6 +22,9 @@ import io.netty.buffer.Unpooled;
 import io.rsocket.Frame;
 import io.rsocket.FrameType;
 
+import static io.rsocket.android.frame.Utils.INTEGER_BYTES;
+import static io.rsocket.android.frame.Utils.SHORT_BYTES;
+
 /**
  * Per connection frame flyweight.
  *
@@ -58,8 +61,8 @@ public class FrameHeaderFlyweight {
   static {
     FRAME_LENGTH_FIELD_OFFSET = 0;
     STREAM_ID_FIELD_OFFSET = FRAME_LENGTH_FIELD_OFFSET + FRAME_LENGTH_SIZE;
-    FRAME_TYPE_AND_FLAGS_FIELD_OFFSET = STREAM_ID_FIELD_OFFSET + Integer.BYTES;
-    PAYLOAD_OFFSET = FRAME_TYPE_AND_FLAGS_FIELD_OFFSET + Short.BYTES;
+    FRAME_TYPE_AND_FLAGS_FIELD_OFFSET = STREAM_ID_FIELD_OFFSET + INTEGER_BYTES;
+    PAYLOAD_OFFSET = FRAME_TYPE_AND_FLAGS_FIELD_OFFSET + SHORT_BYTES;
     FRAME_HEADER_LENGTH = PAYLOAD_OFFSET;
   }
 

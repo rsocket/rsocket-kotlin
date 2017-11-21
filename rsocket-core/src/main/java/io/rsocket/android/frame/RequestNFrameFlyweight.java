@@ -18,6 +18,8 @@ package io.rsocket.android.frame;
 import io.netty.buffer.ByteBuf;
 import io.rsocket.FrameType;
 
+import static io.rsocket.android.frame.Utils.*;
+
 public class RequestNFrameFlyweight {
   private RequestNFrameFlyweight() {}
 
@@ -27,7 +29,7 @@ public class RequestNFrameFlyweight {
   public static int computeFrameLength() {
     int length = FrameHeaderFlyweight.computeFrameHeaderLength(FrameType.REQUEST_N, 0, 0);
 
-    return length + Integer.BYTES;
+    return length + INTEGER_BYTES;
   }
 
   public static int encode(final ByteBuf byteBuf, final int streamId, final int requestN) {
@@ -39,7 +41,7 @@ public class RequestNFrameFlyweight {
 
     byteBuf.setInt(REQUEST_N_FIELD_OFFSET, requestN);
 
-    return length + Integer.BYTES;
+    return length + INTEGER_BYTES;
   }
 
   public static int requestN(final ByteBuf byteBuf) {
@@ -47,6 +49,6 @@ public class RequestNFrameFlyweight {
   }
 
   public static int payloadOffset(final ByteBuf byteBuf) {
-    return FrameHeaderFlyweight.FRAME_HEADER_LENGTH + Integer.BYTES;
+    return FrameHeaderFlyweight.FRAME_HEADER_LENGTH + INTEGER_BYTES;
   }
 }

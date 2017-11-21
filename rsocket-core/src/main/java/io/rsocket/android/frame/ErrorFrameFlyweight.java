@@ -20,6 +20,8 @@ import io.rsocket.FrameType;
 import io.rsocket.android.exceptions.RSocketException;
 import java.nio.charset.StandardCharsets;
 
+import static io.rsocket.android.frame.Utils.INTEGER_BYTES;
+
 public class ErrorFrameFlyweight {
 
   private ErrorFrameFlyweight() {}
@@ -38,11 +40,11 @@ public class ErrorFrameFlyweight {
 
   // relative to start of passed offset
   private static final int ERROR_CODE_FIELD_OFFSET = FrameHeaderFlyweight.FRAME_HEADER_LENGTH;
-  private static final int PAYLOAD_OFFSET = ERROR_CODE_FIELD_OFFSET + Integer.BYTES;
+  private static final int PAYLOAD_OFFSET = ERROR_CODE_FIELD_OFFSET + INTEGER_BYTES;
 
   public static int computeFrameLength(final int dataLength) {
     int length = FrameHeaderFlyweight.computeFrameHeaderLength(FrameType.ERROR, null, dataLength);
-    return length + Integer.BYTES;
+    return length + INTEGER_BYTES;
   }
 
   public static int encode(
@@ -53,7 +55,7 @@ public class ErrorFrameFlyweight {
         FrameHeaderFlyweight.encodeFrameHeader(byteBuf, frameLength, 0, FrameType.ERROR, streamId);
 
     byteBuf.setInt(ERROR_CODE_FIELD_OFFSET, errorCode);
-    length += Integer.BYTES;
+    length += INTEGER_BYTES;
 
     length += FrameHeaderFlyweight.encodeData(byteBuf, length, data);
 
@@ -73,7 +75,7 @@ public class ErrorFrameFlyweight {
   }
 
   public static int payloadOffset(final ByteBuf byteBuf) {
-    return FrameHeaderFlyweight.FRAME_HEADER_LENGTH + Integer.BYTES;
+    return FrameHeaderFlyweight.FRAME_HEADER_LENGTH + INTEGER_BYTES;
   }
 
   public static String message(ByteBuf content) {
