@@ -28,9 +28,5 @@ dependencies {
     jmh "org.openjdk.jmh:jmh-generator-annprocess:1.19"
 }
 
-jar {
-    baseName "rsocket-android-core"
-}
-
 targetCompatibility = 1.7
 sourceCompatibility = 1.7
