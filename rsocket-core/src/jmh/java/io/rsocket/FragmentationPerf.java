@@ -1,9 +1,9 @@
 /*
 package io.rsocket;
 
-import io.rsocket.fragmentation.FrameFragmenter;
-import io.rsocket.fragmentation.FrameReassembler;
-import io.rsocket.util.PayloadImpl;
+import io.rsocket.android.FrameFragmenter;
+import io.rsocket.android.FrameReassembler;
+import io.rsocket.android.PayloadImpl;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
