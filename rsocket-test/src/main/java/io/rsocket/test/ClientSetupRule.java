@@ -17,9 +17,9 @@
 
    package io.rsocket.test;
 
-   import io.rsocket.Closeable;
-   import io.rsocket.RSocket;
-   import io.rsocket.RSocketFactory;
+   import io.rsocket.android.Closeable;
+   import io.rsocket.android.RSocket;
+   import io.rsocket.android.RSocketFactory;
    import io.rsocket.transport.ClientTransport;
    import io.rsocket.transport.ServerTransport;
    import java.util.function.BiFunction;

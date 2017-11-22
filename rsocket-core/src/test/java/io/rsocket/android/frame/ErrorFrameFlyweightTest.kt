@@ -22,7 +22,7 @@ import org.junit.Assert.assertTrue
 
 import io.netty.buffer.ByteBufUtil
 import io.netty.buffer.Unpooled
-import io.rsocket.Frame
+import io.rsocket.android.Frame
 import io.rsocket.android.exceptions.*
 import java.nio.charset.StandardCharsets
 import org.junit.Test

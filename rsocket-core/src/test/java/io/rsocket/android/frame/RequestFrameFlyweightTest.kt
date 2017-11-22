@@ -22,10 +22,8 @@ import org.junit.Assert.assertFalse
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufUtil
 import io.netty.buffer.Unpooled
-import io.rsocket.Frame
-import io.rsocket.FrameType
-import io.rsocket.android.frame.FrameHeaderFlyweight
-import io.rsocket.android.frame.RequestFrameFlyweight
+import io.rsocket.android.Frame
+import io.rsocket.android.FrameType
 import io.rsocket.android.util.PayloadImpl
 import java.nio.charset.StandardCharsets
 import org.junit.Test

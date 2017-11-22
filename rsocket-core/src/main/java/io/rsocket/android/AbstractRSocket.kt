@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package io.rsocket
+package io.rsocket.android
 
 import io.reactivex.*
 import io.reactivex.processors.AsyncProcessor
-import io.reactivex.processors.PublishProcessor
-import org.intellij.lang.annotations.Flow
 import org.reactivestreams.Publisher
 
 /**

@@ -21,7 +21,6 @@ import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.subscribers.TestSubscriber
-import io.rsocket.*
 import io.rsocket.android.test.util.LocalDuplexConnection
 import io.rsocket.android.util.PayloadImpl
 import org.hamcrest.MatcherAssert.assertThat

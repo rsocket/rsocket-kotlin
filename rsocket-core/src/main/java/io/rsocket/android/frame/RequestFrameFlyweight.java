@@ -16,8 +16,8 @@
 package io.rsocket.android.frame;
 
 import io.netty.buffer.ByteBuf;
-import io.rsocket.Frame;
-import io.rsocket.FrameType;
+import io.rsocket.android.Frame;
+import io.rsocket.android.FrameType;
 import javax.annotation.Nullable;
 
 import static io.rsocket.android.frame.Utils.INTEGER_BYTES;

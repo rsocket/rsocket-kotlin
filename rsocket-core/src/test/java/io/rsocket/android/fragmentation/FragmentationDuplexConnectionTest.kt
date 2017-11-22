@@ -22,9 +22,9 @@ import io.reactivex.Flowable
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subscribers.TestSubscriber
-import io.rsocket.DuplexConnection
-import io.rsocket.Frame
-import io.rsocket.FrameType
+import io.rsocket.android.DuplexConnection
+import io.rsocket.android.Frame
+import io.rsocket.android.FrameType
 import io.rsocket.android.util.PayloadImpl
 import org.junit.Assert
 import org.junit.Test

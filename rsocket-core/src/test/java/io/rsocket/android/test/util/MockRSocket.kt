@@ -23,8 +23,8 @@ import io.reactivex.Single
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.`is`
 
-import io.rsocket.Payload
-import io.rsocket.RSocket
+import io.rsocket.android.Payload
+import io.rsocket.android.RSocket
 import java.util.concurrent.atomic.AtomicInteger
 import org.reactivestreams.Publisher
 

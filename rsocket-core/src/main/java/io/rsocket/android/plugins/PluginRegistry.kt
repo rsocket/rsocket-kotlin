@@ -16,8 +16,8 @@
 
 package io.rsocket.android.plugins
 
-import io.rsocket.DuplexConnection
-import io.rsocket.RSocket
+import io.rsocket.android.DuplexConnection
+import io.rsocket.android.RSocket
 import java.util.ArrayList
 
 class PluginRegistry {

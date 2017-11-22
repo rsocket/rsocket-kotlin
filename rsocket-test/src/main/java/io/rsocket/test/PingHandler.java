@@ -17,11 +17,11 @@
 
    package io.rsocket.test;
 
-   import io.rsocket.AbstractRSocket;
-   import io.rsocket.ConnectionSetupPayload;
-   import io.rsocket.Payload;
-   import io.rsocket.RSocket;
-   import io.rsocket.SocketAcceptor;
+   import io.rsocket.android.AbstractRSocket;
+   import io.rsocket.android.ConnectionSetupPayload;
+   import io.rsocket.android.Payload;
+   import io.rsocket.android.RSocket;
+   import io.rsocket.android.SocketAcceptor;
    import io.rsocket.util.PayloadImpl;
    import java.util.concurrent.ThreadLocalRandom;
    import reactor.core.publisher.Mono;

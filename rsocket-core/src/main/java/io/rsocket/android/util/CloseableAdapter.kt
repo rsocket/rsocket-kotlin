@@ -2,7 +2,7 @@ package io.rsocket.android.util
 
 import io.reactivex.Completable
 import io.reactivex.processors.AsyncProcessor
-import io.rsocket.Closeable
+import io.rsocket.android.Closeable
 
 class CloseableAdapter(private val closeFunction: () -> Unit) : Closeable {
     private val onClose = AsyncProcessor.create<Void>()

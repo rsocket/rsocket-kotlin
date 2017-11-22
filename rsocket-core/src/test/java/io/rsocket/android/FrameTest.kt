@@ -1,7 +1,5 @@
 package io.rsocket.android
 
-import io.rsocket.Frame
-import io.rsocket.FrameType
 import org.junit.Assert.assertEquals
 
 import io.rsocket.android.frame.FrameHeaderFlyweight

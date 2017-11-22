@@ -4,7 +4,7 @@ package io.rsocket.test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 
-import io.rsocket.Payload;
+import io.rsocket.android.Payload;
 import org.mockito.Mockito;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;

@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.rsocket
+package io.rsocket.android
 
 import io.reactivex.Completable
 import io.reactivex.Flowable
-import io.reactivex.Single
 import java.nio.channels.ClosedChannelException
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber

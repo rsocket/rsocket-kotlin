@@ -17,8 +17,8 @@
 
 package io.rsocket.perfutil;
 
-import io.rsocket.DuplexConnection;
-import io.rsocket.Frame;
+import io.rsocket.android.DuplexConnection;
+import io.rsocket.android.Frame;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.DirectProcessor;
 import reactor.core.publisher.Flux;

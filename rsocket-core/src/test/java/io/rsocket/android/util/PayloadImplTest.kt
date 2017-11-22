@@ -16,7 +16,7 @@ package io.rsocket.android.util
 import org.hamcrest.MatcherAssert.*
 import org.hamcrest.Matchers.*
 
-import io.rsocket.Payload
+import io.rsocket.android.Payload
 import io.rsocket.android.util.PayloadImpl.Companion.textPayload
 import org.junit.Test
 

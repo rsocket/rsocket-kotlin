@@ -20,7 +20,6 @@ package io.rsocket.android
 import io.reactivex.Completable
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.subscribers.TestSubscriber
-import io.rsocket.*
 import io.rsocket.android.exceptions.ApplicationException
 import io.rsocket.android.exceptions.RejectedSetupException
 import io.rsocket.android.frame.RequestFrameFlyweight

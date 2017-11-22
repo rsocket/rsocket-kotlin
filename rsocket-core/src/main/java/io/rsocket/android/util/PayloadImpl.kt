@@ -16,8 +16,8 @@
 
 package io.rsocket.android.util
 
-import io.rsocket.Frame
-import io.rsocket.Payload
+import io.rsocket.android.Frame
+import io.rsocket.android.Payload
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets

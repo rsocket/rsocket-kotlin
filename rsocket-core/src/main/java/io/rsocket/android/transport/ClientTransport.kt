@@ -17,7 +17,7 @@
 package io.rsocket.android.transport
 
 import io.reactivex.Single
-import io.rsocket.DuplexConnection
+import io.rsocket.android.DuplexConnection
 
 /** A client contract for writing transports of RSocket.  */
 interface ClientTransport : Transport {

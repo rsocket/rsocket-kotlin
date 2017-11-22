@@ -17,8 +17,8 @@
 
    package io.rsocket.test;
 
-   import io.rsocket.AbstractRSocket;
-   import io.rsocket.Payload;
+   import io.rsocket.android.AbstractRSocket;
+   import io.rsocket.android.Payload;
    import io.rsocket.util.PayloadImpl;
    import org.reactivestreams.Publisher;
    import reactor.core.publisher.Flux;

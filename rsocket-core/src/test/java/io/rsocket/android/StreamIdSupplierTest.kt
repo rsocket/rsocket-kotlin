@@ -16,7 +16,6 @@
 
 package io.rsocket.android
 
-import io.rsocket.StreamIdSupplier
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -19,8 +19,8 @@ package io.rsocket.android.fragmentation
 import io.netty.util.collection.IntObjectHashMap
 import io.reactivex.Completable
 import io.reactivex.Flowable
-import io.rsocket.DuplexConnection
-import io.rsocket.Frame
+import io.rsocket.android.DuplexConnection
+import io.rsocket.android.Frame
 import io.rsocket.android.frame.FrameHeaderFlyweight
 import org.reactivestreams.Publisher
 

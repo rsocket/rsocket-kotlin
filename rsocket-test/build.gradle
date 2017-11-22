@@ -15,7 +15,7 @@
  */
 
 dependencies {
-    compile project(':rsocket-core')
+    compile project(':rsocket-android-core')
     compile "junit:junit:4.12"
     compile "org.mockito:mockito-core:2.10.0"
     compile "org.hamcrest:hamcrest-library:1.3"

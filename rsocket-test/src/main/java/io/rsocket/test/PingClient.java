@@ -17,8 +17,8 @@
 
    package io.rsocket.test;
 
-   import io.rsocket.Payload;
-   import io.rsocket.RSocket;
+   import io.rsocket.android.Payload;
+   import io.rsocket.android.RSocket;
    import io.rsocket.util.PayloadImpl;
    import java.time.Duration;
    import org.HdrHistogram.Recorder;
