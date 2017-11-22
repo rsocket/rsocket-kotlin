@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-apply plugin: 'me.champeau.gradle.jmh'
+package io.rsocket.android.transport
 
-jmh {
-    jmhVersion = "1.19"
-    profilers = ['gc']
-    zip64 = true
-    duplicateClassesStrategy = DuplicatesStrategy.WARN
+import io.reactivex.Single
+import io.rsocket.DuplexConnection
+
+/** A client contract for writing transports of RSocket.  */
+interface ClientTransport : Transport {
+
+    /**
+     * Returns a `Publisher`, every subscription to which returns a single `DuplexConnection`.
+     *
+     * @return `Publisher`, every subscription returns a single `DuplexConnection`.
+     */
+    fun connect(): Single<DuplexConnection>
 }
-
-dependencies {
-    jmh "org.openjdk.jmh:jmh-core:1.19"
-    jmh "org.openjdk.jmh:jmh-generator-annprocess:1.19"
-}
-
-targetCompatibility = 1.7
-sourceCompatibility = 1.7

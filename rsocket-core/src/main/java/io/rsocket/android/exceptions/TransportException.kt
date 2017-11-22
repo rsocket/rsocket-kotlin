@@ -13,20 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.rsocket.android.exceptions
 
-apply plugin: 'me.champeau.gradle.jmh'
-
-jmh {
-    jmhVersion = "1.19"
-    profilers = ['gc']
-    zip64 = true
-    duplicateClassesStrategy = DuplicatesStrategy.WARN
-}
-
-dependencies {
-    jmh "org.openjdk.jmh:jmh-core:1.19"
-    jmh "org.openjdk.jmh:jmh-generator-annprocess:1.19"
-}
-
-targetCompatibility = 1.7
-sourceCompatibility = 1.7
+class TransportException(t: Throwable) : Throwable(t)

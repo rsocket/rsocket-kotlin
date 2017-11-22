@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-apply plugin: 'me.champeau.gradle.jmh'
+package io.rsocket.android.frame;
 
-jmh {
-    jmhVersion = "1.19"
-    profilers = ['gc']
-    zip64 = true
-    duplicateClassesStrategy = DuplicatesStrategy.WARN
+public class VersionFlyweight {
+
+  public static int encode(int major, int minor) {
+    return (major << 16) | (minor & 0xFFFF);
+  }
+
+  public static int major(int version) {
+    return version >> 16;
+  }
+
+  public static int minor(int version) {
+    return version & 0xFFFF;
+  }
+
+  public static String toString(int version) {
+    return major(version) + "." + minor(version);
+  }
 }
-
-dependencies {
-    jmh "org.openjdk.jmh:jmh-core:1.19"
-    jmh "org.openjdk.jmh:jmh-generator-annprocess:1.19"
-}
-
-targetCompatibility = 1.7
-sourceCompatibility = 1.7

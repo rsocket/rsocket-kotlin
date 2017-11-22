@@ -27,7 +27,7 @@ repositories {
     jcenter()
 }
 
-description = 'RSocket: stream oriented messaging passing with Reactive Stream semantics.'
+description = 'RSocket-Android: stream oriented messaging passing with Reactive Stream semantics, for Android'
 
 buildScan { licenseAgreementUrl = 'https://gradle.com/terms-of-service'; licenseAgree = 'yes' }
 
@@ -46,32 +46,6 @@ subprojects {
         sourceCompatibility = 1.7
         targetCompatibility = 1.7
         options.compilerArgs << "-Xlint:deprecation" // << "-Xlint:unchecked"
-    }
-
-    ext {
-        // common
-        jsr305Version = '3.0.2'
-        reactorVersion = '3.1.0.RELEASE'
-        nettyVersion = '4.1.15.Final'
-        reactiveStreamsVersion = '1.0.1'
-        slf4jVersion = '1.7.25'
-        // aeron
-        aeronVersion = '1.4.1'
-        // netty
-        reactorNettyVersion = '0.7.0.M2'
-        // spectator
-        spectatorVersion = '0.57.1'
-        hdrHistogramVersion = '2.1.9'
-        // tck-drivers
-        jacksonVersion = '2.9.1'
-        commonsLang3Version = '3.6'
-        airlineVersion = '0.8'
-        rxjavaVersion = '2.1.3'
-        // test
-        junitVersion = '4.12'
-        hamcrestVersion = '1.3'
-        mockitoVersion = '2.10.0'
-        jmhVersion = '1.19'
     }
 
     // custom tasks for creating source/javadoc jars
@@ -171,13 +145,13 @@ subprojects {
         override = false
         pkg {
             repo = 'RSocket'
-            name = 'rsocket-java'
+            name = 'rsocket-android'
             desc = 'RSocket'
-            websiteUrl = 'https://github.com/rsocket/rsocket-java'
-            issueTrackerUrl = 'https://github.com/rsocket/rsocket-java'
-            vcsUrl = 'https://github.com/rsocket/rsocket-java.git'
+            websiteUrl = 'https://github.com/rsocket/rsocket-android'
+            issueTrackerUrl = 'https://github.com/rsocket/rsocket-android'
+            vcsUrl = 'https://github.com/rsocket/rsocket-android.git'
             licenses = ['Apache-2.0']
-            githubRepo = 'rsocket/rsocket-java' //Optional Github repository
+            githubRepo = 'rsocket/rsocket-android' //Optional Github repository
             githubReleaseNotesFile = 'README.md' //Optional Github readme file
             if (project.hasProperty('sonatypeUsername') && project.hasProperty('sonatypePassword')) {
                 def sonatypeUsername = project.property('sonatypeUsername')

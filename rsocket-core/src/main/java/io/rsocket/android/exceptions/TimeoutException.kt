@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-apply plugin: 'me.champeau.gradle.jmh'
+package io.rsocket.android.exceptions
 
-jmh {
-    jmhVersion = "1.19"
-    profilers = ['gc']
-    zip64 = true
-    duplicateClassesStrategy = DuplicatesStrategy.WARN
+class TimeoutException : Exception() {
+    companion object {
+
+        private val serialVersionUID = -6352901497935205059L
+    }
 }
-
-dependencies {
-    jmh "org.openjdk.jmh:jmh-core:1.19"
-    jmh "org.openjdk.jmh:jmh-generator-annprocess:1.19"
-}
-
-targetCompatibility = 1.7
-sourceCompatibility = 1.7

@@ -19,7 +19,7 @@ package io.rsocket;
 
 import io.rsocket.RSocketFactory.Start;
 import io.rsocket.perfutil.TestDuplexConnection;
-import io.rsocket.util.PayloadImpl;
+import io.rsocket.android.PayloadImpl;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import org.openjdk.jmh.annotations.Benchmark;
