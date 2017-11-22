@@ -16,7 +16,7 @@
 
 package io.rsocket.android.plugins
 
-import io.rsocket.RSocket
+import io.rsocket.android.RSocket
 
 /**  */
 @FunctionalInterface

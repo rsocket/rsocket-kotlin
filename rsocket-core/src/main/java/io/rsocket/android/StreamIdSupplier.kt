@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.rsocket
+package io.rsocket.android
 
 internal class StreamIdSupplier private constructor(private var streamId: Int) {
 

@@ -21,7 +21,7 @@ import static io.rsocket.android.frame.Utils.SHORT_BYTES;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.rsocket.FrameType;
+import io.rsocket.android.FrameType;
 import java.nio.charset.StandardCharsets;
 
 public class SetupFrameFlyweight {

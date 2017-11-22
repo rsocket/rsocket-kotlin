@@ -18,8 +18,8 @@ package io.rsocket.android.util
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
-import io.rsocket.Payload
-import io.rsocket.RSocket
+import io.rsocket.android.Payload
+import io.rsocket.android.RSocket
 import org.reactivestreams.Publisher
 
 /** Wrapper/Proxy for a RSocket. This is useful when we want to override a specific method.  */

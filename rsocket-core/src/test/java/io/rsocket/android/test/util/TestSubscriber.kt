@@ -3,7 +3,7 @@ package io.rsocket.android.test.util
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.mock
 
-import io.rsocket.Payload
+import io.rsocket.android.Payload
 import org.mockito.Mockito
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription

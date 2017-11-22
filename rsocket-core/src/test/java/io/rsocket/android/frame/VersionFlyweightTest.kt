@@ -16,9 +16,7 @@
 
 package io.rsocket.android.frame
 
-import io.rsocket.android.frame.VersionFlyweight
-import org.junit.Assert.*
-
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class VersionFlyweightTest {

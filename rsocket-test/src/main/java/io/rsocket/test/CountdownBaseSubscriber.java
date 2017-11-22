@@ -1,7 +1,7 @@
 /*
 package io.rsocket.test;
 
-import io.rsocket.Payload;
+import io.rsocket.android.Payload;
 import java.util.concurrent.CountDownLatch;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;

@@ -16,10 +16,8 @@
 
 package io.rsocket.android.fragmentation
 
-import io.rsocket.Frame
-import io.rsocket.FrameType
-import io.rsocket.android.fragmentation.FrameFragmenter
-import io.rsocket.android.fragmentation.FrameReassembler
+import io.rsocket.android.Frame
+import io.rsocket.android.FrameType
 import io.rsocket.android.util.PayloadImpl
 import org.junit.Ignore
 import java.nio.ByteBuffer

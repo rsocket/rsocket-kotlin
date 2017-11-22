@@ -7,8 +7,8 @@ import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.processors.BehaviorProcessor
 import io.reactivex.processors.UnicastProcessor
-import io.rsocket.DuplexConnection
-import io.rsocket.Frame
+import io.rsocket.android.DuplexConnection
+import io.rsocket.android.Frame
 import io.rsocket.android.frame.FrameHeaderFlyweight.FRAME_LENGTH_SIZE
 import io.rsocket.android.frame.FrameHeaderFlyweight.encodeLength
 import okhttp3.*

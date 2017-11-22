@@ -16,7 +16,7 @@
 
 package io.rsocket.android.plugins
 
-import io.rsocket.DuplexConnection
+import io.rsocket.android.DuplexConnection
 
 /**  */
 @FunctionalInterface

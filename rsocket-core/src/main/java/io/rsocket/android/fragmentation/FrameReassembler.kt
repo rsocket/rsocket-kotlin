@@ -19,8 +19,8 @@ package io.rsocket.android.fragmentation
 import io.netty.buffer.CompositeByteBuf
 import io.netty.buffer.PooledByteBufAllocator
 import io.reactivex.disposables.Disposable
-import io.rsocket.Frame
-import io.rsocket.FrameType
+import io.rsocket.android.Frame
+import io.rsocket.android.FrameType
 import io.rsocket.android.frame.FrameHeaderFlyweight
 
 /** Assembles Fragmented frames.  */

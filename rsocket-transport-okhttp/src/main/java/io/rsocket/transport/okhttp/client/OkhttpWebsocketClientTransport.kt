@@ -2,7 +2,7 @@ package io.rsocket.transport.okhttp.client
 
 import io.rsocket.transport.okhttp.OkWebsocket
 import io.reactivex.Single
-import io.rsocket.DuplexConnection
+import io.rsocket.android.DuplexConnection
 import io.rsocket.android.transport.ClientTransport
 
 /**

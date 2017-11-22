@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.rsocket
+package io.rsocket.android
 
 import io.netty.buffer.Unpooled
 import io.netty.util.collection.IntObjectHashMap
@@ -25,7 +25,7 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.processors.FlowableProcessor
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.processors.UnicastProcessor
-import io.rsocket.Frame.Request.initialRequestN
+import io.rsocket.android.Frame.Request.initialRequestN
 import io.rsocket.android.exceptions.ApplicationException
 import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_C
 import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_M

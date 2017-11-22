@@ -17,7 +17,7 @@
 
 package io.rsocket;
 
-import io.rsocket.RSocketFactory.Start;
+import io.rsocket.android.RSocketFactory.Start;
 import io.rsocket.perfutil.TestDuplexConnection;
 import io.rsocket.android.PayloadImpl;
 import java.nio.ByteBuffer;

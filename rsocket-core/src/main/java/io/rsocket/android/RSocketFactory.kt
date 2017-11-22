@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package io.rsocket
+package io.rsocket.android
 
 import io.reactivex.Completable
 import io.reactivex.Single
@@ -109,7 +109,7 @@ object RSocketFactory {
         fun metadataMimeType(metadataMimeType: String): T
     }
 
-    class ClientRSocketFactory : Acceptor<ClientTransportAcceptor, (RSocket)->  RSocket>,
+    class ClientRSocketFactory : Acceptor<ClientTransportAcceptor, (RSocket) -> RSocket>,
             ClientTransportAcceptor, KeepAlive<ClientRSocketFactory>,
             MimeType<ClientRSocketFactory>, Fragmentation<ClientRSocketFactory>,
             ErrorConsumer<ClientRSocketFactory>,
@@ -194,7 +194,7 @@ object RSocketFactory {
             return StartClient(transport)
         }
 
-        override fun acceptor(acceptor: () -> (RSocket) ->  RSocket): ClientTransportAcceptor {
+        override fun acceptor(acceptor: () -> (RSocket) -> RSocket): ClientTransportAcceptor {
             this.acceptor = acceptor
             return object : ClientTransportAcceptor {
                 override fun transport(transport: () -> ClientTransport): Start<RSocket> = StartClient(transport)

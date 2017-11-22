@@ -19,7 +19,7 @@ package io.rsocket.android.internal
 
 import org.junit.Assert.assertEquals
 
-import io.rsocket.Frame
+import io.rsocket.android.Frame
 import io.rsocket.android.plugins.PluginRegistry
 import io.rsocket.android.test.util.TestDuplexConnection
 import java.util.concurrent.atomic.AtomicInteger

@@ -18,8 +18,8 @@ package io.rsocket.android.transport
 
 import io.reactivex.Completable
 import io.reactivex.Single
-import io.rsocket.Closeable
-import io.rsocket.DuplexConnection
+import io.rsocket.android.Closeable
+import io.rsocket.android.DuplexConnection
 
 /** A server contract for writing transports of RSocket.  */
 interface ServerTransport<T : Closeable> : Transport {

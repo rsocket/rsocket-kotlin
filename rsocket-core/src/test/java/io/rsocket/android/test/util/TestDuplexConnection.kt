@@ -20,8 +20,8 @@ package io.rsocket.android.test.util
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.processors.PublishProcessor
-import io.rsocket.DuplexConnection
-import io.rsocket.Frame
+import io.rsocket.android.DuplexConnection
+import io.rsocket.android.Frame
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.LinkedBlockingQueue
 import org.reactivestreams.Publisher

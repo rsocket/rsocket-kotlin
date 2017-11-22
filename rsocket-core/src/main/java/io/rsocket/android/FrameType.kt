@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.rsocket
+package io.rsocket.android
 
 /** Types of [Frame] that can be sent.  */
 enum class FrameType(val encodedType: Int, private val flags: Int = 0) {

@@ -17,9 +17,8 @@
 package io.rsocket.android.fragmentation
 
 import io.reactivex.subscribers.TestSubscriber
-import io.rsocket.Frame
-import io.rsocket.FrameType
-import io.rsocket.android.fragmentation.FrameFragmenter
+import io.rsocket.android.Frame
+import io.rsocket.android.FrameType
 import io.rsocket.android.util.PayloadImpl
 import org.junit.Test
 import java.nio.ByteBuffer

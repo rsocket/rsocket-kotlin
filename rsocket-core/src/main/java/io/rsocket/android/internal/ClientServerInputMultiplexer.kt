@@ -19,9 +19,9 @@ package io.rsocket.android.internal
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.processors.BehaviorProcessor
-import io.rsocket.DuplexConnection
-import io.rsocket.Frame
-import io.rsocket.FrameType
+import io.rsocket.android.DuplexConnection
+import io.rsocket.android.Frame
+import io.rsocket.android.FrameType
 import io.rsocket.android.plugins.DuplexConnectionInterceptor.Type
 import io.rsocket.android.plugins.PluginRegistry
 import org.reactivestreams.Publisher

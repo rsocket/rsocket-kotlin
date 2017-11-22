@@ -16,13 +16,11 @@
 
 package io.rsocket.android.frame
 
-import org.junit.Assert.*
-
 import io.netty.buffer.ByteBufUtil
 import io.netty.buffer.Unpooled
-import io.rsocket.android.frame.LeaseFrameFlyweight
-import java.nio.charset.StandardCharsets
+import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.nio.charset.StandardCharsets
 
 class LeaseFrameFlyweightTest {
     private val byteBuf = Unpooled.buffer(1024)

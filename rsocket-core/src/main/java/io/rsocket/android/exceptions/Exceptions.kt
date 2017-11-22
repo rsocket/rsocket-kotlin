@@ -17,7 +17,7 @@ package io.rsocket.android.exceptions
 
 import io.rsocket.android.frame.ErrorFrameFlyweight.*
 
-import io.rsocket.Frame
+import io.rsocket.android.Frame
 
 object Exceptions {
 

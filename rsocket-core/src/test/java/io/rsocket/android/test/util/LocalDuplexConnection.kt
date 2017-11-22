@@ -21,9 +21,8 @@ import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.processors.FlowableProcessor
 import io.reactivex.processors.PublishProcessor
-import io.rsocket.Availability
-import io.rsocket.DuplexConnection
-import io.rsocket.Frame
+import io.rsocket.android.DuplexConnection
+import io.rsocket.android.Frame
 import org.reactivestreams.Publisher
 
 class LocalDuplexConnection(

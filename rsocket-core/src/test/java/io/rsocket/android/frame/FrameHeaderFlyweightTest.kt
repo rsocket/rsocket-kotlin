@@ -22,7 +22,7 @@ import org.junit.Assert.*
 
 import io.netty.buffer.ByteBufUtil
 import io.netty.buffer.Unpooled
-import io.rsocket.FrameType
+import io.rsocket.android.FrameType
 import org.junit.Test
 
 class FrameHeaderFlyweightTest {

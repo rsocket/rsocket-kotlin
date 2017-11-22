@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package io.rsocket
+package io.rsocket.android
 
 import io.reactivex.Completable
 

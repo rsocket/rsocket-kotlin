@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.rsocket
+package io.rsocket.android
 
 import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_M
 
@@ -223,7 +223,7 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
     }
 
     fun hasMetadata(): Boolean {
-        return Frame.isFlagSet(this.flags(), FLAGS_M)
+        return isFlagSet(this.flags(), FLAGS_M)
     }
 
     val dataUtf8: String

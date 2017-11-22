@@ -1,4 +1,4 @@
-package io.rsocket
+package io.rsocket.android
 
 import java.util.concurrent.TimeUnit
 

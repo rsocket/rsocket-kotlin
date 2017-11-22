@@ -20,8 +20,8 @@ import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import io.reactivex.Emitter
 import io.reactivex.Flowable
-import io.rsocket.Frame
-import io.rsocket.FrameType
+import io.rsocket.android.Frame
+import io.rsocket.android.FrameType
 import io.rsocket.android.frame.FrameHeaderFlyweight
 
 class FrameFragmenter(private val mtu: Int) {
