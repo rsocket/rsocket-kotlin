@@ -40,13 +40,20 @@ import org.reactivestreams.Subscription
  internal class RSocketServer(
         private val connection: DuplexConnection,
         private val requestHandler: RSocket,
-        private val errorConsumer: (Throwable) -> Unit) : RSocket {
+        private val errorConsumer: (Throwable) -> Unit,
+        private val streamDemandLimit: Int) : RSocket {
 
     private val sendingSubscriptions: IntObjectHashMap<Subscription> = IntObjectHashMap()
     private val channelProcessors: IntObjectHashMap<UnicastProcessor<Payload>> = IntObjectHashMap()
 
     private val sendProcessor: FlowableProcessor<Frame> = PublishProcessor.create<Frame>().toSerialized()
     private val receiveDisposable: Disposable
+
+    /*for testing only*/
+    internal constructor(connection: DuplexConnection,
+                         requestHandler: RSocket,
+                         errorConsumer: (Throwable) -> Unit)
+            : this(connection, requestHandler, errorConsumer, DEFAULT_STREAM_WINDOW)
 
     init {
 
@@ -127,7 +134,7 @@ import org.reactivestreams.Subscription
 
     override fun requestStream(payload: Payload): Flowable<Payload> {
         return try {
-            requestHandler.requestStream(payload)
+            requestHandler.requestStream(payload).rebatchRequests(streamDemandLimit)
         } catch (t: Throwable) {
             Flowable.error(t)
         }
@@ -136,7 +143,9 @@ import org.reactivestreams.Subscription
 
     override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> {
         return try {
-            requestHandler.requestChannel(payloads)
+            requestHandler.requestChannel(
+                    Flowable.fromPublisher(payloads).rebatchRequests(streamDemandLimit)
+            ).rebatchRequests(streamDemandLimit)
         } catch (t: Throwable) {
             Flowable.error(t)
         }
@@ -353,6 +362,10 @@ import org.reactivestreams.Subscription
         channelProcessors.remove(streamId)
     }
 
+    companion object {
+        val DEFAULT_STREAM_WINDOW = 128
+    }
+
     internal sealed class DisposableSubscription : Disposable, Subscription {
         private class Disp(val d: Disposable) : DisposableSubscription() {
             override fun isDisposed(): Boolean = d.isDisposed
@@ -369,5 +382,4 @@ import org.reactivestreams.Subscription
             fun disposable(d: Disposable): DisposableSubscription = Disp(d)
         }
     }
-
 }
