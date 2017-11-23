@@ -19,22 +19,22 @@ import java.nio.channels.ClosedChannelException
 /**
  * Created by Maksym Ostroverkhov on 27.10.17.
  */
-internal class OkWebsocket(scheme: String, host: String, port: Int) {
-
-    @Volatile private var isOpen = false
-    @Volatile private var failErr: ClosedChannelException? = null
+internal class OkWebSocket(client: OkHttpClient,
+                           request: Request) {
+    @Volatile
+    internal var isOpen = false
+    @Volatile
+    private var failErr: ClosedChannelException? = null
     private val defFailErr by lazy {
         noStacktrace(ClosedChannelException())
     }
-    private val connection = BehaviorProcessor.create<OkHttpWebsocketConnection>()
+    private val connection = BehaviorProcessor.create<OkHttpWebSocketConnection>()
     private val frames = UnicastProcessor.create<Frame>()
-    private val url = HttpUrl.Builder().scheme(scheme).host(host).port(port).build()
-    private val req = Request.Builder().url(url).build()
 
     private val listener = object : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket?, response: Response?) {
             isOpen = true
-            connection.onNext(OkHttpWebsocketConnection(this@OkWebsocket))
+            connection.onNext(OkHttpWebSocketConnection(this@OkWebSocket))
         }
 
         override fun onMessage(webSocket: WebSocket?, bytes: ByteString) {
@@ -73,9 +73,9 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
         }
     }
 
-    private val ws = OkHttpClient().newWebSocket(req, listener)
+    private val ws = client.newWebSocket(request, listener)
 
-    fun connected(): Single<OkHttpWebsocketConnection> = connection
+    fun connected(): Single<OkHttpWebSocketConnection> = connection
             .firstOrError()
             .doOnDispose { ws.cancel() }
 
@@ -88,7 +88,7 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
                     .map { ByteString.of(it) }
                     .flatMapCompletable { ws.sendAsync(it) }
 
-    fun close() = Completable.create { e ->
+    fun close(): Completable = Completable.create { e ->
         ws.close(NORMAL_CLOSE, "close")
         e.onComplete()
     }
@@ -97,15 +97,9 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
             .onErrorResumeNext(Flowable.empty())
             .ignoreElements()
 
-    internal fun isClosed() = isOpen
-
     private fun WebSocket.sendAsync(bytes: ByteString): Completable =
             Completable.create { e ->
-                val succ = send(bytes)
-                if (succ) e.onComplete() else {
-                    val throwable: Throwable = failErr ?: defFailErr
-                    e.onError(throwable)
-                }
+                if (send(bytes)) e.onComplete() else e.onError(failErr ?: defFailErr)
             }
 
     companion object {
@@ -113,9 +107,9 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
     }
 }
 
-class OkHttpWebsocketConnection internal constructor(private val ws: OkWebsocket) : DuplexConnection {
+class OkHttpWebSocketConnection internal constructor(private val ws: OkWebSocket) : DuplexConnection {
 
-    override fun availability(): Double = if (ws.isClosed()) 0.0 else 1.0
+    override fun availability(): Double = if (ws.isOpen) 1.0 else 0.0
 
     override fun close() = ws.close()
 
