@@ -14,6 +14,7 @@ import io.rsocket.android.frame.FrameHeaderFlyweight.encodeLength
 import okhttp3.*
 import okio.ByteString
 import org.reactivestreams.Publisher
+import java.nio.channels.ClosedChannelException
 
 /**
  * Created by Maksym Ostroverkhov on 27.10.17.
@@ -21,10 +22,15 @@ import org.reactivestreams.Publisher
 internal class OkWebsocket(scheme: String, host: String, port: Int) {
 
     @Volatile private var closed = true
+    @Volatile private var failErr: ClosedChannelException? = null
+    private val defFailErr by lazy {
+        ClosedChannelException()
+    }
     private val connected = BehaviorProcessor.create<OkHttpWebsocketConnection>()
     private val frames = UnicastProcessor.create<Frame>()
     private val url = HttpUrl.Builder().scheme(scheme).host(host).port(port).build()
     private val req = Request.Builder().url(url).build()
+
     private val listener = object : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket?, response: Response?) {
             closed = false
@@ -45,10 +51,16 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
             connected.onComplete()
         }
 
-        override fun onFailure(webSocket: WebSocket?, t: Throwable?, response: Response?) =
-                (if (closed) connected else frames).onError(t)
-
+        override fun onFailure(webSocket: WebSocket?, t: Throwable?, response: Response?) {
+            if (closed) connected.onError(t) else {
+                val closedChannelException = ClosedChannelException()
+                closedChannelException.initCause(t)
+                failErr = closedChannelException
+                frames.onError(closedChannelException)
+            }
+        }
     }
+
     private val ws = OkHttpClient().newWebSocket(req, listener)
 
     fun connected(): Single<OkHttpWebsocketConnection> = connected.firstOrError()
@@ -83,8 +95,11 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
 
     private fun WebSocket.sendAsync(bytes: ByteString): Completable =
             Completable.create { e ->
-                send(bytes)
-                e.onComplete()
+                val succ = send(bytes)
+                if (succ) e.onComplete() else {
+                    val throwable: Throwable = failErr ?: defFailErr
+                    e.onError(throwable)
+                }
             }
 
     companion object {
