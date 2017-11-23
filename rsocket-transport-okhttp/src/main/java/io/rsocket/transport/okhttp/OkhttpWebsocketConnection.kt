@@ -9,8 +9,7 @@ import io.reactivex.processors.BehaviorProcessor
 import io.reactivex.processors.UnicastProcessor
 import io.rsocket.android.DuplexConnection
 import io.rsocket.android.Frame
-import io.rsocket.android.frame.FrameHeaderFlyweight.FRAME_LENGTH_SIZE
-import io.rsocket.android.frame.FrameHeaderFlyweight.encodeLength
+import io.rsocket.android.frame.FrameHeaderFlyweight.*
 import io.rsocket.android.util.ExceptionUtil.noStacktrace
 import okhttp3.*
 import okio.ByteString
@@ -39,12 +38,23 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
         }
 
         override fun onMessage(webSocket: WebSocket?, bytes: ByteString) {
-            val messageByteBuf = Unpooled.wrappedBuffer(bytes.asByteBuffer())
-            val composite = Unpooled.compositeBuffer()
-            val lengthByteBuf = Unpooled.wrappedBuffer(ByteArray(FRAME_LENGTH_SIZE))
-            encodeLength(lengthByteBuf, 0, messageByteBuf.readableBytes())
-            composite.addComponents(true, lengthByteBuf, messageByteBuf.retain())
-            frames.onNext(Frame.from(composite))
+            val msgBuffer = Unpooled.wrappedBuffer(bytes.asByteBuffer())
+            val frameBuffer = writeFrame(msgBuffer)
+
+            frames.onNext(Frame.from(frameBuffer))
+        }
+
+        private fun writeFrame(msgBuffer: ByteBuf): ByteBuf {
+            val msgSize = msgBuffer.readableBytes()
+            val frameSize = msgSize + FRAME_LENGTH_SIZE
+            val frameBuffer = Unpooled.buffer(frameSize, frameSize)
+
+            frameBuffer.writeByte(msgSize shr 16)
+            frameBuffer.writeByte(msgSize shr 8)
+            frameBuffer.writeByte(msgSize)
+            frameBuffer.writeBytes(msgBuffer)
+
+            return frameBuffer
         }
 
         override fun onClosed(webSocket: WebSocket?, code: Int, reason: String?) {
@@ -74,8 +84,8 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
     fun send(frames: Publisher<Frame>): Completable =
             Flowable.fromPublisher(frames)
                     .map { it.content() }
-                    .map { it.skipBytes(FRAME_LENGTH_SIZE).slice().toArray() }
-                    .map { ByteString.of(*it) }
+                    .map { it.skipBytes(FRAME_LENGTH_SIZE).slice().nioBuffer() }
+                    .map { ByteString.of(it) }
                     .flatMapCompletable { ws.sendAsync(it) }
 
     fun close() = Completable.create { e ->
@@ -88,16 +98,6 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
             .ignoreElements()
 
     internal fun isClosed() = isOpen
-
-    private fun ByteBuf.toArray(): ByteArray {
-        val byteArray = ByteArray(readableBytes())
-        val from = readerIndex()
-        var index = 0
-        for (i in from until from + readableBytes()) {
-            byteArray[index++] = getByte(i)
-        }
-        return byteArray
-    }
 
     private fun WebSocket.sendAsync(bytes: ByteString): Completable =
             Completable.create { e ->
