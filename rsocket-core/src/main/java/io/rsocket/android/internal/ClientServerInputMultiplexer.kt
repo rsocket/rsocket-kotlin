@@ -75,30 +75,22 @@ class ClientServerInputMultiplexer(val source: DuplexConnection, plugins: Plugin
                     }
                     type
                 }
-                .subscribe { group ->
+                .subscribe({ group ->
                     when (group.key) {
                         Type.STREAM_ZERO -> streamZero.onNext(group)
                         Type.SERVER -> server.onNext(group)
                         Type.CLIENT -> client.onNext(group)
                     }
-                }
+                }, { /*noop - errors are handled by demuxed frame streams*/ })
     }
 
-    fun asServerConnection(): DuplexConnection {
-        return serverConnection
-    }
+    fun asServerConnection(): DuplexConnection = serverConnection
 
-    fun asClientConnection(): DuplexConnection {
-        return clientConnection
-    }
+    fun asClientConnection(): DuplexConnection = clientConnection
 
-    fun asStreamZeroConnection(): DuplexConnection {
-        return streamZeroConnection
-    }
+    fun asStreamZeroConnection(): DuplexConnection = streamZeroConnection
 
-    fun close(): Completable {
-        return source.close()
-    }
+    fun close(): Completable = source.close()
 
     private class InternalDuplexConnection(private val source: DuplexConnection,
                                            p: Flowable<Flowable<Frame>>) : DuplexConnection {
@@ -122,25 +114,17 @@ class ClientServerInputMultiplexer(val source: DuplexConnection, plugins: Plugin
 
         override fun receive(): Flowable<Frame> {
             return processor.flatMapPublisher { f ->
-                if (debugEnabled) {
-                    return@flatMapPublisher f.doOnNext { frame -> LOGGER.debug("receiving -> " + frame.toString()) }
-                } else {
-                    return@flatMapPublisher f
-                }
+                if (debugEnabled)
+                    f.doOnNext { frame -> LOGGER.debug("receiving -> " + frame.toString()) }
+                 else f
             }
         }
 
-        override fun close(): Completable {
-            return source.close()
-        }
+        override fun close(): Completable = source.close()
 
-        override fun onClose(): Completable {
-            return source.onClose()
-        }
+        override fun onClose(): Completable = source.onClose()
 
-        override fun availability(): Double {
-            return source.availability()
-        }
+        override fun availability(): Double = source.availability()
     }
 
     companion object {
