@@ -11,6 +11,7 @@ import io.rsocket.android.DuplexConnection
 import io.rsocket.android.Frame
 import io.rsocket.android.frame.FrameHeaderFlyweight.FRAME_LENGTH_SIZE
 import io.rsocket.android.frame.FrameHeaderFlyweight.encodeLength
+import io.rsocket.android.util.ExceptionUtil.noStacktrace
 import okhttp3.*
 import okio.ByteString
 import org.reactivestreams.Publisher
@@ -21,20 +22,20 @@ import java.nio.channels.ClosedChannelException
  */
 internal class OkWebsocket(scheme: String, host: String, port: Int) {
 
-    @Volatile private var closed = true
+    @Volatile private var isOpen = false
     @Volatile private var failErr: ClosedChannelException? = null
     private val defFailErr by lazy {
-        ClosedChannelException()
+        noStacktrace(ClosedChannelException())
     }
-    private val connected = BehaviorProcessor.create<OkHttpWebsocketConnection>()
+    private val connection = BehaviorProcessor.create<OkHttpWebsocketConnection>()
     private val frames = UnicastProcessor.create<Frame>()
     private val url = HttpUrl.Builder().scheme(scheme).host(host).port(port).build()
     private val req = Request.Builder().url(url).build()
 
     private val listener = object : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket?, response: Response?) {
-            closed = false
-            connected.onNext(OkHttpWebsocketConnection(this@OkWebsocket))
+            isOpen = true
+            connection.onNext(OkHttpWebsocketConnection(this@OkWebsocket))
         }
 
         override fun onMessage(webSocket: WebSocket?, bytes: ByteString) {
@@ -47,12 +48,13 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
         }
 
         override fun onClosed(webSocket: WebSocket?, code: Int, reason: String?) {
-            closed = true
-            connected.onComplete()
+            isOpen = false
+            connection.onComplete()
         }
 
-        override fun onFailure(webSocket: WebSocket?, t: Throwable?, response: Response?) {
-            if (closed) connected.onError(t) else {
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+            connection.onError(t)
+            if (isOpen) {
                 val closedChannelException = ClosedChannelException()
                 closedChannelException.initCause(t)
                 failErr = closedChannelException
@@ -63,7 +65,9 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
 
     private val ws = OkHttpClient().newWebSocket(req, listener)
 
-    fun connected(): Single<OkHttpWebsocketConnection> = connected.firstOrError()
+    fun connected(): Single<OkHttpWebsocketConnection> = connection
+            .firstOrError()
+            .doOnDispose { ws.cancel() }
 
     fun receive(): Flowable<Frame> = frames
 
@@ -74,12 +78,16 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
                     .map { ByteString.of(*it) }
                     .flatMapCompletable { ws.sendAsync(it) }
 
-    fun isClosed() = closed
-
     fun close() = Completable.create { e ->
         ws.close(NORMAL_CLOSE, "close")
         e.onComplete()
     }
+
+    fun onClose(): Completable = connection
+            .onErrorResumeNext(Flowable.empty())
+            .ignoreElements()
+
+    internal fun isClosed() = isOpen
 
     private fun ByteBuf.toArray(): ByteArray {
         val byteArray = ByteArray(readableBytes())
@@ -90,8 +98,6 @@ internal class OkWebsocket(scheme: String, host: String, port: Int) {
         }
         return byteArray
     }
-
-    fun onClose(): Completable = connected.ignoreElements()
 
     private fun WebSocket.sendAsync(bytes: ByteString): Completable =
             Completable.create { e ->
