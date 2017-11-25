@@ -55,8 +55,9 @@ import org.reactivestreams.Subscription
 
         connection
                 .send(sendProcessor)
-                .doOnError { handleSendProcessorError(it) }
-                .subscribe()
+                .subscribe(
+                        {},
+                        { handleSendProcessorError(it) })
 
         this.receiveDisposable = connection
                 .receive()
@@ -68,18 +69,20 @@ import org.reactivestreams.Subscription
                                         Completable.complete()
                                     }).toFlowable<Void>()
                 }
-                .doOnError(errorConsumer)
                 .ignoreElements()
-                .subscribe()
+                .subscribe(
+                        {},
+                        errorConsumer)
 
         this.connection
                 .onClose()
-                .doOnError(errorConsumer)
                 .doFinally {
                     cleanup()
                     receiveDisposable.dispose()
                 }
-                .subscribe()
+                .subscribe(
+                        {},
+                        errorConsumer)
     }
 
     private fun handleSendProcessorError(t: Throwable) {
@@ -157,7 +160,7 @@ import org.reactivestreams.Subscription
         cleanUpSendingSubscriptions()
         cleanUpChannelProcessors()
 
-        requestHandler.close().subscribe()
+        requestHandler.close().subscribe({}, errorConsumer)
     }
 
     @Synchronized private fun cleanUpSendingSubscriptions() {
@@ -269,9 +272,8 @@ import org.reactivestreams.Subscription
                         })
                 .concatWith(Flowable.just(Frame.PayloadFrame.from(streamId, FrameType.COMPLETE)))
                 .onErrorResumeNext { t: Throwable -> Flowable.just(Frame.Error.from(streamId, t)) }
-                .doOnNext({ sendProcessor.onNext(it) })
                 .doFinally { removeSubscription(streamId) }
-                .subscribe()
+                .subscribe({ sendProcessor.onNext(it) })
 
         return Completable.complete()
     }
@@ -363,25 +365,8 @@ import org.reactivestreams.Subscription
             }
         }
 
-        private class Subs(val s: Subscription) : DisposableSubscription() {
-            @Volatile private var isDisposed = false
-
-            override fun isDisposed(): Boolean = isDisposed
-
-            override fun dispose() {
-                isDisposed = true
-                cancel()
-            }
-
-            override fun cancel() = s.cancel()
-
-            override fun request(n: Long) = s.request(n)
-        }
-
         companion object {
             fun disposable(d: Disposable): DisposableSubscription = Disp(d)
-
-            fun subscription(s: Subscription): DisposableSubscription = Subs(s)
         }
     }
 

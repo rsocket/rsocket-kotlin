@@ -24,6 +24,8 @@ import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
+import io.reactivex.functions.Action
+import io.reactivex.functions.Consumer
 import io.reactivex.processors.FlowableProcessor
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.processors.UnicastProcessor
@@ -67,33 +69,29 @@ internal class RSocketClient @JvmOverloads constructor(
             val ackTimeoutMs = ackTimeout.toMillis
 
             this.keepAliveSendSub = completeOnStart
-                    .andThen(Flowable.interval(tickPeriod.toMillis,TimeUnit.MILLISECONDS))
+                    .andThen(Flowable.interval(tickPeriod.toMillis, TimeUnit.MILLISECONDS))
                     .doOnSubscribe({ _ -> timeLastTickSentMs = System.currentTimeMillis() })
                     .concatMap({ _ -> sendKeepAlive(ackTimeoutMs, missedAcks).toFlowable<Long>() })
-                    .doOnError({ t:Throwable ->
+                    .subscribe({},
+                            { t: Throwable ->
                                 errorConsumer(t)
-                                connection.close().subscribe()
+                                connection.close().subscribe({}, errorConsumer)
                             })
-                    .subscribe()
         }
 
         connection
                 .onClose()
                 .doFinally { cleanup() }
-                .doOnError(errorConsumer)
-                .subscribe()
+                .subscribe({}, errorConsumer)
 
         connection
                 .send(sendProcessor)
-                .doOnError { handleSendProcessorError(it) }
-                .subscribe()
+                .subscribe({}, { handleSendProcessorError(it) })
 
         connection
                 .receive()
                 .doOnSubscribe { started.onComplete() }
-                .doOnNext { handleIncomingFrames(it) }
-                .doOnError(errorConsumer)
-                .subscribe()
+                .subscribe({ handleIncomingFrames(it) },errorConsumer)
     }
 
     private fun handleSendProcessorError(t: Throwable) {
@@ -292,10 +290,12 @@ internal class RSocketClient @JvmOverloads constructor(
 
                                                         requestFrames
                                                                 .doOnNext { sendProcessor.onNext(it) }
-                                                                .doOnError { t ->
+                                                                .subscribe(
+                                                                {},
+                                                                { t ->
                                                                     errorConsumer(t)
                                                                     receiver.onError(CancellationException("Disposed"))
-                                                                }.subscribe()
+                                                                })
                                                     } else {
                                                         sendOneFrame(Frame.RequestN.from(streamId, l))
                                                     }
@@ -318,7 +318,7 @@ internal class RSocketClient @JvmOverloads constructor(
         }
     }
 
-    protected fun cleanup() {
+    private fun cleanup() {
 
         var subscribers: Collection<Subscriber<Payload>>
         var publishers: Collection<LimitableRequestPublisher<*>>
