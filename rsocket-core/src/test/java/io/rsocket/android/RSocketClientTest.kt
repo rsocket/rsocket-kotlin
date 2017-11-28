@@ -18,6 +18,9 @@
 package io.rsocket.android
 
 import io.reactivex.Completable
+import io.reactivex.Flowable
+import io.reactivex.Single
+import io.reactivex.internal.observers.BlockingMultiObserver
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.subscribers.TestSubscriber
 import io.rsocket.android.exceptions.ApplicationException
@@ -179,10 +182,67 @@ class RSocketClientTest {
         val requestStream = rule.client.requestStream(PayloadImpl("test"))
         val subs = TestSubscriber.create<Payload>()
         requestStream.blockingSubscribe(subs)
-        val errors = subs.errors()
-        assertThat("no error was signalled on connection close", errors, hasSize(1))
-        assertThat("error id not ClosedChannelException", errors[0] is ClosedChannelException)
+        subs.assertNoValues()
+        subs.assertError { it is ClosedChannelException }
     }
+
+    @Test(timeout = 5_000)
+    fun streamErrorAfterConnectionClose() {
+        assertFlowableError { it.requestStream(PayloadImpl("test")) }
+    }
+
+    @Test(timeout = 5_000)
+    fun reqStreamErrorAfterConnectionClose() {
+        assertFlowableError { it.requestStream(PayloadImpl("test")) }
+    }
+
+    @Test(timeout = 5_000)
+    fun reqChannelErrorAfterConnectionClose() {
+        assertFlowableError { it.requestChannel(Flowable.just(PayloadImpl("test"))) }
+    }
+
+    @Test(timeout = 5_000)
+    fun reqResponseErrorAfterConnectionClose() {
+        assertSingleError { it.requestResponse(PayloadImpl("test")) }
+    }
+
+    @Test(timeout = 5_000)
+    fun fnfErrorAfterConnectionClose() {
+        assertCompletableError { it.fireAndForget(PayloadImpl("test")) }
+    }
+
+    @Test(timeout = 5_000)
+    fun metadataPushAfterConnectionClose() {
+        assertCompletableError { it.metadataPush(PayloadImpl("test")) }
+    }
+
+    private fun assertFlowableError(f: (RSocket) -> Flowable<Payload>) {
+        rule.conn.close().subscribe()
+        val subs = TestSubscriber.create<Payload>()
+        f(rule.client).delaySubscription(100, TimeUnit.MILLISECONDS).blockingSubscribe(subs)
+        subs.assertNoValues()
+        subs.assertError { it is ClosedChannelException }
+    }
+
+    private fun assertCompletableError(f: (RSocket) -> Completable) {
+        rule.conn.close().subscribe()
+        val requestStream = Completable
+                .timer(100, TimeUnit.MILLISECONDS)
+                .andThen(f(rule.client))
+        val err = requestStream.blockingGet()
+        assertThat("error is not ClosedChannelException",
+                err is ClosedChannelException)
+    }
+
+    private fun assertSingleError(f: (RSocket) -> Single<Payload>) {
+        rule.conn.close().subscribe()
+        val response = f(rule.client).delaySubscription(100, TimeUnit.MILLISECONDS)
+        val subs = BlockingMultiObserver<Payload>()
+        response.subscribe(subs)
+        val err = subs.blockingGetError()
+        assertThat("error is not ClosedChannelException", err is ClosedChannelException)
+    }
+
 
     class ClientSocketRule : ExternalResource() {
         lateinit var sender: PublishProcessor<Frame>
