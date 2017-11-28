@@ -19,7 +19,6 @@ plugins {
     id 'com.jfrog.bintray' version '1.7.3'
     id 'com.github.sherter.google-java-format' version '0.6'
     id 'com.jfrog.artifactory' version '4.5.2'
-    id 'me.champeau.gradle.jmh' version '0.4.4'
     id "org.jetbrains.kotlin.jvm" version "1.1.51"
 }
 
