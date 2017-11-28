@@ -24,8 +24,6 @@ import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
-import io.reactivex.functions.Action
-import io.reactivex.functions.Consumer
 import io.reactivex.processors.FlowableProcessor
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.processors.UnicastProcessor
@@ -320,22 +318,14 @@ internal class RSocketClient @JvmOverloads constructor(
 
     private fun cleanup() {
 
-        var subscribers: Collection<Subscriber<Payload>>
-        var publishers: Collection<LimitableRequestPublisher<*>>
-        val (subs, pubs) = synchronized(this) {
+        synchronized(this) {
 
-            subscribers = receivers.values
-            publishers = senders.values
+            receivers.values.forEach { cleanUpSubscriber(it) }
+            senders.values.forEach { cleanUpLimitableRequestPublisher(it) }
 
-            senders.clear()
             receivers.clear()
-
-            Pair(subscribers,publishers)
+            senders.clear()
         }
-
-        subs.forEach { cleanUpSubscriber(it) }
-        pubs.forEach { cleanUpLimitableRequestPublisher(it) }
-
         keepAliveSendSub?.dispose()
     }
 

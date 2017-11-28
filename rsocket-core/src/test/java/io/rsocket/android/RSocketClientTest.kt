@@ -33,6 +33,7 @@ import org.junit.Test
 import org.junit.rules.ExternalResource
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
+import java.nio.channels.ClosedChannelException
 import java.util.concurrent.TimeUnit
 
 class RSocketClientTest {
@@ -169,6 +170,18 @@ class RSocketClientTest {
         val streamId2 = framesSubs.values()[1].streamId
 
         assertThat("Stream ID reused.", streamId2, not(equalTo(streamId1)))
+    }
+
+    @Test(timeout = 3_000)
+    fun requestErrorOnConnectionClose() {
+        Completable.timer(100, TimeUnit.MILLISECONDS)
+                .andThen { rule.conn.close() }.subscribe()
+        val requestStream = rule.client.requestStream(PayloadImpl("test"))
+        val subs = TestSubscriber.create<Payload>()
+        requestStream.blockingSubscribe(subs)
+        val errors = subs.errors()
+        assertThat("no error was signalled on connection close", errors, hasSize(1))
+        assertThat("error id not ClosedChannelException", errors[0] is ClosedChannelException)
     }
 
     class ClientSocketRule : ExternalResource() {
