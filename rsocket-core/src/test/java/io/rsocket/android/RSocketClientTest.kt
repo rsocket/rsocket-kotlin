@@ -88,7 +88,7 @@ class RSocketClientTest {
                 `is`<FrameType>(FrameType.REQUEST_STREAM))
         assertThat("initial request n",
                 RequestFrameFlyweight.initialRequestN(f.content()),
-                greaterThanOrEqualTo(5))
+                equalTo(ClientSocketRule.streamWindow))
     }
 
     @Test(timeout = 2000)
@@ -193,6 +193,7 @@ class RSocketClientTest {
                                 Unit
                             },
                             StreamIdSupplier.clientSupplier(),
+                            streamWindow,
                             Duration(100, TimeUnit.MILLISECONDS),
                             Duration(100, TimeUnit.MILLISECONDS),
                             4)
@@ -200,6 +201,10 @@ class RSocketClientTest {
                     base.evaluate()
                 }
             }
+        }
+
+        companion object {
+            val streamWindow = 20
         }
     }
 }

@@ -16,8 +16,6 @@
 
 package io.rsocket.android
 
-import io.rsocket.android.util.ExceptionUtil.noStacktrace
-
 import io.netty.buffer.Unpooled
 import io.netty.util.collection.IntObjectHashMap
 import io.reactivex.Completable
@@ -32,24 +30,34 @@ import io.reactivex.processors.UnicastProcessor
 import io.rsocket.android.exceptions.ConnectionException
 import io.rsocket.android.exceptions.Exceptions
 import io.rsocket.android.internal.LimitableRequestPublisher
+import io.rsocket.android.util.ExceptionUtil.noStacktrace
 import io.rsocket.android.util.PayloadImpl
-
-import java.nio.channels.ClosedChannelException
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
+import java.nio.channels.ClosedChannelException
 import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /** Client Side of a RSocket socket. Sends [Frame]s to a [RSocketServer]  */
 internal class RSocketClient @JvmOverloads constructor(
         private val connection: DuplexConnection,
         private val errorConsumer: (Throwable) -> Unit,
         private val streamIdSupplier: StreamIdSupplier,
+        private val streamDemandLimit: Int,
         tickPeriod: Duration = Duration.ZERO,
         ackTimeout: Duration = Duration.ZERO,
         missedAcks: Int = 0) : RSocket {
+
+    internal constructor(connection: DuplexConnection,
+                         errorConsumer: (Throwable) -> Unit,
+                         streamIdSupplier: StreamIdSupplier,
+                         tickPeriod: Duration = Duration.ZERO,
+                         ackTimeout: Duration = Duration.ZERO,
+                         missedAcks: Int = 0)
+            : this(connection, errorConsumer, streamIdSupplier, DEFAULT_STREAM_WINDOW, tickPeriod, ackTimeout, missedAcks)
+
     private val started: PublishProcessor<Void> = PublishProcessor.create()
     private val completeOnStart = started.ignoreElements()
     private val senders: IntObjectHashMap<LimitableRequestPublisher<*>> = IntObjectHashMap(256, 0.9f)
@@ -146,10 +154,13 @@ internal class RSocketClient @JvmOverloads constructor(
             handleRequestResponse(payload)
 
     override fun requestStream(payload: Payload): Flowable<Payload> =
-            handleRequestStream(payload)
+            handleRequestStream(payload).rebatchRequests(streamDemandLimit)
 
     override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> =
-            handleChannel(Flowable.fromPublisher(payloads), FrameType.REQUEST_CHANNEL)
+            handleChannel(
+                    Flowable.fromPublisher(payloads).rebatchRequests(streamDemandLimit),
+                    FrameType.REQUEST_CHANNEL
+            ).rebatchRequests(streamDemandLimit)
 
     override fun metadataPush(payload: Payload): Completable {
         val requestFrame = Frame.Request.from(
@@ -472,6 +483,7 @@ internal class RSocketClient @JvmOverloads constructor(
 
     companion object {
         private val CLOSED_CHANNEL_EXCEPTION = noStacktrace(ClosedChannelException())
+        private val DEFAULT_STREAM_WINDOW = 128
     }
     private fun <T> UnicastProcessor<T>.isTerminated(): Boolean = hasComplete() || hasThrowable()
 }

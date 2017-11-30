@@ -38,39 +38,23 @@ object RSocketFactory {
      *
      * @return a client factory
      */
-    fun connect(): ClientRSocketFactory {
-        return ClientRSocketFactory()
-    }
+    fun connect(): ClientRSocketFactory = ClientRSocketFactory()
 
     /**
      * Creates a factory that receives server connections from client RSockets.
      *
      * @return a server factory.
      */
-    fun receive(): ServerRSocketFactory {
-        return ServerRSocketFactory()
-    }
+    fun receive(): ServerRSocketFactory = ServerRSocketFactory()
 
     interface Start<T : Closeable> {
         fun start(): Single<T>
     }
 
-    interface SetupPayload<T> {
-        fun setupPayload(payload: Payload): T
-    }
-
-    interface Acceptor<T, A> {
-        fun acceptor(acceptor: () -> A): T
-
-        fun acceptor(acceptor: A): T {
-            return acceptor({ acceptor })
-        }
-    }
-
     interface ClientTransportAcceptor {
         fun transport(transport: () -> ClientTransport): Start<RSocket>
 
-        fun transport(transport: ClientTransport): Start<RSocket> = transport({ transport })
+        fun transport(transport: ClientTransport): Start<RSocket> = transport { transport }
 
     }
 
@@ -81,39 +65,7 @@ object RSocketFactory {
 
     }
 
-    interface Fragmentation<T> {
-        fun fragment(mtu: Int): T
-    }
-
-    interface ErrorConsumer<T> {
-        fun errorConsumer(errorConsumer: (Throwable) -> Unit): T
-    }
-
-    interface KeepAlive<T> {
-        fun keepAlive(): T
-
-        fun keepAlive(tickPeriod: Duration, ackTimeout: Duration, missedAcks: Int): T
-
-        fun keepAliveTickPeriod(tickPeriod: Duration): T
-
-        fun keepAliveAckTimeout(ackTimeout: Duration): T
-
-        fun keepAliveMissedAcks(missedAcks: Int): T
-    }
-
-    interface MimeType<T> {
-        fun mimeType(metadataMimeType: String, dataMimeType: String): T
-
-        fun dataMimeType(dataMimeType: String): T
-
-        fun metadataMimeType(metadataMimeType: String): T
-    }
-
-    class ClientRSocketFactory : Acceptor<ClientTransportAcceptor, (RSocket) -> RSocket>,
-            ClientTransportAcceptor, KeepAlive<ClientRSocketFactory>,
-            MimeType<ClientRSocketFactory>, Fragmentation<ClientRSocketFactory>,
-            ErrorConsumer<ClientRSocketFactory>,
-            SetupPayload<ClientRSocketFactory> {
+    class ClientRSocketFactory {
 
         private var acceptor: () -> (RSocket) -> RSocket = { { rs -> rs } }
 
@@ -131,6 +83,8 @@ object RSocketFactory {
         private var metadataMimeType = "application/binary"
         private var dataMimeType = "application/binary"
 
+        private var streamDemandLimit = 128
+
         fun addConnectionPlugin(interceptor: DuplexConnectionInterceptor): ClientRSocketFactory {
             plugins.addConnectionPlugin(interceptor)
             return this
@@ -146,12 +100,12 @@ object RSocketFactory {
             return this
         }
 
-        override fun keepAlive(): ClientRSocketFactory {
+        fun keepAlive(): ClientRSocketFactory {
             tickPeriod = Duration.ofSeconds(20)
             return this
         }
 
-        override fun keepAlive(
+        fun keepAlive(
                 tickPeriod: Duration, ackTimeout: Duration, missedAcks: Int): ClientRSocketFactory {
             this.tickPeriod = tickPeriod
             this.ackTimeout = ackTimeout
@@ -159,42 +113,40 @@ object RSocketFactory {
             return this
         }
 
-        override fun keepAliveTickPeriod(tickPeriod: Duration): ClientRSocketFactory {
+        fun keepAliveTickPeriod(tickPeriod: Duration): ClientRSocketFactory {
             this.tickPeriod = tickPeriod
             return this
         }
 
-        override fun keepAliveAckTimeout(ackTimeout: Duration): ClientRSocketFactory {
+        fun keepAliveAckTimeout(ackTimeout: Duration): ClientRSocketFactory {
             this.ackTimeout = ackTimeout
             return this
         }
 
-        override fun keepAliveMissedAcks(missedAcks: Int): ClientRSocketFactory {
+        fun keepAliveMissedAcks(missedAcks: Int): ClientRSocketFactory {
             this.missedAcks = missedAcks
             return this
         }
 
-        override fun mimeType(metadataMimeType: String, dataMimeType: String): ClientRSocketFactory {
+        fun mimeType(metadataMimeType: String, dataMimeType: String): ClientRSocketFactory {
             this.dataMimeType = dataMimeType
             this.metadataMimeType = metadataMimeType
             return this
         }
 
-        override fun dataMimeType(dataMimeType: String): ClientRSocketFactory {
+        fun dataMimeType(dataMimeType: String): ClientRSocketFactory {
             this.dataMimeType = dataMimeType
             return this
         }
 
-        override fun metadataMimeType(metadataMimeType: String): ClientRSocketFactory {
+        fun metadataMimeType(metadataMimeType: String): ClientRSocketFactory {
             this.metadataMimeType = metadataMimeType
             return this
         }
 
-        override fun transport(transport: () -> ClientTransport): Start<RSocket> {
-            return StartClient(transport)
-        }
+        fun transport(transport: () -> ClientTransport): Start<RSocket> = StartClient(transport)
 
-        override fun acceptor(acceptor: () -> (RSocket) -> RSocket): ClientTransportAcceptor {
+        fun acceptor(acceptor: () -> (RSocket) -> RSocket): ClientTransportAcceptor {
             this.acceptor = acceptor
             return object : ClientTransportAcceptor {
                 override fun transport(transport: () -> ClientTransport): Start<RSocket> = StartClient(transport)
@@ -202,22 +154,28 @@ object RSocketFactory {
             }
         }
 
-        override fun fragment(mtu: Int): ClientRSocketFactory {
+        fun fragment(mtu: Int): ClientRSocketFactory {
             this.mtu = mtu
             return this
         }
 
-        override fun errorConsumer(errorConsumer: (Throwable) -> Unit): ClientRSocketFactory {
+        fun errorConsumer(errorConsumer: (Throwable) -> Unit): ClientRSocketFactory {
             this.errorConsumer = errorConsumer
             return this
         }
 
-        override fun setupPayload(payload: Payload): ClientRSocketFactory {
+        fun setupPayload(payload: Payload): ClientRSocketFactory {
             this.setupPayload = payload
             return this
         }
 
-        protected inner class StartClient internal constructor(private val transportClient: () -> ClientTransport) : Start<RSocket> {
+        fun streamDemandLimit(streamDemandLimit: Int): ClientRSocketFactory {
+            this.streamDemandLimit = streamDemandLimit
+            return this
+        }
+
+        private inner class StartClient internal constructor(private val transportClient: () -> ClientTransport)
+            : Start<RSocket> {
 
             override fun start(): Single<RSocket> {
                 return transportClient()
@@ -242,6 +200,7 @@ object RSocketFactory {
                                     multiplexer.asClientConnection(),
                                     errorConsumer,
                                     StreamIdSupplier.clientSupplier(),
+                                    streamDemandLimit,
                                     tickPeriod,
                                     ackTimeout,
                                     missedAcks)
@@ -256,7 +215,7 @@ object RSocketFactory {
                                 wrappedRSocketServer
                                         .doAfterSuccess { rSocket ->
                                             RSocketServer(
-                                                    multiplexer.asServerConnection(), rSocket, errorConsumer)
+                                                    multiplexer.asServerConnection(), rSocket, errorConsumer, streamDemandLimit)
                                         }.flatMapCompletable { conn.sendOne(setupFrame) }
                                         .andThen (wrappedRSocketClient)
                             }
@@ -265,14 +224,13 @@ object RSocketFactory {
         }
     }
 
-    class ServerRSocketFactory internal constructor() : Acceptor<ServerTransportAcceptor, SocketAcceptor>,
-            Fragmentation<ServerRSocketFactory>,
-            ErrorConsumer<ServerRSocketFactory> {
+    class ServerRSocketFactory internal constructor() {
 
         private var acceptor: (() -> SocketAcceptor)? = null
         private var errorConsumer: (Throwable) -> Unit = { it.printStackTrace() }
         private var mtu = 0
         private val plugins = PluginRegistry(Plugins.defaultPlugins())
+        private var streamWindow = 20
 
         fun addConnectionPlugin(interceptor: DuplexConnectionInterceptor): ServerRSocketFactory {
             plugins.addConnectionPlugin(interceptor)
@@ -289,26 +247,31 @@ object RSocketFactory {
             return this
         }
 
-        override fun acceptor(acceptor: () -> SocketAcceptor): ServerTransportAcceptor {
+        fun acceptor(acceptor: () -> SocketAcceptor): ServerTransportAcceptor {
             this.acceptor = acceptor
             return object : ServerTransportAcceptor {
-                override fun <T : Closeable> transport(transport: () -> ServerTransport<T>): Start<T> {
-                    return ServerStart(transport)
-                }
+                override fun <T : Closeable> transport(transport: () -> ServerTransport<T>): Start<T> =
+                        ServerStart(transport)
             }
         }
 
-        override fun fragment(mtu: Int): ServerRSocketFactory {
+        fun fragment(mtu: Int): ServerRSocketFactory {
             this.mtu = mtu
             return this
         }
 
-        override fun errorConsumer(errorConsumer: (Throwable) -> Unit): ServerRSocketFactory {
+        fun errorConsumer(errorConsumer: (Throwable) -> Unit): ServerRSocketFactory {
             this.errorConsumer = errorConsumer
             return this
         }
 
-        private inner class ServerStart<T : Closeable> internal constructor(private val transportServer: () -> ServerTransport<T>) : Start<T> {
+        fun streamWindow(streamWindow: Int): ServerRSocketFactory {
+            this.streamWindow = streamWindow
+            return this
+        }
+
+        private inner class ServerStart<T : Closeable> internal constructor(private val transportServer: () -> ServerTransport<T>)
+            : Start<T> {
 
             override fun start(): Single<T> {
                 return transportServer()
@@ -345,13 +308,13 @@ object RSocketFactory {
                 val setupPayload = ConnectionSetupPayload.create(setupFrame)
 
                 val rSocketClient = RSocketClient(
-                        multiplexer.asServerConnection(), errorConsumer, StreamIdSupplier.serverSupplier())
+                        multiplexer.asServerConnection(), errorConsumer, StreamIdSupplier.serverSupplier(), streamWindow)
 
                 val wrappedRSocketClient = Single.just(rSocketClient).map { plugins.applyClient(it) }
 
                 return wrappedRSocketClient
                         .flatMap { sender -> acceptor?.let { it() }?.accept(setupPayload, sender)?.map { plugins.applyServer(it) } }
-                        .map { handler -> RSocketServer(multiplexer.asClientConnection(), handler, errorConsumer) }
+                        .map { handler -> RSocketServer(multiplexer.asClientConnection(), handler, errorConsumer,streamWindow) }
                         .toCompletable()
             }
         }
