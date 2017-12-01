@@ -43,9 +43,19 @@ internal class RSocketClient @JvmOverloads constructor(
         private val connection: DuplexConnection,
         private val errorConsumer: (Throwable) -> Unit,
         private val streamIdSupplier: StreamIdSupplier,
+        private val streamDemandLimit: Int,
         tickPeriod: Duration = Duration.ZERO,
         ackTimeout: Duration = Duration.ZERO,
         missedAcks: Int = 0) : RSocket {
+
+    internal constructor(connection: DuplexConnection,
+                         errorConsumer: (Throwable) -> Unit,
+                         streamIdSupplier: StreamIdSupplier,
+                         tickPeriod: Duration = Duration.ZERO,
+                         ackTimeout: Duration = Duration.ZERO,
+                         missedAcks: Int = 0)
+            : this(connection, errorConsumer, streamIdSupplier, DEFAULT_STREAM_WINDOW, tickPeriod, ackTimeout, missedAcks)
+
     private val started: PublishProcessor<Void> = PublishProcessor.create()
     private val completeOnStart = started.ignoreElements()
     private val senders: IntObjectHashMap<LimitableRequestPublisher<*>> = IntObjectHashMap(256, 0.9f)
@@ -140,12 +150,15 @@ internal class RSocketClient @JvmOverloads constructor(
     override fun requestStream(payload: Payload): Flowable<Payload> =
             errorSignal
                     ?.let { Flowable.error<Payload>(it) }
-                    ?: handleRequestStream(payload)
+                    ?: handleRequestStream(payload).rebatchRequests(streamDemandLimit)
 
     override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> =
             errorSignal
                     ?.let { Flowable.error<Payload>(it) }
-                    ?: handleChannel(Flowable.fromPublisher(payloads), FrameType.REQUEST_CHANNEL)
+                    ?: handleChannel(
+                    Flowable.fromPublisher(payloads).rebatchRequests(streamDemandLimit),
+                    FrameType.REQUEST_CHANNEL
+            ).rebatchRequests(streamDemandLimit)
 
     override fun metadataPush(payload: Payload): Completable =
         errorSignal
@@ -465,6 +478,7 @@ internal class RSocketClient @JvmOverloads constructor(
 
     companion object {
         private val CLOSED_CHANNEL_EXCEPTION = noStacktrace(ClosedChannelException())
+        private val DEFAULT_STREAM_WINDOW = 128
     }
 
     private fun <T> UnicastProcessor<T>.isTerminated(): Boolean = hasComplete() || hasThrowable()
