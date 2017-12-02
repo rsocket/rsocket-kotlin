@@ -31,17 +31,11 @@ abstract class ConnectionSetupPayload : Payload {
 
     abstract val flags: Int
 
-    fun willClientHonorLease(): Boolean {
-        return Frame.isFlagSet(flags, HONOR_LEASE)
-    }
+    fun willClientHonorLease(): Boolean = Frame.isFlagSet(flags, HONOR_LEASE)
 
-    fun doesClientRequestStrictInterpretation(): Boolean {
-        return STRICT_INTERPRETATION == flags and STRICT_INTERPRETATION
-    }
+    fun doesClientRequestStrictInterpretation(): Boolean = STRICT_INTERPRETATION == flags and STRICT_INTERPRETATION
 
-    override fun hasMetadata(): Boolean {
-        return Frame.isFlagSet(flags, FLAGS_M)
-    }
+    override fun hasMetadata(): Boolean = Frame.isFlagSet(flags, FLAGS_M)
 
     private class ConnectionSetupPayloadImpl(
             private val metadataMimeType: String,
@@ -51,30 +45,29 @@ abstract class ConnectionSetupPayload : Payload {
             override val flags: Int) : ConnectionSetupPayload() {
 
         init {
-
             if (!hasMetadata() && metadata.remaining() > 0) {
                 throw IllegalArgumentException("metadata flag incorrect")
             }
         }
 
-        override fun metadataMimeType(): String {
-            return metadataMimeType
-        }
+        override fun metadataMimeType(): String = metadataMimeType
 
-        override fun dataMimeType(): String {
-            return dataMimeType
-        }
+        override fun dataMimeType(): String = dataMimeType
     }
 
     companion object {
 
-        val NO_FLAGS = 0
+        private val NO_FLAGS = 0
         val HONOR_LEASE = SetupFrameFlyweight.FLAGS_WILL_HONOR_LEASE
         val STRICT_INTERPRETATION = SetupFrameFlyweight.FLAGS_STRICT_INTERPRETATION
 
         fun create(metadataMimeType: String, dataMimeType: String): ConnectionSetupPayload {
             return ConnectionSetupPayloadImpl(
-                    metadataMimeType, dataMimeType, Frame.NULL_BYTEBUFFER, Frame.NULL_BYTEBUFFER, NO_FLAGS)
+                    metadataMimeType,
+                    dataMimeType,
+                    Frame.NULL_BYTEBUFFER,
+                    Frame.NULL_BYTEBUFFER,
+                    NO_FLAGS)
         }
 
         fun create(
@@ -88,10 +81,13 @@ abstract class ConnectionSetupPayload : Payload {
         }
 
         fun create(
-                metadataMimeType: String, dataMimeType: String, flags: Int): ConnectionSetupPayload {
-            return ConnectionSetupPayloadImpl(
-                    metadataMimeType, dataMimeType, Frame.NULL_BYTEBUFFER, Frame.NULL_BYTEBUFFER, flags)
-        }
+                metadataMimeType: String, dataMimeType: String, flags: Int): ConnectionSetupPayload =
+                ConnectionSetupPayloadImpl(
+                        metadataMimeType,
+                        dataMimeType,
+                        Frame.NULL_BYTEBUFFER,
+                        Frame.NULL_BYTEBUFFER,
+                        flags)
 
         fun create(setupFrame: Frame): ConnectionSetupPayload {
             Frame.ensureFrameType(FrameType.SETUP, setupFrame)

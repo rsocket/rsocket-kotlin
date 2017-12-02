@@ -59,22 +59,14 @@ enum class FrameType(val encodedType: Int, private val flags: Int = 0) {
     val isRequestType: Boolean
         get() = Flags.IS_REQUEST_TYPE == flags and Flags.IS_REQUEST_TYPE
 
-    fun hasInitialRequestN(): Boolean {
-        return Flags.HAS_INITIAL_REQUEST_N == flags and Flags.HAS_INITIAL_REQUEST_N
-    }
+    fun hasInitialRequestN(): Boolean = Flags.HAS_INITIAL_REQUEST_N == flags and Flags.HAS_INITIAL_REQUEST_N
 
-    fun canHaveData(): Boolean {
-        return Flags.CAN_HAVE_DATA == flags and Flags.CAN_HAVE_DATA
-    }
+    fun canHaveData(): Boolean = Flags.CAN_HAVE_DATA == flags and Flags.CAN_HAVE_DATA
 
-    fun canHaveMetadata(): Boolean {
-        return Flags.CAN_HAVE_METADATA == flags and Flags.CAN_HAVE_METADATA
-    }
+    fun canHaveMetadata(): Boolean = Flags.CAN_HAVE_METADATA == flags and Flags.CAN_HAVE_METADATA
 
     // TODO: offset of metadata and data (simplify parsing) naming: endOfFrameHeaderOffset()
-    fun payloadOffset(): Int {
-        return 0
-    }
+    fun payloadOffset(): Int = 0
 
     companion object {
 
@@ -95,8 +87,6 @@ enum class FrameType(val encodedType: Int, private val flags: Int = 0) {
             }
         }
 
-        fun from(id: Int): FrameType? {
-            return typesById[id]
-        }
+        fun from(id: Int): FrameType? = typesById[id]
     }
 }

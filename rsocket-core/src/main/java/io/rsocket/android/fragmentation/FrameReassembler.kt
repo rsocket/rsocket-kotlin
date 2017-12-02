@@ -26,7 +26,8 @@ import io.rsocket.android.frame.FrameHeaderFlyweight
 /** Assembles Fragmented frames.  */
 class FrameReassembler(frame: Frame) : Disposable {
 
-    @Volatile private var isDisposed: Boolean = false
+    @Volatile
+    private var isDisposed: Boolean = false
     private val frameType: FrameType = frame.type
     private val streamId: Int = frame.streamId
     private val flags: Int = frame.flags()
@@ -54,9 +55,7 @@ class FrameReassembler(frame: Frame) : Disposable {
     }
 
     @Synchronized
-    fun reassemble(): Frame {
-        return Frame.PayloadFrame.from(streamId, frameType, metadataBuffer, dataBuffer, flags)
-    }
+    fun reassemble(): Frame = Frame.PayloadFrame.from(streamId, frameType, metadataBuffer, dataBuffer, flags)
 
     override fun dispose() {
         isDisposed = true

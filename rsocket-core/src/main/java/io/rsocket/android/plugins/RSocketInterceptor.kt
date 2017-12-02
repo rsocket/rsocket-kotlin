@@ -18,6 +18,4 @@ package io.rsocket.android.plugins
 
 import io.rsocket.android.RSocket
 
-/**  */
-@FunctionalInterface
 interface RSocketInterceptor : (RSocket) -> RSocket

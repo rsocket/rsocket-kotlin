@@ -16,5 +16,4 @@
 
 package io.rsocket.android.transport
 
-/**  */
 interface Transport

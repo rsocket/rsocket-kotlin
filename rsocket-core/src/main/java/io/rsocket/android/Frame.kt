@@ -58,38 +58,28 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
     }
 
     /** Creates a deep copy of this [Frame].  */
-    override fun copy(): Frame {
-        return replace(content!!.copy())
-    }
+    override fun copy(): Frame = replace(content!!.copy())
 
     /**
      * Duplicates this [Frame]. Be aware that this will not automatically call [ ][.retain].
      */
-    override fun duplicate(): Frame {
-        return replace(content!!.duplicate())
-    }
+    override fun duplicate(): Frame = replace(content!!.duplicate())
 
     /**
      * Duplicates this [Frame]. This method returns a retained duplicate unlike [ ][.duplicate].
      *
      * @see ByteBuf.retainedDuplicate
      */
-    override fun retainedDuplicate(): Frame {
-        return replace(content!!.retainedDuplicate())
-    }
+    override fun retainedDuplicate(): Frame = replace(content!!.retainedDuplicate())
 
     /** Returns a new [Frame] which contains the specified `content`.  */
-    override fun replace(content: ByteBuf): Frame {
-        return from(content)
-    }
+    override fun replace(content: ByteBuf): Frame = from(content)
 
     /**
      * Returns the reference count of this object. If `0`, it means this object has been
      * deallocated.
      */
-    override fun refCnt(): Int {
-        return content!!.refCnt()
-    }
+    override fun refCnt(): Int = content!!.refCnt()
 
     /** Increases the reference count by `1`.  */
     override fun retain(): Frame {
@@ -218,13 +208,9 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
      *
      * @return frame flags field value
      */
-    fun flags(): Int {
-        return FrameHeaderFlyweight.flags(content!!)
-    }
+    fun flags(): Int = FrameHeaderFlyweight.flags(content!!)
 
-    fun hasMetadata(): Boolean {
-        return isFlagSet(this.flags(), FLAGS_M)
-    }
+    fun hasMetadata(): Boolean = isFlagSet(this.flags(), FLAGS_M)
 
     val dataUtf8: String
         get() = StandardCharsets.UTF_8.decode(data).toString()
@@ -430,10 +416,16 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
 
         fun from(streamId: Int, type: FrameType, flags: Int): Frame {
             val frame = RECYCLER.get()
-            frame.content = ByteBufAllocator.DEFAULT.buffer(RequestFrameFlyweight.computeFrameLength(type, null, 0))
+            frame.content = ByteBufAllocator.DEFAULT.buffer(RequestFrameFlyweight
+                    .computeFrameLength(type, null, 0))
             frame.content!!.writerIndex(
                     RequestFrameFlyweight.encode(
-                            frame.content!!, streamId, flags, type, Unpooled.EMPTY_BUFFER, Unpooled.EMPTY_BUFFER))
+                            frame.content!!,
+                            streamId,
+                            flags,
+                            type,
+                            Unpooled.EMPTY_BUFFER,
+                            Unpooled.EMPTY_BUFFER))
             return frame
         }
 
@@ -450,25 +442,27 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
                             type, metadata.readableBytes(), data.readableBytes()))
             frame.content!!.writerIndex(
                     RequestFrameFlyweight.encode(
-                            frame.content!!, streamId, flags, type, initialRequestN, metadata, data))
+                            frame.content!!,
+                            streamId,
+                            flags,
+                            type,
+                            initialRequestN,
+                            metadata,
+                            data))
             return frame
         }
 
         fun initialRequestN(frame: Frame): Int {
             val type = frame.type
-            val result: Int
-
             if (!type.isRequestType) {
                 throw AssertionError("expected request type, but saw " + type.name)
             }
 
-            when (frame.type) {
-                FrameType.REQUEST_RESPONSE -> result = 1
-                FrameType.FIRE_AND_FORGET -> result = 0
-                else -> result = RequestFrameFlyweight.initialRequestN(frame.content!!)
+            return when (frame.type) {
+                FrameType.REQUEST_RESPONSE -> 1
+                FrameType.FIRE_AND_FORGET -> 0
+                else -> RequestFrameFlyweight.initialRequestN(frame.content!!)
             }
-
-            return result
         }
 
         fun isRequestChannelComplete(frame: Frame): Boolean {
@@ -482,7 +476,10 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
     object PayloadFrame {
 
         @JvmOverloads
-        fun from(streamId: Int, type: FrameType, payload: Payload, flags: Int = if (payload.hasMetadata()) FLAGS_M else 0): Frame {
+        fun from(streamId: Int,
+                 type: FrameType,
+                 payload: Payload,
+                 flags: Int = if (payload.hasMetadata()) FLAGS_M else 0): Frame {
             val metadata = if (payload.hasMetadata()) Unpooled.wrappedBuffer(payload.metadata) else null
             val data = Unpooled.wrappedBuffer(payload.data)
             return from(streamId, type, metadata, data, flags)
@@ -490,7 +487,11 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
 
         @JvmOverloads
         fun from(
-                streamId: Int, type: FrameType, metadata: ByteBuf? = null, data: ByteBuf = Unpooled.EMPTY_BUFFER, flags: Int = 0): Frame {
+                streamId: Int,
+                type: FrameType,
+                metadata: ByteBuf? = null,
+                data: ByteBuf = Unpooled.EMPTY_BUFFER,
+                flags: Int = 0): Frame {
             val frame = RECYCLER.get()
             frame.content = ByteBufAllocator.DEFAULT.buffer(
                     FrameHeaderFlyweight.computeFrameHeaderLength(
@@ -509,7 +510,12 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
                     FrameHeaderFlyweight.computeFrameHeaderLength(FrameType.CANCEL, null, 0))
             frame.content!!.writerIndex(
                     FrameHeaderFlyweight.encode(
-                            frame.content!!, streamId, 0, FrameType.CANCEL, null, Unpooled.EMPTY_BUFFER))
+                            frame.content!!,
+                            streamId,
+                            0,
+                            FrameType.CANCEL,
+                            null,
+                            Unpooled.EMPTY_BUFFER))
             return frame
         }
     }
@@ -554,17 +560,15 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
 
         val streamId = FrameHeaderFlyweight.streamId(content!!).toLong()
 
-        var additionalFlags = ""
-        when (type) {
-            FrameType.LEASE -> additionalFlags = " Permits: " + Lease.numberOfRequests(this) + " TTL: " + Lease.ttl(this)
-            FrameType.REQUEST_N -> additionalFlags = " RequestN: " + RequestN.requestN(this)
-            FrameType.KEEPALIVE -> additionalFlags = " Respond flag: " + Keepalive.hasRespondFlag(this)
-            FrameType.REQUEST_STREAM, FrameType.REQUEST_CHANNEL -> additionalFlags = " Initial Request N: " + Request.initialRequestN(this)
-            FrameType.ERROR -> additionalFlags = " Error code: " + Error.errorCode(this)
-            FrameType.SETUP -> {
-                val version = Setup.version(this)
-                additionalFlags = " Version: " +
-                        VersionFlyweight.toString(version) +
+        val additionalFlags: String = when (type) {
+            FrameType.LEASE -> " Permits: ${Lease.numberOfRequests(this)} TTL: ${Lease.ttl(this)}"
+            FrameType.REQUEST_N -> " RequestN: ${RequestN.requestN(this)}"
+            FrameType.KEEPALIVE -> " Respond flag: ${Keepalive.hasRespondFlag(this)}"
+            FrameType.REQUEST_STREAM, FrameType.REQUEST_CHANNEL -> " Initial Request N: ${Request.initialRequestN(this)}"
+            FrameType.ERROR -> " Error code: ${Error.errorCode(this)}"
+            FrameType.SETUP ->
+                " Version: " +
+                        VersionFlyweight.toString(Setup.version(this)) +
                         " keep-alive interval: " +
                         Setup.keepaliveInterval(this) +
                         " max lifetime: " +
@@ -573,7 +577,7 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
                         Setup.metadataMimeType(this) +
                         " data mime type: " +
                         Setup.dataMimeType(this)
-            }
+            else -> ""
         }
 
         return "Frame => Stream ID: " +
@@ -586,7 +590,7 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
     }
 
     companion object {
-        val NULL_BYTEBUFFER = ByteBuffer.allocateDirect(0)
+        val NULL_BYTEBUFFER:ByteBuffer = ByteBuffer.allocateDirect(0)
 
         private val RECYCLER = object : Recycler<Frame>() {
             override fun newObject(handle: Handle<Frame>): Frame {
@@ -607,17 +611,12 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
             return frame
         }
 
-        fun isFlagSet(flags: Int, checkedFlag: Int): Boolean {
-            return flags and checkedFlag == checkedFlag
-        }
+        fun isFlagSet(flags: Int, checkedFlag: Int): Boolean = flags and checkedFlag == checkedFlag
 
-        fun setFlag(current: Int, toSet: Int): Int {
-            return current or toSet
-        }
+        fun setFlag(current: Int, toSet: Int): Int = current or toSet
 
         fun ensureFrameType(frameType: FrameType, frame: Frame) {
             val typeInFrame = frame.type
-
             if (typeInFrame !== frameType) {
                 throw AssertionError("expected $frameType, but saw$typeInFrame")
             }

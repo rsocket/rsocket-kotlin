@@ -25,31 +25,24 @@ import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 
 /**  */
-class LimitableRequestPublisher<T> private constructor(private val source: Publisher<T>) : Flowable<T>(), Subscription,Disposable {
+class LimitableRequestPublisher<T> private constructor(private val source: Publisher<T>)
+    : Flowable<T>(), Subscription,Disposable {
 
-    private val canceled: AtomicBoolean
-
+    private val canceled: AtomicBoolean = AtomicBoolean()
     private var internalRequested: Long = 0
-
     private var externalRequested: Long = 0
-
-    @Volatile private var subscribed: Boolean = false
-
-    @Volatile private var internalSubscription: Subscription? = null
-
-    init {
-        this.canceled = AtomicBoolean()
-    }
+    @Volatile
+    private var subscribed: Boolean = false
+    @Volatile
+    private var internalSubscription: Subscription? = null
 
     override fun subscribeActual(destination: Subscriber<in T>) {
         synchronized(this) {
             if (subscribed) {
                 throw IllegalStateException("only one subscriber at a time")
             }
-
             subscribed = true
         }
-
         destination.onSubscribe(InnerSubscription())
         source.subscribe(InnerSubscriber(destination))
     }
@@ -58,7 +51,6 @@ class LimitableRequestPublisher<T> private constructor(private val source: Publi
         synchronized(this) {
             externalRequested = BackpressureHelper.addCap(n, externalRequested)
         }
-
         requestN()
     }
 
@@ -97,16 +89,16 @@ class LimitableRequestPublisher<T> private constructor(private val source: Publi
     private inner class InnerSubscriber internal constructor(internal var destination: Subscriber<in T>) : Subscriber<T> {
 
         override fun onSubscribe(s: Subscription) {
-            synchronized(this@LimitableRequestPublisher) {
-                this@LimitableRequestPublisher.internalSubscription = s
+            val parent = this@LimitableRequestPublisher
+            synchronized(parent) {
+                parent.internalSubscription = s
 
                 if (canceled.get()) {
                     s.cancel()
                     subscribed = false
-                    this@LimitableRequestPublisher.internalSubscription = null
+                    parent.internalSubscription = null
                 }
             }
-
             requestN()
         }
 
@@ -133,7 +125,6 @@ class LimitableRequestPublisher<T> private constructor(private val source: Publi
             synchronized(this@LimitableRequestPublisher) {
                 internalRequested = BackpressureHelper.addCap(n, internalRequested)
             }
-
             requestN()
         }
 
@@ -144,8 +135,6 @@ class LimitableRequestPublisher<T> private constructor(private val source: Publi
 
     companion object {
 
-        fun <T> wrap(source: Publisher<T>): LimitableRequestPublisher<T> {
-            return LimitableRequestPublisher(source)
-        }
+        fun <T> wrap(source: Publisher<T>): LimitableRequestPublisher<T> = LimitableRequestPublisher(source)
     }
 }

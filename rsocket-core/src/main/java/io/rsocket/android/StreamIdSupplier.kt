@@ -25,18 +25,12 @@ internal class StreamIdSupplier private constructor(private var streamId: Int) {
     }
 
     @Synchronized
-    fun isBeforeOrCurrent(streamId: Int): Boolean {
-        return this.streamId >= streamId && streamId > 0
-    }
+    fun isBeforeOrCurrent(streamId: Int): Boolean = this.streamId >= streamId && streamId > 0
 
     companion object {
 
-        fun clientSupplier(): StreamIdSupplier {
-            return StreamIdSupplier(-1)
-        }
+        fun clientSupplier(): StreamIdSupplier = StreamIdSupplier(-1)
 
-        fun serverSupplier(): StreamIdSupplier {
-            return StreamIdSupplier(0)
-        }
+        fun serverSupplier(): StreamIdSupplier = StreamIdSupplier(0)
     }
 }

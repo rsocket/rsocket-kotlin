@@ -30,25 +30,20 @@ abstract class AbstractRSocket : RSocket {
 
     private val onClose:AsyncProcessor<Void> = AsyncProcessor.create()
 
-    override fun fireAndForget(payload: Payload): Completable {
-        return Completable.error(UnsupportedOperationException("Fire and forget not implemented."))
-    }
+    override fun fireAndForget(payload: Payload): Completable =
+            Completable.error(UnsupportedOperationException("Fire and forget not implemented."))
 
-    override fun requestResponse(payload: Payload): Single<Payload> {
-        return Single.error(UnsupportedOperationException("Request-Response not implemented."))
-    }
+    override fun requestResponse(payload: Payload): Single<Payload> =
+            Single.error(UnsupportedOperationException("Request-Response not implemented."))
 
-    override fun requestStream(payload: Payload): Flowable<Payload> {
-        return Flowable.error(UnsupportedOperationException("Request-Stream not implemented."))
-    }
+    override fun requestStream(payload: Payload): Flowable<Payload> =
+            Flowable.error(UnsupportedOperationException("Request-Stream not implemented."))
 
-    override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> {
-        return Flowable.error(UnsupportedOperationException("Request-Channel not implemented."))
-    }
+    override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> =
+            Flowable.error(UnsupportedOperationException("Request-Channel not implemented."))
 
-    override fun metadataPush(payload: Payload): Completable {
-        return Completable.error(UnsupportedOperationException("Metadata-Push not implemented."))
-    }
+    override fun metadataPush(payload: Payload): Completable =
+            Completable.error(UnsupportedOperationException("Metadata-Push not implemented."))
 
     override fun close(): Completable {
         return Completable.defer {

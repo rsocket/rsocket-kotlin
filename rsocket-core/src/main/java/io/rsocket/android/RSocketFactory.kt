@@ -205,19 +205,26 @@ object RSocketFactory {
                                     ackTimeout,
                                     missedAcks)
 
-                            val wrappedRSocketClient = Single.just(rSocketClient).map { plugins.applyClient(it) }
+                            val wrappedRSocketClient = Single
+                                    .just(rSocketClient)
+                                    .map { plugins.applyClient(it) }
 
                             wrappedRSocketClient.flatMap { wrappedClientRSocket ->
                                 val unwrappedServerSocket = acceptor()(wrappedClientRSocket)
 
-                                val wrappedRSocketServer = Single.just<RSocket>(unwrappedServerSocket).map { plugins.applyServer(it) }
+                                val wrappedRSocketServer = Single
+                                        .just<RSocket>(unwrappedServerSocket)
+                                        .map { plugins.applyServer(it) }
 
                                 wrappedRSocketServer
                                         .doAfterSuccess { rSocket ->
                                             RSocketServer(
-                                                    multiplexer.asServerConnection(), rSocket, errorConsumer, streamDemandLimit)
+                                                    multiplexer.asServerConnection(),
+                                                    rSocket,
+                                                    errorConsumer,
+                                                    streamDemandLimit)
                                         }.flatMapCompletable { conn.sendOne(setupFrame) }
-                                        .andThen (wrappedRSocketClient)
+                                        .andThen(wrappedRSocketClient)
                             }
                         }
             }
@@ -270,8 +277,8 @@ object RSocketFactory {
             return this
         }
 
-        private inner class ServerStart<T : Closeable> internal constructor(private val transportServer: () -> ServerTransport<T>)
-            : Start<T> {
+        private inner class ServerStart<T : Closeable> internal constructor(
+                private val transportServer: () -> ServerTransport<T>) : Start<T> {
 
             override fun start(): Single<T> {
                 return transportServer()
@@ -298,23 +305,37 @@ object RSocketFactory {
                 val version = Frame.Setup.version(setupFrame)
                 if (version != SetupFrameFlyweight.CURRENT_VERSION) {
                     val error = InvalidSetupException(
-                            "Unsupported version " + VersionFlyweight.toString(version))
+                            "Unsupported version ${VersionFlyweight.toString(version)}")
                     return multiplexer
                             .asStreamZeroConnection()
                             .sendOne(Frame.Error.from(0, error))
-                            .andThen { multiplexer.close()}
+                            .andThen { multiplexer.close() }
                 }
 
                 val setupPayload = ConnectionSetupPayload.create(setupFrame)
 
                 val rSocketClient = RSocketClient(
-                        multiplexer.asServerConnection(), errorConsumer, StreamIdSupplier.serverSupplier(), streamWindow)
+                        multiplexer.asServerConnection(),
+                        errorConsumer,
+                        StreamIdSupplier.serverSupplier(),
+                        streamWindow)
 
-                val wrappedRSocketClient = Single.just(rSocketClient).map { plugins.applyClient(it) }
+                val wrappedRSocketClient = Single
+                        .just(rSocketClient)
+                        .map { plugins.applyClient(it) }
 
                 return wrappedRSocketClient
-                        .flatMap { sender -> acceptor?.let { it() }?.accept(setupPayload, sender)?.map { plugins.applyServer(it) } }
-                        .map { handler -> RSocketServer(multiplexer.asClientConnection(), handler, errorConsumer,streamWindow) }
+                        .flatMap { sender -> acceptor
+                                ?.let { it() }
+                                ?.accept(setupPayload, sender)
+                                ?.map { plugins.applyServer(it) }
+                        }
+                        .map { handler -> RSocketServer(
+                                multiplexer.asClientConnection(),
+                                handler,
+                                errorConsumer,
+                                streamWindow)
+                        }
                         .toCompletable()
             }
         }
