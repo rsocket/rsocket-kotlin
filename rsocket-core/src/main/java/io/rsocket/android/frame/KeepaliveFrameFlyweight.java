@@ -15,10 +15,10 @@
  */
 package io.rsocket.android.frame;
 
+import static io.rsocket.android.frame.Utils.*;
+
 import io.netty.buffer.ByteBuf;
 import io.rsocket.android.FrameType;
-
-import static io.rsocket.android.frame.Utils.*;
 
 public class KeepaliveFrameFlyweight {
   public static final int FLAGS_KEEPALIVE_R = 0b00_1000_0000;

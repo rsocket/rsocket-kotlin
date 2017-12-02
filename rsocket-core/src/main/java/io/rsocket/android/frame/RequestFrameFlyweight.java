@@ -15,12 +15,12 @@
  */
 package io.rsocket.android.frame;
 
+import static io.rsocket.android.frame.Utils.INTEGER_BYTES;
+
 import io.netty.buffer.ByteBuf;
 import io.rsocket.android.Frame;
 import io.rsocket.android.FrameType;
 import javax.annotation.Nullable;
-
-import static io.rsocket.android.frame.Utils.INTEGER_BYTES;
 
 public class RequestFrameFlyweight {
 

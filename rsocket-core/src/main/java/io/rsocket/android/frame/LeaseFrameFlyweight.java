@@ -15,10 +15,10 @@
  */
 package io.rsocket.android.frame;
 
+import static io.rsocket.android.frame.Utils.*;
+
 import io.netty.buffer.ByteBuf;
 import io.rsocket.android.FrameType;
-
-import static io.rsocket.android.frame.Utils.*;
 
 public class LeaseFrameFlyweight {
   private LeaseFrameFlyweight() {}
