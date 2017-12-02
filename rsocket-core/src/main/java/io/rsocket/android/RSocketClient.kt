@@ -22,8 +22,6 @@ import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
-import io.reactivex.functions.Action
-import io.reactivex.functions.Consumer
 import io.reactivex.processors.FlowableProcessor
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.processors.UnicastProcessor
@@ -63,6 +61,8 @@ internal class RSocketClient @JvmOverloads constructor(
     private val senders: IntObjectHashMap<LimitableRequestPublisher<*>> = IntObjectHashMap(256, 0.9f)
     private val receivers: IntObjectHashMap<Subscriber<Payload>> = IntObjectHashMap(256, 0.9f)
     private val missedAckCounter: AtomicInteger = AtomicInteger()
+    @Volatile
+    private var errorSignal: Throwable? = null
 
     private val sendProcessor: FlowableProcessor<Frame> = PublishProcessor
             .create<Frame>()
@@ -99,70 +99,79 @@ internal class RSocketClient @JvmOverloads constructor(
         connection
                 .receive()
                 .doOnSubscribe { started.onComplete() }
-                .subscribe({ handleIncomingFrames(it) },errorConsumer)
+                .subscribe({ handleIncomingFrames(it) }, errorConsumer)
     }
 
     private fun handleSendProcessorError(t: Throwable) {
-        val (receivers, senders) = synchronized(this) {
-            Pair(receivers.values, senders.values)
-        }
-        for (subscriber in receivers) {
-            try {
-                subscriber.onError(t)
-            } catch (e: Throwable) {
-                errorConsumer(e)
-            }
-        }
-
-        for (p in senders) {
-            p.cancel()
+        synchronized(this) {
+            receivers.values.forEach { it.onError(t) }
+            senders.values.forEach { it.cancel() }
         }
     }
 
     private fun sendKeepAlive(ackTimeoutMs: Long, missedAcks: Int): Completable {
         return Completable.fromRunnable {
-                    val now = System.currentTimeMillis()
-                    if (now - timeLastTickSentMs > ackTimeoutMs) {
-                        val count = missedAckCounter.incrementAndGet()
-                        if (count >= missedAcks) {
-                            val message = String.format(
-                                    "Missed %d keep-alive acks with a threshold of %d and a ack timeout of %d ms",
-                                    count, missedAcks, ackTimeoutMs)
-                            throw ConnectionException(message)
-                        }
-                    }
-
-                    sendProcessor.onNext(Frame.Keepalive.from(Unpooled.EMPTY_BUFFER, true))
+            val now = System.currentTimeMillis()
+            if (now - timeLastTickSentMs > ackTimeoutMs) {
+                val count = missedAckCounter.incrementAndGet()
+                if (count >= missedAcks) {
+                    val message = String.format(
+                            "Missed %d keep-alive acks with a threshold of %d and a ack timeout of %d ms",
+                            count, missedAcks, ackTimeoutMs)
+                    throw ConnectionException(message)
                 }
+            }
+
+            sendProcessor.onNext(Frame.Keepalive.from(Unpooled.EMPTY_BUFFER, true))
+        }
     }
 
     override fun fireAndForget(payload: Payload): Completable {
         val defer = Completable.fromRunnable {
-                    val streamId = streamIdSupplier.nextStreamId()
-                    val requestFrame = Frame.Request.from(
-                            streamId,
-                            FrameType.FIRE_AND_FORGET,
-                            payload,
-                            1)
-                    sendProcessor.onNext(requestFrame)
-                }
+            val streamId = streamIdSupplier.nextStreamId()
+            val requestFrame = Frame.Request.from(
+                    streamId,
+                    FrameType.FIRE_AND_FORGET,
+                    payload,
+                    1)
+            sendProcessor.onNext(requestFrame)
+        }
 
-        return completeOnStart.andThen(defer)
+        return errorSignal
+                ?.let { Completable.error(it) }
+                ?: completeOnStart.andThen(defer)
     }
 
     override fun requestResponse(payload: Payload): Single<Payload> =
-            handleRequestResponse(payload)
+            errorSignal
+                    ?.let { Single.error<Payload>(it) }
+                    ?: handleRequestResponse(payload)
 
     override fun requestStream(payload: Payload): Flowable<Payload> =
-            handleRequestStream(payload).rebatchRequests(streamDemandLimit)
+            errorSignal
+                    ?.let { Flowable.error<Payload>(it) }
+                    ?: handleRequestStream(payload).rebatchRequests(streamDemandLimit)
 
     override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> =
-            handleChannel(
+            errorSignal
+                    ?.let { Flowable.error<Payload>(it) }
+                    ?: handleChannel(
                     Flowable.fromPublisher(payloads).rebatchRequests(streamDemandLimit),
                     FrameType.REQUEST_CHANNEL
             ).rebatchRequests(streamDemandLimit)
 
-    override fun metadataPush(payload: Payload): Completable {
+    override fun metadataPush(payload: Payload): Completable =
+        errorSignal
+                ?.let { Completable.error(it) }
+                ?: handleMetadataPush(payload)
+
+    override fun availability(): Double = connection.availability()
+
+    override fun close(): Completable = connection.close()
+
+    override fun onClose(): Completable = connection.onClose()
+
+    private fun handleMetadataPush(payload: Payload): Completable {
         val requestFrame = Frame.Request.from(
                 0,
                 FrameType.METADATA_PUSH,
@@ -172,44 +181,38 @@ internal class RSocketClient @JvmOverloads constructor(
         return Completable.complete()
     }
 
-    override fun availability(): Double = connection.availability()
-
-    override fun close(): Completable = connection.close()
-
-    override fun onClose(): Completable = connection.onClose()
-
     private fun handleRequestStream(payload: Payload): Flowable<Payload> {
         return completeOnStart.andThen(
                 Flowable.defer {
-                            val streamId = streamIdSupplier.nextStreamId()
-                            val receiver = UnicastProcessor.create<Payload>()
-                            synchronized(this) {
-                                receivers.put(streamId, receiver)
+                    val streamId = streamIdSupplier.nextStreamId()
+                    val receiver = UnicastProcessor.create<Payload>()
+                    synchronized(this) {
+                        receivers.put(streamId, receiver)
+                    }
+
+                    val first = AtomicBoolean(false)
+
+                    receiver
+                            .doOnRequest { l ->
+                                if (first.compareAndSet(false, true) && !receiver.isTerminated()) {
+                                    val requestFrame = Frame.Request.from(streamId, FrameType.REQUEST_STREAM, payload, l)
+                                    sendProcessor.onNext(requestFrame)
+                                } else if (contains(streamId)) {
+                                    sendProcessor.onNext(Frame.RequestN.from(streamId, l))
+                                }
                             }
-
-                            val first = AtomicBoolean(false)
-
-                            receiver
-                                    .doOnRequest{ l ->
-                                                if (first.compareAndSet(false, true) && !receiver.isTerminated()) {
-                                                    val requestFrame = Frame.Request.from(streamId, FrameType.REQUEST_STREAM, payload, l)
-                                                    sendProcessor.onNext(requestFrame)
-                                                } else if (contains(streamId)) {
-                                                    sendProcessor.onNext(Frame.RequestN.from(streamId, l))
-                                                }
-                                            }
-                                    .doOnError { t ->
-                                                if (contains(streamId) && !receiver.isTerminated()) {
-                                                    sendProcessor.onNext(Frame.Error.from(streamId, t))
-                                                }
-                                            }
-                                    .doOnCancel {
-                                                if (contains(streamId) && !receiver.isTerminated()) {
-                                                    sendProcessor.onNext(Frame.Cancel.from(streamId))
-                                                }
-                                            }
-                                    .doFinally { removeReceiver(streamId) }
-                        })
+                            .doOnError { t ->
+                                if (contains(streamId) && !receiver.isTerminated()) {
+                                    sendProcessor.onNext(Frame.Error.from(streamId, t))
+                                }
+                            }
+                            .doOnCancel {
+                                if (contains(streamId) && !receiver.isTerminated()) {
+                                    sendProcessor.onNext(Frame.Cancel.from(streamId))
+                                }
+                            }
+                            .doFinally { removeReceiver(streamId) }
+                })
     }
 
     private fun handleRequestResponse(payload: Payload): Single<Payload> {
@@ -228,8 +231,8 @@ internal class RSocketClient @JvmOverloads constructor(
                             sendProcessor.onNext(requestFrame)
 
                             receiver
-                                    .doOnError{ t -> sendProcessor.onNext(Frame.Error.from(streamId, t)) }
-                                    .doOnCancel{ sendProcessor.onNext(Frame.Cancel.from(streamId)) }
+                                    .doOnError { t -> sendProcessor.onNext(Frame.Error.from(streamId, t)) }
+                                    .doOnCancel { sendProcessor.onNext(Frame.Cancel.from(streamId)) }
                                     .doFinally { removeReceiver(streamId) }
                                     .firstOrError()
                         }))
@@ -302,11 +305,11 @@ internal class RSocketClient @JvmOverloads constructor(
                                                         requestFrames
                                                                 .doOnNext { sendProcessor.onNext(it) }
                                                                 .subscribe(
-                                                                {},
-                                                                { t ->
-                                                                    errorConsumer(t)
-                                                                    receiver.onError(CancellationException("Disposed"))
-                                                                })
+                                                                        {},
+                                                                        { t ->
+                                                                            errorConsumer(t)
+                                                                            receiver.onError(CancellationException("Disposed"))
+                                                                        })
                                                     } else {
                                                         sendOneFrame(Frame.RequestN.from(streamId, l))
                                                     }
@@ -330,23 +333,15 @@ internal class RSocketClient @JvmOverloads constructor(
     }
 
     private fun cleanup() {
+        errorSignal = CLOSED_CHANNEL_EXCEPTION
 
-        var subscribers: Collection<Subscriber<Payload>>
-        var publishers: Collection<LimitableRequestPublisher<*>>
-        val (subs, pubs) = synchronized(this) {
+        synchronized(this) {
+            receivers.values.forEach { cleanUpSubscriber(it) }
+            senders.values.forEach { cleanUpLimitableRequestPublisher(it) }
 
-            subscribers = receivers.values
-            publishers = senders.values
-
-            senders.clear()
             receivers.clear()
-
-            Pair(subscribers,publishers)
+            senders.clear()
         }
-
-        subs.forEach { cleanUpSubscriber(it) }
-        pubs.forEach { cleanUpLimitableRequestPublisher(it) }
-
         keepAliveSendSub?.dispose()
     }
 
@@ -485,5 +480,6 @@ internal class RSocketClient @JvmOverloads constructor(
         private val CLOSED_CHANNEL_EXCEPTION = noStacktrace(ClosedChannelException())
         private val DEFAULT_STREAM_WINDOW = 128
     }
+
     private fun <T> UnicastProcessor<T>.isTerminated(): Boolean = hasComplete() || hasThrowable()
 }
