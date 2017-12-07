@@ -15,15 +15,14 @@
  */
 package io.rsocket.android.frame;
 
-import javax.annotation.Nullable;
+import static io.rsocket.android.frame.Utils.INTEGER_BYTES;
+import static io.rsocket.android.frame.Utils.SHORT_BYTES;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.rsocket.android.Frame;
 import io.rsocket.android.FrameType;
-
-import static io.rsocket.android.frame.Utils.INTEGER_BYTES;
-import static io.rsocket.android.frame.Utils.SHORT_BYTES;
+import javax.annotation.Nullable;
 
 /**
  * Per connection frame flyweight.

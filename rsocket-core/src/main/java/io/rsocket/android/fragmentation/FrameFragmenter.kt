@@ -26,16 +26,20 @@ import io.rsocket.android.frame.FrameHeaderFlyweight
 
 class FrameFragmenter(private val mtu: Int) {
 
-    fun shouldFragment(frame: Frame): Boolean {
-        return isFragmentableFrame(frame.type) && FrameHeaderFlyweight.payloadLength(frame.content()) > mtu
-    }
+    fun shouldFragment(frame: Frame): Boolean =
+            isFragmentableFrame(frame.type) && FrameHeaderFlyweight.payloadLength(frame.content()) > mtu
 
-    private fun isFragmentableFrame(type: FrameType): Boolean {
-        when (type) {
-            FrameType.FIRE_AND_FORGET, FrameType.REQUEST_STREAM, FrameType.REQUEST_CHANNEL, FrameType.REQUEST_RESPONSE, FrameType.PAYLOAD, FrameType.NEXT_COMPLETE, FrameType.METADATA_PUSH -> return true
-            else -> return false
-        }
-    }
+    private fun isFragmentableFrame(type: FrameType): Boolean =
+            when (type) {
+                FrameType.FIRE_AND_FORGET,
+                FrameType.REQUEST_STREAM,
+                FrameType.REQUEST_CHANNEL,
+                FrameType.REQUEST_RESPONSE,
+                FrameType.PAYLOAD,
+                FrameType.NEXT_COMPLETE,
+                FrameType.METADATA_PUSH -> true
+                else -> false
+            }
 
     fun fragment(frame: Frame): Flowable<Frame> = Flowable.generate(FragmentGenerator(frame))
 
@@ -45,7 +49,10 @@ class FrameFragmenter(private val mtu: Int) {
         private val frameType: FrameType = frame.type
         private val flags: Int = frame.flags() and FrameHeaderFlyweight.FLAGS_M.inv()
         private val data: ByteBuf = FrameHeaderFlyweight.sliceFrameData(frame.content())
-        private val metadata: ByteBuf? = if (frame.hasMetadata()) FrameHeaderFlyweight.sliceFrameMetadata(frame.content()) else null
+        private val metadata: ByteBuf? =
+                if (frame.hasMetadata())
+                    FrameHeaderFlyweight.sliceFrameMetadata(frame.content())
+                else null
 
         override fun invoke(sink: Emitter<Frame>) {
             val dataLength = data.readableBytes()

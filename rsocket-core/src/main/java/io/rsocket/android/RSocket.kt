@@ -69,7 +69,5 @@ interface RSocket : Availability, Closeable {
      */
     fun metadataPush(payload: Payload): Completable
 
-    override fun availability(): Double {
-        return 0.0
-    }
+    override fun availability(): Double = 0.0
 }

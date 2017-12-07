@@ -18,8 +18,6 @@ package io.rsocket.android.plugins
 
 import io.rsocket.android.DuplexConnection
 
-/**  */
-@FunctionalInterface
 interface DuplexConnectionInterceptor : (DuplexConnectionInterceptor.Type, DuplexConnection) -> DuplexConnection {
     enum class Type {
         STREAM_ZERO,

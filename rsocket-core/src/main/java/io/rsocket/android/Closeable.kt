@@ -18,7 +18,6 @@ package io.rsocket.android
 
 import io.reactivex.Completable
 
-/**  */
 interface Closeable {
     /**
      * Close this `RSocket` upon subscribing to the returned `Publisher`
@@ -32,7 +31,8 @@ interface Closeable {
     fun close(): Completable
 
     /**
-     * Returns a `Publisher` that completes when this `RSocket` is closed. A `RSocket` can be closed by explicitly calling [.close] or when the underlying transport
+     * Returns a `Publisher` that completes when this `RSocket` is closed. A `RSocket` can be closed by explicitly calling
+     * [.close] or when the underlying transport
      * connection is closed.
      *
      * @return A `Publisher` that completes when this `RSocket` close is complete.

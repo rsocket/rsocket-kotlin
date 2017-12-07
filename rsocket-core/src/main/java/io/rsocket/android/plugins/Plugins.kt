@@ -32,7 +32,5 @@ object Plugins {
         DEFAULT.addServerPlugin(interceptor)
     }
 
-    fun defaultPlugins(): PluginRegistry {
-        return DEFAULT
-    }
+    fun defaultPlugins(): PluginRegistry = DEFAULT
 }

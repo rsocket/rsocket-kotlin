@@ -61,21 +61,20 @@ class ClientServerInputMultiplexer(val source: DuplexConnection, plugins: Plugin
         s.receive()
                 .groupBy { frame ->
                     val streamId = frame.streamId
-                    val type: Type
                     if (streamId == 0) {
                         if (frame.type === FrameType.SETUP) {
-                            type = Type.STREAM_ZERO
+                            Type.STREAM_ZERO
                         } else {
-                            type = Type.CLIENT
+                            Type.CLIENT
                         }
                     } else if (streamId and 1 == 0) {
-                        type = Type.SERVER
+                        Type.SERVER
                     } else {
-                        type = Type.CLIENT
+                        Type.CLIENT
                     }
-                    type
                 }
                 .subscribe({ group ->
+                    @Suppress("NON_EXHAUSTIVE_WHEN")
                     when (group.key) {
                         Type.STREAM_ZERO -> streamZero.onNext(group)
                         Type.SERVER -> server.onNext(group)
@@ -96,13 +95,13 @@ class ClientServerInputMultiplexer(val source: DuplexConnection, plugins: Plugin
                                            p: Flowable<Flowable<Frame>>) : DuplexConnection {
         private val debugEnabled: Boolean = LOGGER.isDebugEnabled
         private val processor = p.firstOrError()
-        override fun send(frames: Publisher<Frame>): Completable {
-            var frame = frames
+        override fun send(frame: Publisher<Frame>): Completable {
+            var frames = frame
             if (debugEnabled) {
-                frame = Flowable.fromPublisher(frame).doOnNext { f -> LOGGER.debug("sending -> " + f.toString()) }
+                frames = Flowable.fromPublisher(frames).doOnNext { f -> LOGGER.debug("sending -> " + f.toString()) }
             }
 
-            return source.send(frame)
+            return source.send(frames)
         }
 
         override fun sendOne(frame: Frame): Completable {

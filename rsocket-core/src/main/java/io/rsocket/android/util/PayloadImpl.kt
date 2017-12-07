@@ -28,7 +28,7 @@ import java.nio.charset.StandardCharsets
  */
 class PayloadImpl @JvmOverloads constructor(data: ByteBuffer,
                                             private val _metadata: ByteBuffer?,
-                                            val reusable: Boolean = true) : Payload {
+                                            private val reusable: Boolean = true) : Payload {
     private val dataStartPosition: Int = if (reusable) data.position() else 0
     private val metadataStartPosition: Int = if (reusable && _metadata != null) _metadata.position() else 0
 
@@ -69,7 +69,7 @@ class PayloadImpl @JvmOverloads constructor(data: ByteBuffer,
             return field
         }
 
-    override val metadata:ByteBuffer
+    override val metadata: ByteBuffer
         get() {
             if (_metadata == null) {
                 return Frame.NULL_BYTEBUFFER
@@ -80,9 +80,7 @@ class PayloadImpl @JvmOverloads constructor(data: ByteBuffer,
             return _metadata
         }
 
-    override fun hasMetadata(): Boolean {
-        return _metadata != null
-    }
+    override fun hasMetadata(): Boolean = _metadata != null
 
     companion object {
 
@@ -95,9 +93,7 @@ class PayloadImpl @JvmOverloads constructor(data: ByteBuffer,
          * @param data the data of the payload.
          * @return a payload.
          */
-        fun textPayload(data: String): Payload {
-            return PayloadImpl(data)
-        }
+        fun textPayload(data: String): Payload = PayloadImpl(data)
 
         /**
          * Static factory method for a text payload. Mainly looks better than "new PayloadImpl(data,
@@ -107,8 +103,6 @@ class PayloadImpl @JvmOverloads constructor(data: ByteBuffer,
          * @param metadata the metadata for the payload.
          * @return a payload.
          */
-        fun textPayload(data: String, metadata: String?): Payload {
-            return PayloadImpl(data, metadata)
-        }
+        fun textPayload(data: String, metadata: String?): Payload = PayloadImpl(data, metadata)
     }
 }

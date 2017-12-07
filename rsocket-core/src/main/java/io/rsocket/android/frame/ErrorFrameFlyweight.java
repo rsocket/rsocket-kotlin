@@ -15,12 +15,12 @@
  */
 package io.rsocket.android.frame;
 
+import static io.rsocket.android.frame.Utils.INTEGER_BYTES;
+
 import io.netty.buffer.ByteBuf;
 import io.rsocket.android.FrameType;
 import io.rsocket.android.exceptions.RSocketException;
 import java.nio.charset.StandardCharsets;
-
-import static io.rsocket.android.frame.Utils.INTEGER_BYTES;
 
 public class ErrorFrameFlyweight {
 

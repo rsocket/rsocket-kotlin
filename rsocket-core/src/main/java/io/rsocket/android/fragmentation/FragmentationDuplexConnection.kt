@@ -29,13 +29,11 @@ class FragmentationDuplexConnection(private val source: DuplexConnection, mtu: I
     private val frameReassemblers = IntObjectHashMap<FrameReassembler>()
     private val frameFragmenter: FrameFragmenter = FrameFragmenter(mtu)
 
-    override fun availability(): Double {
-        return source.availability()
-    }
+    override fun availability(): Double = source.availability()
 
-    override fun send(frames: Publisher<Frame>): Completable {
-        return Flowable.fromPublisher(frames)
-                .concatMap({ frame -> sendOne(frame).toFlowable<Void>() })
+    override fun send(frame: Publisher<Frame>): Completable {
+        return Flowable.fromPublisher(frame)
+                .concatMap { f -> sendOne(f).toFlowable<Void>() }
                 .ignoreElements()
     }
 
@@ -47,55 +45,48 @@ class FragmentationDuplexConnection(private val source: DuplexConnection, mtu: I
         }
     }
 
-    override fun receive(): Flowable<Frame> {
-        return source
-                .receive()
-                .concatMap { frame ->
-                    if (FrameHeaderFlyweight.FLAGS_F == frame.flags() and FrameHeaderFlyweight.FLAGS_F) {
-                        val frameReassembler = getFrameReassembler(frame)
-                        frameReassembler.append(frame)
-                        return@concatMap Flowable.empty<Frame>()
-                    } else if (frameReassemblersContain(frame.streamId)) {
-                        val frameReassembler = removeFrameReassembler(frame.streamId)
-                        frameReassembler.append(frame)
-                        val reassembled = frameReassembler.reassemble()
-                        return@concatMap Flowable.just<Frame>(reassembled)
-                    } else {
-                        return@concatMap Flowable.just<Frame>(frame)
-                    }
+    override fun receive(): Flowable<Frame> = source
+            .receive()
+            .concatMap { frame ->
+                if (FrameHeaderFlyweight.FLAGS_F == frame.flags() and FrameHeaderFlyweight.FLAGS_F) {
+                    val frameReassembler = getFrameReassembler(frame)
+                    frameReassembler.append(frame)
+                    Flowable.empty<Frame>()
+                } else if (frameReassemblersContain(frame.streamId)) {
+                    val frameReassembler = removeFrameReassembler(frame.streamId)
+                    frameReassembler.append(frame)
+                    val reassembled = frameReassembler.reassemble()
+                    Flowable.just<Frame>(reassembled)
+                } else {
+                    Flowable.just<Frame>(frame)
                 }
-    }
+            }
 
-    override fun close(): Completable {
-        return source.close()
-    }
+    override fun close(): Completable = source.close()
 
-    @Synchronized private fun getFrameReassembler(frame: Frame): FrameReassembler =
-         frameReassemblers.getOrPut(frame.streamId, { FrameReassembler(frame) })
+    @Synchronized
+    private fun getFrameReassembler(frame: Frame): FrameReassembler =
+            frameReassemblers.getOrPut(frame.streamId, { FrameReassembler(frame) })
 
 
-    @Synchronized private fun removeFrameReassembler(streamId: Int): FrameReassembler {
-        return frameReassemblers.remove(streamId)
-    }
+    @Synchronized
+    private fun removeFrameReassembler(streamId: Int): FrameReassembler =
+            frameReassemblers.remove(streamId)
 
-    @Synchronized private fun frameReassemblersContain(streamId: Int): Boolean {
-        return frameReassemblers.containsKey(streamId)
-    }
+    @Synchronized
+    private fun frameReassemblersContain(streamId: Int): Boolean =
+            frameReassemblers.containsKey(streamId)
 
-    override fun onClose(): Completable {
-        return source
-                .onClose()
-                .doFinally {
-                    synchronized(this@FragmentationDuplexConnection) {
-                        frameReassemblers.values.forEach { it.dispose() }
-
-                        frameReassemblers.clear()
-                    }
+    override fun onClose(): Completable = source
+            .onClose()
+            .doFinally {
+                synchronized(this) {
+                    frameReassemblers.values.forEach { it.dispose() }
+                    frameReassemblers.clear()
                 }
-    }
+            }
 
     companion object {
-
         val defaultMTU: Int
             get() = if (java.lang.Boolean.getBoolean("io.rsocket.fragmentation.enable")) {
                 Integer.getInteger("io.rsocket.fragmentation.mtu", 1024)!!

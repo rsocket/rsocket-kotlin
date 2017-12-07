@@ -54,7 +54,14 @@ internal class RSocketClient @JvmOverloads constructor(
                          tickPeriod: Duration = Duration.ZERO,
                          ackTimeout: Duration = Duration.ZERO,
                          missedAcks: Int = 0)
-            : this(connection, errorConsumer, streamIdSupplier, DEFAULT_STREAM_WINDOW, tickPeriod, ackTimeout, missedAcks)
+            : this(
+            connection,
+            errorConsumer,
+            streamIdSupplier,
+            DEFAULT_STREAM_WINDOW,
+            tickPeriod,
+            ackTimeout,
+            missedAcks)
 
     private val started: PublishProcessor<Void> = PublishProcessor.create()
     private val completeOnStart = started.ignoreElements()
@@ -69,7 +76,8 @@ internal class RSocketClient @JvmOverloads constructor(
             .toSerialized()
 
     private var keepAliveSendSub: Disposable? = null
-    @Volatile private var timeLastTickSentMs: Long = 0
+    @Volatile
+    private var timeLastTickSentMs: Long = 0
 
     init {
         // DO NOT Change the order here. The Send processor must be subscribed to before receiving
@@ -78,8 +86,8 @@ internal class RSocketClient @JvmOverloads constructor(
 
             this.keepAliveSendSub = completeOnStart
                     .andThen(Flowable.interval(tickPeriod.toMillis, TimeUnit.MILLISECONDS))
-                    .doOnSubscribe({ _ -> timeLastTickSentMs = System.currentTimeMillis() })
-                    .concatMap({ _ -> sendKeepAlive(ackTimeoutMs, missedAcks).toFlowable<Long>() })
+                    .doOnSubscribe { _ -> timeLastTickSentMs = System.currentTimeMillis() }
+                    .concatMap { _ -> sendKeepAlive(ackTimeoutMs, missedAcks).toFlowable<Long>() }
                     .subscribe({},
                             { t: Throwable ->
                                 errorConsumer(t)
@@ -161,9 +169,9 @@ internal class RSocketClient @JvmOverloads constructor(
             ).rebatchRequests(streamDemandLimit)
 
     override fun metadataPush(payload: Payload): Completable =
-        errorSignal
-                ?.let { Completable.error(it) }
-                ?: handleMetadataPush(payload)
+            errorSignal
+                    ?.let { Completable.error(it) }
+                    ?: handleMetadataPush(payload)
 
     override fun availability(): Double = connection.availability()
 
@@ -345,23 +353,23 @@ internal class RSocketClient @JvmOverloads constructor(
         keepAliveSendSub?.dispose()
     }
 
-    @Synchronized private fun cleanUpLimitableRequestPublisher(
+    @Synchronized
+    private fun cleanUpLimitableRequestPublisher(
             limitableRequestPublisher: LimitableRequestPublisher<*>) {
         try {
             limitableRequestPublisher.cancel()
         } catch (t: Throwable) {
             errorConsumer(t)
         }
-
     }
 
-    @Synchronized private fun cleanUpSubscriber(subscriber: Subscriber<*>) {
+    @Synchronized
+    private fun cleanUpSubscriber(subscriber: Subscriber<*>) {
         try {
             subscriber.onError(CLOSED_CHANNEL_EXCEPTION)
         } catch (t: Throwable) {
             errorConsumer(t)
         }
-
     }
 
     private fun handleIncomingFrames(frame: Frame) {
@@ -390,7 +398,7 @@ internal class RSocketClient @JvmOverloads constructor(
                 // Ignore unknown frames. Throwing an error will close the socket.
                 errorConsumer(
                         IllegalStateException(
-                                "Client received supported frame on stream 0: " + frame.toString()))
+                                "Client received supported frame on stream 0: $frame"))
         }
     }
 
@@ -439,7 +447,7 @@ internal class RSocketClient @JvmOverloads constructor(
                     }
                 }
                 else -> throw IllegalStateException(
-                        "Client received supported frame on stream " + streamId + ": " + frame.toString())
+                        "Client received unsupported frame on stream $streamId : $frame")
             }
         }
     }
@@ -452,27 +460,23 @@ internal class RSocketClient @JvmOverloads constructor(
                 val errorMessage = frame.dataUtf8
 
                 throw IllegalStateException(
-                        "Client received error for non-existent stream: "
-                                + streamId
-                                + " Message: "
-                                + errorMessage)
+                        "Client received error for non-existent stream: $streamId Message: $errorMessage")
             } else {
                 throw IllegalStateException(
-                        "Client received message for non-existent stream: "
-                                + streamId
-                                + ", frame type: "
-                                + type)
+                        "Client received message for non-existent stream: $streamId, frame type: $type")
             }
         }
         // receiving a frame after a given stream has been cancelled/completed,
         // so ignore (cancellation is async so there is a race condition)
     }
 
-    @Synchronized private fun removeReceiver(streamId: Int) {
+    @Synchronized
+    private fun removeReceiver(streamId: Int) {
         receivers.remove(streamId)
     }
 
-    @Synchronized private fun removeSender(streamId: Int) {
+    @Synchronized
+    private fun removeSender(streamId: Int) {
         senders.remove(streamId)
     }
 

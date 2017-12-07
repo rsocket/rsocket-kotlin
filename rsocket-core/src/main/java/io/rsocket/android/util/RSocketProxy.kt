@@ -25,35 +25,19 @@ import org.reactivestreams.Publisher
 /** Wrapper/Proxy for a RSocket. This is useful when we want to override a specific method.  */
 open class RSocketProxy(protected val source: RSocket) : RSocket {
 
-    override fun fireAndForget(payload: Payload): Completable {
-        return source.fireAndForget(payload)
-    }
+    override fun fireAndForget(payload: Payload): Completable = source.fireAndForget(payload)
 
-    override fun requestResponse(payload: Payload): Single<Payload> {
-        return source.requestResponse(payload)
-    }
+    override fun requestResponse(payload: Payload): Single<Payload> = source.requestResponse(payload)
 
-    override fun requestStream(payload: Payload): Flowable<Payload> {
-        return source.requestStream(payload)
-    }
+    override fun requestStream(payload: Payload): Flowable<Payload> = source.requestStream(payload)
 
-    override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> {
-        return source.requestChannel(payloads)
-    }
+    override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> = source.requestChannel(payloads)
 
-    override fun metadataPush(payload: Payload): Completable {
-        return source.metadataPush(payload)
-    }
+    override fun metadataPush(payload: Payload): Completable = source.metadataPush(payload)
 
-    override fun availability(): Double {
-        return source.availability()
-    }
+    override fun availability(): Double = source.availability()
 
-    override fun close(): Completable {
-        return source.close()
-    }
+    override fun close(): Completable = source.close()
 
-    override fun onClose(): Completable {
-        return source.onClose()
-    }
+    override fun onClose(): Completable = source.onClose()
 }

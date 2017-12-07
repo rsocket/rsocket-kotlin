@@ -46,9 +46,7 @@ interface DuplexConnection : Availability, Closeable {
      * @return `Publisher` that completes when the frame is written on the connection
      * successfully and errors when it fails.
      */
-     fun sendOne(frame: Frame): Completable {
-        return send(Flowable.just(frame))
-    }
+     fun sendOne(frame: Frame): Completable = send(Flowable.just(frame))
 
     /**
      * Returns a stream of all `Frame`s received on this connection.

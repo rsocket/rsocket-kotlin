@@ -1,24 +1,67 @@
-####RSOCKET-ANDROID
+#### RSOCKET-ANDROID
 
-Ongoing effort to make [rsocket-java](https://github.com/rsocket/rsocket-java) available pre java8. This project focus is client-server communication use case, and it complements original one - intended 
-mainly for server-server. The goal is to make rsocket practically useful for native mobile (support android 4.4+) while interacting with jvm based backends (primary platform is `Spring Boot`). Backend is assumed to run original `rsocket-java`.  Interop with `rsocket` implementations on other tech stacks is not a goal of this project.
+This is an implementation of [RSocket](http://rsocket.io/) - binary application protocol bringing [Reactive-Streams](http://www.reactive-streams.org/) semantics   
+for network communications. 
+`Kotlin` & `RxJava2` backport of [RSocket-java](https://github.com/rsocket/rsocket-java) intended for pre java8 runtimes.   
+Relies on `OkHttp` as WebSockets transport. Target platform is Android (tested on API level 4.4+)  
+
+Supports 4 interaction models: fire-and-forget, request-response, request-stream, request-channel.  
    
+  ##### USAGE
+  Sample mobile application for verifying interactions is available [here](https://github.com/mostroverkhov/rsocket-backport-demo)  
+  
+  ######Client
+  Client initiates new `Connections`. Because protocol is duplex, each side of connection has  
+  `Requester` RSocket for making requests to peer, and `Responder` RSocket to handle  
+   requests from peer. `Responder` RSocket is optional for Client.   
+  
+  ```
+  val rSocket: Single<RSocket> = RSocketFactory               // Requester RSocket  
+              .connect()
+              .acceptor { -> handler() }                      // Optional responder RSocket  
+              .transport(OkhttpWebsocketClientTransport       // WebSockets transport
+                      .create(protocol, host, port))
+              .start()
+              
+              private fun handler(): RSocket {
+                      return object : AbstractRSocket() {
+                          override fun fireAndForget(payload: Payload): Completable {
+                              return Completable.fromAction {Log.d("tag", "fire-n-forget from server")}
+                          }
+                      }
+                  }
+   ```
+   Messages for all 4 interactions are represented as `Payload` of binary (nio `ByteBuffer`) data   
+   and metadata (to/from UTF8-string utility methods are available)
+        
+   Request-stream  
+   ```
+   rSocket.flatMapPublisher { 
+      it.requestStream(PayloadImpl("req-stream ping")) 
+    }.subscribe { responsePayload -> Log.d("request-stream", responsePayload.getDataUtf8)}
+   ```
    
-   Done so far (to make runnable POC)
+   Request-channel  
+   ```
+      rSocket.flatMapPublisher { 
+         it.requestChannel(Flowable.just(
+                PayloadImpl("req-channel1"),
+                PayloadImpl("req-channel2"))) 
+       }.subscribe { responsePayload -> Log.d("request-stream", responsePayload.getDataUtf8)}
+   ```
+   ######Server
+   Server accepts new `Connections` from peers. Same as `Client` it has `Requester` and `Responder` RSockets.  
+   As this project does not provide server implementation, use [RSocket-java](https://github.com/rsocket/rsocket-java) with `Netty` based `WebSockets`  
+   transport. Check its [examples](https://github.com/rsocket/rsocket-java/tree/1.0.x/rsocket-examples) folder or sample [app](https://github.com/mostroverkhov/rsocket-backport-demo/tree/master/rsocket-server-netty) minimalistic server 
    
-   * Get rid of all modules except rsocket-core
-   * Convert sources to kotlin (intellij semi auto converter helped a lot)
-   * Replace jre8 specific types with kotlin or custom counterparts
-   * Replace reactor types with rxjava2 ones
-   * Added throw-away OkHttp based Websockets transport
-   * Sample server running rsocket-java, and [mobile app](https://github.com/mostroverkhov/rsocket-backport-demo) running rsocket-backport to verify supported interactions: 
-     req-reply, req-stream, fire-and-forget. req-channel is not ported for now as there is no obvious way to convert it 
-     to rxjava2 with minimal efforts
-       
-   TODO
+   ##### Build and binaries
    
-   * Implement req-channel
-   * Resurrect tests
-   * Come up with Websockets transport with capabilities similar to Netty one, and minimal dependencies
-   * Introduce rpc system assuming jvm only environment - it should be approachable for regular developer to use/extend 
-   * at least minimal integration with Spring Boot    
+   The project is not released yet, so snapshots have to be installed locally with `./gradlew install`  
+   This will produce 2 artifacts:   
+
+```groovy
+    dependencies {  
+        compile 'io.rsocket:rsocket-android-core:0.9-SNAPSHOT'    
+        compile 'io.rsocket:rsocket-transport-okhttp:0.9-SNAPSHOT'         
+    }    
+```

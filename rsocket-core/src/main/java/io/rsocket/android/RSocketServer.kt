@@ -37,7 +37,7 @@ import org.reactivestreams.Subscription
 
 
 /** Server side RSocket. Receives [Frame]s from a [RSocketClient]  */
- internal class RSocketServer(
+internal class RSocketServer(
         private val connection: DuplexConnection,
         private val requestHandler: RSocket,
         private val errorConsumer: (Throwable) -> Unit,
@@ -129,7 +129,6 @@ import org.reactivestreams.Subscription
         } catch (t: Throwable) {
             Single.error(t)
         }
-
     }
 
     override fun requestStream(payload: Payload): Flowable<Payload> {
@@ -138,7 +137,6 @@ import org.reactivestreams.Subscription
         } catch (t: Throwable) {
             Flowable.error(t)
         }
-
     }
 
     override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> {
@@ -149,7 +147,6 @@ import org.reactivestreams.Subscription
         } catch (t: Throwable) {
             Flowable.error(t)
         }
-
     }
 
     override fun metadataPush(payload: Payload): Completable {
@@ -158,7 +155,6 @@ import org.reactivestreams.Subscription
         } catch (t: Throwable) {
             Completable.error(t)
         }
-
     }
 
     override fun close(): Completable = connection.close()
@@ -172,12 +168,14 @@ import org.reactivestreams.Subscription
         requestHandler.close().subscribe({}, errorConsumer)
     }
 
-    @Synchronized private fun cleanUpSendingSubscriptions() {
+    @Synchronized
+    private fun cleanUpSendingSubscriptions() {
         sendingSubscriptions.values.forEach { it.cancel() }
         sendingSubscriptions.clear()
     }
 
-    @Synchronized private fun cleanUpChannelProcessors() {
+    @Synchronized
+    private fun cleanUpChannelProcessors() {
         channelProcessors.values.forEach { it.onComplete() }
         channelProcessors.clear()
     }
@@ -248,15 +246,13 @@ import org.reactivestreams.Subscription
     private fun handleRequestResponse(streamId: Int, response: Single<Payload>): Completable {
         return response
                 .doOnSubscribe { d -> addSubscription(streamId, DisposableSubscription.disposable(d)) }
-                .map(
-                        { payload ->
-                            var flags = FLAGS_C
-                            if (payload.hasMetadata()) {
-                                flags = Frame.setFlag(flags, FLAGS_M)
-                            }
-                            val frame = Frame.PayloadFrame.from(streamId, FrameType.NEXT_COMPLETE, payload, flags)
-                            frame
-                        })
+                .map { payload ->
+                    var flags = FLAGS_C
+                    if (payload.hasMetadata()) {
+                        flags = Frame.setFlag(flags, FLAGS_M)
+                    }
+                    Frame.PayloadFrame.from(streamId, FrameType.NEXT_COMPLETE, payload, flags)
+                }
                 .doOnError(errorConsumer)
                 .onErrorResumeNext { t -> Single.just(Frame.Error.from(streamId, t)) }
                 .doAfterSuccess { sendProcessor.onNext(it) }
@@ -266,23 +262,19 @@ import org.reactivestreams.Subscription
 
     private fun handleStream(streamId: Int, response: Flowable<Payload>, initialRequestN: Int): Completable {
         response
-                .map({ payload ->
-                    val frame = Frame.PayloadFrame.from(streamId, FrameType.NEXT, payload)
-                    frame
-                })
-                .compose(
-                        { frameFlux ->
-                            val frames = LimitableRequestPublisher.wrap(frameFlux)
-                            synchronized(this) {
-                                sendingSubscriptions.put(streamId, frames)
-                            }
-                            frames.increaseRequestLimit(initialRequestN.toLong())
-                            frames
-                        })
+                .map { payload -> Frame.PayloadFrame.from(streamId, FrameType.NEXT, payload) }
+                .compose { frameFlux ->
+                    val frames = LimitableRequestPublisher.wrap(frameFlux)
+                    synchronized(this) {
+                        sendingSubscriptions.put(streamId, frames)
+                    }
+                    frames.increaseRequestLimit(initialRequestN.toLong())
+                    frames
+                }
                 .concatWith(Flowable.just(Frame.PayloadFrame.from(streamId, FrameType.COMPLETE)))
                 .onErrorResumeNext { t: Throwable -> Flowable.just(Frame.Error.from(streamId, t)) }
                 .doFinally { removeSubscription(streamId) }
-                .subscribe({ sendProcessor.onNext(it) })
+                .subscribe { sendProcessor.onNext(it) }
 
         return Completable.complete()
     }
@@ -292,12 +284,9 @@ import org.reactivestreams.Subscription
         addChannelProcessor(streamId, frames)
 
         val payloads = frames
-                .doOnCancel(
-                        { sendProcessor.onNext(Frame.Cancel.from(streamId)) })
-                .doOnError(
-                        { t -> sendProcessor.onNext(Frame.Error.from(streamId, t)) })
-                .doOnRequest(
-                        { l -> sendProcessor.onNext(Frame.RequestN.from(streamId, l)) })
+                .doOnCancel { sendProcessor.onNext(Frame.Cancel.from(streamId)) }
+                .doOnError { t -> sendProcessor.onNext(Frame.Error.from(streamId, t)) }
+                .doOnRequest { l -> sendProcessor.onNext(Frame.RequestN.from(streamId, l)) }
                 .doFinally { removeChannelProcessor(streamId) }
 
         // not chained, as the payload should be enqueued in the Unicast processor before this method
@@ -340,25 +329,31 @@ import org.reactivestreams.Subscription
         return Completable.complete()
     }
 
-    @Synchronized private fun addSubscription(streamId: Int, subscription: Subscription) {
+    @Synchronized
+    private fun addSubscription(streamId: Int, subscription: Subscription) {
         sendingSubscriptions.put(streamId, subscription)
     }
 
-    @Synchronized private fun getSubscription(streamId: Int): Subscription? =
+    @Synchronized
+    private fun getSubscription(streamId: Int): Subscription? =
             sendingSubscriptions.get(streamId)
 
-    @Synchronized private fun removeSubscription(streamId: Int) {
+    @Synchronized
+    private fun removeSubscription(streamId: Int) {
         sendingSubscriptions.remove(streamId)
     }
 
-    @Synchronized private fun addChannelProcessor(streamId: Int, processor: UnicastProcessor<Payload>) {
+    @Synchronized
+    private fun addChannelProcessor(streamId: Int, processor: UnicastProcessor<Payload>) {
         channelProcessors.put(streamId, processor)
     }
 
-    @Synchronized private fun getChannelProcessor(streamId: Int): UnicastProcessor<Payload>? =
+    @Synchronized
+    private fun getChannelProcessor(streamId: Int): UnicastProcessor<Payload>? =
             channelProcessors.get(streamId)
 
-    @Synchronized private fun removeChannelProcessor(streamId: Int) {
+    @Synchronized
+    private fun removeChannelProcessor(streamId: Int) {
         channelProcessors.remove(streamId)
     }
 
