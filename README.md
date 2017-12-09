@@ -9,7 +9,7 @@ Supports 4 interaction models: fire-and-forget, request-response, request-stream
    
 ## Build and Binaries
 
-<a href='https://travis-ci.org/rsocket/rsocket-java/builds'><img src='https://travis-ci.org/rsocket/rsocket-java.svg?branch=1.0.x'></a>
+<a href='https://travis-ci.org/rsocket/rsocket-android/builds'><img src='https://travis-ci.org/rsocket/rsocket-android.svg?branch=master'></a>
    
       
    The project is not released yet, so snapshots have to be installed locally with `./gradlew install`  
