@@ -12,8 +12,13 @@ Supports 4 interaction models: fire-and-forget, request-response, request-stream
 <a href='https://travis-ci.org/rsocket/rsocket-android/builds'><img src='https://travis-ci.org/rsocket/rsocket-android.svg?branch=master'></a>
    
       
-   The project is not released yet, so snapshots have to be installed locally with `./gradlew install`  
-   This will produce 2 artifacts:   
+   The project is not released yet, snapshots are available on Bintray
+   ```groovy
+    repositories {
+        maven { url 'https://oss.jfrog.org/libs-snapshot' }
+    }
+```    
+
 
 ```groovy
     dependencies {  
