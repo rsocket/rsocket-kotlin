@@ -1,9 +1,6 @@
 dependencies {
     compile project(":rsocket-android-core")
-    compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.9.0'
-    // https://mvnrepository.com/artifact/io.netty/netty-buffer
-    compile group: 'io.netty', name: 'netty-buffer', version: '4.1.16.Final'
-
+    compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.9.1'
 }
 
 sourceCompatibility = "1.7"
