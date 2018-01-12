@@ -38,7 +38,7 @@ subprojects {
     apply plugin: 'com.jfrog.bintray'
     apply plugin: 'com.jfrog.artifactory'
 
-    group = 'io.rsocket'
+    group = 'io.rsocket.android'
     version = mavenversion
 
     compileJava {
