@@ -1,6 +1,6 @@
 dependencies {
     compile project(":rsocket-android-core")
-    compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.9.1'
+    compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.10.0'
 }
 
 sourceCompatibility = "1.7"

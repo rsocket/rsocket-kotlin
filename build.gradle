@@ -15,20 +15,11 @@
  */
 
 plugins {
-    id "com.gradle.build-scan" version "1.9"
+    id "com.gradle.build-scan" version "1.12.1"
     id 'com.jfrog.bintray' version '1.7.3'
-    id 'com.github.sherter.google-java-format' version '0.6'
-    id 'com.jfrog.artifactory' version '4.5.2'
-    id "org.jetbrains.kotlin.jvm" version "1.1.51"
+    id 'com.jfrog.artifactory' version '4.7.1'
+    id "org.jetbrains.kotlin.jvm" version "1.2.41"
 }
-
-repositories {
-    jcenter()
-}
-
-description = 'RSocket-Android: stream oriented messaging passing with Reactive Stream semantics, for Android'
-
-buildScan { licenseAgreementUrl = 'https://gradle.com/terms-of-service'; licenseAgree = 'yes' }
 
 subprojects {
     apply plugin: 'java'
@@ -39,15 +30,8 @@ subprojects {
     apply plugin: 'com.jfrog.artifactory'
 
     group = 'io.rsocket.android'
-    version = mavenversion
+    version = '0.9-SNAPSHOT'
 
-    compileJava {
-        sourceCompatibility = 1.7
-        targetCompatibility = 1.7
-        options.compilerArgs << "-Xlint:deprecation" // << "-Xlint:unchecked"
-    }
-
-    // custom tasks for creating source/javadoc jars
     task sourcesJar(type: Jar, dependsOn: classes) {
         classifier = 'sources'
         from sourceSets.main.allSource
@@ -66,22 +50,19 @@ subprojects {
     }
 
     repositories {
-        maven { url 'http://repo.spring.io/milestone' }
-        maven { url 'https://oss.jfrog.org/libs-snapshot' }
         jcenter()
-        mavenCentral()
     }
 
     dependencies {
-        compile "io.netty:netty-buffer:4.1.19.Final"
+        compile "io.netty:netty-buffer:4.1.24.Final"
         compile "org.reactivestreams:reactive-streams:1.0.2"
         compile "org.slf4j:slf4j-api:1.7.25"
         compile "com.google.code.findbugs:jsr305:3.0.2"
-        compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:1.1.61"
-        compile 'io.reactivex.rxjava2:rxjava:2.1.8'
+        compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:1.2.41"
+        compile 'io.reactivex.rxjava2:rxjava:2.1.13'
 
         testCompile "junit:junit:4.12"
-        testCompile "org.mockito:mockito-core:2.13.0"
+        testCompile "org.mockito:mockito-core:2.18.3"
         testCompile "org.hamcrest:hamcrest-library:1.3"
         testCompile "org.slf4j:slf4j-log4j12:1.7.25"
     }
@@ -107,8 +88,10 @@ subprojects {
             contextUrl = 'https://oss.jfrog.org'
 
             repository {
-                repoKey = 'oss-snapshot-local' //The Artifactory repository key to publish to
-                //when using oss.jfrog.org the credentials are from Bintray. For local build we expect them to be found in
+                repoKey = 'oss-snapshot-local'
+                //The Artifactory repository key to publish to
+                //when using oss.jfrog.org the credentials are from Bintray.
+                // For local build we expect them to be found in
                 //~/.gradle/gradle.properties, otherwise to be set in the build server
                 // Conditionalize for the users who don't have bintray credentials setup
                 if (project.hasProperty('bintrayUser')) {
@@ -167,4 +150,15 @@ subprojects {
             }
         }
     }
+}
+
+repositories {
+    jcenter()
+}
+
+description = 'RSocket-Android: stream oriented messaging passing with Reactive Stream semantics, for Android'
+
+buildScan {
+    licenseAgreementUrl = 'https://gradle.com/terms-of-service'
+    licenseAgree = 'yes'
 }
