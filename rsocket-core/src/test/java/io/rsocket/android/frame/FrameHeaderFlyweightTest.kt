@@ -75,7 +75,7 @@ class FrameHeaderFlyweightTest {
     @Test
     fun dataLength() {
         val data = Unpooled.wrappedBuffer(byteArrayOf(1, 2, 3, 4, 5))
-        val length = FrameHeaderFlyweight.encode(
+        FrameHeaderFlyweight.encode(
                 byteBuf, 0, FLAGS_M, FrameType.SETUP, Unpooled.EMPTY_BUFFER, data)
         assertEquals(
                 5,

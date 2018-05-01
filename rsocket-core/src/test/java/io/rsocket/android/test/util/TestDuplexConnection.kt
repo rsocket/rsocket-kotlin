@@ -54,9 +54,9 @@ class TestDuplexConnection : DuplexConnection {
         }
         val subscriber = TestSubscriber.create<Frame>(initialSendRequestN.toLong())
         Flowable.fromPublisher(frame)
-                .doOnNext { frame ->
-                    sent.offer(frame)
-                    sentPublisher.onNext(frame)
+                .doOnNext { f ->
+                    sent.offer(f)
+                    sentPublisher.onNext(f)
                 }
                 .doOnError { throwable -> logger.error("Error in send stream on test connection.", throwable) }
                 .subscribe(subscriber)

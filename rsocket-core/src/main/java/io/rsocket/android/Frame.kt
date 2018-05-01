@@ -236,10 +236,7 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
                 Unpooled.wrappedBuffer(payload.metadata)
             else
                 Unpooled.EMPTY_BUFFER
-            val data = if (payload.data != null)
-                Unpooled.wrappedBuffer(payload.data)
-            else
-                Unpooled.EMPTY_BUFFER
+            val data = Unpooled.wrappedBuffer(payload.data)
 
             val frame = RECYCLER.get()
             frame.content = ByteBufAllocator.DEFAULT.buffer(

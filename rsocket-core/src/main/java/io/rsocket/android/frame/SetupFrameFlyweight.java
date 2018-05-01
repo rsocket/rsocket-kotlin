@@ -29,10 +29,9 @@ public class SetupFrameFlyweight {
 
   public static final int FLAGS_RESUME_ENABLE = 0b00_1000_0000;
   public static final int FLAGS_WILL_HONOR_LEASE = 0b00_0100_0000;
-  public static final int FLAGS_STRICT_INTERPRETATION = 0b00_0010_0000;
 
   public static final int VALID_FLAGS =
-      FLAGS_RESUME_ENABLE | FLAGS_WILL_HONOR_LEASE | FLAGS_STRICT_INTERPRETATION | FLAGS_M;
+      FLAGS_RESUME_ENABLE | FLAGS_WILL_HONOR_LEASE | FLAGS_M;
 
   public static final int CURRENT_VERSION = VersionFlyweight.encode(1, 0);
 

@@ -33,6 +33,8 @@ import io.rsocket.android.util.PayloadImpl
 
 /** Factory for creating RSocket clients and servers.  */
 object RSocketFactory {
+
+    private const val DEFAULT_STREAM_DEMAND_LIMIT = 128
     /**
      * Creates a factory that establishes client connections to other RSockets.
      *
@@ -72,7 +74,7 @@ object RSocketFactory {
         private var errorConsumer: (Throwable) -> Unit = { it.printStackTrace() }
         private var mtu = 0
         private val plugins = PluginRegistry(Plugins.defaultPlugins())
-        private val flags = SetupFrameFlyweight.FLAGS_STRICT_INTERPRETATION
+        private var flags = 0
 
         private var setupPayload: Payload = PayloadImpl.EMPTY
 
@@ -83,7 +85,7 @@ object RSocketFactory {
         private var metadataMimeType = "application/binary"
         private var dataMimeType = "application/binary"
 
-        private var streamDemandLimit = 128
+        private var streamDemandLimit = DEFAULT_STREAM_DEMAND_LIMIT
 
         fun addConnectionPlugin(interceptor: DuplexConnectionInterceptor): ClientRSocketFactory {
             plugins.addConnectionPlugin(interceptor)
@@ -237,7 +239,7 @@ object RSocketFactory {
         private var errorConsumer: (Throwable) -> Unit = { it.printStackTrace() }
         private var mtu = 0
         private val plugins = PluginRegistry(Plugins.defaultPlugins())
-        private var streamWindow = 20
+        private var streamDemandLimit = DEFAULT_STREAM_DEMAND_LIMIT
 
         fun addConnectionPlugin(interceptor: DuplexConnectionInterceptor): ServerRSocketFactory {
             plugins.addConnectionPlugin(interceptor)
@@ -272,8 +274,8 @@ object RSocketFactory {
             return this
         }
 
-        fun streamWindow(streamWindow: Int): ServerRSocketFactory {
-            this.streamWindow = streamWindow
+        fun streamDemandLimit(streamDemandLimit: Int): ServerRSocketFactory {
+            this.streamDemandLimit = streamDemandLimit
             return this
         }
 
@@ -318,7 +320,7 @@ object RSocketFactory {
                         multiplexer.asServerConnection(),
                         errorConsumer,
                         StreamIdSupplier.serverSupplier(),
-                        streamWindow)
+                        streamDemandLimit)
 
                 val wrappedRSocketClient = Single
                         .just(rSocketClient)
@@ -334,9 +336,9 @@ object RSocketFactory {
                                 multiplexer.asClientConnection(),
                                 handler,
                                 errorConsumer,
-                                streamWindow)
+                                streamDemandLimit)
                         }
-                        .toCompletable()
+                        .ignoreElement()
             }
         }
     }

@@ -16,15 +16,15 @@
 
 plugins {
     id "com.gradle.build-scan" version "1.12.1"
-    id 'com.jfrog.bintray' version '1.7.3'
-    id 'com.jfrog.artifactory' version '4.7.1'
-    id "org.jetbrains.kotlin.jvm" version "1.2.41"
+    id 'com.jfrog.bintray' version '1.7.3' apply false
+    id 'com.jfrog.artifactory' version '4.7.1' apply false
+    id "org.jetbrains.kotlin.jvm" version "1.2.41" apply false
 }
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'java-library'
     apply plugin: 'kotlin'
-    apply plugin: 'maven'
     apply plugin: 'maven-publish'
     apply plugin: 'com.jfrog.bintray'
     apply plugin: 'com.jfrog.artifactory'
@@ -54,17 +54,17 @@ subprojects {
     }
 
     dependencies {
-        compile "io.netty:netty-buffer:4.1.24.Final"
-        compile "org.reactivestreams:reactive-streams:1.0.2"
-        compile "org.slf4j:slf4j-api:1.7.25"
-        compile "com.google.code.findbugs:jsr305:3.0.2"
-        compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:1.2.41"
-        compile 'io.reactivex.rxjava2:rxjava:2.1.13'
+        api "io.netty:netty-buffer:4.1.24.Final"
+        api "org.reactivestreams:reactive-streams:1.0.2"
+        api "com.google.code.findbugs:jsr305:3.0.2"
+        api "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.2.41"
+        api 'io.reactivex.rxjava2:rxjava:2.1.13'
+        api "org.slf4j:slf4j-api:1.7.25"
 
-        testCompile "junit:junit:4.12"
-        testCompile "org.mockito:mockito-core:2.18.3"
-        testCompile "org.hamcrest:hamcrest-library:1.3"
-        testCompile "org.slf4j:slf4j-log4j12:1.7.25"
+        testImplementation "junit:junit:4.12"
+        testImplementation "org.mockito:mockito-core:2.18.3"
+        testImplementation "org.hamcrest:hamcrest-library:1.3"
+        testImplementation "org.slf4j:slf4j-log4j12:1.7.25"
     }
 
     publishing {

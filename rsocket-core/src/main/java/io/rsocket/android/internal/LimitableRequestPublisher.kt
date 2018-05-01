@@ -24,9 +24,8 @@ import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 
-/**  */
 class LimitableRequestPublisher<T> private constructor(private val source: Publisher<T>)
-    : Flowable<T>(), Subscription,Disposable {
+    : Flowable<T>(), Subscription, Disposable {
 
     private val canceled: AtomicBoolean = AtomicBoolean()
     private var internalRequested: Long = 0
