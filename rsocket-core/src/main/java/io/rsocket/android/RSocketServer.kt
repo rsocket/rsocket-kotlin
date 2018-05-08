@@ -27,10 +27,12 @@ import io.rsocket.android.RSocketServer.DisposableSubscription.Companion.subscri
 import io.rsocket.android.exceptions.ApplicationException
 import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_C
 import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_M
-import io.rsocket.android.internal.LimitableRequestPublisher
+import io.rsocket.android.internal.RequestingPublisher
+import io.rsocket.android.internal.StreamReceiver
 import io.rsocket.android.util.ExceptionUtil.noStacktrace
 import io.rsocket.android.util.PayloadImpl
 import org.reactivestreams.Publisher
+import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import java.nio.channels.ClosedChannelException
 import java.util.concurrent.ConcurrentHashMap
@@ -48,7 +50,7 @@ internal class RSocketServer(
     private val sendingSubscriptions =
             ConcurrentHashMap<Int, Subscription>(256)
     private val channelReceivers =
-            ConcurrentHashMap<Int, UnicastProcessor<Payload>>(256)
+            ConcurrentHashMap<Int, Subscriber<Payload>>(256)
     private val sentFrames =
             UnicastProcessor
                     .create<Frame>()
@@ -142,7 +144,7 @@ internal class RSocketServer(
                 FrameType.ERROR -> handleError(streamId, frame)
                 FrameType.NEXT_COMPLETE -> handleNextComplete(streamId, frame)
                 else -> Completable.complete()
-            }.toFlowable<Void>()
+            }.toFlowable()
         } finally {
             frame.release()
         }
@@ -209,9 +211,9 @@ internal class RSocketServer(
         response
                 .map { payload -> Frame.PayloadFrame.from(streamId, FrameType.NEXT, payload) }
                 .compose { frameFlux ->
-                    val frames = LimitableRequestPublisher.wrap(frameFlux)
+                    val frames = RequestingPublisher.wrap(frameFlux)
                     sendingSubscriptions[streamId] = frames
-                    frames.increaseRequestLimit(initialRequestN.toLong())
+                    frames.request(initialRequestN.toLong())
                     frames
                 }
                 .concatWith(Flowable.just(Frame.PayloadFrame.from(streamId, FrameType.COMPLETE)))
@@ -222,13 +224,13 @@ internal class RSocketServer(
     }
 
     private fun handleChannel(streamId: Int, firstFrame: Frame): Completable {
-        val receiver = UnicastProcessor.create<Payload>()
+        val receiver = StreamReceiver.create()
         channelReceivers[streamId] = receiver
 
         val request = receiver
+                .doOnRequestIfActive { request -> sentFrames.onNext(Frame.RequestN.from(streamId, request)) }
                 .doOnCancel { sentFrames.onNext(Frame.Cancel.from(streamId)) }
                 .doOnError { t -> sentFrames.onNext(Frame.Error.from(streamId, t)) }
-                .doOnRequest { request -> sentFrames.onNext(Frame.RequestN.from(streamId, request)) }
                 .doFinally { channelReceivers -= streamId }
 
         receiver.onNext(PayloadImpl(firstFrame))
