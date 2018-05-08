@@ -132,7 +132,8 @@ class RSocketTest {
             crs = RSocketClient(
                     clientConnection,
                     { throwable -> clientErrors.add(throwable) },
-                    StreamIdSupplier.clientSupplier())
+                    StreamIdSupplier.clientSupplier(),
+                    128)
         }
 
         fun setRequestAcceptor(requestAcceptor: RSocket) {

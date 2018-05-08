@@ -28,7 +28,7 @@ class KeepaliveFrameFlyweightTest {
     @Test
     fun canReadData() {
         val data = Unpooled.wrappedBuffer(byteArrayOf(5, 4, 3))
-        val length = KeepaliveFrameFlyweight.encode(byteBuf, KeepaliveFrameFlyweight.FLAGS_KEEPALIVE_R, data)
+        KeepaliveFrameFlyweight.encode(byteBuf, KeepaliveFrameFlyweight.FLAGS_KEEPALIVE_R, data)
         data.resetReaderIndex()
 
         assertEquals(

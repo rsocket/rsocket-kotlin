@@ -17,5 +17,8 @@ include ':rsocket-transport-okhttp'
 
 rootProject.name='rsocket-android'
 include 'rsocket-core'
-project(':rsocket-core').name = 'rsocket-android-core'
+project(':rsocket-core').name = 'rsocket-core'
 include 'rsocket-transport-okhttp'
+include 'rsocket-transport-netty'
+include 'test'
+

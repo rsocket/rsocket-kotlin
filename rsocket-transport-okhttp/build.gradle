@@ -1,7 +1,11 @@
 dependencies {
-    compile project(":rsocket-android-core")
-    compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.10.0'
+    api project(":rsocket-core")
+    api 'com.squareup.okhttp3:okhttp:3.10.0'
 }
 
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.6"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.6"
+}

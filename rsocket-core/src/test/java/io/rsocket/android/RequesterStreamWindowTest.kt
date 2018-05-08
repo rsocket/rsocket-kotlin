@@ -39,7 +39,7 @@ class RequesterStreamWindowTest {
         val request = Flowable.just(1, 2, 3)
                 .map { PayloadImpl(it.toString()) as Payload }
                 .doOnRequest { demand = it }
-        rule.client.requestChannel(request).subscribe()
+        rule.client.requestChannel(request).subscribe({}, {})
         rule.receiver.onNext(Frame.RequestN.from(1, Int.MAX_VALUE))
         assertThat("requester channel handler is not limited",
                 demand,
@@ -47,7 +47,7 @@ class RequesterStreamWindowTest {
     }
 
     private fun checkRequesterInbound(f: Flowable<Payload>, type: FrameType) {
-        f.delaySubscription(100, TimeUnit.MILLISECONDS).subscribe()
+        f.delaySubscription(100, TimeUnit.MILLISECONDS).subscribe({}, {})
 
         val reqN = rule.sender.filter { it.type == type }
                 .firstOrError().blockingGet()

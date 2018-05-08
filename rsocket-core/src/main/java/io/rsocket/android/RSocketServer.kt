@@ -17,23 +17,24 @@
 package io.rsocket.android
 
 import io.netty.buffer.Unpooled
-import io.netty.util.collection.IntObjectHashMap
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
-import io.reactivex.processors.FlowableProcessor
-import io.reactivex.processors.PublishProcessor
 import io.reactivex.processors.UnicastProcessor
 import io.rsocket.android.Frame.Request.initialRequestN
+import io.rsocket.android.RSocketServer.DisposableSubscription.Companion.subscription
 import io.rsocket.android.exceptions.ApplicationException
 import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_C
 import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_M
 import io.rsocket.android.internal.LimitableRequestPublisher
+import io.rsocket.android.util.ExceptionUtil.noStacktrace
 import io.rsocket.android.util.PayloadImpl
 import org.reactivestreams.Publisher
-import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
+import java.nio.channels.ClosedChannelException
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 /** Server side RSocket. Receives [Frame]s from a [RSocketClient]  */
@@ -43,83 +44,46 @@ internal class RSocketServer(
         private val errorConsumer: (Throwable) -> Unit,
         private val streamDemandLimit: Int) : RSocket {
 
-    private val sendingSubscriptions: IntObjectHashMap<Subscription> = IntObjectHashMap()
-    private val channelProcessors: IntObjectHashMap<UnicastProcessor<Payload>> = IntObjectHashMap()
-
-    private val sendProcessor: FlowableProcessor<Frame> = PublishProcessor.create<Frame>().toSerialized()
+    private val completion = Lifecycle()
+    private val sendingSubscriptions =
+            ConcurrentHashMap<Int, Subscription>(256)
+    private val channelReceivers =
+            ConcurrentHashMap<Int, UnicastProcessor<Payload>>(256)
+    private val sentFrames =
+            UnicastProcessor
+                    .create<Frame>()
+                    .toSerialized()
     private val receiveDisposable: Disposable
 
-    /*for testing only*/
     internal constructor(connection: DuplexConnection,
                          requestHandler: RSocket,
                          errorConsumer: (Throwable) -> Unit)
-            : this(connection, requestHandler, errorConsumer, DEFAULT_STREAM_WINDOW)
+            : this(
+            connection,
+            requestHandler,
+            errorConsumer,
+            DEFAULT_STREAM_WINDOW)
 
     init {
+        connection
+                .send(sentFrames)
+                .subscribe({}, { completion.error(it) })
 
-        // DO NOT Change the order here. The Send processor must be subscribed to before receiving
-        // connections
+        receiveDisposable = connection
+                .receive()
+                .concatMap { frame -> handleFrame(frame) }
+                .subscribe({}, { completion.error(it) })
 
         connection
-                .send(sendProcessor)
-                .subscribe(
-                        {},
-                        { handleSendProcessorError(it) })
-
-        this.receiveDisposable = connection
-                .receive()
-                .concatMapEager { frame ->
-                    handleFrame(frame)
-                            .onErrorResumeNext(
-                                    { t: Throwable ->
-                                        errorConsumer.invoke(t)
-                                        Completable.complete()
-                                    }).toFlowable<Void>()
-                }
-                .ignoreElements()
-                .subscribe(
-                        {},
-                        errorConsumer)
-
-        this.connection
                 .onClose()
-                .doFinally {
-                    cleanup()
-                    receiveDisposable.dispose()
-                }
-                .subscribe(
-                        {},
-                        errorConsumer)
-    }
-
-    private fun handleSendProcessorError(t: Throwable) {
-        val (sendingSubscriptions, channelProcessors) = synchronized(this) {
-            Pair(sendingSubscriptions.values, channelProcessors.values)
-        }
-
-        for (subscription in sendingSubscriptions) {
-            try {
-                subscription.cancel()
-            } catch (e: Throwable) {
-                errorConsumer(e)
-            }
-
-        }
-
-        for (subscription in channelProcessors) {
-            try {
-                subscription.onError(t)
-            } catch (e: Throwable) {
-                errorConsumer(e)
-            }
-        }
+                .subscribe({ completion.complete() }, errorConsumer)
     }
 
     override fun fireAndForget(payload: Payload): Completable {
         return try {
             requestHandler.fireAndForget(payload)
         } catch (t: Throwable) {
-            Completable.complete()
+            Completable.error(t)
         }
     }
 
@@ -161,208 +125,181 @@ internal class RSocketServer(
 
     override fun onClose(): Completable = connection.onClose()
 
-    private fun cleanup() {
-        cleanUpSendingSubscriptions()
-        cleanUpChannelProcessors()
-
-        requestHandler.close().subscribe({}, errorConsumer)
-    }
-
-    @Synchronized
-    private fun cleanUpSendingSubscriptions() {
-        sendingSubscriptions.values.forEach { it.cancel() }
-        sendingSubscriptions.clear()
-    }
-
-    @Synchronized
-    private fun cleanUpChannelProcessors() {
-        channelProcessors.values.forEach { it.onComplete() }
-        channelProcessors.clear()
-    }
-
-    private fun handleFrame(frame: Frame): Completable {
-        try {
+    private fun handleFrame(frame: Frame): Flowable<Void> {
+        return try {
             val streamId = frame.streamId
-            val receiver: Subscriber<Payload>?
             when (frame.type) {
-                FrameType.FIRE_AND_FORGET -> return handleFireAndForget(streamId, fireAndForget(PayloadImpl(frame)))
-                FrameType.REQUEST_RESPONSE -> return handleRequestResponse(streamId, requestResponse(PayloadImpl(frame)))
-                FrameType.CANCEL -> return handleCancelFrame(streamId)
-                FrameType.KEEPALIVE -> return handleKeepAliveFrame(frame)
-                FrameType.REQUEST_N -> return handleRequestN(streamId, frame)
-                FrameType.REQUEST_STREAM -> return handleStream(
-                        streamId, requestStream(PayloadImpl(frame)), initialRequestN(frame))
-                FrameType.REQUEST_CHANNEL -> return handleChannel(streamId, frame)
-                FrameType.PAYLOAD ->
-                    // TODO: Hook in receiving socket.
-                    return Completable.complete()
-                FrameType.METADATA_PUSH -> return metadataPush(PayloadImpl(frame))
-                FrameType.LEASE ->
-                    // Lease must not be received here as this is the server end of the socket which sends
-                    // leases.
-                    return Completable.complete()
-                FrameType.NEXT -> {
-                    receiver = getChannelProcessor(streamId)
-                    receiver?.onNext(PayloadImpl(frame))
-                    return Completable.complete()
-                }
-                FrameType.COMPLETE -> {
-                    receiver = getChannelProcessor(streamId)
-                    receiver?.onComplete()
-                    return Completable.complete()
-                }
-                FrameType.ERROR -> {
-                    receiver = getChannelProcessor(streamId)
-                    receiver?.onError(ApplicationException(Frame.Error.message(frame)))
-                    return Completable.complete()
-                }
-                FrameType.NEXT_COMPLETE -> {
-                    receiver = getChannelProcessor(streamId)
-                    receiver?.onNext(PayloadImpl(frame))
-                    receiver?.onComplete()
-
-                    return Completable.complete()
-                }
-
-                FrameType.SETUP -> return handleError(
-                        streamId, IllegalStateException("Setup frame received post setup."))
-                else -> return handleError(
-                        streamId,
-                        IllegalStateException(
-                                "ServerRSocket: Unexpected frame type: " + frame.type))
-            }
+                FrameType.FIRE_AND_FORGET -> handleFireAndForget(streamId, fireAndForget(PayloadImpl(frame)))
+                FrameType.REQUEST_RESPONSE -> handleRequestResponse(streamId, requestResponse(PayloadImpl(frame)))
+                FrameType.CANCEL -> handleCancel(streamId)
+                FrameType.KEEPALIVE -> handleKeepAlive(frame)
+                FrameType.REQUEST_N -> handleRequestN(streamId, frame)
+                FrameType.REQUEST_STREAM -> handleStream(streamId, requestStream(PayloadImpl(frame)), initialRequestN(frame))
+                FrameType.REQUEST_CHANNEL -> handleChannel(streamId, frame)
+                FrameType.METADATA_PUSH -> metadataPush(PayloadImpl(frame))
+                FrameType.NEXT -> handleNext(streamId, frame)
+                FrameType.COMPLETE -> handleComplete(streamId)
+                FrameType.ERROR -> handleError(streamId, frame)
+                FrameType.NEXT_COMPLETE -> handleNextComplete(streamId, frame)
+                else -> Completable.complete()
+            }.toFlowable<Void>()
         } finally {
             frame.release()
         }
     }
 
-    private fun handleFireAndForget(streamId: Int, result: Completable): Completable {
-        return result
-                .doOnSubscribe { d -> addSubscription(streamId, DisposableSubscription.disposable(d)) }
-                .doOnError(errorConsumer)
-                .doFinally { removeSubscription(streamId) }
+    private fun handleNextComplete(streamId: Int, frame: Frame): Completable {
+        val receiver = channelReceivers[streamId]
+        receiver?.onNext(PayloadImpl(frame))
+        receiver?.onComplete()
+        return Completable.complete()
     }
 
-    private fun handleRequestResponse(streamId: Int, response: Single<Payload>): Completable {
+    private fun handleError(streamId: Int, frame: Frame): Completable {
+        val receiver = channelReceivers[streamId]
+        receiver?.onError(ApplicationException(Frame.Error.message(frame)))
+        return Completable.complete()
+    }
+
+    private fun handleComplete(streamId: Int): Completable {
+        val receiver = channelReceivers[streamId]
+        receiver?.onComplete()
+        return Completable.complete()
+    }
+
+    private fun handleNext(streamId: Int, frame: Frame): Completable {
+        val receiver = channelReceivers[streamId]
+        receiver?.onNext(PayloadImpl(frame))
+        return Completable.complete()
+    }
+
+    private fun handleFireAndForget(streamId: Int,
+                                    result: Completable): Completable {
+        return result
+                .doOnSubscribe { d -> sendingSubscriptions[streamId] = subscription(d) }
+                .doOnError(errorConsumer)
+                .doFinally { sendingSubscriptions -= streamId }
+    }
+
+    private fun handleRequestResponse(streamId: Int,
+                                      response: Single<Payload>): Completable {
         return response
-                .doOnSubscribe { d -> addSubscription(streamId, DisposableSubscription.disposable(d)) }
+                .doOnSubscribe { d -> sendingSubscriptions[streamId] = subscription(d) }
                 .map { payload ->
                     var flags = FLAGS_C
                     if (payload.hasMetadata()) {
                         flags = Frame.setFlag(flags, FLAGS_M)
                     }
-                    Frame.PayloadFrame.from(streamId, FrameType.NEXT_COMPLETE, payload, flags)
+                    Frame.PayloadFrame.from(
+                            streamId,
+                            FrameType.NEXT_COMPLETE,
+                            payload,
+                            flags)
                 }
                 .doOnError(errorConsumer)
                 .onErrorResumeNext { t -> Single.just(Frame.Error.from(streamId, t)) }
-                .doAfterSuccess { sendProcessor.onNext(it) }
-                .doFinally { removeSubscription(streamId) }
-                .toCompletable()
+                .doOnSuccess { sentFrames.onNext(it) }
+                .doFinally { sendingSubscriptions -= streamId }
+                .ignoreElement()
     }
 
-    private fun handleStream(streamId: Int, response: Flowable<Payload>, initialRequestN: Int): Completable {
+    private fun handleStream(streamId: Int,
+                             response: Flowable<Payload>,
+                             initialRequestN: Int): Completable {
         response
                 .map { payload -> Frame.PayloadFrame.from(streamId, FrameType.NEXT, payload) }
                 .compose { frameFlux ->
                     val frames = LimitableRequestPublisher.wrap(frameFlux)
-                    synchronized(this) {
-                        sendingSubscriptions.put(streamId, frames)
-                    }
+                    sendingSubscriptions[streamId] = frames
                     frames.increaseRequestLimit(initialRequestN.toLong())
                     frames
                 }
                 .concatWith(Flowable.just(Frame.PayloadFrame.from(streamId, FrameType.COMPLETE)))
                 .onErrorResumeNext { t: Throwable -> Flowable.just(Frame.Error.from(streamId, t)) }
-                .doFinally { removeSubscription(streamId) }
-                .subscribe { sendProcessor.onNext(it) }
-
+                .doFinally { sendingSubscriptions -= streamId }
+                .subscribe { sentFrames.onNext(it) }
         return Completable.complete()
     }
 
     private fun handleChannel(streamId: Int, firstFrame: Frame): Completable {
-        val frames = UnicastProcessor.create<Payload>()
-        addChannelProcessor(streamId, frames)
+        val receiver = UnicastProcessor.create<Payload>()
+        channelReceivers[streamId] = receiver
 
-        val payloads = frames
-                .doOnCancel { sendProcessor.onNext(Frame.Cancel.from(streamId)) }
-                .doOnError { t -> sendProcessor.onNext(Frame.Error.from(streamId, t)) }
-                .doOnRequest { l -> sendProcessor.onNext(Frame.RequestN.from(streamId, l)) }
-                .doFinally { removeChannelProcessor(streamId) }
+        val request = receiver
+                .doOnCancel { sentFrames.onNext(Frame.Cancel.from(streamId)) }
+                .doOnError { t -> sentFrames.onNext(Frame.Error.from(streamId, t)) }
+                .doOnRequest { request -> sentFrames.onNext(Frame.RequestN.from(streamId, request)) }
+                .doFinally { channelReceivers -= streamId }
 
-        // not chained, as the payload should be enqueued in the Unicast processor before this method
-        // returns
-        // and any later payload can be processed
-        frames.onNext(PayloadImpl(firstFrame))
+        receiver.onNext(PayloadImpl(firstFrame))
 
-        return handleStream(streamId, requestChannel(payloads), initialRequestN(firstFrame))
+        return handleStream(
+                streamId,
+                requestChannel(request),
+                initialRequestN(firstFrame))
     }
 
-    private fun handleKeepAliveFrame(frame: Frame): Completable {
+    private fun handleKeepAlive(frame: Frame): Completable {
         if (Frame.Keepalive.hasRespondFlag(frame)) {
             val data = Unpooled.wrappedBuffer(frame.data)
-            sendProcessor.onNext(Frame.Keepalive.from(data, false))
+            sentFrames.onNext(Frame.Keepalive.from(data, false))
         }
         return Completable.complete()
     }
 
-    private fun handleCancelFrame(streamId: Int): Completable =
-            Completable.fromRunnable {
-                var subscription: Subscription? = null
-                synchronized(this) {
-                    subscription = sendingSubscriptions.remove(streamId)
-                }
-                subscription?.cancel()
-            }
-
-    private fun handleError(streamId: Int, t: Throwable): Completable =
-            Completable.fromRunnable {
-                errorConsumer(t)
-                sendProcessor.onNext(Frame.Error.from(streamId, t))
-            }
+    private fun handleCancel(streamId: Int): Completable {
+        val subscription = sendingSubscriptions.remove(streamId)
+        subscription?.cancel()
+        return Completable.complete()
+    }
 
     private fun handleRequestN(streamId: Int, frame: Frame): Completable {
-        val subscription = getSubscription(streamId)
-        if (subscription != null) {
+        val subscription = sendingSubscriptions[streamId]
+        subscription?.let {
             val n = Frame.RequestN.requestN(frame).toLong()
-            subscription.request(if (n >= Integer.MAX_VALUE) java.lang.Long.MAX_VALUE else n)
+            it.request(if (n >= Integer.MAX_VALUE) Long.MAX_VALUE else n)
         }
         return Completable.complete()
     }
 
-    @Synchronized
-    private fun addSubscription(streamId: Int, subscription: Subscription) {
-        sendingSubscriptions.put(streamId, subscription)
-    }
+    private inner class Lifecycle {
+        private val completed = AtomicBoolean()
 
-    @Synchronized
-    private fun getSubscription(streamId: Int): Subscription? =
-            sendingSubscriptions.get(streamId)
+        fun complete() {
+            completeOnce(closedException)
+        }
 
-    @Synchronized
-    private fun removeSubscription(streamId: Int) {
-        sendingSubscriptions.remove(streamId)
-    }
+        fun error(err: Throwable) {
+            completeOnce(err)
+        }
 
-    @Synchronized
-    private fun addChannelProcessor(streamId: Int, processor: UnicastProcessor<Payload>) {
-        channelProcessors.put(streamId, processor)
-    }
+        private fun completeOnce(err: Throwable) {
+            if (completed.compareAndSet(false, true)) {
+                receiveDisposable.dispose()
+                requestHandler
+                        .close()
+                        .subscribe({}, errorConsumer)
 
-    @Synchronized
-    private fun getChannelProcessor(streamId: Int): UnicastProcessor<Payload>? =
-            channelProcessors.get(streamId)
+                cleanUp(sendingSubscriptions, { it.cancel() })
+                cleanUp(channelReceivers, { it.onError(err) })
+            }
+        }
 
-    @Synchronized
-    private fun removeChannelProcessor(streamId: Int) {
-        channelProcessors.remove(streamId)
-    }
-
-    companion object {
-        val DEFAULT_STREAM_WINDOW = 128
+        private inline fun <T> cleanUp(map: MutableMap<Int, T>,
+                                       action: (T) -> Unit) {
+            map.values.forEach {
+                try {
+                    action(it)
+                } catch (t: Throwable) {
+                    errorConsumer(t)
+                }
+            }
+            map.clear()
+        }
     }
 
     internal sealed class DisposableSubscription : Disposable, Subscription {
-        private class Disp(val d: Disposable) : DisposableSubscription() {
+        private class Impl(val d: Disposable) : DisposableSubscription() {
             override fun isDisposed(): Boolean = d.isDisposed
 
             override fun dispose() = d.dispose()
@@ -374,7 +311,12 @@ internal class RSocketServer(
         }
 
         companion object {
-            fun disposable(d: Disposable): DisposableSubscription = Disp(d)
+            fun subscription(d: Disposable): DisposableSubscription = Impl(d)
         }
+    }
+
+    companion object {
+        private const val DEFAULT_STREAM_WINDOW = 128
+        private val closedException = noStacktrace(ClosedChannelException())
     }
 }

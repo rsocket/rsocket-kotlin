@@ -33,8 +33,6 @@ abstract class ConnectionSetupPayload : Payload {
 
     fun willClientHonorLease(): Boolean = Frame.isFlagSet(flags, HONOR_LEASE)
 
-    fun doesClientRequestStrictInterpretation(): Boolean = STRICT_INTERPRETATION == flags and STRICT_INTERPRETATION
-
     override fun hasMetadata(): Boolean = Frame.isFlagSet(flags, FLAGS_M)
 
     private class ConnectionSetupPayloadImpl(
@@ -59,7 +57,6 @@ abstract class ConnectionSetupPayload : Payload {
 
         private val NO_FLAGS = 0
         val HONOR_LEASE = SetupFrameFlyweight.FLAGS_WILL_HONOR_LEASE
-        val STRICT_INTERPRETATION = SetupFrameFlyweight.FLAGS_STRICT_INTERPRETATION
 
         fun create(metadataMimeType: String, dataMimeType: String): ConnectionSetupPayload {
             return ConnectionSetupPayloadImpl(
