@@ -24,7 +24,7 @@ import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 
-class LimitableRequestPublisher<T> private constructor(private val source: Publisher<T>)
+class RequestingPublisher<T> private constructor(private val source: Publisher<T>)
     : Flowable<T>(), Subscription, Disposable {
 
     private val canceled: AtomicBoolean = AtomicBoolean()
@@ -46,15 +46,15 @@ class LimitableRequestPublisher<T> private constructor(private val source: Publi
         source.subscribe(InnerSubscriber(destination))
     }
 
-    fun increaseRequestLimit(n: Long) {
+    override fun request(n: Long) {
+        increaseRequestLimit(n)
+    }
+
+    private fun increaseRequestLimit(n: Long) {
         synchronized(this) {
             externalRequested = BackpressureHelper.addCap(n, externalRequested)
         }
         requestN()
-    }
-
-    override fun request(n: Long) {
-        increaseRequestLimit(n)
     }
 
     private fun requestN() {
@@ -88,7 +88,7 @@ class LimitableRequestPublisher<T> private constructor(private val source: Publi
     private inner class InnerSubscriber internal constructor(internal var destination: Subscriber<in T>) : Subscriber<T> {
 
         override fun onSubscribe(s: Subscription) {
-            val parent = this@LimitableRequestPublisher
+            val parent = this@RequestingPublisher
             synchronized(parent) {
                 parent.internalSubscription = s
 
@@ -121,19 +121,19 @@ class LimitableRequestPublisher<T> private constructor(private val source: Publi
 
     private inner class InnerSubscription : Subscription {
         override fun request(n: Long) {
-            synchronized(this@LimitableRequestPublisher) {
+            synchronized(this@RequestingPublisher) {
                 internalRequested = BackpressureHelper.addCap(n, internalRequested)
             }
             requestN()
         }
 
         override fun cancel() {
-            this@LimitableRequestPublisher.cancel()
+            this@RequestingPublisher.cancel()
         }
     }
 
     companion object {
 
-        fun <T> wrap(source: Publisher<T>): LimitableRequestPublisher<T> = LimitableRequestPublisher(source)
+        fun <T> wrap(source: Publisher<T>): RequestingPublisher<T> = RequestingPublisher(source)
     }
 }

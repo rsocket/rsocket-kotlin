@@ -19,21 +19,24 @@ package io.rsocket.android
 import io.netty.buffer.Unpooled
 import io.reactivex.Completable
 import io.reactivex.Flowable
+import io.reactivex.FlowableSubscriber
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import io.reactivex.processors.FlowableProcessor
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.processors.UnicastProcessor
+import io.rsocket.android.exceptions.ApplicationException
+import io.rsocket.android.exceptions.ChannelRequestException
 import io.rsocket.android.exceptions.ConnectionException
 import io.rsocket.android.exceptions.Exceptions
-import io.rsocket.android.internal.LimitableRequestPublisher
+import io.rsocket.android.internal.RequestingPublisher
+import io.rsocket.android.internal.StreamReceiver
 import io.rsocket.android.util.ExceptionUtil.noStacktrace
 import io.rsocket.android.util.PayloadImpl
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import java.nio.channels.ClosedChannelException
-import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -93,19 +96,19 @@ internal class RSocketClient @JvmOverloads constructor(
         }
     }
 
-    override fun fireAndForget(payload: Payload): Completable =
-            interactions.fireAndForget(doHandleFireAndForget(payload))
+    override fun fireAndForget(payload: Payload) =
+            interactions.fireAndForget(handleFireAndForget(payload))
 
-    override fun requestResponse(payload: Payload): Single<Payload> =
-            interactions.requestResponse(doHandleRequestResponse(payload))
+    override fun requestResponse(payload: Payload) =
+            interactions.requestResponse(handleRequestResponse(payload))
 
     override fun requestStream(payload: Payload): Flowable<Payload> =
             interactions.requestStream(
-                    doHandleRequestStream(payload).rebatchRequests(streamDemandLimit))
+                    handleRequestStream(payload).rebatchRequests(streamDemandLimit))
 
     override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> =
             interactions.requestChannel(
-                    doHandleChannel(
+                    handleChannel(
                             Flowable.fromPublisher(payloads)
                                     .rebatchRequests(streamDemandLimit)
                     ).rebatchRequests(streamDemandLimit))
@@ -119,7 +122,7 @@ internal class RSocketClient @JvmOverloads constructor(
 
     override fun onClose(): Completable = connection.onClose()
 
-    private fun doHandleFireAndForget(payload: Payload): Completable {
+    private fun handleFireAndForget(payload: Payload): Completable {
         return Completable.fromRunnable {
             val streamId = streamIdSupplier.nextStreamId()
             val requestFrame = Frame.Request.from(
@@ -131,7 +134,7 @@ internal class RSocketClient @JvmOverloads constructor(
         }
     }
 
-    private fun doHandleRequestResponse(payload: Payload): Single<Payload> {
+    private fun handleRequestResponse(payload: Payload): Single<Payload> {
         return Single.defer {
             val streamId = streamIdSupplier.nextStreamId()
             val requestFrame = Frame.Request.from(
@@ -148,23 +151,27 @@ internal class RSocketClient @JvmOverloads constructor(
         }
     }
 
-    private fun doHandleRequestStream(payload: Payload): Flowable<Payload> {
+    private fun handleRequestStream(payload: Payload): Flowable<Payload> {
         return Flowable.defer {
             val streamId = streamIdSupplier.nextStreamId()
-            val receiver = UnicastProcessor.create<Payload>()
+            val receiver = StreamReceiver.create()
             receivers[streamId] = receiver
-            var firstRequest = true
+            val doOnRequestN = StartThen<Frame>()
 
-            receiver.doOnRequest { requestN ->
-                if (!receiver.isTerminated()) {
-                    val first = firstRequest
-                    firstRequest = false
-                    val frame = if (first)
-                        Frame.Request.from(streamId, FrameType.REQUEST_STREAM, payload, requestN)
-                    else
-                        Frame.RequestN.from(streamId, requestN)
-                    sentFrames.onNext(frame)
-                }
+            receiver.doOnRequestIfActive { requestN ->
+
+                val frame = doOnRequestN({
+                    Frame.Request.from(
+                            streamId,
+                            FrameType.REQUEST_STREAM,
+                            payload,
+                            requestN)
+                } then {
+                    Frame.RequestN.from(
+                            streamId,
+                            requestN)
+                })
+                sentFrames.onNext(frame)
             }.doOnCancel {
                 sentFrames.onNext(Frame.Cancel.from(streamId))
             }.doFinally {
@@ -173,53 +180,63 @@ internal class RSocketClient @JvmOverloads constructor(
         }
     }
 
-    private fun doHandleChannel(request: Flowable<Payload>): Flowable<Payload> {
+    private fun handleChannel(request: Flowable<Payload>): Flowable<Payload> {
         return Flowable.defer {
-            val receiver = UnicastProcessor.create<Payload>()
+            val receiver = StreamReceiver.create()
             val streamId = streamIdSupplier.nextStreamId()
-            var firstRequest = true
+            val doOnRequestN = StartThen<Unit>()
 
-            receiver.doOnRequest { requestN ->
-                if (!receiver.isTerminated()) {
-                    val firstReq = firstRequest
-                    firstRequest = false
-                    if (firstReq) {
-                        var firstPayload = true
-                        request.compose { req ->
-                            val sender = LimitableRequestPublisher.wrap(req)
-                            sender.increaseRequestLimit(1)
-                            senders[streamId] = sender
-                            receivers[streamId] = receiver
-                            sender
-                        }.map { payload ->
-                            val first = firstPayload
-                            firstPayload = false
-                            val frame: Frame =
-                                    if (first) {
-                                        Frame.Request.from(
-                                                streamId, FrameType.REQUEST_CHANNEL, payload, requestN)
-                                    } else {
-                                        Frame.PayloadFrame.from(
-                                                streamId, FrameType.NEXT, payload)
-                                    }
-                            frame
-                        }.subscribe(
-                                { sentFrames.onNext(it) },
-                                { receiver.onError(CancellationException("Disposed")) },
-                                {
-                                    if (firstPayload) {
-                                        receiver.onComplete()
-                                    } else {
-                                        sentFrames.onNext(Frame.PayloadFrame.from(
-                                                streamId, FrameType.COMPLETE))
-                                    }
-                                })
-                    } else {
-                        sentFrames.onNext(Frame.RequestN.from(streamId, requestN))
-                    }
+            receiver.doOnRequestIfActive { requestN ->
+
+                doOnRequestN({
+                    val wrappedRequest = request.compose {
+                        val sender = RequestingPublisher.wrap(it)
+                        sender.request(1)
+                        senders[streamId] = sender
+                        receivers[streamId] = receiver
+                        sender
+                    }.publish().autoConnect(2)
+
+                    val first = wrappedRequest.take(1)
+                            .map { payload ->
+                                Frame.Request.from(
+                                        streamId,
+                                        FrameType.REQUEST_CHANNEL,
+                                        payload,
+                                        requestN)
+                            }
+                    val rest = wrappedRequest.skip(1)
+                            .map { payload ->
+                                Frame.PayloadFrame.from(
+                                        streamId,
+                                        FrameType.NEXT,
+                                        payload)
+                            }
+                    val requestFrames = Flowable.concatArrayEager(first, rest)
+                    requestFrames.subscribe(
+                            ChannelRequestSubscriber(
+                                    { payload -> sentFrames.onNext(payload) },
+                                    {
+                                        receiver.onError(ChannelRequestException(
+                                                "Channel request exception", it))
+                                    },
+                                    { empty ->
+                                        if (empty) {
+                                            receiver.onComplete()
+                                        } else {
+                                            sentFrames.onNext(Frame.PayloadFrame.from(
+                                                    streamId, FrameType.COMPLETE))
+                                        }
+                                    }))
+
+                } then {
+                    sentFrames.onNext(Frame.RequestN.from(streamId, requestN))
+                })
+            }.doOnError { err ->
+                if (err is ChannelRequestException) {
+                    sentFrames.onNext(Frame.Error.from(streamId,
+                            ApplicationException(err.message, err.cause)))
                 }
-            }.doOnError { t ->
-                sentFrames.onNext(Frame.Error.from(streamId, t))
             }.doOnCancel {
                 sentFrames.onNext(Frame.Cancel.from(streamId))
             }.doFinally {
@@ -262,15 +279,15 @@ internal class RSocketClient @JvmOverloads constructor(
             val streamId = frame.streamId
             val type = frame.type
             when (streamId) {
-                0 -> handleZeroFrame(type, frame)
-                else -> handleNonZeroFrame(streamId, type, frame)
+                0 -> handleConnectionFrame(type, frame)
+                else -> handleStreamFrame(streamId, type, frame)
             }
         } finally {
             frame.release()
         }
     }
 
-    private fun handleZeroFrame(type: FrameType, frame: Frame) {
+    private fun handleConnectionFrame(type: FrameType, frame: Frame) {
         when (type) {
             FrameType.ERROR -> throw Exceptions.from(frame)
             FrameType.LEASE -> {
@@ -278,14 +295,11 @@ internal class RSocketClient @JvmOverloads constructor(
             FrameType.KEEPALIVE -> if (!Frame.Keepalive.hasRespondFlag(frame)) {
                 timeLastTickSentMs = System.currentTimeMillis()
             }
-            else ->
-                errorConsumer(
-                        IllegalStateException(
-                                "Client received supported frame on stream 0: $frame"))
+            else -> unsupportedConnectionFrame(frame)
         }
     }
 
-    private fun handleNonZeroFrame(streamId: Int, type: FrameType, frame: Frame) {
+    private fun handleStreamFrame(streamId: Int, type: FrameType, frame: Frame) {
         receivers[streamId]?.let { receiver ->
             when (type) {
                 FrameType.ERROR -> {
@@ -315,6 +329,11 @@ internal class RSocketClient @JvmOverloads constructor(
             }
         } ?: missingReceiver(streamId, type, frame)
     }
+
+    private fun unsupportedConnectionFrame(frame: Frame) =
+            errorConsumer(IllegalStateException(
+                    "Client received supported frame on stream 0: $frame"))
+
 
     private fun unsupportedFrame(streamId: Int, frame: Frame) {
         errorConsumer(IllegalStateException(
@@ -391,8 +410,49 @@ internal class RSocketClient @JvmOverloads constructor(
         }
     }
 
+    private class StartThen<T> {
+        private var init = true
+
+        operator fun invoke(calls: Calls<T>): T =
+                if (init) {
+                    init = false
+                    calls.start()
+                } else {
+                    calls.end()
+                }
+
+        data class Calls<T>(inline val start: () -> T, inline val end: () -> T)
+
+    }
+
+    private infix fun <T> (() -> T).then(end: () -> T)
+            : StartThen.Calls<T> = StartThen.Calls(this, end)
+
+    private class ChannelRequestSubscriber(private val next: (Frame) -> Unit,
+                                           private val error: (Throwable) -> Unit,
+                                           private val complete: (Boolean) -> Unit)
+        : FlowableSubscriber<Frame> {
+        private var empty = true
+
+        override fun onComplete() {
+            complete(empty)
+        }
+
+        override fun onSubscribe(s: Subscription) {
+            s.request(Long.MAX_VALUE)
+        }
+
+        override fun onNext(frame: Frame) {
+            empty = false
+            next(frame)
+        }
+
+        override fun onError(err: Throwable) {
+            error(err)
+        }
+    }
+
     companion object {
         private val closedException = noStacktrace(ClosedChannelException())
-        private fun <T> UnicastProcessor<T>.isTerminated() = hasComplete() or hasThrowable()
     }
 }
