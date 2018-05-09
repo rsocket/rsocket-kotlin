@@ -212,7 +212,7 @@ internal class RSocketClient @JvmOverloads constructor(
                                         FrameType.NEXT,
                                         payload)
                             }
-                    val requestFrames = first.mergeWith(rest)
+                    val requestFrames = Flowable.concatArrayEager(first, rest)
                     requestFrames.subscribe(
                             ChannelRequestSubscriber(
                                     { payload -> sentFrames.onNext(payload) },
