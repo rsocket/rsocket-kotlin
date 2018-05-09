@@ -27,7 +27,7 @@ class ResponderStreamWindowTest {
                 FrameType.REQUEST_STREAM,
                 PayloadImpl("test"),
                 Int.MAX_VALUE))
-        assertThat("responder stream is not limited",
+        assertThat("responderConnection stream is not limited",
                 rule.responseDemand,
                 Matchers.equalTo(WindowRSocketRule.streamWindow.toLong()))
     }
@@ -38,7 +38,7 @@ class ResponderStreamWindowTest {
                 FrameType.REQUEST_CHANNEL,
                 PayloadImpl("test"),
                 Int.MAX_VALUE))
-        assertThat("responder channel is not limited",
+        assertThat("responderConnection channel is not limited",
                 rule.responseDemand,
                 Matchers.equalTo(WindowRSocketRule.streamWindow.toLong()))
     }
@@ -58,7 +58,7 @@ class ResponderStreamWindowTest {
                 .firstOrError()
                 .blockingGet()
 
-        assertThat("responder channel request is not limited",
+        assertThat("responderConnection channel request is not limited",
                 Frame.RequestN.requestN(responderDemand),
                 Matchers.equalTo(WindowRSocketRule.streamWindow))
     }

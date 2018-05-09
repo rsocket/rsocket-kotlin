@@ -16,7 +16,6 @@
 
 package io.rsocket.android
 
-import io.netty.buffer.Unpooled
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
@@ -134,7 +133,6 @@ internal class RSocketServer(
                 FrameType.FIRE_AND_FORGET -> handleFireAndForget(streamId, fireAndForget(PayloadImpl(frame)))
                 FrameType.REQUEST_RESPONSE -> handleRequestResponse(streamId, requestResponse(PayloadImpl(frame)))
                 FrameType.CANCEL -> handleCancel(streamId)
-                FrameType.KEEPALIVE -> handleKeepAlive(frame)
                 FrameType.REQUEST_N -> handleRequestN(streamId, frame)
                 FrameType.REQUEST_STREAM -> handleStream(streamId, requestStream(PayloadImpl(frame)), initialRequestN(frame))
                 FrameType.REQUEST_CHANNEL -> handleChannel(streamId, frame)
@@ -143,11 +141,16 @@ internal class RSocketServer(
                 FrameType.COMPLETE -> handleComplete(streamId)
                 FrameType.ERROR -> handleError(streamId, frame)
                 FrameType.NEXT_COMPLETE -> handleNextComplete(streamId, frame)
-                else -> Completable.complete()
+                else -> handleUnsupportedFrame(frame)
             }.toFlowable()
         } finally {
             frame.release()
         }
+    }
+
+    private fun handleUnsupportedFrame(frame: Frame): Completable {
+        errorConsumer(IllegalArgumentException("Unsupported frame: $frame"))
+        return Completable.complete()
     }
 
     private fun handleNextComplete(streamId: Int, frame: Frame): Completable {
@@ -239,14 +242,6 @@ internal class RSocketServer(
                 streamId,
                 requestChannel(request),
                 initialRequestN(firstFrame))
-    }
-
-    private fun handleKeepAlive(frame: Frame): Completable {
-        if (Frame.Keepalive.hasRespondFlag(frame)) {
-            val data = Unpooled.wrappedBuffer(frame.data)
-            sentFrames.onNext(Frame.Keepalive.from(data, false))
-        }
-        return Completable.complete()
     }
 
     private fun handleCancel(streamId: Int): Completable {

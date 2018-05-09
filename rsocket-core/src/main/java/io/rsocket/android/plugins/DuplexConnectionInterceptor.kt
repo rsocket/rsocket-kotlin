@@ -20,9 +20,10 @@ import io.rsocket.android.DuplexConnection
 
 interface DuplexConnectionInterceptor : (DuplexConnectionInterceptor.Type, DuplexConnection) -> DuplexConnection {
     enum class Type {
-        STREAM_ZERO,
-        CLIENT,
-        SERVER,
-        SOURCE
+        ALL,
+        SETUP,
+        REQUESTER,
+        RESPONDER,
+        SERVICE
     }
 }

@@ -24,13 +24,11 @@ import io.reactivex.internal.observers.BlockingMultiObserver
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.subscribers.TestSubscriber
 import io.rsocket.android.exceptions.ApplicationException
-import io.rsocket.android.exceptions.RejectedSetupException
 import io.rsocket.android.frame.RequestFrameFlyweight
 import io.rsocket.android.test.util.LocalDuplexConnection
 import io.rsocket.android.util.PayloadImpl
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.*
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
@@ -43,15 +41,6 @@ class RSocketClientTest {
 
     @get:Rule
     val rule = ClientSocketRule()
-
-    @Test(timeout = 2000)
-    @Throws(Exception::class)
-    fun testKeepAlive() {
-        val actualFrame = rule.sender.blockingFirst()
-
-        assertThat("Unexpected frame sent.", actualFrame.type, `is`<FrameType>(FrameType.KEEPALIVE))
-        assertThat("errors not empty", rule.errors, hasSize(0))
-    }
 
     @Test(timeout = 2000)
     fun testInvalidFrameOnStream0() {
@@ -96,18 +85,6 @@ class RSocketClientTest {
     }
 
     @Test(timeout = 2000)
-    fun testHandleSetupException() {
-        rule.receiver.onNext(Frame.Error.from(0, RejectedSetupException("boom")))
-
-        val errors = rule.errors
-        assertThat("Unexpected errors.", errors, hasSize<Throwable>(1))
-        assertThat(
-                "Unexpected error received.",
-                errors,
-                contains(instanceOf<Throwable>(RejectedSetupException::class.java)))
-    }
-
-    @Test(timeout = 2000)
     fun testHandleApplicationException() {
         val response = rule.client.requestResponse(PayloadImpl.EMPTY).toFlowable()
         val responseSub = TestSubscriber.create<Payload>()
@@ -147,17 +124,6 @@ class RSocketClientTest {
         assertThat("Unexpected frame sent on the connection.", sent[1].type, `is`<FrameType>(FrameType.CANCEL))
     }
 
-    @Test(timeout = 2000)
-    @Ignore
-    fun testRequestReplyErrorOnSend() {
-
-        rule.conn.setAvailability(0.0) // Fails send
-        val response = rule.client.requestResponse(PayloadImpl.EMPTY).toFlowable()
-        val responseSub = TestSubscriber.create<Payload>()
-        response.subscribe(responseSub)
-        assertThat("expected connection error", responseSub.errorCount(), `is`(1))
-    }
-
     @Test
     fun testLazyRequestResponse() {
 
@@ -178,7 +144,7 @@ class RSocketClientTest {
     @Test(timeout = 3_000)
     fun requestErrorOnConnectionClose() {
         Completable.timer(100, TimeUnit.MILLISECONDS)
-                .andThen { rule.conn.close() }.subscribe()
+                .andThen(rule.conn.close()).subscribe()
         val requestStream = rule.client.requestStream(PayloadImpl("test"))
         val subs = TestSubscriber.create<Payload>()
         requestStream.blockingSubscribe(subs)
@@ -266,10 +232,7 @@ class RSocketClientTest {
                                 Unit
                             },
                             StreamIdSupplier.clientSupplier(),
-                            streamWindow,
-                            Duration(100, TimeUnit.MILLISECONDS),
-                            Duration(100, TimeUnit.MILLISECONDS),
-                            4)
+                            streamWindow)
 
                     base.evaluate()
                 }

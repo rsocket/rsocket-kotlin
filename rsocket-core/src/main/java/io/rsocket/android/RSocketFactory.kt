@@ -22,7 +22,7 @@ import io.rsocket.android.exceptions.InvalidSetupException
 import io.rsocket.android.fragmentation.FragmentationDuplexConnection
 import io.rsocket.android.frame.SetupFrameFlyweight
 import io.rsocket.android.frame.VersionFlyweight
-import io.rsocket.android.internal.ClientServerInputMultiplexer
+import io.rsocket.android.internal.*
 import io.rsocket.android.plugins.DuplexConnectionInterceptor
 import io.rsocket.android.plugins.PluginRegistry
 import io.rsocket.android.plugins.Plugins
@@ -183,7 +183,6 @@ object RSocketFactory {
                 return transportClient()
                         .connect()
                         .flatMap { connection ->
-                            var conn = connection
                             val setupFrame = Frame.Setup.from(
                                     flags,
                                     ackTimeout.toMillis.toInt(),
@@ -192,20 +191,19 @@ object RSocketFactory {
                                     dataMimeType,
                                     setupPayload)
 
-                            if (mtu > 0) {
-                                conn = FragmentationDuplexConnection(conn, mtu)
-                            }
+                            val conn =
+                                    if (mtu > 0)
+                                        FragmentationDuplexConnection(connection, mtu)
+                                    else
+                                        connection
 
-                            val multiplexer = ClientServerInputMultiplexer(conn, plugins)
+                            val demuxer = ClientConnectionDemuxer(conn, plugins)
 
                             val rSocketClient = RSocketClient(
-                                    multiplexer.asClientConnection(),
+                                    demuxer.requesterConnection(),
                                     errorConsumer,
                                     StreamIdSupplier.clientSupplier(),
-                                    streamDemandLimit,
-                                    tickPeriod,
-                                    ackTimeout,
-                                    missedAcks)
+                                    streamDemandLimit)
 
                             val wrappedRSocketClient = Single
                                     .just(rSocketClient)
@@ -219,13 +217,22 @@ object RSocketFactory {
                                         .map { plugins.applyServer(it) }
 
                                 wrappedRSocketServer
-                                        .doAfterSuccess { rSocket ->
+                                        .doOnSuccess { rSocket ->
                                             RSocketServer(
-                                                    multiplexer.asServerConnection(),
+                                                    demuxer.responderConnection(),
                                                     rSocket,
                                                     errorConsumer,
                                                     streamDemandLimit)
-                                        }.flatMapCompletable { conn.sendOne(setupFrame) }
+                                        }.doOnSuccess {
+                                            ClientServiceHandler(
+                                                    demuxer.serviceConnection(),
+                                                    errorConsumer,
+                                                    KeepAliveInfo(
+                                                            tickPeriod,
+                                                            ackTimeout,
+                                                            missedAcks))
+                                        }
+                                        .flatMapCompletable { conn.sendOne(setupFrame) }
                                         .andThen(wrappedRSocketClient)
                             }
                         }
@@ -285,39 +292,41 @@ object RSocketFactory {
             override fun start(): Single<T> {
                 return transportServer()
                         .start(object : ServerTransport.ConnectionAcceptor {
-                            override fun invoke(duplexConnection: DuplexConnection): Completable {
-                                var conn = duplexConnection
-                                if (mtu > 0) {
-                                    conn = FragmentationDuplexConnection(conn, mtu)
-                                }
+                            override fun invoke(conn: DuplexConnection): Completable {
 
-                                val multiplexer = ClientServerInputMultiplexer(conn, plugins)
+                                val connection =
+                                        if (mtu > 0)
+                                            FragmentationDuplexConnection(conn, mtu)
+                                        else conn
 
-                                return multiplexer
-                                        .asStreamZeroConnection()
+                                val demuxer = ServerConnectionDemuxer(connection, plugins)
+                                return demuxer
+                                        .setupConnection()
                                         .receive()
                                         .firstOrError()
-                                        .flatMapCompletable { setupFrame -> processSetupFrame(multiplexer, setupFrame) }
+                                        .flatMapCompletable { setupFrame ->
+                                            processSetupFrame(demuxer, setupFrame)
+                                        }
                             }
                         })
             }
 
             private fun processSetupFrame(
-                    multiplexer: ClientServerInputMultiplexer, setupFrame: Frame): Completable {
+                    demuxer: ConnectionDemuxer, setupFrame: Frame): Completable {
                 val version = Frame.Setup.version(setupFrame)
                 if (version != SetupFrameFlyweight.CURRENT_VERSION) {
                     val error = InvalidSetupException(
                             "Unsupported version ${VersionFlyweight.toString(version)}")
-                    return multiplexer
-                            .asStreamZeroConnection()
+                    return demuxer
+                            .setupConnection()
                             .sendOne(Frame.Error.from(0, error))
-                            .andThen { multiplexer.close() }
+                            .andThen { demuxer.close() }
                 }
 
                 val setupPayload = ConnectionSetupPayload.create(setupFrame)
 
                 val rSocketClient = RSocketClient(
-                        multiplexer.asServerConnection(),
+                        demuxer.requesterConnection(),
                         errorConsumer,
                         StreamIdSupplier.serverSupplier(),
                         streamDemandLimit)
@@ -327,18 +336,23 @@ object RSocketFactory {
                         .map { plugins.applyClient(it) }
 
                 return wrappedRSocketClient
-                        .flatMap { sender -> acceptor
-                                ?.let { it() }
-                                ?.accept(setupPayload, sender)
-                                ?.map { plugins.applyServer(it) }
+                        .flatMap { requester ->
+                            acceptor
+                                    ?.let { it() }
+                                    ?.accept(setupPayload, requester)
+                                    ?.map { plugins.applyServer(it) }
                         }
-                        .map { handler -> RSocketServer(
-                                multiplexer.asClientConnection(),
-                                handler,
-                                errorConsumer,
-                                streamDemandLimit)
-                        }
-                        .ignoreElement()
+                        .map { handler ->
+                            RSocketServer(
+                                    demuxer.responderConnection(),
+                                    handler,
+                                    errorConsumer,
+                                    streamDemandLimit)
+                        }.doOnSuccess {
+                            ServerServiceHandler(
+                                    demuxer.serviceConnection(),
+                                    errorConsumer)
+                        }.ignoreElement()
             }
         }
     }

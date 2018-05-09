@@ -40,23 +40,6 @@ class RSocketServerTest {
     @get:Rule
     val rule = ServerSocketRule()
 
-    @Test(timeout = 200000)
-    @Throws(Exception::class)
-    fun testHandleKeepAlive() {
-
-        Completable.timer(100, TimeUnit.MILLISECONDS).subscribe({
-            rule.receiver.onNext(Frame.Keepalive.from(Unpooled.EMPTY_BUFFER, true))
-        })
-
-        val sentFrame = rule.sender.firstOrError().blockingGet()
-
-        assertThat("Unexpected frame sent.", sentFrame.type, `is`(FrameType.KEEPALIVE))
-        assertThat(
-                "Unexpected keep-alive frame respond flag.",
-                Frame.Keepalive.hasRespondFlag(sentFrame),
-                `is`(false))
-    }
-
     @Test(timeout = 2000)
     @Throws(Exception::class)
     fun testHandleResponseFrameNoError() {
