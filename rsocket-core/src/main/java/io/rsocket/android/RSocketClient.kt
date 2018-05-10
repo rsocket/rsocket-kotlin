@@ -130,21 +130,20 @@ internal class RSocketClient constructor(
             val streamId = streamIdSupplier.nextStreamId()
             val receiver = StreamReceiver.create()
             receivers[streamId] = receiver
-            val doOnRequestN = StartThen<Frame>()
+            val reqN = Cond()
 
             receiver.doOnRequestIfActive { requestN ->
-
-                val frame = doOnRequestN({
+                val frame = if (reqN.first()) {
                     Frame.Request.from(
                             streamId,
                             FrameType.REQUEST_STREAM,
                             payload,
                             requestN)
-                } then {
+                } else {
                     Frame.RequestN.from(
                             streamId,
                             requestN)
-                })
+                }
                 sentFrames.onNext(frame)
             }.doOnCancel {
                 sentFrames.onNext(Frame.Cancel.from(streamId))
@@ -158,11 +157,11 @@ internal class RSocketClient constructor(
         return Flowable.defer {
             val receiver = StreamReceiver.create()
             val streamId = streamIdSupplier.nextStreamId()
-            val doOnRequestN = StartThen<Unit>()
+            val reqN = Cond()
 
             receiver.doOnRequestIfActive { requestN ->
 
-                doOnRequestN({
+                if (reqN.first()) {
                     val wrappedRequest = request.compose {
                         val sender = RequestingPublisher.wrap(it)
                         sender.request(1)
@@ -203,9 +202,9 @@ internal class RSocketClient constructor(
                                         }
                                     }))
 
-                } then {
+                } else {
                     sentFrames.onNext(Frame.RequestN.from(streamId, requestN))
-                })
+                }
             }.doOnError { err ->
                 if (err is ChannelRequestException) {
                     sentFrames.onNext(Frame.Error.from(streamId,
@@ -346,23 +345,17 @@ internal class RSocketClient constructor(
         }
     }
 
-    private class StartThen<T> {
-        private var init = true
+    private class Cond {
+        private var first = true
 
-        operator fun invoke(calls: Calls<T>): T =
-                if (init) {
-                    init = false
-                    calls.start()
+        fun first(): Boolean =
+                if (first) {
+                    first = false
+                    true
                 } else {
-                    calls.end()
+                    false
                 }
-
-        data class Calls<T>(inline val start: () -> T, inline val end: () -> T)
-
     }
-
-    private infix fun <T> (() -> T).then(end: () -> T)
-            : StartThen.Calls<T> = StartThen.Calls(this, end)
 
     private class ChannelRequestSubscriber(private val next: (Frame) -> Unit,
                                            private val error: (Throwable) -> Unit,
