@@ -6,7 +6,7 @@ When submitting code, please make every effort to follow existing conventions an
 
 ## License
 
-By contributing your code, you agree to license your contribution under the terms of the APLv2: https://github.com/RSocket/reactivesocket-java/blob/master/LICENSE
+By contributing your code, you agree to license your contribution under the terms of the APLv2: https://github.com/rsocket/rsocket-kotlin/blob/master/LICENSE
 
 All files are released with the Apache 2.0 license.
 
@@ -14,7 +14,7 @@ If you are adding a new file it should have a header like this:
 
 ```
 /**
- * Copyright 2015 Netflix, Inc.
+ * Copyright 2018 Netflix, Inc.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
