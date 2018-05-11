@@ -15,6 +15,7 @@
  */
 package io.rsocket.android
 
+import com.sun.org.apache.xpath.internal.operations.Bool
 import io.netty.buffer.ByteBuf
 import io.netty.buffer.ByteBufAllocator
 import io.netty.buffer.ByteBufHolder
@@ -207,11 +208,17 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
      */
     fun flags(): Int = FrameHeaderFlyweight.flags(content!!)
 
-    fun hasMetadata(): Boolean = isFlagSet(this.flags(), FLAGS_M)
+    fun isFlagSet(flag: Int): Boolean {
+        return isFlagSet(this.flags(), flag)
+    }
+
+    fun hasMetadata(): Boolean = isFlagSet(FLAGS_M)
 
     val dataUtf8: String
         get() = StandardCharsets.UTF_8.decode(data).toString()
 
+    val isFragmentable: Boolean
+        get() = type.isFragmentable
     /* TODO:
    *
    * fromRequest(type, id, payload)
@@ -461,14 +468,14 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
         fun from(
                 streamId: Int,
                 type: FrameType,
-                metadata: ByteBuf,
+                metadata: ByteBuf?,
                 data: ByteBuf,
                 initialRequestN: Int,
                 flags: Int): Frame {
             val frame = RECYCLER.get()
             frame.content = ByteBufAllocator.DEFAULT.buffer(
                     RequestFrameFlyweight.computeFrameLength(
-                            type, metadata.readableBytes(), data.readableBytes()))
+                            type, metadata?.readableBytes(), data.readableBytes()))
             frame.content!!.writerIndex(
                     RequestFrameFlyweight.encode(
                             frame.content!!,
@@ -480,6 +487,21 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
                             data))
             return frame
         }
+
+        fun from(streamId: Int,
+                 type: FrameType,
+                 metadata: ByteBuf?,
+                 data: ByteBuf,
+                 flags: Int): Frame {
+
+            return PayloadFrame.from(
+                    streamId,
+                    type,
+                    metadata,
+                    data,
+                    flags)
+        }
+
 
         fun initialRequestN(frame: Frame): Int {
             val type = frame.type
@@ -568,6 +590,66 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
 
             return flags and KeepaliveFrameFlyweight.FLAGS_KEEPALIVE_R == KeepaliveFrameFlyweight.FLAGS_KEEPALIVE_R
         }
+    }
+
+    object Fragmentation {
+
+        fun assembleFrame(blueprintFrame: Frame,
+                          metadata: ByteBuf,
+                          data: ByteBuf): Frame =
+
+                create(blueprintFrame,
+                        metadata,
+                        data,
+                        { it and FrameHeaderFlyweight.FLAGS_F.inv() })
+
+        fun sliceFrame(blueprintFrame: Frame,
+                       metadata: ByteBuf?,
+                       data: ByteBuf,
+                       additionalFlags: Int): Frame =
+
+                create(blueprintFrame,
+                        metadata,
+                        data,
+                        { it or additionalFlags })
+
+        private inline fun create(blueprintFrame: Frame,
+                                  metadata: ByteBuf?,
+                                  data: ByteBuf,
+                                  modifyFlags: (Int) -> Int): Frame =
+                when (blueprintFrame.type) {
+                    FrameType.FIRE_AND_FORGET,
+                    FrameType.REQUEST_RESPONSE -> {
+                        Frame.Request.from(
+                                blueprintFrame.streamId,
+                                blueprintFrame.type,
+                                metadata,
+                                data,
+                                modifyFlags(blueprintFrame.flags()))
+                    }
+                    FrameType.NEXT,
+                    FrameType.NEXT_COMPLETE -> {
+                        Frame.PayloadFrame.from(
+                                blueprintFrame.streamId,
+                                blueprintFrame.type,
+                                metadata,
+                                data,
+                                modifyFlags(blueprintFrame.flags()))
+                    }
+
+                    FrameType.REQUEST_STREAM,
+                    FrameType.REQUEST_CHANNEL -> {
+                        Frame.Request.from(
+                                blueprintFrame.streamId,
+                                blueprintFrame.type,
+                                metadata,
+                                data,
+                                Frame.Request.initialRequestN(blueprintFrame),
+                                modifyFlags(blueprintFrame.flags()))
+                    }
+                    else -> throw AssertionError("Non-fragmentable frame: " +
+                            "${blueprintFrame.type}")
+                }
     }
 
     override fun toString(): String {

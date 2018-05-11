@@ -20,7 +20,9 @@ import io.reactivex.Completable
 import io.reactivex.Single
 import io.rsocket.android.fragmentation.FragmentationInterceptor
 import io.rsocket.android.internal.*
-import io.rsocket.android.plugins.*
+import io.rsocket.android.plugins.GlobalInterceptors
+import io.rsocket.android.plugins.InterceptorOptions
+import io.rsocket.android.plugins.InterceptorRegistry
 import io.rsocket.android.transport.ClientTransport
 import io.rsocket.android.transport.ServerTransport
 import io.rsocket.android.util.KeepAlive
@@ -98,7 +100,7 @@ object RSocketFactory {
         fun transport(transport: () -> ClientTransport): Start<RSocket> =
                 ClientStart(transport, interceptors())
 
-        fun acceptor(acceptor: () -> (RSocket) -> RSocket): ClientTransportAcceptor {
+        fun acceptor(acceptor: ClientAcceptor): ClientTransportAcceptor {
             this.acceptor = acceptor
             return object : ClientTransportAcceptor {
                 override fun transport(transport: () -> ClientTransport)
@@ -109,10 +111,8 @@ object RSocketFactory {
 
         private fun interceptors(): InterceptorRegistry =
                 interceptors.copyWith {
-                    if (mtu > 0) {
-                        it.connectionFirst(
-                                FragmentationInterceptor(mtu))
-                    }
+                    it.connectionFirst(
+                            FragmentationInterceptor(mtu))
                 }
 
         private inner class ClientStart(private val transportClient: () -> ClientTransport,
@@ -214,10 +214,8 @@ object RSocketFactory {
             return interceptors.copyWith {
                 it.connectionFirst(
                         ServerContractInterceptor(errorConsumer))
-                if (mtu > 0) {
-                    it.connectionFirst(
-                            FragmentationInterceptor(mtu))
-                }
+                it.connectionFirst(
+                        FragmentationInterceptor(mtu))
             }
         }
 

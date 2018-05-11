@@ -16,26 +16,22 @@
 
 package io.rsocket.android.fragmentation
 
-import io.netty.util.collection.IntObjectHashMap
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.rsocket.android.DuplexConnection
 import io.rsocket.android.Frame
-import io.rsocket.android.frame.FrameHeaderFlyweight
 import org.reactivestreams.Publisher
 
-/** Fragments and Re-assembles frames. MTU is number of bytes per fragment. The default is 1024  */
-class FragmentationDuplexConnection(private val source: DuplexConnection, mtu: Int) : DuplexConnection {
-    private val frameReassemblers = IntObjectHashMap<FrameReassembler>()
+/** Fragments and Re-assembles frames. MTU is number of bytes per fragment.*/
+internal class FragmentationDuplexConnection(private val source: DuplexConnection,
+                                             mtu: Int)
+    : DuplexConnection {
+    private val framesReassembler = FramesReassembler()
     private val frameFragmenter: FrameFragmenter = FrameFragmenter(mtu)
 
-    override fun availability(): Double = source.availability()
-
-    override fun send(frame: Publisher<Frame>): Completable {
-        return Flowable.fromPublisher(frame)
-                .concatMap { f -> sendOne(f).toFlowable<Void>() }
-                .ignoreElements()
-    }
+    override fun send(frame: Publisher<Frame>): Completable =
+            Flowable.fromPublisher(frame)
+                    .concatMapCompletable { f -> sendOne(f) }
 
     override fun sendOne(frame: Frame): Completable {
         return if (frameFragmenter.shouldFragment(frame)) {
@@ -48,48 +44,20 @@ class FragmentationDuplexConnection(private val source: DuplexConnection, mtu: I
     override fun receive(): Flowable<Frame> = source
             .receive()
             .concatMap { frame ->
-                if (FrameHeaderFlyweight.FLAGS_F == frame.flags() and FrameHeaderFlyweight.FLAGS_F) {
-                    val frameReassembler = getFrameReassembler(frame)
-                    frameReassembler.append(frame)
-                    Flowable.empty<Frame>()
-                } else if (frameReassemblersContain(frame.streamId)) {
-                    val frameReassembler = removeFrameReassembler(frame.streamId)
-                    frameReassembler.append(frame)
-                    val reassembled = frameReassembler.reassemble()
-                    Flowable.just<Frame>(reassembled)
+                if (framesReassembler.shouldReassemble(frame)) {
+                    framesReassembler.reassemble(frame)
                 } else {
-                    Flowable.just<Frame>(frame)
+                    Flowable.just(frame)
                 }
             }
+
+    override fun availability(): Double = source.availability()
 
     override fun close(): Completable = source.close()
 
-    @Synchronized
-    private fun getFrameReassembler(frame: Frame): FrameReassembler =
-            frameReassemblers.getOrPut(frame.streamId, { FrameReassembler(frame) })
-
-
-    @Synchronized
-    private fun removeFrameReassembler(streamId: Int): FrameReassembler =
-            frameReassemblers.remove(streamId)
-
-    @Synchronized
-    private fun frameReassemblersContain(streamId: Int): Boolean =
-            frameReassemblers.containsKey(streamId)
-
     override fun onClose(): Completable = source
             .onClose()
-            .doFinally {
-                synchronized(this) {
-                    frameReassemblers.values.forEach { it.dispose() }
-                    frameReassemblers.clear()
-                }
+            .doOnTerminate {
+                framesReassembler.dispose()
             }
-
-    companion object {
-        val defaultMTU: Int
-            get() = if (java.lang.Boolean.getBoolean("io.rsocket.fragmentation.enable")) {
-                Integer.getInteger("io.rsocket.fragmentation.mtu", 1024)!!
-            } else 0
-    }
 }

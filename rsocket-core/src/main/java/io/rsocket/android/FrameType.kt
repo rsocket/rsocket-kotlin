@@ -24,12 +24,26 @@ enum class FrameType(val encodedType: Int, private val flags: Int = 0) {
     LEASE(0x02, Flags.CAN_HAVE_METADATA),
     KEEPALIVE(0x03, Flags.CAN_HAVE_DATA),
     // Requester to start request
-    REQUEST_RESPONSE(0x04, Flags.CAN_HAVE_METADATA_AND_DATA or Flags.IS_REQUEST_TYPE),
-    FIRE_AND_FORGET(0x05, Flags.CAN_HAVE_METADATA_AND_DATA or Flags.IS_REQUEST_TYPE),
+    REQUEST_RESPONSE(0x04,
+            Flags.CAN_HAVE_METADATA_AND_DATA or
+                    Flags.IS_REQUEST_TYPE or
+                    Flags.IS_FRAGMENTABLE),
+    FIRE_AND_FORGET(0x05,
+            Flags.CAN_HAVE_METADATA_AND_DATA or
+                    Flags.IS_REQUEST_TYPE or
+                    Flags.IS_FRAGMENTABLE),
     REQUEST_STREAM(
-            0x06, Flags.CAN_HAVE_METADATA_AND_DATA or Flags.IS_REQUEST_TYPE or Flags.HAS_INITIAL_REQUEST_N),
+            0x06,
+            Flags.CAN_HAVE_METADATA_AND_DATA or
+                    Flags.IS_REQUEST_TYPE or
+                    Flags.HAS_INITIAL_REQUEST_N
+                    or Flags.IS_FRAGMENTABLE),
     REQUEST_CHANNEL(
-            0x07, Flags.CAN_HAVE_METADATA_AND_DATA or Flags.IS_REQUEST_TYPE or Flags.HAS_INITIAL_REQUEST_N),
+            0x07,
+            Flags.CAN_HAVE_METADATA_AND_DATA or
+                    Flags.IS_REQUEST_TYPE or
+                    Flags.HAS_INITIAL_REQUEST_N or
+                    Flags.IS_FRAGMENTABLE),
     // Requester mid-stream
     REQUEST_N(0x08),
     CANCEL(0x09, Flags.CAN_HAVE_METADATA),
@@ -42,22 +56,28 @@ enum class FrameType(val encodedType: Int, private val flags: Int = 0) {
     RESUME(0x0D),
     RESUME_OK(0x0E),
     // synthetic types from Responder for use by the rest of the machinery
-    NEXT(0xA0, Flags.CAN_HAVE_METADATA_AND_DATA),
+    NEXT(0xA0,
+            Flags.CAN_HAVE_METADATA_AND_DATA or
+                    Flags.IS_FRAGMENTABLE),
     COMPLETE(0xB0),
-    NEXT_COMPLETE(0xC0, Flags.CAN_HAVE_METADATA_AND_DATA),
+    NEXT_COMPLETE(0xC0,
+            Flags.CAN_HAVE_METADATA_AND_DATA or
+                    Flags.IS_FRAGMENTABLE),
     EXT(0xFFFF, Flags.CAN_HAVE_METADATA_AND_DATA);
 
     private object Flags {
 
-        internal val CAN_HAVE_DATA = 1
-        internal val CAN_HAVE_METADATA = 2
-        internal val CAN_HAVE_METADATA_AND_DATA = 3
-        internal val IS_REQUEST_TYPE = 4
-        internal val HAS_INITIAL_REQUEST_N = 8
+        internal const val CAN_HAVE_DATA = 1
+        internal const val CAN_HAVE_METADATA = 2
+        internal const val CAN_HAVE_METADATA_AND_DATA = 3
+        internal const val IS_REQUEST_TYPE = 4
+        internal const val HAS_INITIAL_REQUEST_N = 8
+        internal const val IS_FRAGMENTABLE = 16
     }
 
-    val isRequestType: Boolean
-        get() = Flags.IS_REQUEST_TYPE == flags and Flags.IS_REQUEST_TYPE
+    val isFragmentable = Flags.IS_FRAGMENTABLE == (flags and Flags.IS_FRAGMENTABLE)
+
+    val isRequestType: Boolean = Flags.IS_REQUEST_TYPE == (flags and Flags.IS_REQUEST_TYPE)
 
     fun hasInitialRequestN(): Boolean = Flags.HAS_INITIAL_REQUEST_N == flags and Flags.HAS_INITIAL_REQUEST_N
 
