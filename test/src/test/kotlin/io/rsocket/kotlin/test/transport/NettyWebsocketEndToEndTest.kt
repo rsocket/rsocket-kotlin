@@ -1,5 +1,6 @@
-package io.rsocket.kotlin.test
+package io.rsocket.kotlin.test.transport
 
+import io.rsocket.kotlin.test.transport.EndToEndTest
 import io.rsocket.kotlin.transport.netty.client.WebsocketClientTransport
 import io.rsocket.kotlin.transport.netty.server.WebsocketServerTransport
 

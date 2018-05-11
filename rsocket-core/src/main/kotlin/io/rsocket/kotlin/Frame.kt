@@ -304,9 +304,11 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
 
         fun leaseEnabled(frame: Frame): Boolean {
             ensureFrameType(FrameType.SETUP, frame)
-            return Frame.isFlagSet(
-                    frame.flags(),
-                    SetupFrameFlyweight.FLAGS_WILL_HONOR_LEASE)
+            return SetupFrameFlyweight.supportsLease(frame.flags())
+        }
+
+        fun enableLease(flags: Int): Int {
+            return flags or SetupFrameFlyweight.FLAGS_WILL_HONOR_LEASE
         }
 
         fun keepaliveInterval(frame: Frame): Int {
@@ -594,7 +596,7 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
     object Fragmentation {
 
         fun assembleFrame(blueprintFrame: Frame,
-                          metadata: ByteBuf,
+                          metadata: ByteBuf?,
                           data: ByteBuf): Frame =
 
                 create(blueprintFrame,

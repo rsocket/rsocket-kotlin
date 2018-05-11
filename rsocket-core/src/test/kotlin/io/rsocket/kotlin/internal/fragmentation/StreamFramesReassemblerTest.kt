@@ -19,8 +19,7 @@ package io.rsocket.kotlin.internal.fragmentation
 import io.rsocket.kotlin.Frame
 import io.rsocket.kotlin.FrameType
 import io.rsocket.kotlin.DefaultPayload
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Test
 import java.nio.ByteBuffer
 import java.util.concurrent.ThreadLocalRandom
@@ -56,6 +55,23 @@ class StreamFramesReassemblerTest {
         while (reassembleMetadata.hasRemaining()) {
             assertEquals(reassembleMetadata.get(), metadata.get())
         }
+    }
+
+    @Test
+    fun testReassembleNullMetadata() {
+        val data = createRandomBytes(16)
+        val metadata = null
+
+        val from = Frame.Request.from(
+                1024, FrameType.REQUEST_RESPONSE, DefaultPayload(data, metadata), 1)
+        val frameFragmenter = FrameFragmenter(2)
+        val frameReassembler = StreamFramesReassembler(from)
+        frameFragmenter.fragment(from)
+                .doOnNext { frameReassembler.append(it) }
+                .blockingLast()
+        val reassemble = frameReassembler.reassemble()
+        assertFalse(reassemble.hasMetadata())
+        assertFalse(reassemble.metadata.hasRemaining())
     }
 
     private fun createRandomBytes(size: Int): ByteBuffer {

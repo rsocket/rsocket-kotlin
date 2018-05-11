@@ -20,6 +20,10 @@ class KeepAliveOptions : KeepAlive {
 
     override fun keepAliveMaxLifeTime() = maxLifeTime
 
+    fun copy(): KeepAliveOptions = KeepAliveOptions()
+            .keepAliveInterval(interval)
+            .keepAliveMaxLifeTime(maxLifeTime)
+
     private fun assertDuration(duration: Duration, name: String) {
         if (duration.millis <= 0) {
             throw IllegalArgumentException("$name must be positive")

@@ -36,15 +36,6 @@ class ServiceHandlerTest {
     }
 
     @Test
-    fun serviceHandlerLease() {
-        ServerServiceHandler(conn, keepAlive, errors)
-        receiver.onNext(Frame.Lease.from(1000, 42, EMPTY_BUFFER))
-        val errs = errors.get()
-        assertEquals(1, errs.size)
-        assertTrue(errs.first() is IllegalArgumentException)
-    }
-
-    @Test
     fun serviceHandlerError() {
         ServerServiceHandler(conn, keepAlive, errors)
         receiver.onNext(Frame.Error.from(0, RejectedSetupException("error")))

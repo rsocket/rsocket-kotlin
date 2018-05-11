@@ -169,6 +169,9 @@ internal object SetupFrameFlyweight {
     fun keepaliveInterval(byteBuf: ByteBuf): Int =
             byteBuf.getInt(KEEPALIVE_INTERVAL_FIELD_OFFSET)
 
+    fun supportsLease(flags: Int): Boolean =
+            (flags and FLAGS_WILL_HONOR_LEASE) == FLAGS_WILL_HONOR_LEASE
+
     fun maxLifetime(byteBuf: ByteBuf): Int =
             byteBuf.getInt(MAX_LIFETIME_FIELD_OFFSET)
 

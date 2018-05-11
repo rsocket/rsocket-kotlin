@@ -36,8 +36,9 @@ internal abstract class ServiceHandler(private val serviceConnection: DuplexConn
 
     protected abstract fun handleKeepAlive(frame: Frame)
 
+    @Suppress("UNUSED_PARAMETER")
     private fun handleLease(frame: Frame) {
-        errorConsumer(IllegalArgumentException("Lease is not supported: $frame"))
+        /*Lease interceptors processed frame already, just release it here*/
     }
 
     private fun handleError(frame: Frame) {
