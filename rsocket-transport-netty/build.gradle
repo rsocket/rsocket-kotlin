@@ -1,6 +1,5 @@
-repositories {
-    maven { url 'https://repo.spring.io/libs-snapshot' }
-}
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.jfrog.artifactory'
 
 dependencies {
     api project(":rsocket-core")

@@ -13,15 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'com.jfrog.artifactory'
+package io.rsocket.kotlin.exceptions
 
-targetCompatibility = 1.7
-sourceCompatibility = 1.7
-
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.6"
-}
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.6"
-}
+/** Marker interface only  */
+interface Retryable

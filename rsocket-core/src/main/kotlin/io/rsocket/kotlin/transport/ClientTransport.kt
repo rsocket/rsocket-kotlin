@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'com.jfrog.artifactory'
 
-targetCompatibility = 1.7
-sourceCompatibility = 1.7
+package io.rsocket.kotlin.transport
 
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.6"
-}
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.6"
+import io.reactivex.Single
+import io.rsocket.kotlin.DuplexConnection
+
+/** A client contract for writing transports of RSocket.  */
+interface ClientTransport : Transport {
+
+    /**
+     * Returns a `Publisher`, every subscription to which returns a single `DuplexConnection`.
+     *
+     * @return `Publisher`, every subscription returns a single `DuplexConnection`.
+     */
+    fun connect(): Single<DuplexConnection>
 }

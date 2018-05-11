@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'com.jfrog.artifactory'
+package io.rsocket.kotlin.exceptions
 
-targetCompatibility = 1.7
-sourceCompatibility = 1.7
+import io.rsocket.kotlin.internal.frame.ErrorFrameFlyweight
 
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.6"
-}
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.6"
+class UnsupportedSetupException : SetupException {
+    constructor(message: String) : super(message)
+
+    constructor(message: String, cause: Throwable) : super(message, cause)
+
+    override fun errorCode(): Int {
+        return ErrorFrameFlyweight.UNSUPPORTED_SETUP
+    }
 }

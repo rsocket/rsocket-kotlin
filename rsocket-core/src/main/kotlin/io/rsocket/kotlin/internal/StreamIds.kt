@@ -13,15 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'com.jfrog.artifactory'
 
-targetCompatibility = 1.7
-sourceCompatibility = 1.7
+package io.rsocket.kotlin.internal
 
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.6"
+internal sealed class StreamIds(private var streamId: Int) {
+
+    @Synchronized
+    fun nextStreamId(): Int {
+        streamId += 2
+        return streamId
+    }
+
+    @Synchronized
+    fun isBeforeOrCurrent(streamId: Int): Boolean =
+            this.streamId >= streamId && streamId > 0
 }
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.6"
-}
+
+internal class ClientStreamIds : StreamIds(-1)
+
+internal class ServerStreamIds : StreamIds(0)
