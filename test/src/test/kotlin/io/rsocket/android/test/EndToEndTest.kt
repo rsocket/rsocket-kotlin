@@ -71,7 +71,7 @@ abstract class EndToEndTest
     }
 
     @Test
-    fun response() {
+    open fun response() {
         val data = testData()
         val response = client.requestResponse(data.payload())
                 .timeout(10, TimeUnit.SECONDS)
