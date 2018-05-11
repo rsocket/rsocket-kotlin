@@ -41,7 +41,7 @@ class RequesterStreamWindowTest {
                 .doOnRequest { demand = it }
         rule.client.requestChannel(request).subscribe({}, {})
         rule.receiver.onNext(Frame.RequestN.from(1, Int.MAX_VALUE))
-        assertThat("requester channel handler is not limited",
+        assertThat("requesterConnection channel handler is not limited",
                 demand,
                 equalTo(WindowRSocketRule.streamWindow.toLong()))
     }
@@ -81,10 +81,7 @@ class RequesterStreamWindowTest {
                                 Unit
                             },
                             StreamIdSupplier.clientSupplier(),
-                            streamWindow,
-                            Duration(1000, TimeUnit.SECONDS),
-                            Duration(1000, TimeUnit.SECONDS),
-                            4)
+                            streamWindow)
 
                     base.evaluate()
                 }

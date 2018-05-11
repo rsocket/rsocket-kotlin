@@ -13,6 +13,7 @@ data class Duration(val value: Long, val unit: TimeUnit) {
     companion object {
         val ZERO = Duration(0, TimeUnit.MILLISECONDS)
         fun ofSeconds(n: Long) = Duration(n, TimeUnit.SECONDS)
+        fun ofMillis(n: Long) = Duration(n, TimeUnit.MILLISECONDS)
     }
 }
 

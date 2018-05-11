@@ -16,7 +16,6 @@
 
 package io.rsocket.android
 
-import io.netty.buffer.Unpooled
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
@@ -27,10 +26,12 @@ import io.rsocket.android.RSocketServer.DisposableSubscription.Companion.subscri
 import io.rsocket.android.exceptions.ApplicationException
 import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_C
 import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_M
-import io.rsocket.android.internal.LimitableRequestPublisher
+import io.rsocket.android.internal.RequestingPublisher
+import io.rsocket.android.internal.StreamReceiver
 import io.rsocket.android.util.ExceptionUtil.noStacktrace
 import io.rsocket.android.util.PayloadImpl
 import org.reactivestreams.Publisher
+import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import java.nio.channels.ClosedChannelException
 import java.util.concurrent.ConcurrentHashMap
@@ -48,7 +49,7 @@ internal class RSocketServer(
     private val sendingSubscriptions =
             ConcurrentHashMap<Int, Subscription>(256)
     private val channelReceivers =
-            ConcurrentHashMap<Int, UnicastProcessor<Payload>>(256)
+            ConcurrentHashMap<Int, Subscriber<Payload>>(256)
     private val sentFrames =
             UnicastProcessor
                     .create<Frame>()
@@ -132,7 +133,6 @@ internal class RSocketServer(
                 FrameType.FIRE_AND_FORGET -> handleFireAndForget(streamId, fireAndForget(PayloadImpl(frame)))
                 FrameType.REQUEST_RESPONSE -> handleRequestResponse(streamId, requestResponse(PayloadImpl(frame)))
                 FrameType.CANCEL -> handleCancel(streamId)
-                FrameType.KEEPALIVE -> handleKeepAlive(frame)
                 FrameType.REQUEST_N -> handleRequestN(streamId, frame)
                 FrameType.REQUEST_STREAM -> handleStream(streamId, requestStream(PayloadImpl(frame)), initialRequestN(frame))
                 FrameType.REQUEST_CHANNEL -> handleChannel(streamId, frame)
@@ -141,11 +141,16 @@ internal class RSocketServer(
                 FrameType.COMPLETE -> handleComplete(streamId)
                 FrameType.ERROR -> handleError(streamId, frame)
                 FrameType.NEXT_COMPLETE -> handleNextComplete(streamId, frame)
-                else -> Completable.complete()
-            }.toFlowable<Void>()
+                else -> handleUnsupportedFrame(frame)
+            }.toFlowable()
         } finally {
             frame.release()
         }
+    }
+
+    private fun handleUnsupportedFrame(frame: Frame): Completable {
+        errorConsumer(IllegalArgumentException("Unsupported frame: $frame"))
+        return Completable.complete()
     }
 
     private fun handleNextComplete(streamId: Int, frame: Frame): Completable {
@@ -209,9 +214,9 @@ internal class RSocketServer(
         response
                 .map { payload -> Frame.PayloadFrame.from(streamId, FrameType.NEXT, payload) }
                 .compose { frameFlux ->
-                    val frames = LimitableRequestPublisher.wrap(frameFlux)
+                    val frames = RequestingPublisher.wrap(frameFlux)
                     sendingSubscriptions[streamId] = frames
-                    frames.increaseRequestLimit(initialRequestN.toLong())
+                    frames.request(initialRequestN.toLong())
                     frames
                 }
                 .concatWith(Flowable.just(Frame.PayloadFrame.from(streamId, FrameType.COMPLETE)))
@@ -222,13 +227,13 @@ internal class RSocketServer(
     }
 
     private fun handleChannel(streamId: Int, firstFrame: Frame): Completable {
-        val receiver = UnicastProcessor.create<Payload>()
+        val receiver = StreamReceiver.create()
         channelReceivers[streamId] = receiver
 
         val request = receiver
+                .doOnRequestIfActive { request -> sentFrames.onNext(Frame.RequestN.from(streamId, request)) }
                 .doOnCancel { sentFrames.onNext(Frame.Cancel.from(streamId)) }
                 .doOnError { t -> sentFrames.onNext(Frame.Error.from(streamId, t)) }
-                .doOnRequest { request -> sentFrames.onNext(Frame.RequestN.from(streamId, request)) }
                 .doFinally { channelReceivers -= streamId }
 
         receiver.onNext(PayloadImpl(firstFrame))
@@ -237,14 +242,6 @@ internal class RSocketServer(
                 streamId,
                 requestChannel(request),
                 initialRequestN(firstFrame))
-    }
-
-    private fun handleKeepAlive(frame: Frame): Completable {
-        if (Frame.Keepalive.hasRespondFlag(frame)) {
-            val data = Unpooled.wrappedBuffer(frame.data)
-            sentFrames.onNext(Frame.Keepalive.from(data, false))
-        }
-        return Completable.complete()
     }
 
     private fun handleCancel(streamId: Int): Completable {

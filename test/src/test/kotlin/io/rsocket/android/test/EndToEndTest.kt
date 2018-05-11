@@ -3,6 +3,7 @@ package io.rsocket.android.test
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
+import io.reactivex.processors.BehaviorProcessor
 import io.rsocket.android.*
 import io.rsocket.android.transport.ClientTransport
 import io.rsocket.android.transport.ServerTransport
@@ -22,35 +23,33 @@ abstract class EndToEndTest
  private val serverTransport: (InetSocketAddress) -> ServerTransport<NettyContextCloseable>) {
     private lateinit var server: NettyContextCloseable
     private lateinit var client: RSocket
-    private lateinit var handler: TestRSocketHandler
+    private lateinit var clientHandler: TestRSocketHandler
+    private lateinit var serverHandler: TestRSocketHandler
     private val errors = Errors()
 
     @Before
     fun setUp() {
-        handler = TestRSocketHandler()
         val address = InetSocketAddress
                 .createUnresolved("localhost", 0)
-
+        val serverAcceptor = ServerAcceptor()
+        clientHandler = TestRSocketHandler()
         server = RSocketFactory
                 .receive()
                 .errorConsumer(errors.errorsConsumer())
-                .acceptor {
-                    object : SocketAcceptor {
-                        override fun accept(setup: ConnectionSetupPayload,
-                                            sendingSocket: RSocket): Single<RSocket> {
-                            return Single.just(handler)
-                        }
-                    }
-                }.transport(serverTransport(address))
+                .acceptor { serverAcceptor }
+                .transport(serverTransport(address))
                 .start()
                 .blockingGet()
 
         client = RSocketFactory
                 .connect()
                 .errorConsumer(errors.errorsConsumer())
+                .acceptor { {  clientHandler } }
                 .transport { clientTransport(server.address()) }
                 .start()
                 .blockingGet()
+
+        serverHandler = serverAcceptor.handler().blockingGet()
     }
 
     @After
@@ -67,7 +66,7 @@ abstract class EndToEndTest
                 .andThen(Completable.timer(1, TimeUnit.SECONDS))
                 .blockingAwait(10, TimeUnit.SECONDS)
         assertThat(errors.errors()).isEmpty()
-        assertThat(handler.fireAndForgetData()).hasSize(1)
+        assertThat(serverHandler.fireAndForgetData()).hasSize(1)
                 .contains(data)
     }
 
@@ -106,7 +105,7 @@ abstract class EndToEndTest
     }
 
     @Test
-    fun metadataPush() {
+    fun clientMetadataPush() {
         val payload = PayloadImpl("", "md")
         client.metadataPush(payload)
                 .andThen(Completable.timer(1, TimeUnit.SECONDS))
@@ -114,7 +113,21 @@ abstract class EndToEndTest
                 .blockingAwait()
 
         assertThat(errors.errors()).isEmpty()
-        assertThat(handler.metadataPushData())
+        assertThat(serverHandler.metadataPushData())
+                .hasSize(1)
+                .contains("md")
+    }
+
+    @Test
+    fun serverMetadataPush() {
+        val payload = PayloadImpl("", "md")
+        serverHandler.sendMetadataPush(payload)
+                .andThen(Completable.timer(1, TimeUnit.SECONDS))
+                .timeout(10, TimeUnit.SECONDS)
+                .blockingAwait()
+
+        assertThat(errors.errors()).isEmpty()
+        assertThat(clientHandler.metadataPushData())
                 .hasSize(1)
                 .contains("md")
     }
@@ -149,7 +162,7 @@ abstract class EndToEndTest
 
     private fun testData() = Data("d", "md")
 
-    internal class TestRSocketHandler : AbstractRSocket() {
+    internal class TestRSocketHandler(private val requester: RSocket? = null) : AbstractRSocket() {
         private val fnf = ArrayList<Data>()
         private val metadata = ArrayList<String>()
 
@@ -175,6 +188,10 @@ abstract class EndToEndTest
             return Flowable.fromPublisher(payloads)
         }
 
+        fun sendMetadataPush(payload: Payload): Completable = requester
+                ?.metadataPush(payload)
+                ?: Completable.complete()
+
         fun fireAndForgetData() = fnf
 
         fun metadataPushData() = metadata
@@ -190,6 +207,23 @@ abstract class EndToEndTest
         }
 
         fun errors() = errors
+    }
+
+    internal class ServerAcceptor : SocketAcceptor {
+
+        private val serverHandlerReady = BehaviorProcessor
+                .create<TestRSocketHandler>()
+
+        override fun accept(setup: ConnectionSetupPayload,
+                            sendingSocket: RSocket): Single<RSocket> {
+            val handler = TestRSocketHandler(sendingSocket)
+            serverHandlerReady.onNext(handler)
+            return Single.just(handler)
+        }
+
+        fun handler(): Single<TestRSocketHandler> {
+            return serverHandlerReady.firstOrError()
+        }
     }
 
     internal data class Data(val data: String, val metadata: String) {
