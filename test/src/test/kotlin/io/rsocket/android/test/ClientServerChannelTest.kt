@@ -2,7 +2,10 @@ package io.rsocket.android.test
 
 import io.reactivex.Flowable
 import io.reactivex.Single
-import io.rsocket.android.*
+import io.rsocket.android.AbstractRSocket
+import io.rsocket.android.Payload
+import io.rsocket.android.RSocket
+import io.rsocket.android.RSocketFactory
 import io.rsocket.android.transport.netty.client.TcpClientTransport
 import io.rsocket.android.transport.netty.server.NettyContextCloseable
 import io.rsocket.android.transport.netty.server.TcpServerTransport
@@ -27,14 +30,8 @@ class ClientServerChannelTest {
         channelHandler = ChannelHandler(intervalMillis)
         server = RSocketFactory
                 .receive()
-                .acceptor {
-                    object : SocketAcceptor {
-                        override fun accept(setup: ConnectionSetupPayload,
-                                            sendingSocket: RSocket): Single<RSocket> {
-                            return Single.just(channelHandler)
-                        }
-                    }
-                }.transport(serverTransport)
+                .acceptor { { _, _ -> Single.just(channelHandler) } }
+                .transport(serverTransport)
                 .start()
                 .blockingGet()
 

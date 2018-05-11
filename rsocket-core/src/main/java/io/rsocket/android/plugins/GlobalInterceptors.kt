@@ -14,5 +14,23 @@
  *  limitations under the License.
  */
 
-@javax.annotation.ParametersAreNonnullByDefault
-package io.rsocket.android.transport;
+package io.rsocket.android.plugins
+
+/** JVM wide plugins for RSocket  */
+object GlobalInterceptors : InterceptorOptions {
+    private val DEFAULT = InterceptorRegistry()
+
+    override fun connection(interceptor: DuplexConnectionInterceptor) {
+        DEFAULT.connection(interceptor)
+    }
+
+    override fun requester(interceptor: RSocketInterceptor) {
+        DEFAULT.requester(interceptor)
+    }
+
+    override fun handler(interceptor: RSocketInterceptor) {
+        DEFAULT.handler(interceptor)
+    }
+
+    internal fun create(): InterceptorRegistry = InterceptorRegistry(DEFAULT)
+}

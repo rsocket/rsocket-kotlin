@@ -16,7 +16,7 @@
 
 package io.rsocket.android
 
-internal class StreamIdSupplier private constructor(private var streamId: Int) {
+internal sealed class StreamIds(private var streamId: Int) {
 
     @Synchronized
     fun nextStreamId(): Int {
@@ -25,12 +25,10 @@ internal class StreamIdSupplier private constructor(private var streamId: Int) {
     }
 
     @Synchronized
-    fun isBeforeOrCurrent(streamId: Int): Boolean = this.streamId >= streamId && streamId > 0
-
-    companion object {
-
-        fun clientSupplier(): StreamIdSupplier = StreamIdSupplier(-1)
-
-        fun serverSupplier(): StreamIdSupplier = StreamIdSupplier(0)
-    }
+    fun isBeforeOrCurrent(streamId: Int): Boolean =
+            this.streamId >= streamId && streamId > 0
 }
+
+internal class ClientStreamIds : StreamIds(-1)
+
+internal class ServerStreamIds : StreamIds(0)

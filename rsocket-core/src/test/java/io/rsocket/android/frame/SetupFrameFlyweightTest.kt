@@ -31,7 +31,15 @@ class SetupFrameFlyweightTest {
     fun validFrame() {
         val metadata = Unpooled.wrappedBuffer(byteArrayOf(1, 2, 3, 4))
         val data = Unpooled.wrappedBuffer(byteArrayOf(5, 4, 3))
-        SetupFrameFlyweight.encode(byteBuf, 0, 5, 500, "metadata_type", "data_type", metadata, data)
+        SetupFrameFlyweight.encode(byteBuf,
+                0,
+                SetupFrameFlyweight.CURRENT_VERSION,
+                5,
+                500,
+                "metadata_type",
+                "data_type",
+                metadata,
+                data)
 
         metadata.resetReaderIndex()
         data.resetReaderIndex()
@@ -43,19 +51,6 @@ class SetupFrameFlyweightTest {
         assertEquals(data, FrameHeaderFlyweight.sliceFrameData(byteBuf))
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun resumeNotSupported() {
-        SetupFrameFlyweight.encode(
-                byteBuf,
-                SetupFrameFlyweight.FLAGS_RESUME_ENABLE,
-                5,
-                500,
-                "",
-                "",
-                Unpooled.EMPTY_BUFFER,
-                Unpooled.EMPTY_BUFFER)
-    }
-
     @Test
     fun validResumeFrame() {
         val token = Unpooled.wrappedBuffer(byteArrayOf(2, 3))
@@ -64,6 +59,7 @@ class SetupFrameFlyweightTest {
         SetupFrameFlyweight.encode(
                 byteBuf,
                 SetupFrameFlyweight.FLAGS_RESUME_ENABLE,
+                SetupFrameFlyweight.CURRENT_VERSION,
                 5,
                 500,
                 token,
@@ -91,6 +87,7 @@ class SetupFrameFlyweightTest {
         val encoded = SetupFrameFlyweight.encode(
                 byteBuf,
                 0,
+                SetupFrameFlyweight.CURRENT_VERSION,
                 5000,
                 60000,
                 "mdmt",

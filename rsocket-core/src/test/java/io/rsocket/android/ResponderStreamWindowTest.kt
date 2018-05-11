@@ -3,7 +3,6 @@ package io.rsocket.android
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.processors.PublishProcessor
-import io.reactivex.schedulers.Schedulers
 import io.rsocket.android.test.util.LocalDuplexConnection
 import io.rsocket.android.util.PayloadImpl
 import org.hamcrest.MatcherAssert.assertThat
@@ -67,7 +66,7 @@ class ResponderStreamWindowTest {
         lateinit var sender: PublishProcessor<Frame>
         lateinit var receiver: PublishProcessor<Frame>
         lateinit var conn: LocalDuplexConnection
-        internal lateinit var server: RSocketServer
+        internal lateinit var responder: RSocketResponder
         val errors: MutableList<Throwable> = ArrayList()
         var responseDemand: Long? = null
 
@@ -79,7 +78,7 @@ class ResponderStreamWindowTest {
                     receiver = PublishProcessor.create<Frame>()
                     conn = LocalDuplexConnection("conn", sender, receiver)
 
-                    server = RSocketServer(
+                    responder = RSocketResponder(
                             conn,
                             object : AbstractRSocket() {
                                 override fun requestStream(payload: Payload): Flowable<Payload> =

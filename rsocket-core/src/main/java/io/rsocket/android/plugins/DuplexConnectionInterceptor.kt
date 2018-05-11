@@ -18,7 +18,8 @@ package io.rsocket.android.plugins
 
 import io.rsocket.android.DuplexConnection
 
-interface DuplexConnectionInterceptor : (DuplexConnectionInterceptor.Type, DuplexConnection) -> DuplexConnection {
+interface DuplexConnectionInterceptor : (DuplexConnectionInterceptor.Type,
+                                         DuplexConnection) -> DuplexConnection {
     enum class Type {
         ALL,
         SETUP,

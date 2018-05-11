@@ -25,12 +25,12 @@ import io.rsocket.android.FrameType.*
 import io.rsocket.android.FrameType.SETUP
 import io.rsocket.android.plugins.DuplexConnectionInterceptor.Type
 import io.rsocket.android.plugins.DuplexConnectionInterceptor.Type.*
-import io.rsocket.android.plugins.PluginRegistry
+import io.rsocket.android.plugins.InterceptorRegistry
 import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
 
 internal class ServerConnectionDemuxer(source: DuplexConnection,
-                                       plugins: PluginRegistry)
+                                       plugins: InterceptorRegistry)
     : ConnectionDemuxer(source, plugins) {
 
     override fun demux(frame: Frame): Type {
@@ -46,7 +46,7 @@ internal class ServerConnectionDemuxer(source: DuplexConnection,
 }
 
 internal class ClientConnectionDemuxer(source: DuplexConnection,
-                                       plugins: PluginRegistry)
+                                       plugins: InterceptorRegistry)
     : ConnectionDemuxer(source, plugins) {
 
     override fun demux(frame: Frame): Type {
@@ -62,7 +62,7 @@ internal class ClientConnectionDemuxer(source: DuplexConnection,
 }
 
 sealed class ConnectionDemuxer(private val source: DuplexConnection,
-                               plugins: PluginRegistry) {
+                               plugins: InterceptorRegistry) {
 
     private val setupConnection: DuplexConnection
     private val responderConnection: DuplexConnection
@@ -70,19 +70,19 @@ sealed class ConnectionDemuxer(private val source: DuplexConnection,
     private val serviceConnection: DuplexConnection
 
     init {
-        val src = plugins.applyConnection(ALL, source)
+        val src = plugins.interceptConnection(ALL, source)
 
         val setupConn = DemuxedConnection(src)
-        setupConnection = plugins.applyConnection(Type.SETUP, setupConn)
+        setupConnection = plugins.interceptConnection(Type.SETUP, setupConn)
 
         val requesterConn = DemuxedConnection(src)
-        requesterConnection = plugins.applyConnection(REQUESTER, requesterConn)
+        requesterConnection = plugins.interceptConnection(REQUESTER, requesterConn)
 
         val responderConn = DemuxedConnection(src)
-        responderConnection = plugins.applyConnection(RESPONDER, responderConn)
+        responderConnection = plugins.interceptConnection(RESPONDER, responderConn)
 
         val serviceConn = DemuxedConnection(src)
-        serviceConnection = plugins.applyConnection(SERVICE, serviceConn)
+        serviceConnection = plugins.interceptConnection(SERVICE, serviceConn)
 
         src.receive()
                 .groupBy(::demux)

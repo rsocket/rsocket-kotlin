@@ -37,12 +37,12 @@ import java.nio.channels.ClosedChannelException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
-/** Client Side of a RSocket socket. Sends [Frame]s to a [RSocketServer]  */
-internal class RSocketClient constructor(
+/** Requester Side of a RSocket. Sends [Frame]s to a [RSocketResponder]  */
+internal class RSocketRequester(
         private val connection: DuplexConnection,
         private val errorConsumer: (Throwable) -> Unit,
-        private val streamIdSupplier: StreamIdSupplier,
-        private val streamDemandLimit: Int) : RSocket {
+        private val streamIds: StreamIds,
+        private val streamRequestLimit: Int) : RSocket {
 
     private val senders = ConcurrentHashMap<Int, Subscription>(256)
     private val receivers = ConcurrentHashMap<Int, Subscriber<Payload>>(256)
@@ -78,14 +78,14 @@ internal class RSocketClient constructor(
 
     override fun requestStream(payload: Payload): Flowable<Payload> =
             interactions.requestStream(
-                    handleRequestStream(payload).rebatchRequests(streamDemandLimit))
+                    handleRequestStream(payload).rebatchRequests(streamRequestLimit))
 
     override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> =
             interactions.requestChannel(
                     handleChannel(
                             Flowable.fromPublisher(payloads)
-                                    .rebatchRequests(streamDemandLimit)
-                    ).rebatchRequests(streamDemandLimit))
+                                    .rebatchRequests(streamRequestLimit)
+                    ).rebatchRequests(streamRequestLimit))
 
     override fun metadataPush(payload: Payload): Completable =
             interactions.metadataPush(handleMetadataPush(payload))
@@ -98,7 +98,7 @@ internal class RSocketClient constructor(
 
     private fun handleFireAndForget(payload: Payload): Completable {
         return Completable.fromRunnable {
-            val streamId = streamIdSupplier.nextStreamId()
+            val streamId = streamIds.nextStreamId()
             val requestFrame = Frame.Request.from(
                     streamId,
                     FrameType.FIRE_AND_FORGET,
@@ -110,7 +110,7 @@ internal class RSocketClient constructor(
 
     private fun handleRequestResponse(payload: Payload): Single<Payload> {
         return Single.defer {
-            val streamId = streamIdSupplier.nextStreamId()
+            val streamId = streamIds.nextStreamId()
             val requestFrame = Frame.Request.from(
                     streamId, FrameType.REQUEST_RESPONSE, payload, 1)
 
@@ -127,7 +127,7 @@ internal class RSocketClient constructor(
 
     private fun handleRequestStream(payload: Payload): Flowable<Payload> {
         return Flowable.defer {
-            val streamId = streamIdSupplier.nextStreamId()
+            val streamId = streamIds.nextStreamId()
             val receiver = StreamReceiver.create()
             receivers[streamId] = receiver
             val reqN = Cond()
@@ -156,7 +156,7 @@ internal class RSocketClient constructor(
     private fun handleChannel(request: Flowable<Payload>): Flowable<Payload> {
         return Flowable.defer {
             val receiver = StreamReceiver.create()
-            val streamId = streamIdSupplier.nextStreamId()
+            val streamId = streamIds.nextStreamId()
             val reqN = Cond()
 
             receiver.doOnRequestIfActive { requestN ->
@@ -278,7 +278,7 @@ internal class RSocketClient constructor(
     }
 
     private fun missingReceiver(streamId: Int, type: FrameType, frame: Frame) {
-        if (!streamIdSupplier.isBeforeOrCurrent(streamId)) {
+        if (!streamIds.isBeforeOrCurrent(streamId)) {
             val err = if (type === FrameType.ERROR) {
                 IllegalStateException(
                         "Client received error for non-existent stream: " +

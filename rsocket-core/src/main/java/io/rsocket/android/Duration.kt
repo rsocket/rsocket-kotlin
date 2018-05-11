@@ -8,12 +8,19 @@ import java.util.concurrent.TimeUnit
 
 data class Duration(val value: Long, val unit: TimeUnit) {
 
-    val toMillis = unit.toMillis(value)
+    val millis = unit.toMillis(value)
+
+    val intMillis = unit.toMillis(value).toInt()
 
     companion object {
-        val ZERO = Duration(0, TimeUnit.MILLISECONDS)
+
         fun ofSeconds(n: Long) = Duration(n, TimeUnit.SECONDS)
+
+        fun ofSeconds(n: Int) = Duration(n.toLong(), TimeUnit.SECONDS)
+
         fun ofMillis(n: Long) = Duration(n, TimeUnit.MILLISECONDS)
+
+        fun ofMillis(n: Int) = Duration(n.toLong(), TimeUnit.MILLISECONDS)
     }
 }
 

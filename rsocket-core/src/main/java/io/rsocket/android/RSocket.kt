@@ -55,7 +55,7 @@ interface RSocket : Availability, Closeable {
     /**
      * Request-Channel interaction model of `RSocket`.
      *
-     * @param payloads Stream of request payloads.
+     * @param payloads Stream of send payloads.
      * @return Stream of response payloads.
      */
     fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload>

@@ -2,7 +2,6 @@ package io.rsocket.android
 
 import io.reactivex.Flowable
 import io.reactivex.processors.PublishProcessor
-import io.reactivex.schedulers.Schedulers
 import io.rsocket.android.test.util.LocalDuplexConnection
 import io.rsocket.android.util.PayloadImpl
 import org.hamcrest.MatcherAssert.assertThat
@@ -22,14 +21,14 @@ class RequesterStreamWindowTest {
     @Test(timeout = 3_000)
     fun requesterStreamInbound() {
         checkRequesterInbound(
-                rule.client.requestStream(PayloadImpl("test")),
+                rule.requester.requestStream(PayloadImpl("test")),
                 FrameType.REQUEST_STREAM)
     }
 
     @Test(timeout = 3_000)
     fun requesterChannelInbound() {
         checkRequesterInbound(
-                rule.client.requestChannel(Flowable.just(PayloadImpl("test"))),
+                rule.requester.requestChannel(Flowable.just(PayloadImpl("test"))),
                 FrameType.REQUEST_CHANNEL)
     }
 
@@ -39,7 +38,7 @@ class RequesterStreamWindowTest {
         val request = Flowable.just(1, 2, 3)
                 .map { PayloadImpl(it.toString()) as Payload }
                 .doOnRequest { demand = it }
-        rule.client.requestChannel(request).subscribe({}, {})
+        rule.requester.requestChannel(request).subscribe({}, {})
         rule.receiver.onNext(Frame.RequestN.from(1, Int.MAX_VALUE))
         assertThat("requesterConnection channel handler is not limited",
                 demand,
@@ -63,7 +62,7 @@ class RequesterStreamWindowTest {
         lateinit var sender: PublishProcessor<Frame>
         lateinit var receiver: PublishProcessor<Frame>
         lateinit var conn: LocalDuplexConnection
-        internal lateinit var client: RSocketClient
+        internal lateinit var requester: RSocketRequester
         val errors: MutableList<Throwable> = ArrayList()
 
         override fun apply(base: Statement, description: Description?): Statement {
@@ -74,13 +73,13 @@ class RequesterStreamWindowTest {
                     receiver = PublishProcessor.create<Frame>()
                     conn = LocalDuplexConnection("conn", sender, receiver)
 
-                    client = RSocketClient(
+                    requester = RSocketRequester(
                             conn,
                             { throwable ->
                                 errors.add(throwable)
                                 Unit
                             },
-                            StreamIdSupplier.clientSupplier(),
+                            ClientStreamIds(),
                             streamWindow)
 
                     base.evaluate()

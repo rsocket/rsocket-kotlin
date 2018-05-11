@@ -15,24 +15,19 @@
  */
 package io.rsocket.android
 
-import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_M
-
-import io.netty.buffer.*
+import io.netty.buffer.ByteBuf
+import io.netty.buffer.ByteBufAllocator
+import io.netty.buffer.ByteBufHolder
+import io.netty.buffer.Unpooled
 import io.netty.util.IllegalReferenceCountException
 import io.netty.util.Recycler
 import io.netty.util.Recycler.Handle
 import io.netty.util.ResourceLeakDetector
-import io.rsocket.android.frame.ErrorFrameFlyweight
-import io.rsocket.android.frame.FrameHeaderFlyweight
-import io.rsocket.android.frame.KeepaliveFrameFlyweight
-import io.rsocket.android.frame.LeaseFrameFlyweight
-import io.rsocket.android.frame.RequestFrameFlyweight
-import io.rsocket.android.frame.RequestNFrameFlyweight
-import io.rsocket.android.frame.SetupFrameFlyweight
-import io.rsocket.android.frame.VersionFlyweight
+import io.rsocket.android.frame.*
+import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_M
+import org.slf4j.LoggerFactory
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import org.slf4j.LoggerFactory
 
 /**
  * Represents a Frame sent over a [DuplexConnection].
@@ -51,10 +46,12 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
 
     /** Return the content which is held by this [Frame].  */
     override fun content(): ByteBuf {
-        if (content!!.refCnt() <= 0) {
-            throw IllegalReferenceCountException(content!!.refCnt())
-        }
-        return content as ByteBuf
+        val c = content
+        return if (c == null) {
+            throw IllegalReferenceCountException(0)
+        } else if (c.refCnt() <= 0) {
+            throw IllegalReferenceCountException(c.refCnt())
+        } else content as ByteBuf
     }
 
     /** Creates a deep copy of this [Frame].  */
@@ -79,7 +76,7 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
      * Returns the reference count of this object. If `0`, it means this object has been
      * deallocated.
      */
-    override fun refCnt(): Int = content!!.refCnt()
+    override fun refCnt(): Int = content?.refCnt() ?: 0
 
     /** Increases the reference count by `1`.  */
     override fun retain(): Frame {
@@ -227,6 +224,7 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
 
         fun from(
                 flags: Int,
+                version: Int,
                 keepaliveInterval: Int,
                 maxLifetime: Int,
                 metadataMimeType: String,
@@ -250,6 +248,7 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
                     SetupFrameFlyweight.encode(
                             frame.content!!,
                             flags,
+                            version,
                             keepaliveInterval,
                             maxLifetime,
                             metadataMimeType,
@@ -258,6 +257,25 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
                             data))
             return frame
         }
+
+        fun from(
+                flags: Int,
+                keepaliveInterval: Int,
+                maxLifetime: Int,
+                metadataMimeType: String,
+                dataMimeType: String,
+                payload: Payload): Frame {
+
+            return from(
+                    flags,
+                    SetupFrameFlyweight.CURRENT_VERSION,
+                    keepaliveInterval,
+                    maxLifetime,
+                    metadataMimeType,
+                    dataMimeType,
+                    payload)
+        }
+
 
         fun getFlags(frame: Frame): Int {
             ensureFrameType(FrameType.SETUP, frame)
@@ -269,6 +287,20 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
         fun version(frame: Frame): Int {
             ensureFrameType(FrameType.SETUP, frame)
             return SetupFrameFlyweight.version(frame.content!!)
+        }
+
+        fun resumeEnabled(frame: Frame): Boolean {
+            ensureFrameType(FrameType.SETUP, frame)
+            return Frame.isFlagSet(
+                    frame.flags(),
+                    SetupFrameFlyweight.FLAGS_RESUME_ENABLE)
+        }
+
+        fun leaseEnabled(frame: Frame): Boolean {
+            ensureFrameType(FrameType.SETUP, frame)
+            return Frame.isFlagSet(
+                    frame.flags(),
+                    SetupFrameFlyweight.FLAGS_WILL_HONOR_LEASE)
         }
 
         fun keepaliveInterval(frame: Frame): Int {
@@ -587,7 +619,7 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
     }
 
     companion object {
-        val NULL_BYTEBUFFER:ByteBuffer = ByteBuffer.allocateDirect(0)
+        val NULL_BYTEBUFFER: ByteBuffer = ByteBuffer.allocateDirect(0)
 
         private val RECYCLER = object : Recycler<Frame>() {
             override fun newObject(handle: Handle<Frame>): Frame {

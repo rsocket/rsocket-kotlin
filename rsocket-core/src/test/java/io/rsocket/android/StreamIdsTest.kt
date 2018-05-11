@@ -19,13 +19,15 @@ package io.rsocket.android
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 
 import org.junit.Test
 
-class StreamIdSupplierTest {
+class StreamIdsTest {
+
     @Test
     fun testClientSequence() {
-        val s = StreamIdSupplier.clientSupplier()
+        val s = ClientStreamIds()
         assertEquals(1, s.nextStreamId().toLong())
         assertEquals(3, s.nextStreamId().toLong())
         assertEquals(5, s.nextStreamId().toLong())
@@ -33,7 +35,7 @@ class StreamIdSupplierTest {
 
     @Test
     fun testServerSequence() {
-        val s = StreamIdSupplier.serverSupplier()
+        val s = ServerStreamIds()
         assertEquals(2, s.nextStreamId().toLong())
         assertEquals(4, s.nextStreamId().toLong())
         assertEquals(6, s.nextStreamId().toLong())
@@ -41,7 +43,7 @@ class StreamIdSupplierTest {
 
     @Test
     fun testClientIsValid() {
-        val s = StreamIdSupplier.clientSupplier()
+        val s = ClientStreamIds()
 
         assertFalse(s.isBeforeOrCurrent(1))
         assertFalse(s.isBeforeOrCurrent(3))
@@ -63,7 +65,7 @@ class StreamIdSupplierTest {
 
     @Test
     fun testServerIsValid() {
-        val s = StreamIdSupplier.serverSupplier()
+        val s = ServerStreamIds()
 
         assertFalse(s.isBeforeOrCurrent(2))
         assertFalse(s.isBeforeOrCurrent(4))
