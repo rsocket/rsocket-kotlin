@@ -17,7 +17,6 @@
 
 package io.rsocket.android
 
-import io.netty.buffer.Unpooled
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
@@ -35,7 +34,7 @@ import org.junit.runners.model.Statement
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-class RSocketServerTest {
+class RSocketResponderTest {
 
     @get:Rule
     val rule = ServerSocketRule()
@@ -112,8 +111,8 @@ class RSocketServerTest {
         lateinit var sender: PublishProcessor<Frame>
         lateinit var receiver: PublishProcessor<Frame>
         private lateinit var conn: LocalDuplexConnection
-        lateinit var errors:MutableList<Throwable>
-        internal lateinit var rsocket: RSocketServer
+        lateinit var errors: MutableList<Throwable>
+        internal lateinit var rsocket: RSocketResponder
 
         override fun apply(base: Statement, description: Description?): Statement {
             return object : Statement() {
@@ -130,7 +129,11 @@ class RSocketServerTest {
             receiver = PublishProcessor.create<Frame>()
             conn = LocalDuplexConnection("serverConn", sender, receiver)
             errors = ArrayList()
-            rsocket = RSocketServer(conn, acceptingSocket) { throwable -> errors.add(throwable) }
+            rsocket = RSocketResponder(
+                    conn,
+                    acceptingSocket,
+                    { throwable -> errors.add(throwable) },
+                    128)
         }
 
         fun setAccSocket(acceptingSocket: RSocket) {

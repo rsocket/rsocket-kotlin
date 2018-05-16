@@ -20,6 +20,7 @@ import io.reactivex.subscribers.TestSubscriber
 import io.rsocket.android.Frame
 import io.rsocket.android.FrameType
 import io.rsocket.android.util.PayloadImpl
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import java.nio.ByteBuffer
 import java.util.concurrent.ThreadLocalRandom
@@ -65,6 +66,16 @@ class FrameFragmenterTest {
         val subs = TestSubscriber.create<Frame>()
         frameFragmenter.fragment(from).blockingSubscribe(subs)
         subs.assertValueCount(8).assertComplete().assertNoErrors()
+    }
+
+    @Test
+    fun fragmentOnlyOnPositiveMtu() {
+        val data = ByteBuffer.allocate(42)
+        val metadata = createRandomBytes(16)
+        val frameFragmenter = FrameFragmenter(0)
+        assertFalse(frameFragmenter.shouldFragment(Frame.Request.from(
+                1, FrameType.REQUEST_RESPONSE, PayloadImpl(data, metadata), 1))
+        )
     }
 
     @Test

@@ -2,15 +2,15 @@ package io.rsocket.android.internal
 
 import io.rsocket.android.DuplexConnection
 import io.rsocket.android.Frame
-import io.rsocket.android.plugins.PluginRegistry
+import io.rsocket.android.plugins.InterceptorRegistry
 import org.junit.Assert
 import org.junit.Test
 
-class ClientDemuxerTest : ConnectionDemuxerTest() {
+internal class ClientDemuxerTest : ConnectionDemuxerTest() {
 
     override fun createDemuxer(conn: DuplexConnection,
-                               pluginRegistry: PluginRegistry): ConnectionDemuxer =
-            ClientConnectionDemuxer(conn, pluginRegistry)
+                               interceptorRegistry: InterceptorRegistry): ConnectionDemuxer =
+            ClientConnectionDemuxer(conn, interceptorRegistry)
 
     @Test
     override fun requester() {

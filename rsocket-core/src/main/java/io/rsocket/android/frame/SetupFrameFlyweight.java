@@ -76,19 +76,18 @@ public class SetupFrameFlyweight {
   public static int encode(
       final ByteBuf byteBuf,
       int flags,
+      int version,
       final int keepaliveInterval,
       final int maxLifetime,
       final String metadataMimeType,
       final String dataMimeType,
       final ByteBuf metadata,
       final ByteBuf data) {
-    if ((flags & FLAGS_RESUME_ENABLE) != 0) {
-      throw new IllegalArgumentException("RESUME_ENABLE not supported");
-    }
 
     return encode(
         byteBuf,
         flags,
+        version,
         keepaliveInterval,
         maxLifetime,
         Unpooled.EMPTY_BUFFER,
@@ -102,6 +101,7 @@ public class SetupFrameFlyweight {
   static int encode(
       final ByteBuf byteBuf,
       int flags,
+      int version,
       final int keepaliveInterval,
       final int maxLifetime,
       final ByteBuf resumeToken,
@@ -121,7 +121,7 @@ public class SetupFrameFlyweight {
     int length =
         FrameHeaderFlyweight.encodeFrameHeader(byteBuf, frameLength, flags, FrameType.SETUP, 0);
 
-    byteBuf.setInt(VERSION_FIELD_OFFSET, CURRENT_VERSION);
+    byteBuf.setInt(VERSION_FIELD_OFFSET, version);
     byteBuf.setInt(KEEPALIVE_INTERVAL_FIELD_OFFSET, keepaliveInterval);
     byteBuf.setInt(MAX_LIFETIME_FIELD_OFFSET, maxLifetime);
 

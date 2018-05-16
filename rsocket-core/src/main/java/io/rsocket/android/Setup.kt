@@ -18,12 +18,13 @@ package io.rsocket.android
 import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_M
 
 import io.rsocket.android.frame.SetupFrameFlyweight
+import io.rsocket.android.util.KeepAlive
 import java.nio.ByteBuffer
 
 /**
  * Exposed to server for determination of RequestHandler based on mime types and SETUP metadata/data
  */
-abstract class ConnectionSetupPayload : Payload {
+abstract class Setup : Payload, KeepAlive {
 
     abstract fun metadataMimeType(): String
 
@@ -35,18 +36,26 @@ abstract class ConnectionSetupPayload : Payload {
 
     override fun hasMetadata(): Boolean = Frame.isFlagSet(flags, FLAGS_M)
 
-    private class ConnectionSetupPayloadImpl(
+    private class SetupImpl(
             private val metadataMimeType: String,
             private val dataMimeType: String,
             override val data: ByteBuffer,
             override val metadata: ByteBuffer,
-            override val flags: Int) : ConnectionSetupPayload() {
+            private val keepAliveInterval: Int,
+            private val keepAliveLifetime: Int,
+            override val flags: Int) : Setup() {
 
         init {
             if (!hasMetadata() && metadata.remaining() > 0) {
                 throw IllegalArgumentException("metadata flag incorrect")
             }
         }
+
+        override fun keepAliveInterval(): Duration =
+                Duration.ofMillis(keepAliveInterval)
+
+        override fun keepAliveMaxLifeTime(): Duration =
+                Duration.ofMillis(keepAliveLifetime)
 
         override fun metadataMimeType(): String = metadataMimeType
 
@@ -55,45 +64,22 @@ abstract class ConnectionSetupPayload : Payload {
 
     companion object {
 
-        private val NO_FLAGS = 0
-        val HONOR_LEASE = SetupFrameFlyweight.FLAGS_WILL_HONOR_LEASE
+        private const val HONOR_LEASE = SetupFrameFlyweight.FLAGS_WILL_HONOR_LEASE
 
-        fun create(metadataMimeType: String, dataMimeType: String): ConnectionSetupPayload {
-            return ConnectionSetupPayloadImpl(
-                    metadataMimeType,
-                    dataMimeType,
-                    Frame.NULL_BYTEBUFFER,
-                    Frame.NULL_BYTEBUFFER,
-                    NO_FLAGS)
-        }
-
-        fun create(
-                metadataMimeType: String, dataMimeType: String, payload: Payload): ConnectionSetupPayload {
-            return ConnectionSetupPayloadImpl(
-                    metadataMimeType,
-                    dataMimeType,
-                    payload.data,
-                    payload.metadata,
-                    if (payload.hasMetadata()) FLAGS_M else 0)
-        }
-
-        fun create(
-                metadataMimeType: String, dataMimeType: String, flags: Int): ConnectionSetupPayload =
-                ConnectionSetupPayloadImpl(
-                        metadataMimeType,
-                        dataMimeType,
-                        Frame.NULL_BYTEBUFFER,
-                        Frame.NULL_BYTEBUFFER,
-                        flags)
-
-        fun create(setupFrame: Frame): ConnectionSetupPayload {
+        internal fun create(setupFrame: Frame): Setup {
             Frame.ensureFrameType(FrameType.SETUP, setupFrame)
-            return ConnectionSetupPayloadImpl(
-                    Frame.Setup.metadataMimeType(setupFrame),
-                    Frame.Setup.dataMimeType(setupFrame),
-                    setupFrame.data,
-                    setupFrame.metadata,
-                    Frame.Setup.getFlags(setupFrame))
+            return try {
+                SetupImpl(
+                        Frame.Setup.metadataMimeType(setupFrame),
+                        Frame.Setup.dataMimeType(setupFrame),
+                        setupFrame.data,
+                        setupFrame.metadata,
+                        Frame.Setup.keepaliveInterval(setupFrame),
+                        Frame.Setup.maxLifetime(setupFrame),
+                        Frame.Setup.getFlags(setupFrame))
+            } finally {
+                setupFrame.release()
+            }
         }
     }
 }

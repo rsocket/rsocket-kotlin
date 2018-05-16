@@ -23,14 +23,15 @@ import org.junit.Assert.assertEquals
 
 import io.rsocket.android.Frame
 import io.rsocket.android.FrameType
-import io.rsocket.android.plugins.PluginRegistry
+import io.rsocket.android.frame.SetupFrameFlyweight
+import io.rsocket.android.plugins.InterceptorRegistry
 import io.rsocket.android.test.util.TestDuplexConnection
 import io.rsocket.android.util.PayloadImpl
 import org.junit.Before
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Test
 
-abstract class ConnectionDemuxerTest {
+internal abstract class ConnectionDemuxerTest {
     lateinit var source: TestDuplexConnection
     lateinit var demuxer: ConnectionDemuxer
 
@@ -46,7 +47,7 @@ abstract class ConnectionDemuxerTest {
         responderFrames = AtomicInteger()
         setupFrames = AtomicInteger()
         serviceFrames = AtomicInteger()
-        demuxer = createDemuxer(source, PluginRegistry())
+        demuxer = createDemuxer(source, InterceptorRegistry())
 
         demuxer
                 .requesterConnection()
@@ -103,7 +104,9 @@ abstract class ConnectionDemuxerTest {
 
     @Test
     fun setup() {
-        val setup = Frame.Setup.from(0, 0, 0,
+        val setup = Frame.Setup.from(0,
+                SetupFrameFlyweight.CURRENT_VERSION,
+                0, 0,
                 "test",
                 "test",
                 PayloadImpl.EMPTY)
@@ -119,6 +122,6 @@ abstract class ConnectionDemuxerTest {
     abstract fun responder()
 
     abstract fun createDemuxer(conn: DuplexConnection,
-                               pluginRegistry: PluginRegistry): ConnectionDemuxer
+                               interceptorRegistry: InterceptorRegistry): ConnectionDemuxer
 }
 

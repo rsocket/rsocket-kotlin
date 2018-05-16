@@ -84,8 +84,8 @@ class RSocketTest {
 
     class SocketRule : ExternalResource() {
 
-        lateinit internal var crs: RSocketClient
-        internal lateinit var srs: RSocketServer
+        lateinit internal var crs: RSocketRequester
+        internal lateinit var srs: RSocketResponder
         private var requestAcceptor: RSocket? = null
         lateinit private var serverProcessor: PublishProcessor<Frame>
         lateinit private var clientProcessor: PublishProcessor<Frame>
@@ -106,7 +106,7 @@ class RSocketTest {
             serverProcessor = PublishProcessor.create()
             clientProcessor = PublishProcessor.create()
 
-            val serverConnection = LocalDuplexConnection("server", clientProcessor, serverProcessor)
+            val serverConnection = LocalDuplexConnection("responder", clientProcessor, serverProcessor)
             val clientConnection = LocalDuplexConnection("client", serverProcessor, clientProcessor)
 
             requestAcceptor = if (null != requestAcceptor)
@@ -126,13 +126,16 @@ class RSocketTest {
                     }
                 }
 
-            srs = RSocketServer(
-                    serverConnection, requestAcceptor!!) { throwable -> serverErrors.add(throwable) }
+            srs = RSocketResponder(
+                    serverConnection,
+                    requestAcceptor!!,
+                    { throwable -> serverErrors.add(throwable) },
+                    128)
 
-            crs = RSocketClient(
+            crs = RSocketRequester(
                     clientConnection,
                     { throwable -> clientErrors.add(throwable) },
-                    StreamIdSupplier.clientSupplier(),
+                    ClientStreamIds(),
                     128)
         }
 
@@ -163,13 +166,13 @@ class RSocketTest {
 
         fun assertNoServerErrors() {
             assertThat(
-                    "Unexpected error on the server connection.",
+                    "Unexpected error on the responder connection.",
                     serverErrors,
                     empty())
         }
 
         fun assertServerErrorCount(count: Int) {
-            assertThat("Unexpected error count on the server connection.",
+            assertThat("Unexpected error count on the responder connection.",
                     serverErrors,
                     hasSize(count))
         }

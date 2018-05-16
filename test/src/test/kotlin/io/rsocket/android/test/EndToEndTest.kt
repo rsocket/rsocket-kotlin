@@ -44,7 +44,7 @@ abstract class EndToEndTest
         client = RSocketFactory
                 .connect()
                 .errorConsumer(errors.errorsConsumer())
-                .acceptor { {  clientHandler } }
+                .acceptor { { clientHandler } }
                 .transport { clientTransport(server.address()) }
                 .start()
                 .blockingGet()
@@ -71,7 +71,7 @@ abstract class EndToEndTest
     }
 
     @Test
-    fun response() {
+    open fun response() {
         val data = testData()
         val response = client.requestResponse(data.payload())
                 .timeout(10, TimeUnit.SECONDS)
@@ -209,12 +209,13 @@ abstract class EndToEndTest
         fun errors() = errors
     }
 
-    internal class ServerAcceptor : SocketAcceptor {
+    internal class ServerAcceptor
+        : (Setup, RSocket) -> Single<RSocket> {
 
         private val serverHandlerReady = BehaviorProcessor
                 .create<TestRSocketHandler>()
 
-        override fun accept(setup: ConnectionSetupPayload,
+        override fun invoke(setup: Setup,
                             sendingSocket: RSocket): Single<RSocket> {
             val handler = TestRSocketHandler(sendingSocket)
             serverHandlerReady.onNext(handler)

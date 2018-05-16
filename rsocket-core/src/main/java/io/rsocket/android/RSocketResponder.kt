@@ -22,7 +22,7 @@ import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import io.reactivex.processors.UnicastProcessor
 import io.rsocket.android.Frame.Request.initialRequestN
-import io.rsocket.android.RSocketServer.DisposableSubscription.Companion.subscription
+import io.rsocket.android.RSocketResponder.DisposableSubscription.Companion.subscription
 import io.rsocket.android.exceptions.ApplicationException
 import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_C
 import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_M
@@ -38,12 +38,12 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 
-/** Server side RSocket. Receives [Frame]s from a [RSocketClient]  */
-internal class RSocketServer(
+/** Responder side RSocket. Receives [Frame]s from a [RSocketRequester]  */
+internal class RSocketResponder(
         private val connection: DuplexConnection,
         private val requestHandler: RSocket,
         private val errorConsumer: (Throwable) -> Unit,
-        private val streamDemandLimit: Int) : RSocket {
+        private val streamRequestLimit: Int) : RSocket {
 
     private val completion = Lifecycle()
     private val sendingSubscriptions =
@@ -55,15 +55,6 @@ internal class RSocketServer(
                     .create<Frame>()
                     .toSerialized()
     private val receiveDisposable: Disposable
-
-    internal constructor(connection: DuplexConnection,
-                         requestHandler: RSocket,
-                         errorConsumer: (Throwable) -> Unit)
-            : this(
-            connection,
-            requestHandler,
-            errorConsumer,
-            DEFAULT_STREAM_WINDOW)
 
     init {
         connection
@@ -98,7 +89,7 @@ internal class RSocketServer(
 
     override fun requestStream(payload: Payload): Flowable<Payload> {
         return try {
-            requestHandler.requestStream(payload).rebatchRequests(streamDemandLimit)
+            requestHandler.requestStream(payload).rebatchRequests(streamRequestLimit)
         } catch (t: Throwable) {
             Flowable.error(t)
         }
@@ -107,8 +98,8 @@ internal class RSocketServer(
     override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> {
         return try {
             requestHandler.requestChannel(
-                    Flowable.fromPublisher(payloads).rebatchRequests(streamDemandLimit)
-            ).rebatchRequests(streamDemandLimit)
+                    Flowable.fromPublisher(payloads).rebatchRequests(streamRequestLimit)
+            ).rebatchRequests(streamRequestLimit)
         } catch (t: Throwable) {
             Flowable.error(t)
         }
@@ -313,7 +304,6 @@ internal class RSocketServer(
     }
 
     companion object {
-        private const val DEFAULT_STREAM_WINDOW = 128
         private val closedException = noStacktrace(ClosedChannelException())
     }
 }

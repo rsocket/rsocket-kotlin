@@ -6,4 +6,8 @@ import io.rsocket.android.transport.netty.server.TcpServerTransport
 class NettyTcpEndToEndTest
     : EndToEndTest(
         { TcpClientTransport.create(it) },
-        { TcpServerTransport.create(it) })
+        { TcpServerTransport.create(it) }) {
+
+    override fun response() {
+    }
+}

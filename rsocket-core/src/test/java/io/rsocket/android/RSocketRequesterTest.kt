@@ -37,7 +37,7 @@ import org.junit.runners.model.Statement
 import java.nio.channels.ClosedChannelException
 import java.util.concurrent.TimeUnit
 
-class RSocketClientTest {
+class RSocketRequesterTest {
 
     @get:Rule
     val rule = ClientSocketRule()
@@ -59,7 +59,7 @@ class RSocketClientTest {
 
     @Test(timeout = 2000)
     fun testStreamInitialN() {
-        val stream = rule.client.requestStream(PayloadImpl.EMPTY)
+        val stream = rule.requester.requestStream(PayloadImpl.EMPTY)
         Completable.timer(100, TimeUnit.MILLISECONDS)
                 .subscribe({
                     val subscriber = TestSubscriber<Payload>()
@@ -86,7 +86,7 @@ class RSocketClientTest {
 
     @Test(timeout = 2000)
     fun testHandleApplicationException() {
-        val response = rule.client.requestResponse(PayloadImpl.EMPTY).toFlowable()
+        val response = rule.requester.requestResponse(PayloadImpl.EMPTY).toFlowable()
         val responseSub = TestSubscriber.create<Payload>()
         response.subscribe(responseSub)
         rule.receiver.onNext(Frame.Error.from(1, ApplicationException("error")))
@@ -96,7 +96,7 @@ class RSocketClientTest {
 
     @Test(timeout = 2000)
     fun testHandleValidFrame() {
-        val response = rule.client.requestResponse(PayloadImpl.EMPTY).toFlowable()
+        val response = rule.requester.requestResponse(PayloadImpl.EMPTY).toFlowable()
         val sub = TestSubscriber.create<Payload>()
         response.subscribe(sub)
 
@@ -112,7 +112,7 @@ class RSocketClientTest {
         val subs = TestSubscriber.create<Frame>()
         rule.sender.filter { it.type != FrameType.KEEPALIVE }
                 .subscribe(subs)
-        rule.client.requestResponse(PayloadImpl.EMPTY).timeout(100, TimeUnit.MILLISECONDS)
+        rule.requester.requestResponse(PayloadImpl.EMPTY).timeout(100, TimeUnit.MILLISECONDS)
                 .onErrorReturnItem(PayloadImpl("test"))
                 .blockingGet()
 
@@ -127,7 +127,7 @@ class RSocketClientTest {
     @Test
     fun testLazyRequestResponse() {
 
-        val response = rule.client.requestResponse(PayloadImpl.EMPTY).toFlowable()
+        val response = rule.requester.requestResponse(PayloadImpl.EMPTY).toFlowable()
 
         val framesSubs = TestSubscriber.create<Frame>()
         rule.sender.filter { it.type != FrameType.KEEPALIVE }.subscribe(framesSubs)
@@ -145,7 +145,7 @@ class RSocketClientTest {
     fun requestErrorOnConnectionClose() {
         Completable.timer(100, TimeUnit.MILLISECONDS)
                 .andThen(rule.conn.close()).subscribe()
-        val requestStream = rule.client.requestStream(PayloadImpl("test"))
+        val requestStream = rule.requester.requestStream(PayloadImpl("test"))
         val subs = TestSubscriber.create<Payload>()
         requestStream.blockingSubscribe(subs)
         subs.assertNoValues()
@@ -185,7 +185,7 @@ class RSocketClientTest {
     private fun assertFlowableError(f: (RSocket) -> Flowable<Payload>) {
         rule.conn.close().subscribe()
         val subs = TestSubscriber.create<Payload>()
-        f(rule.client).delaySubscription(100, TimeUnit.MILLISECONDS).blockingSubscribe(subs)
+        f(rule.requester).delaySubscription(100, TimeUnit.MILLISECONDS).blockingSubscribe(subs)
         subs.assertNoValues()
         subs.assertError { it is ClosedChannelException }
     }
@@ -194,7 +194,7 @@ class RSocketClientTest {
         rule.conn.close().subscribe()
         val requestStream = Completable
                 .timer(100, TimeUnit.MILLISECONDS)
-                .andThen(f(rule.client))
+                .andThen(f(rule.requester))
         val err = requestStream.blockingGet()
         assertThat("error is not ClosedChannelException",
                 err is ClosedChannelException)
@@ -202,7 +202,7 @@ class RSocketClientTest {
 
     private fun assertSingleError(f: (RSocket) -> Single<Payload>) {
         rule.conn.close().subscribe()
-        val response = f(rule.client).delaySubscription(100, TimeUnit.MILLISECONDS)
+        val response = f(rule.requester).delaySubscription(100, TimeUnit.MILLISECONDS)
         val subs = BlockingMultiObserver<Payload>()
         response.subscribe(subs)
         val err = subs.blockingGetError()
@@ -214,7 +214,7 @@ class RSocketClientTest {
         lateinit var sender: PublishProcessor<Frame>
         lateinit var receiver: PublishProcessor<Frame>
         lateinit var conn: LocalDuplexConnection
-        internal lateinit var client: RSocketClient
+        internal lateinit var requester: RSocketRequester
         val errors: MutableList<Throwable> = ArrayList()
 
         override fun apply(base: Statement, description: Description?): Statement {
@@ -225,13 +225,13 @@ class RSocketClientTest {
                     receiver = PublishProcessor.create<Frame>()
                     conn = LocalDuplexConnection("clientRequesterConn", sender, receiver)
 
-                    client = RSocketClient(
+                    requester = RSocketRequester(
                             conn,
                             { throwable ->
                                 errors.add(throwable)
                                 Unit
                             },
-                            StreamIdSupplier.clientSupplier(),
+                            ClientStreamIds(),
                             streamWindow)
 
                     base.evaluate()

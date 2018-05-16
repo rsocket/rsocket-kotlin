@@ -6,18 +6,20 @@ import io.rsocket.android.Frame
 import io.rsocket.android.FrameType
 import io.rsocket.android.exceptions.Exceptions
 
-internal abstract class ServiceConnectionHandler(private val serviceConnection: DuplexConnection,
-                                                 private val errorConsumer: (Throwable) -> Unit) {
+internal abstract class ServiceHandler(private val serviceConnection: DuplexConnection,
+                                       private val errorConsumer: (Throwable) -> Unit) {
 
-    val sentFrames = UnicastProcessor.create<Frame>()
+    internal val sentFrames = UnicastProcessor.create<Frame>()
 
     init {
-        serviceConnection.receive()
+        serviceConnection
+                .receive()
                 .subscribe(::handle, errorConsumer)
-        serviceConnection.send(sentFrames).subscribe({}, errorConsumer)
-    }
 
-    abstract fun handleKeepAlive(frame: Frame)
+        serviceConnection
+                .send(sentFrames)
+                .subscribe({}, errorConsumer)
+    }
 
     private fun handle(frame: Frame) {
         try {
@@ -25,15 +27,17 @@ internal abstract class ServiceConnectionHandler(private val serviceConnection: 
                 FrameType.LEASE -> handleLease(frame)
                 FrameType.ERROR -> handleError(frame)
                 FrameType.KEEPALIVE -> handleKeepAlive(frame)
-                else -> unknownFrame(frame)
+                else -> handleUnknownFrame(frame)
             }
         } finally {
             frame.release()
         }
     }
 
+    protected abstract fun handleKeepAlive(frame: Frame)
+
     private fun handleLease(frame: Frame) {
-        unsupportedLeaseFrame(frame)
+        errorConsumer(IllegalArgumentException("Lease is not supported: $frame"))
     }
 
     private fun handleError(frame: Frame) {
@@ -42,12 +46,7 @@ internal abstract class ServiceConnectionHandler(private val serviceConnection: 
 
     }
 
-    private fun unknownFrame(frame: Frame) {
+    private fun handleUnknownFrame(frame: Frame) {
         errorConsumer(IllegalArgumentException("Unexpected frame: $frame"))
     }
-
-    private fun unsupportedLeaseFrame(frame: Frame) {
-        errorConsumer(IllegalArgumentException("Lease is not supported: $frame"))
-    }
-
 }

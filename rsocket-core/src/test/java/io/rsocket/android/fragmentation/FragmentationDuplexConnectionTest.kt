@@ -25,8 +25,10 @@ import io.reactivex.subscribers.TestSubscriber
 import io.rsocket.android.DuplexConnection
 import io.rsocket.android.Frame
 import io.rsocket.android.FrameType
+import io.rsocket.android.frame.FrameHeaderFlyweight.FLAGS_F
 import io.rsocket.android.util.PayloadImpl
-import org.junit.Assert
+import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.*
@@ -56,38 +58,161 @@ class FragmentationDuplexConnectionTest {
         fun sentFrames(): Flowable<Frame> = sent
     }
 
-    @Test
-    fun testSendOneWithFragmentation() {
+    lateinit var mockConnection: MockConnection
+    lateinit var sentSubscriber :TestSubscriber<Frame>
 
-        val mockConnection = MockConnection()
+    @Before
+    fun setUp() {
+        mockConnection = MockConnection()
 
-        val sentSubscriber = TestSubscriber.create<Frame>()
+        sentSubscriber = TestSubscriber.create<Frame>()
         mockConnection.sentFrames().subscribe(sentSubscriber)
-
+    }
+    @Test
+    fun dataMetadataAboveMtu() {
         val data = createRandomBytes(16)
         val metadata = createRandomBytes(16)
 
         val frame = Frame.Request.from(
                 1, FrameType.REQUEST_RESPONSE, PayloadImpl(data, metadata), 1)
 
-        val duplexConnection = FragmentationDuplexConnection(mockConnection, 2)
+        val mtu = 2
+        val duplexConnection = FragmentationDuplexConnection(mockConnection, mtu)
         val subs = TestSubscriber.create<Frame>()
-        Flowable.defer { duplexConnection.sendOne(frame).toFlowable<Frame>() }.subscribeOn(Schedulers.io()).blockingSubscribe(subs)
+        Flowable.defer { duplexConnection.sendOne(frame).toFlowable<Frame>() }
+                .subscribeOn(Schedulers.io())
+                .blockingSubscribe(subs)
         subs.assertComplete()
 
         sentSubscriber.assertNoErrors()
         sentSubscriber.assertComplete()
-        Assert.assertEquals(16, sentSubscriber.valueCount())
-        Completable.complete()
-  }
+        assertEquals(16, sentSubscriber.valueCount())
+        val frames = sentSubscriber.values()
+        val lastFrame = frames.last()
+        val firstFrames = frames.take(15)
+        val metadataFrames = frames.take(8)
+        val dataFrames = frames.takeLast(8)
+        firstFrames.forEach {
+            assertTrue(it.isFlagSet(FLAGS_F))
+        }
+        assertFalse(lastFrame.isFlagSet(FLAGS_F))
+        metadataFrames.forEach {
+            assertTrue(it.metadata.remaining() == mtu)
+            assertFalse(it.data.hasRemaining())
+        }
 
-    private fun <T> any(): T {
-        Mockito.any<T>()
-        return uninitialized()
+        dataFrames.forEach {
+            assertFalse(it.metadata.hasRemaining())
+            assertTrue(it.data.remaining() == mtu)
+        }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun <T> uninitialized(): T = null as T
+    @Test
+    fun dataAboveMtu() {
+        val data = createRandomBytes(16)
+        val metadata = createRandomBytes(1)
+
+        val frame = Frame.Request.from(
+                1, FrameType.REQUEST_RESPONSE, PayloadImpl(data, metadata), 1)
+
+        val mtu = 2
+        val duplexConnection = FragmentationDuplexConnection(mockConnection, mtu)
+        val subs = TestSubscriber.create<Frame>()
+        Flowable.defer { duplexConnection.sendOne(frame).toFlowable<Frame>() }
+                .subscribeOn(Schedulers.io())
+                .blockingSubscribe(subs)
+        subs.assertComplete()
+
+        sentSubscriber.assertNoErrors()
+        sentSubscriber.assertComplete()
+        assertEquals(9, sentSubscriber.valueCount())
+        val frames = sentSubscriber.values()
+        val lastFrame = frames.last()
+        val firstFrames = frames.take(8)
+        val firstFrame = frames.first()
+        firstFrames.forEach {
+            assertTrue(it.isFlagSet(FLAGS_F))
+        }
+        assertFalse(lastFrame.isFlagSet(FLAGS_F))
+        assertTrue(firstFrame.metadata.remaining() == 1)
+        assertTrue(firstFrame.data.remaining() == 1)
+        assertTrue(lastFrame.metadata.remaining() == 0)
+        assertTrue(lastFrame.data.remaining() == 1)
+    }
+
+    @Test
+    fun dataAboveMtuNullMetadata() {
+        val data = createRandomBytes(16)
+        val metadata = null
+
+        val frame = Frame.Request.from(
+                1, FrameType.REQUEST_RESPONSE, PayloadImpl(data, metadata), 1)
+
+        val mtu = 2
+        val duplexConnection = FragmentationDuplexConnection(mockConnection, mtu)
+        val subs = TestSubscriber.create<Frame>()
+        Flowable.defer { duplexConnection.sendOne(frame).toFlowable<Frame>() }
+                .subscribeOn(Schedulers.io())
+                .blockingSubscribe(subs)
+        subs.assertComplete()
+
+        sentSubscriber.assertNoErrors()
+        sentSubscriber.assertComplete()
+        assertEquals(8, sentSubscriber.valueCount())
+        val frames = sentSubscriber.values()
+        val lastFrame = frames.last()
+        val firstFrames = frames.take(7)
+        firstFrames.forEach {
+            assertTrue(it.isFlagSet(FLAGS_F))
+        }
+        assertFalse(lastFrame.isFlagSet(FLAGS_F))
+    }
+
+    @Test
+    fun dataMetadataBelowMtu() {
+        val data = createRandomBytes(16)
+        val metadata = createRandomBytes(1)
+
+        val frame = Frame.Request.from(
+                1, FrameType.REQUEST_RESPONSE, PayloadImpl(data, metadata), 1)
+
+        val mtu = 20
+        val duplexConnection = FragmentationDuplexConnection(mockConnection, mtu)
+        val subs = TestSubscriber.create<Frame>()
+        Flowable.defer { duplexConnection.sendOne(frame).toFlowable<Frame>() }
+                .subscribeOn(Schedulers.io())
+                .blockingSubscribe(subs)
+        subs.assertComplete()
+
+        sentSubscriber.assertNoErrors()
+        sentSubscriber.assertComplete()
+        assertEquals(1, sentSubscriber.valueCount())
+        val firstFrame = sentSubscriber.values().first()
+        assertFalse(firstFrame.isFlagSet(FLAGS_F))
+    }
+
+    @Test
+    fun zeroMtu() {
+        val data = createRandomBytes(16)
+        val metadata = createRandomBytes(1)
+
+        val frame = Frame.Request.from(
+                1, FrameType.REQUEST_RESPONSE, PayloadImpl(data, metadata), 1)
+
+        val mtu = 0
+        val duplexConnection = FragmentationDuplexConnection(mockConnection, mtu)
+        val subs = TestSubscriber.create<Frame>()
+        Flowable.defer { duplexConnection.sendOne(frame).toFlowable<Frame>() }
+                .subscribeOn(Schedulers.io())
+                .blockingSubscribe(subs)
+        subs.assertComplete()
+
+        sentSubscriber.assertNoErrors()
+        sentSubscriber.assertComplete()
+        assertEquals(1, sentSubscriber.valueCount())
+        val firstFrame = sentSubscriber.values().first()
+        assertFalse(firstFrame.isFlagSet(FLAGS_F))
+    }
 
     @Test
     fun testShouldNotFragment() {
@@ -114,7 +239,7 @@ class FragmentationDuplexConnectionTest {
                     frames.blockingSubscribe(subs)
                     subs.assertNoErrors()
                     subs.assertComplete()
-                    Assert.assertEquals(16, subs.valueCount())
+                    assertEquals(16, subs.valueCount())
                     Completable.complete()
                 }
         `when`(mockConnection.sendOne(any())).thenReturn(Completable.complete())
@@ -167,4 +292,12 @@ class FragmentationDuplexConnectionTest {
         ThreadLocalRandom.current().nextBytes(bytes)
         return ByteBuffer.wrap(bytes)
     }
+
+    private fun <T> any(): T {
+        Mockito.any<T>()
+        return uninitialized()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> uninitialized(): T = null as T
 }

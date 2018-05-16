@@ -20,92 +20,103 @@ import io.netty.buffer.ByteBuf
 import io.netty.buffer.Unpooled
 import io.reactivex.Emitter
 import io.reactivex.Flowable
+import io.reactivex.disposables.Disposable
 import io.rsocket.android.Frame
-import io.rsocket.android.FrameType
-import io.rsocket.android.frame.FrameHeaderFlyweight
+import io.rsocket.android.frame.FrameHeaderFlyweight.*
+import java.util.concurrent.atomic.AtomicBoolean
 
-class FrameFragmenter(private val mtu: Int) {
+internal class FrameFragmenter(private val mtu: Int) {
 
     fun shouldFragment(frame: Frame): Boolean =
-            isFragmentableFrame(frame.type) && FrameHeaderFlyweight.payloadLength(frame.content()) > mtu
+            mtu > 0 && frame.isFragmentable
+                    && payloadLength(frame.content()) > mtu
 
-    private fun isFragmentableFrame(type: FrameType): Boolean =
-            when (type) {
-                FrameType.FIRE_AND_FORGET,
-                FrameType.REQUEST_STREAM,
-                FrameType.REQUEST_CHANNEL,
-                FrameType.REQUEST_RESPONSE,
-                FrameType.PAYLOAD,
-                FrameType.NEXT_COMPLETE,
-                FrameType.METADATA_PUSH -> true
-                else -> false
-            }
+    fun fragment(frame: Frame): Flowable<Frame> = Flowable
+            .generate(
+                    { State(frame) },
+                    FragmentGenerator(),
+                    { it.dispose() })
 
-    fun fragment(frame: Frame): Flowable<Frame> = Flowable.generate(FragmentGenerator(frame))
+    private inner class FragmentGenerator : (State, Emitter<Frame>) -> Unit {
 
-    private inner class FragmentGenerator(frame: Frame) : (Emitter<Frame>) -> Unit {
-        private val frame: Frame = frame.retain()
-        private val streamId: Int = frame.streamId
-        private val frameType: FrameType = frame.type
-        private val flags: Int = frame.flags() and FrameHeaderFlyweight.FLAGS_M.inv()
-        private val data: ByteBuf = FrameHeaderFlyweight.sliceFrameData(frame.content())
-        private val metadata: ByteBuf? =
-                if (frame.hasMetadata())
-                    FrameHeaderFlyweight.sliceFrameMetadata(frame.content())
-                else null
+        override fun invoke(state: State, sink: Emitter<Frame>) {
+            val dataLength = state.dataReadableBytes()
 
-        override fun invoke(sink: Emitter<Frame>) {
-            val dataLength = data.readableBytes()
-
-            if (metadata != null) {
-                val metadataLength = metadata.readableBytes()
-
+            if (state.metadataPresent()) {
+                val metadataLength = state.metadataReadableBytes()
                 if (metadataLength > mtu) {
-                    sink.onNext(
-                            Frame.PayloadFrame.from(
-                                    streamId,
-                                    frameType,
-                                    metadata.readSlice(mtu),
-                                    Unpooled.EMPTY_BUFFER,
-                                    flags or FrameHeaderFlyweight.FLAGS_M or FrameHeaderFlyweight.FLAGS_F))
-                } else {
-                    if (dataLength > mtu - metadataLength) {
-                        sink.onNext(
-                                Frame.PayloadFrame.from(
-                                        streamId,
-                                        frameType,
-                                        metadata.readSlice(metadataLength),
-                                        data.readSlice(mtu - metadataLength),
-                                        flags or FrameHeaderFlyweight.FLAGS_M or FrameHeaderFlyweight.FLAGS_F))
-                    } else {
-                        sink.onNext(
-                                Frame.PayloadFrame.from(
-                                        streamId,
-                                        frameType,
-                                        metadata.readSlice(metadataLength),
-                                        data.readSlice(dataLength),
-                                        flags or FrameHeaderFlyweight.FLAGS_M))
-                        frame.release()
-                        sink.onComplete()
-                    }
-                }
-            } else {
-                if (dataLength > mtu) {
-                    sink.onNext(
-                            Frame.PayloadFrame.from(
-                                    streamId,
-                                    frameType,
-                                    Unpooled.EMPTY_BUFFER,
-                                    data.readSlice(mtu),
-                                    flags or FrameHeaderFlyweight.FLAGS_F))
+                    sink.onNext(state.sliceMetadata(
+                            mtu,
+                            FLAGS_F))
+                } else if (dataLength > mtu - metadataLength) {
+                    sink.onNext(state.sliceDataAndMetadata(
+                            metadataLength,
+                            mtu - metadataLength,
+                            FLAGS_F))
                 } else {
                     sink.onNext(
-                            Frame.PayloadFrame.from(
-                                    streamId, frameType, Unpooled.EMPTY_BUFFER, data.readSlice(dataLength), flags))
-                    frame.release()
+                            state.sliceDataAndMetadata(
+                                    metadataLength,
+                                    dataLength,
+                                    0))
                     sink.onComplete()
                 }
+
+            } else if (dataLength > mtu) {
+                sink.onNext(state.sliceData(mtu, FLAGS_F))
+            } else {
+                sink.onNext(state.sliceData(dataLength, 0))
+                sink.onComplete()
+            }
+
+        }
+    }
+
+    private class State(frame: Frame) : Disposable {
+        private val disposed = AtomicBoolean()
+        private val frame: Frame = frame.retain()
+        private val data: ByteBuf = sliceFrameData(frame.content())
+        private val metadata: ByteBuf? =
+                if (frame.hasMetadata())
+                    sliceFrameMetadata(frame.content())
+                else null
+
+        override fun isDisposed(): Boolean = disposed.get()
+
+        override fun dispose() {
+            if (disposed.compareAndSet(false, true)) {
+                frame.release()
             }
         }
+
+        fun metadataPresent(): Boolean = metadata != null
+
+        fun metadataReadableBytes(): Int = metadata!!.readableBytes()
+
+        fun dataReadableBytes(): Int = data.readableBytes()
+
+        fun sliceMetadata(metadataLength: Int, additionalFlags: Int): Frame =
+                Frame.Fragmentation.sliceFrame(
+                        frame,
+                        metadata!!.readSlice(metadataLength),
+                        Unpooled.EMPTY_BUFFER,
+                        additionalFlags)
+
+        fun sliceDataAndMetadata(metadataLength: Int,
+                                 dataLength: Int,
+                                 additionalFlags: Int): Frame =
+                Frame.Fragmentation.sliceFrame(
+                        frame,
+                        metadata!!.readSlice(metadataLength),
+                        data.readSlice(dataLength),
+                        additionalFlags)
+
+        fun sliceData(dataLength: Int,
+                      additionalFlags: Int): Frame =
+                Frame.Fragmentation.sliceFrame(
+                        frame,
+                        null,
+                        data.readSlice(dataLength),
+                        additionalFlags)
     }
 }
