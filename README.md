@@ -1,76 +1,118 @@
-# RSOCKET-ANDROID
+# RSOCKET-KOTLIN
+<a href='https://travis-ci.org/rsocket/rsocket-kotlin/builds'><img src='https://travis-ci.org/rsocket/rsocket-kotlin.svg?branch=master'></a> [![Join the chat at https://gitter.im/RSocket/reactivesocket-java](https://badges.gitter.im/RSocket/reactivesocket-java.svg)](https://gitter.im/ReactiveSocket/reactivesocket-java)
 
-This is an implementation of [RSocket](http://rsocket.io/) - binary application protocol bringing [Reactive-Streams](http://www.reactive-streams.org/) semantics   
-for network communications. 
-`Kotlin` & `RxJava2` backport of [RSocket-java](https://github.com/rsocket/rsocket-java) intended for pre java8 runtimes.   
-Relies on `OkHttp` as WebSockets transport. Target platform is Android (tested on API level 4.4+)  
+R(eactive)Socket: [Reactive Streams](http://www.reactive-streams.org/) over network boundary (tcp, websockets, etc) using Kotlin/Rxjava
 
-Supports 4 interaction models: fire-and-forget, request-response, request-stream, request-channel.  
-   
+RSocket is binary application protocol which models all communication as multiplexed streams of messages over a single network connection, and never synchronously blocks while waiting for a response.
+
+It enables following symmetric interaction models:
+
+*  fire-and-forget (no response)
+* request/response (stream of 1)
+* request/stream (finite/infinite stream of many)
+*  channel (bi-directional streams)
+
+Also, metadata can be associated with stream or RSocket itself
+
 ## Build and Binaries
 
-<a href='https://travis-ci.org/rsocket/rsocket-android/builds'><img src='https://travis-ci.org/rsocket/rsocket-android.svg?branch=master'></a>
-   
-      
-   The project is not released yet, snapshots are available on Bintray
+  Snapshots are available on Bintray
    ```groovy
     repositories {
         maven { url 'https://oss.jfrog.org/libs-snapshot' }
     }
-```    
-
+```
 
 ```groovy
-    dependencies {  
-        compile 'io.rsocket:rsocket-android-core:0.9-SNAPSHOT'    
-        compile 'io.rsocket:rsocket-transport-okhttp:0.9-SNAPSHOT'         
-    }    
+    dependencies {
+        compile 'io.rsocket.android:rsocket-core:0.9-SNAPSHOT'
+    }
 ```
-   
-  ## USAGE
-  Sample mobile application for verifying interactions is available [here](https://github.com/mostroverkhov/rsocket-backport-demo)  
-  
-  ### Client
-  Client initiates new `Connections`. Because protocol is duplex, each side of connection has  
-  `Requester` RSocket for making requests to peer, and `Responder` RSocket to handle  
-   requests from peer. `Responder` RSocket is optional for Client.   
-  
-  ```
-  val rSocket: Single<RSocket> = RSocketFactory               // Requester RSocket  
+### Transports
+`Netty` based Websockets and TCP transport (`Client` and `Server`)
+`OkHttp` based Websockets transport (`Client` only)
+```groovy
+ dependencies {
+                compile 'io.rsocket.android:rsocket-transport-netty:0.9-SNAPSHOT'
+                compile 'io.rsocket.android:rsocket-transport-okhttp:0.9-SNAPSHOT'
+ }
+```
+### Usage
+Each side of connection (Client and Server) has `Requester RSocket` for making requests to peer, and `Responder RSocket` to handle requests from peer.
+
+Messages for all  interactions are represented as `Payload` of binary (`NIO ByteBuffer`) data   and metadata.
+
+UTF-8 `text` payloads can be constructed as follows
+```kotlin
+val request = PayloadImpl.textPayload("data", "metadata")
+```
+Stream Metadata is optional
+```kotlin
+val request = PayloadImpl.textPayload("data")
+```
+#### Interactions
+   Fire and Forget
+  `RSocket.fireAndForget(payload: Payload): Completable`
+   Request-Response
+   `RSocket.requestResponse(payload: Payload): Single<Payload>`
+   Request-Stream
+   `RSocket.requestStream(payload: Payload): Flowable<Payload>`
+   Request-Channel
+   `RSocket.requestChannel(payload: Publisher<Payload>): Flowable<Payload>`
+   Metadata-Push
+   `fun metadataPush(payload: Payload): Completable`
+
+#### Client
+  Client is initiator of `Connections`
+  ```kotlin
+  val rSocket: Single<RSocket> = RSocketFactory               // Requester RSocket
               .connect()
-              .acceptor { -> handler() }                      // Optional responder RSocket  
+              .acceptor { { requesterRSocket -> handler(requesterRSocket) } }  // Optional handler RSocket
               .transport(OkhttpWebsocketClientTransport       // WebSockets transport
-                      .create(protocol, host, port))
+                    .create(protocol, host, port))
               .start()
-              
-              private fun handler(): RSocket {
+
+              private fun handler(requester:RSocket): RSocket {
                       return object : AbstractRSocket() {
-                          override fun fireAndForget(payload: Payload): Completable {
-                              return Completable.fromAction {Log.d("tag", "fire-n-forget from server")}
+                          override fun requestStream(payload: Payload): Flowable<Payload> {
+                              return Flowable.just(PayloadImpl.textPayload("client handler response"))
                           }
                       }
                   }
-   ```
-   Messages for all 4 interactions are represented as `Payload` of binary (nio `ByteBuffer`) data   
-   and metadata (to/from UTF8-string utility methods are available)
-        
-   Request-stream  
-   ```
-   rSocket.flatMapPublisher { 
-      it.requestStream(PayloadImpl("req-stream ping")) 
-    }.subscribe { responsePayload -> Log.d("request-stream", responsePayload.getDataUtf8)}
-   ```
-   
-   Request-channel  
-   ```
-      rSocket.flatMapPublisher { 
-         it.requestChannel(Flowable.just(
-                PayloadImpl("req-channel1"),
-                PayloadImpl("req-channel2"))) 
-       }.subscribe { responsePayload -> Log.d("request-stream", responsePayload.getDataUtf8)}
-   ```
-   ### Server
-   Server accepts new `Connections` from peers. Same as `Client` it has `Requester` and `Responder` RSockets.  
-   As this project does not provide server implementation, use [RSocket-java](https://github.com/rsocket/rsocket-java) with `Netty` based `WebSockets`  
-   transport. Check its [examples](https://github.com/rsocket/rsocket-java/tree/1.0.x/rsocket-examples) folder or sample [app](https://github.com/mostroverkhov/rsocket-backport-demo/tree/master/rsocket-server-netty) minimalistic server 
-   
+```
+#### Server
+Accepts `Connections` from `Clients`
+```kotlin
+val closeable: Single<Closeable> = RSocketFactory
+                .receive()
+                .acceptor { { setup, rSocket -> handler(setup, rSocket) } } // server handler RSocket
+                .transport(WebsocketServerTransport.create(port))  // Netty websocket transport
+                .start()
+
+
+private fun handler(setup: Setup, rSocket: RSocket): Single<RSocket> {
+        return Single.just(object : AbstractRSocket() {
+            override fun requestStream(payload: Payload): Flowable<Payload> {
+                return Flowable.just(PayloadImpl.textPayload("server handler response"))
+            }
+        })
+    }
+
+```
+
+### LICENSE
+
+Copyright 2015-2018 Netflix, Inc.
+Maksym Ostroverkhov
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
