@@ -13,15 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'com.jfrog.artifactory'
+package io.rsocket.kotlin.util
 
-targetCompatibility = 1.7
-sourceCompatibility = 1.7
+import io.rsocket.kotlin.RSocket
 
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.6"
-}
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.6"
-}
+/** Wrapper/Proxy for a RSocket. This is useful when we want to override a specific method.  */
+open class RSocketProxy(source: RSocket) : RSocket by source

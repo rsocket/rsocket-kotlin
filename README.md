@@ -25,7 +25,7 @@ Also, metadata can be associated with stream or RSocket itself
 
 ```groovy
     dependencies {
-        compile 'io.rsocket.android:rsocket-core:0.9-SNAPSHOT'
+        compile 'io.rsocket.kotlin:rsocket-core:0.9-SNAPSHOT'
     }
 ```
 ### Transports
@@ -33,8 +33,8 @@ Also, metadata can be associated with stream or RSocket itself
 `OkHttp` based Websockets transport (`Client` only)
 ```groovy
  dependencies {
-                compile 'io.rsocket.android:rsocket-transport-netty:0.9-SNAPSHOT'
-                compile 'io.rsocket.android:rsocket-transport-okhttp:0.9-SNAPSHOT'
+                compile 'io.rsocket.kotlin:rsocket-transport-netty:0.9-SNAPSHOT'
+                compile 'io.rsocket.kotlin:rsocket-transport-okhttp:0.9-SNAPSHOT'
  }
 ```
 ### Usage
@@ -51,16 +51,16 @@ Stream Metadata is optional
 val request = PayloadImpl.textPayload("data")
 ```
 #### Interactions
-   Fire and Forget
-  `RSocket.fireAndForget(payload: Payload): Completable`
-   Request-Response
-   `RSocket.requestResponse(payload: Payload): Single<Payload>`
-   Request-Stream
-   `RSocket.requestStream(payload: Payload): Flowable<Payload>`
-   Request-Channel
-   `RSocket.requestChannel(payload: Publisher<Payload>): Flowable<Payload>`
-   Metadata-Push
-   `fun metadataPush(payload: Payload): Completable`
+   Fire and Forget  
+  `RSocket.fireAndForget(payload: Payload): Completable`  
+   Request-Response  
+   `RSocket.requestResponse(payload: Payload): Single<Payload>`  
+   Request-Stream  
+   `RSocket.requestStream(payload: Payload): Flowable<Payload>`  
+   Request-Channel  
+   `RSocket.requestChannel(payload: Publisher<Payload>): Flowable<Payload>`  
+   Metadata-Push  
+   `fun metadataPush(payload: Payload): Completable`  
 
 #### Client
   Client is initiator of `Connections`

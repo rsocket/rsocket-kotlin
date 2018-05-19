@@ -15,9 +15,8 @@ include ':rsocket-transport-okhttp'
  * limitations under the License.
  */
 
-rootProject.name='rsocket-android'
+rootProject.name='rsocket-kotlin'
 include 'rsocket-core'
-project(':rsocket-core').name = 'rsocket-core'
 include 'rsocket-transport-okhttp'
 include 'rsocket-transport-netty'
 include 'test'

@@ -26,10 +26,8 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'kotlin'
     apply plugin: 'maven-publish'
-    apply plugin: 'com.jfrog.bintray'
-    apply plugin: 'com.jfrog.artifactory'
 
-    group = 'io.rsocket.android'
+    group = 'io.rsocket.kotlin'
     version = '0.9-SNAPSHOT'
 
     task sourcesJar(type: Jar, dependsOn: classes) {
@@ -42,9 +40,6 @@ subprojects {
         from javadoc.destinationDir
     }
 
-    tasks.bintrayUpload.dependsOn tasks.jar, tasks.sourcesJar, tasks.javadocJar
-
-    // add javadoc/source jar tasks as artifacts
     artifacts {
         archives sourcesJar, javadocJar, jar
     }
@@ -82,81 +77,75 @@ subprojects {
             }
         }
     }
+}
 
-    artifactory {
-        publish {
-            contextUrl = 'https://oss.jfrog.org'
+if (project.hasProperty('bintrayUser') && project.hasProperty('bintrayKey')) {
 
-            repository {
-                repoKey = 'oss-snapshot-local'
-                //The Artifactory repository key to publish to
-                //when using oss.jfrog.org the credentials are from Bintray.
-                // For local build we expect them to be found in
-                //~/.gradle/gradle.properties, otherwise to be set in the build server
-                // Conditionalize for the users who don't have bintray credentials setup
-                if (project.hasProperty('bintrayUser')) {
-                    username = project.property('bintrayUser')
-                    password = project.property('bintrayKey')
-                }
-            }
+    subprojects {
+        plugins.withId('com.jfrog.bintray') {
+            bintray {
+                user = project.property('bintrayUser')
+                key = project.property('bintrayKey')
 
-            publications('mavenJava')
+                publications = ['maven']
+                publish = true
 
-            defaults {
-                // Reference to Gradle publications defined in the build script.
-                // This is how we tell the Artifactory Plugin which artifacts should be
-                // published to Artifactory.
-                publications('mavenJava')
-                publishArtifacts = true
-            }
-        }
-    }
+                pkg {
+                    repo = 'RSocket'
+                    name = 'rsocket-kotlin'
+                    licenses = ['Apache-2.0']
 
-    artifactoryPublish {
-        dependsOn jar
-    }
+                    issueTrackerUrl = 'https://github.com/rsocket/rsocket-kotlin/issues'
+                    websiteUrl = 'https://github.com/rsocket/rsocket-kotlin'
+                    vcsUrl = 'https://github.com/rsocket/rsocket-kotlin.git'
+                    githubRepo = 'rsocket/rsocket-kotlin'
+                    githubReleaseNotesFile = 'README.md'
 
-    bintray {
-        if (project.hasProperty('bintrayUser')) {
-            user = project.property('bintrayUser')
-            key = project.property('bintrayKey')
-        }
-        publications = ['mavenJava']
-        dryRun = false
-        publish = true
-        override = false
-        pkg {
-            repo = 'RSocket'
-            name = 'rsocket-android'
-            desc = 'RSocket'
-            websiteUrl = 'https://github.com/rsocket/rsocket-android'
-            issueTrackerUrl = 'https://github.com/rsocket/rsocket-android'
-            vcsUrl = 'https://github.com/rsocket/rsocket-android.git'
-            licenses = ['Apache-2.0']
-            githubRepo = 'rsocket/rsocket-android' //Optional Github repository
-            githubReleaseNotesFile = 'README.md' //Optional Github readme file
-            if (project.hasProperty('sonatypeUsername') && project.hasProperty('sonatypePassword')) {
-                def sonatypeUsername = project.property('sonatypeUsername')
-                def sonatypePassword = project.property('sonatypePassword')
-                version {
-                    name = "v${project.version}"
-                    vcsTag = "${project.version}"
-                    mavenCentralSync {
-                        sync = false
-                        user = sonatypeUsername
-                        password = sonatypePassword
+                    version {
+                        name = project.version
+                        released = new Date()
+                        vcsTag = project.version
+
+                        gpg {
+                            sign = true
+                        }
+
+                        mavenCentralSync {
+                            user = project.property('sonatypeUsername')
+                            password = project.property('sonatypePassword')
+                        }
                     }
                 }
             }
+
+            tasks.bintrayUpload.dependsOn tasks.jar, tasks.sourcesJar, tasks.javadocJar
+        }
+
+        plugins.withId('com.jfrog.artifactory') {
+            artifactory {
+                publish {
+                    contextUrl = 'https://oss.jfrog.org'
+
+                    repository {
+                        repoKey = 'oss-snapshot-local'
+                        username = project.property('bintrayUser')
+                        password = project.property('bintrayKey')
+                    }
+
+                    defaults {
+                        publications('maven')
+                    }
+                }
+            }
+
+            artifactoryPublish {
+                dependsOn jar
+            }
         }
     }
 }
 
-repositories {
-    jcenter()
-}
-
-description = 'RSocket-Android: stream oriented messaging passing with Reactive Stream semantics, for Android'
+description = 'RSocket-kotlin: Reactive Streams over network boundary with Kotlin/Rxjava'
 
 buildScan {
     licenseAgreementUrl = 'https://gradle.com/terms-of-service'

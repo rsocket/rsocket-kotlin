@@ -13,15 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'com.jfrog.artifactory'
 
-targetCompatibility = 1.7
-sourceCompatibility = 1.7
+package io.rsocket.kotlin.internal.frame
 
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.6"
-}
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.6"
+internal object VersionFlyweight {
+
+    fun encode(major: Int, minor: Int): Int {
+        return major shl 16 or (minor and 0xFFFF)
+    }
+
+    fun major(version: Int): Int {
+        return version shr 16
+    }
+
+    fun minor(version: Int): Int {
+        return version and 0xFFFF
+    }
+
+    fun toString(version: Int): String {
+        return major(version).toString() + "." + minor(version)
+    }
 }

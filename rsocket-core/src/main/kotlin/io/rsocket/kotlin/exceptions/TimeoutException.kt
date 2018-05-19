@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'com.jfrog.artifactory'
 
-targetCompatibility = 1.7
-sourceCompatibility = 1.7
+package io.rsocket.kotlin.exceptions
 
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.6"
-}
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.6"
+class TimeoutException : Exception() {
+    companion object {
+
+        private val serialVersionUID = -6352901497935205059L
+    }
 }
