@@ -75,9 +75,8 @@ internal class FrameFragmenter(private val mtu: Int) {
         }
     }
 
-    private class State(frame: Frame) : Disposable {
+    private class State(private val frame: Frame) : Disposable {
         private val disposed = AtomicBoolean()
-        private val frame: Frame = frame.retain()
         private val data: ByteBuf = sliceFrameData(frame.content())
         private val metadata: ByteBuf? =
                 if (frame.hasMetadata())

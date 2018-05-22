@@ -33,6 +33,7 @@ class StreamFramesReassemblerTest {
 
         val from = Frame.Request.from(
                 1024, FrameType.REQUEST_RESPONSE, DefaultPayload(data, metadata), 1)
+                .retain()
         val frameFragmenter = FrameFragmenter(2)
         val frameReassembler = StreamFramesReassembler(from)
         frameFragmenter.fragment(from)
@@ -64,6 +65,7 @@ class StreamFramesReassemblerTest {
 
         val from = Frame.Request.from(
                 1024, FrameType.REQUEST_RESPONSE, DefaultPayload(data, metadata), 1)
+                .retain()
         val frameFragmenter = FrameFragmenter(2)
         val frameReassembler = StreamFramesReassembler(from)
         frameFragmenter.fragment(from)
