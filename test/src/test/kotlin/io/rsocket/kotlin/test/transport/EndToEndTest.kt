@@ -1,4 +1,4 @@
-package io.rsocket.kotlin.test
+package io.rsocket.kotlin.test.transport
 
 import io.reactivex.Completable
 import io.reactivex.Flowable

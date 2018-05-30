@@ -20,6 +20,10 @@ class MediaTypeOptions : MediaType {
 
     override fun metadataMimeType(): String = metadataMimeType
 
+    fun copy(): MediaTypeOptions = MediaTypeOptions()
+            .dataMimeType(dataMimeType)
+            .metadataMimeType(metadataMimeType)
+
     private fun assertMediaType(mediaType: String) {
         if (mediaType.isEmpty()) {
             throw IllegalArgumentException("media type must be non-empty")

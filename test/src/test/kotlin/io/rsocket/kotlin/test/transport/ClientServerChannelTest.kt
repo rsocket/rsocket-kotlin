@@ -1,15 +1,15 @@
-package io.rsocket.kotlin.test
+package io.rsocket.kotlin.test.transport
 
 import io.reactivex.Flowable
 import io.reactivex.Single
-import io.rsocket.kotlin.util.AbstractRSocket
+import io.rsocket.kotlin.DefaultPayload
 import io.rsocket.kotlin.Payload
 import io.rsocket.kotlin.RSocket
 import io.rsocket.kotlin.RSocketFactory
 import io.rsocket.kotlin.transport.netty.client.TcpClientTransport
 import io.rsocket.kotlin.transport.netty.server.NettyContextCloseable
 import io.rsocket.kotlin.transport.netty.server.TcpServerTransport
-import io.rsocket.kotlin.DefaultPayload
+import io.rsocket.kotlin.util.AbstractRSocket
 import org.junit.Before
 import org.junit.Test
 import org.reactivestreams.Publisher
@@ -26,7 +26,6 @@ class ClientServerChannelTest {
         val address = InetSocketAddress
                 .createUnresolved("localhost", 0)
         val serverTransport = TcpServerTransport.create(address)
-
         channelHandler = ChannelHandler(intervalMillis)
         server = RSocketFactory
                 .receive()

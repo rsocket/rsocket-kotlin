@@ -26,9 +26,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 internal class StreamFramesReassembler(frame: Frame) : Disposable {
 
     private val isDisposed = AtomicBoolean()
-    private val blueprintFrame = frame.retain()
+    private val blueprintFrame = frame
     private val dataBuffer = PooledByteBufAllocator.DEFAULT.compositeBuffer()
-    private val metadataBuffer = PooledByteBufAllocator.DEFAULT.compositeBuffer()
+    private val metadataBuffer =
+            if (frame.hasMetadata())
+                PooledByteBufAllocator.DEFAULT.compositeBuffer()
+            else
+                null
 
     fun append(frame: Frame): StreamFramesReassembler {
         val byteBuf = frame.content()
@@ -37,25 +41,25 @@ internal class StreamFramesReassembler(frame: Frame) : Disposable {
         val metadataLength = FrameHeaderFlyweight.metadataLength(
                 byteBuf,
                 frameType,
-                frameLength)!!
+                frameLength) ?: 0
         val dataLength = FrameHeaderFlyweight.dataLength(byteBuf, frameType)
-        if (0 < metadataLength) {
+        if (metadataLength > 0) {
             var metadataOffset = FrameHeaderFlyweight.metadataOffset(byteBuf)
             if (FrameHeaderFlyweight.hasMetadataLengthField(frameType)) {
                 metadataOffset += FrameHeaderFlyweight.FRAME_LENGTH_SIZE
             }
-            metadataBuffer.addComponent(
+            metadataBuffer!!.addComponent(
                     true,
-                    byteBuf.retainedSlice(metadataOffset, metadataLength))
+                    byteBuf.slice(metadataOffset, metadataLength))
         }
-        if (0 < dataLength) {
+        if (dataLength > 0) {
             val dataOffset = FrameHeaderFlyweight.dataOffset(
                     byteBuf,
                     frameType,
                     frameLength)
             dataBuffer.addComponent(
                     true,
-                    byteBuf.retainedSlice(dataOffset, dataLength))
+                    byteBuf.slice(dataOffset, dataLength))
         }
         return this
     }
@@ -65,15 +69,14 @@ internal class StreamFramesReassembler(frame: Frame) : Disposable {
                 blueprintFrame,
                 metadataBuffer,
                 dataBuffer)
-        blueprintFrame.release()
+        dispose()
         return assembled
     }
 
     override fun dispose() {
         if (isDisposed.compareAndSet(false, true)) {
-            blueprintFrame.release()
             dataBuffer.release()
-            metadataBuffer.release()
+            metadataBuffer?.release()
         }
     }
 

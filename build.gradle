@@ -109,11 +109,6 @@ if (project.hasProperty('bintrayUser') && project.hasProperty('bintrayKey')) {
                         gpg {
                             sign = true
                         }
-
-                        mavenCentralSync {
-                            user = project.property('sonatypeUsername')
-                            password = project.property('sonatypePassword')
-                        }
                     }
                 }
             }

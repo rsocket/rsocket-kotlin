@@ -9,9 +9,9 @@ import io.rsocket.kotlin.exceptions.InvalidSetupException
 import io.rsocket.kotlin.exceptions.RSocketException
 import io.rsocket.kotlin.exceptions.RejectedResumeException
 import io.rsocket.kotlin.exceptions.RejectedSetupException
-import io.rsocket.kotlin.internal.frame.SetupFrameFlyweight
 import io.rsocket.kotlin.interceptors.DuplexConnectionInterceptor
 import io.rsocket.kotlin.interceptors.DuplexConnectionInterceptor.Type
+import io.rsocket.kotlin.internal.frame.SetupFrameFlyweight
 import io.rsocket.kotlin.util.DuplexConnectionProxy
 
 internal class ServerContractInterceptor(
@@ -20,10 +20,10 @@ internal class ServerContractInterceptor(
         private val leaseEnabled: Boolean,
         private val resumeEnabled: Boolean) : DuplexConnectionInterceptor {
 
-    constructor(errorConsumer: (Throwable) -> Unit) :
+    constructor(errorConsumer: (Throwable) -> Unit, leaseEnabled: Boolean) :
             this(errorConsumer,
                     SetupFrameFlyweight.CURRENT_VERSION,
-                    false,
+                    leaseEnabled,
                     false)
 
     override fun invoke(type: Type, source: DuplexConnection): DuplexConnection =

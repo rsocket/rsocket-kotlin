@@ -17,13 +17,16 @@
 package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.DuplexConnection
+import io.rsocket.kotlin.InterceptorOptions
 import io.rsocket.kotlin.RSocket
 import io.rsocket.kotlin.interceptors.DuplexConnectionInterceptor
-import io.rsocket.kotlin.InterceptorOptions
 import io.rsocket.kotlin.interceptors.RSocketInterceptor
-import java.util.ArrayList
+import java.util.*
 
-internal class InterceptorRegistry : InterceptorOptions {
+internal class InterceptorRegistry :
+        InterceptorOptions,
+        InterceptConnection,
+        InterceptRSocket {
     private val connections = ArrayList<DuplexConnectionInterceptor>()
     private val requesters = ArrayList<RSocketInterceptor>()
     private val handlers = ArrayList<RSocketInterceptor>()
@@ -36,9 +39,13 @@ internal class InterceptorRegistry : InterceptorOptions {
         this.handlers.addAll(interceptorRegistry.handlers)
     }
 
-    fun copyWith(action: (InterceptorRegistry) -> Unit): InterceptorRegistry {
-        val copy = InterceptorRegistry(this)
-        action(copy)
+    fun copy(): InterceptorRegistry = InterceptorRegistry(this)
+
+    fun copyWith(registry: InterceptorRegistry): InterceptorRegistry {
+        val copy = copy()
+        copy.connections.addAll(registry.connections)
+        copy.requesters.addAll(registry.requesters)
+        copy.handlers.addAll(registry.handlers)
         return copy
     }
 
@@ -58,7 +65,7 @@ internal class InterceptorRegistry : InterceptorOptions {
         handlers.add(interceptor)
     }
 
-    fun interceptRequester(rSocket: RSocket): RSocket {
+    override fun interceptRequester(rSocket: RSocket): RSocket {
         var rs = rSocket
         for (interceptor in requesters) {
             rs = interceptor(rs)
@@ -66,7 +73,7 @@ internal class InterceptorRegistry : InterceptorOptions {
         return rs
     }
 
-    fun interceptHandler(rSocket: RSocket): RSocket {
+    override fun interceptHandler(rSocket: RSocket): RSocket {
         var rs = rSocket
         for (interceptor in handlers) {
             rs = interceptor(rs)
@@ -74,7 +81,7 @@ internal class InterceptorRegistry : InterceptorOptions {
         return rs
     }
 
-    fun interceptConnection(
+    override fun interceptConnection(
             type: DuplexConnectionInterceptor.Type,
             connection: DuplexConnection): DuplexConnection {
         var conn = connection
@@ -84,3 +91,19 @@ internal class InterceptorRegistry : InterceptorOptions {
         return conn
     }
 }
+
+internal interface InterceptConnection {
+
+    fun interceptConnection(
+            type: DuplexConnectionInterceptor.Type,
+            connection: DuplexConnection): DuplexConnection
+}
+
+internal interface InterceptRSocket {
+
+    fun interceptRequester(rSocket: RSocket): RSocket
+
+    fun interceptHandler(rSocket: RSocket): RSocket
+}
+
+

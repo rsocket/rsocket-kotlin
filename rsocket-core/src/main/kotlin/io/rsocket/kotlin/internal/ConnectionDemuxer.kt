@@ -29,8 +29,8 @@ import org.reactivestreams.Publisher
 import org.slf4j.LoggerFactory
 
 internal class ServerConnectionDemuxer(source: DuplexConnection,
-                                       plugins: InterceptorRegistry)
-    : ConnectionDemuxer(source, plugins) {
+                                       interceptors: InterceptConnection)
+    : ConnectionDemuxer(source, interceptors) {
 
     override fun demux(frame: Frame): Type {
         val streamId = frame.streamId
@@ -45,8 +45,8 @@ internal class ServerConnectionDemuxer(source: DuplexConnection,
 }
 
 internal class ClientConnectionDemuxer(source: DuplexConnection,
-                                       plugins: InterceptorRegistry)
-    : ConnectionDemuxer(source, plugins) {
+                                       interceptors: InterceptConnection)
+    : ConnectionDemuxer(source, interceptors) {
 
     override fun demux(frame: Frame): Type {
         val streamId = frame.streamId
@@ -61,27 +61,26 @@ internal class ClientConnectionDemuxer(source: DuplexConnection,
 }
 
 sealed class ConnectionDemuxer(private val source: DuplexConnection,
-                               plugins: InterceptorRegistry) {
-
+                               interceptors: InterceptConnection) {
     private val setupConnection: DuplexConnection
     private val responderConnection: DuplexConnection
     private val requesterConnection: DuplexConnection
     private val serviceConnection: DuplexConnection
 
     init {
-        val src = plugins.interceptConnection(ALL, source)
+        val src = interceptors.interceptConnection(ALL, source)
 
         val setupConn = DemuxedConnection(src)
-        setupConnection = plugins.interceptConnection(Type.SETUP, setupConn)
+        setupConnection = interceptors.interceptConnection(Type.SETUP, setupConn)
 
         val requesterConn = DemuxedConnection(src)
-        requesterConnection = plugins.interceptConnection(REQUESTER, requesterConn)
+        requesterConnection = interceptors.interceptConnection(REQUESTER, requesterConn)
 
         val responderConn = DemuxedConnection(src)
-        responderConnection = plugins.interceptConnection(RESPONDER, responderConn)
+        responderConnection = interceptors.interceptConnection(RESPONDER, responderConn)
 
         val serviceConn = DemuxedConnection(src)
-        serviceConnection = plugins.interceptConnection(SERVICE, serviceConn)
+        serviceConnection = interceptors.interceptConnection(SERVICE, serviceConn)
 
         src.receive()
                 .groupBy(::demux)
@@ -126,7 +125,8 @@ sealed class ConnectionDemuxer(private val source: DuplexConnection,
             val frames = if (debugEnabled) {
                 Flowable.fromPublisher(frame)
                         .doOnNext { f ->
-                            LOGGER.debug("sending -> " + f.toString()) }
+                            LOGGER.debug("sending -> " + f.toString())
+                        }
             } else {
                 frame
             }
