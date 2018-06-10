@@ -6,18 +6,23 @@ import io.reactivex.Flowable
 import io.reactivex.disposables.Disposable
 import io.rsocket.kotlin.DuplexConnection
 import io.rsocket.kotlin.Frame
-import io.rsocket.kotlin.exceptions.ConnectionException
 import io.rsocket.kotlin.KeepAlive
+import io.rsocket.kotlin.KeepAliveData
+import io.rsocket.kotlin.exceptions.ConnectionException
+import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 
 internal class ClientServiceHandler(serviceConnection: DuplexConnection,
                                     keepAlive: KeepAlive,
+                                    keepAliveData: KeepAliveData,
                                     errorConsumer: (Throwable) -> Unit)
     : ServiceHandler(serviceConnection, errorConsumer) {
 
     @Volatile
     private var keepAliveReceivedMillis = System.currentTimeMillis()
     private var subscription: Disposable? = null
+    private val dataProducer: () -> ByteBuffer = keepAliveData.producer()
+    private val dataHandler: (ByteBuffer) -> Unit = keepAliveData.handler()
 
     init {
         val tickPeriod = keepAlive.keepAliveInterval().millis
@@ -35,6 +40,9 @@ internal class ClientServiceHandler(serviceConnection: DuplexConnection,
     override fun handleKeepAlive(frame: Frame) {
         if (!Frame.Keepalive.hasRespondFlag(frame)) {
             keepAliveReceivedMillis = System.currentTimeMillis()
+            dataHandler(frame.data)
+        } else {
+            sendKeepAliveFrame(frame.data, false)
         }
     }
 
@@ -51,8 +59,12 @@ internal class ClientServiceHandler(serviceConnection: DuplexConnection,
                         "keep-alive timed out: $duration of $timeout ms"
                 throw ConnectionException(message)
             }
-            sentFrames.onNext(
-                    Frame.Keepalive.from(Unpooled.EMPTY_BUFFER, true))
+            sendKeepAliveFrame(dataProducer(), true)
         }
+    }
+
+    private fun sendKeepAliveFrame(data: ByteBuffer, respond: Boolean) {
+        sentFrames.onNext(
+                Frame.Keepalive.from(Unpooled.wrappedBuffer(data), respond))
     }
 }

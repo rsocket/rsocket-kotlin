@@ -42,7 +42,7 @@ class LeaseGranterConnectionTest {
     @Test
     fun sentLease() {
         leaseGranterConnection.send(
-                Flowable.just(Frame.Lease.from(2, 1, Unpooled.EMPTY_BUFFER)))
+                Flowable.just(Frame.Lease.from(2_000, 1, Unpooled.EMPTY_BUFFER)))
                 .blockingAwait()
         assertEquals(1.0, receive.availability(), 1e-5)
         assertEquals(0.0, send.availability(), 1e-5)

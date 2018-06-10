@@ -6,11 +6,11 @@ import io.reactivex.Flowable
 import io.reactivex.disposables.Disposable
 import io.rsocket.kotlin.DuplexConnection
 import io.rsocket.kotlin.Frame
-import io.rsocket.kotlin.exceptions.ConnectionException
 import io.rsocket.kotlin.KeepAlive
+import io.rsocket.kotlin.exceptions.ConnectionException
 import java.util.concurrent.TimeUnit
 
-internal class ServerServiceHandler(serviceConnection: DuplexConnection,
+internal class ServerServiceHandler(private val serviceConnection: DuplexConnection,
                                     keepAlive: KeepAlive,
                                     errorConsumer: (Throwable) -> Unit)
     : ServiceHandler(serviceConnection, errorConsumer) {
@@ -22,7 +22,7 @@ internal class ServerServiceHandler(serviceConnection: DuplexConnection,
     init {
         val tickPeriod = keepAlive.keepAliveInterval().millis
         val timeout = keepAlive.keepAliveMaxLifeTime().millis
-        Flowable.interval(tickPeriod, TimeUnit.MILLISECONDS)
+        subscription = Flowable.interval(tickPeriod, TimeUnit.MILLISECONDS)
                 .concatMapCompletable { checkKeepAlive(timeout) }
                 .subscribe({},
                         { err ->

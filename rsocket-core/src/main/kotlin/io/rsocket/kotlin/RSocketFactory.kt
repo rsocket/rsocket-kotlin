@@ -55,7 +55,7 @@ object RSocketFactory {
         private var setupPayload: Payload = DefaultPayload.EMPTY
         private val keepAlive = KeepAliveOptions()
         private val mediaType = MediaTypeOptions()
-        private var streamRequestLimit = defaultStreamRequestLimit
+        private val options = ClientOptions()
 
         fun interceptors(configure: (InterceptorOptions) -> Unit): ClientRSocketFactory {
             configure(interceptors)
@@ -79,7 +79,7 @@ object RSocketFactory {
             return this
         }
 
-        fun enableLease(leaseRefConsumer: (LeaseRef) -> Unit): ClientRSocketFactory {
+        fun lease(leaseRefConsumer: (LeaseRef) -> Unit): ClientRSocketFactory {
             this.flags = Frame.Setup.enableLease(flags)
             this.leaseRefConsumer = leaseRefConsumer
             return this
@@ -95,9 +95,8 @@ object RSocketFactory {
             return this
         }
 
-        fun streamRequestLimit(streamRequestLimit: Int): ClientRSocketFactory {
-            assertRequestLimit(streamRequestLimit)
-            this.streamRequestLimit = streamRequestLimit
+        fun options(configure: (ClientOptions) -> Unit): ClientRSocketFactory {
+            configure(options)
             return this
         }
 
@@ -126,7 +125,7 @@ object RSocketFactory {
                         setupPayload,
                         keepAlive.copy(),
                         mediaType.copy(),
-                        streamRequestLimit,
+                        options.copy(),
                         transport,
                         interceptors.copy())
 
@@ -137,12 +136,16 @@ object RSocketFactory {
                 private val leaseRef: ((LeaseRef) -> Unit)?,
                 private val flags: Int,
                 private val setupPayload: Payload,
-                private val keepAlive: KeepAlive,
+                keepAliveOpts: KeepAliveOptions,
                 private val mediaType: MediaType,
-                private val streamRequestLimit: Int,
+                options: ClientOptions,
                 private val transportClient: () -> ClientTransport,
                 private val parentInterceptors: InterceptorRegistry)
             : Start<RSocket> {
+
+            private val streamRequestLimit = options.streamRequestLimit()
+            private val keepALive = keepAliveOpts as KeepAlive
+            private val keepAliveData = keepAliveOpts.keepAliveData()
 
             override fun start(): Single<RSocket> {
                 return transportClient()
@@ -184,7 +187,8 @@ object RSocketFactory {
 
                             ClientServiceHandler(
                                     demuxer.serviceConnection(),
-                                    keepAlive,
+                                    keepALive,
+                                    keepAliveData,
                                     errorConsumer)
 
                             val setupFrame = createSetupFrame()
@@ -205,8 +209,8 @@ object RSocketFactory {
             private fun createSetupFrame(): Frame {
                 return Frame.Setup.from(
                         flags,
-                        keepAlive.keepAliveInterval().intMillis,
-                        keepAlive.keepAliveMaxLifeTime().intMillis,
+                        keepALive.keepAliveInterval().intMillis,
+                        keepALive.keepAliveMaxLifeTime().intMillis,
                         mediaType.metadataMimeType(),
                         mediaType.dataMimeType(),
                         setupPayload)
@@ -229,7 +233,7 @@ object RSocketFactory {
         private var mtu = 0
         private var leaseRefConsumer: ((LeaseRef) -> Unit)? = null
         private val interceptors = GlobalInterceptors.create()
-        private var streamRequestLimit = defaultStreamRequestLimit
+        private val options = ServerOptions()
 
         fun interceptors(configure: (InterceptorOptions) -> Unit): ServerRSocketFactory {
             configure(interceptors)
@@ -242,7 +246,7 @@ object RSocketFactory {
             return this
         }
 
-        fun enableLease(leaseRefConsumer: (LeaseRef) -> Unit): ServerRSocketFactory {
+        fun lease(leaseRefConsumer: (LeaseRef) -> Unit): ServerRSocketFactory {
             this.leaseRefConsumer = leaseRefConsumer
             return this
         }
@@ -252,8 +256,8 @@ object RSocketFactory {
             return this
         }
 
-        fun streamRequestLimit(streamRequestLimit: Int): ServerRSocketFactory {
-            this.streamRequestLimit = streamRequestLimit
+        fun options(configure: (ServerOptions) -> Unit): ServerRSocketFactory {
+            configure(options)
             return this
         }
 
@@ -268,7 +272,7 @@ object RSocketFactory {
                                 mtu,
                                 leaseRefConsumer,
                                 interceptors.copy(),
-                                streamRequestLimit)
+                                options.copy())
             }
         }
 
@@ -279,7 +283,9 @@ object RSocketFactory {
                 private val mtu: Int,
                 private val leaseRef: ((LeaseRef) -> Unit)?,
                 private val parentInterceptors: InterceptorRegistry,
-                private val streamRequestLimit: Int) : Start<T> {
+                options: ServerOptions) : Start<T> {
+
+            private val streamRequestLimit = options.streamRequestLimit()
 
             override fun start(): Single<T> {
                 return transportServer().start(object
@@ -331,12 +337,15 @@ object RSocketFactory {
 
                 ServerServiceHandler(
                         demuxer.serviceConnection(),
-                        setup as KeepAlive,
+                        setup,
                         errorConsumer)
 
                 val handlerRSocket = acceptor()(setup, wrappedRequester)
 
-                return handlerRSocket
+                val rejectingHandlerRSocket = RejectingRSocket(handlerRSocket)
+                                .with(demuxer.requesterConnection())
+
+                return rejectingHandlerRSocket
                         .map { handler -> interceptors.interceptHandler(handler) }
                         .doOnSuccess { handler ->
                             RSocketResponder(
@@ -374,12 +383,6 @@ object RSocketFactory {
         }
     }
 
-    private fun assertRequestLimit(streamRequestLimit: Int) {
-        if (streamRequestLimit <= 0) {
-            throw IllegalArgumentException("stream request limit must be positive")
-        }
-    }
-
     private fun assertFragmentation(mtu: Int) {
         if (mtu < 0) {
             throw IllegalArgumentException("fragmentation mtu must be non-negative")
@@ -404,8 +407,6 @@ object RSocketFactory {
         fun <T : Closeable> transport(transport: ServerTransport<T>): Start<T> =
                 transport { transport }
     }
-
-    private const val defaultStreamRequestLimit = 128
 
     private val emptyRSocket = object : AbstractRSocket() {}
 }

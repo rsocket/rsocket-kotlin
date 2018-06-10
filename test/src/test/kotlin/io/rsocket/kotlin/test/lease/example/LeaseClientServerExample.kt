@@ -20,7 +20,7 @@ object LeaseClientServerExample {
 
         val serverLease = LeaseRefs()
         val nettyContextCloseable = RSocketFactory.receive()
-                .enableLease(serverLease)
+                .lease(serverLease)
                 .acceptor {
                     { _, _ ->
                         Single.just(
@@ -37,7 +37,7 @@ object LeaseClientServerExample {
 
         val address = nettyContextCloseable.address()
         val clientSocket = RSocketFactory.connect()
-                .enableLease(LeaseRefs())
+                .lease(LeaseRefs())
                 .keepAlive { opts ->
                     opts.keepAliveInterval(Duration.ofMinutes(1))
                             .keepAliveMaxLifeTime(Duration.ofMinutes(20))
