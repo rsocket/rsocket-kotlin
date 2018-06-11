@@ -21,14 +21,12 @@ import io.reactivex.Flowable
 import io.reactivex.FlowableSubscriber
 import io.reactivex.Single
 import io.reactivex.processors.FlowableProcessor
-import io.reactivex.processors.PublishProcessor
 import io.reactivex.processors.UnicastProcessor
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.exceptions.ApplicationException
 import io.rsocket.kotlin.exceptions.ChannelRequestException
 import io.rsocket.kotlin.exceptions.Exceptions
 import io.rsocket.kotlin.internal.ExceptionUtil.noStacktrace
-import io.rsocket.kotlin.DefaultPayload
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
@@ -113,7 +111,7 @@ internal class RSocketRequester(
             val requestFrame = Frame.Request.from(
                     streamId, FrameType.REQUEST_RESPONSE, payload, 1)
 
-            val receiver = PublishProcessor.create<Payload>()
+            val receiver = UnicastProcessor.create<Payload>()
             receivers[streamId] = receiver
             sentFrames.onNext(requestFrame)
 

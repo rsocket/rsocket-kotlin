@@ -6,8 +6,4 @@ import io.rsocket.kotlin.transport.netty.server.TcpServerTransport
 class NettyTcpEndToEndTest
     : EndToEndTest(
         { TcpClientTransport.create(it) },
-        { TcpServerTransport.create(it) }) {
-
-    override fun response() {
-    }
-}
+        { TcpServerTransport.create(it) })
