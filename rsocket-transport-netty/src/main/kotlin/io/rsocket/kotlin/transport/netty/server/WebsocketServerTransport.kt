@@ -39,8 +39,7 @@ class WebsocketServerTransport private constructor(internal var server: HttpServ
                                         inbound,
                                         outbound,
                                         inbound.context())
-                        acceptor(connection).subscribe()
-                        outbound.neverComplete()
+                        acceptor(connection).andThen(outbound.neverComplete())
                     }
                 }.toSingle().map { NettyContextCloseable(it) }
     }

@@ -38,8 +38,7 @@ class TcpServerTransport private constructor(private var server: TcpServer)
                         inbound,
                         outbound,
                         inbound.context())
-                acceptor(connection).subscribe()
-                outbound.neverComplete()
+                acceptor(connection).andThen(outbound.neverComplete())
             }.toSingle().map { NettyContextCloseable(it) }
 
     companion object {

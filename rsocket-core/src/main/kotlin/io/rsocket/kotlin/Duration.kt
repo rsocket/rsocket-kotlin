@@ -2,10 +2,6 @@ package io.rsocket.kotlin
 
 import java.util.concurrent.TimeUnit
 
-/**
- * Created by Maksym Ostroverkhov on 27.10.17.
- */
-
 data class Duration(private val value: Long, val unit: TimeUnit) {
 
     val millis = unit.toMillis(value)

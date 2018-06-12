@@ -8,9 +8,6 @@ import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
-/**
- * Created by Maksym Ostroverkhov on 28.10.17.
- */
 class OkhttpWebsocketClientTransport private constructor(private val client: OkHttpClient,
                                                          private val request: Request)
     : ClientTransport {

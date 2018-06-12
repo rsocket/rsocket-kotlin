@@ -22,11 +22,8 @@ import io.rsocket.kotlin.transport.ServerTransport
 import io.rsocket.kotlin.transport.ServerTransport.ConnectionAcceptor
 import io.rsocket.kotlin.transport.netty.WebsocketDuplexConnection
 import io.rsocket.kotlin.transport.netty.toSingle
-import reactor.core.publisher.Mono
 import reactor.ipc.netty.http.server.HttpServer
 import reactor.ipc.netty.http.server.HttpServerRoutes
-
-import java.util.function.Consumer
 
 class WebsocketRouteTransport(private val server: HttpServer,
                               private val routesBuilder: (HttpServerRoutes) -> Unit,
@@ -41,8 +38,7 @@ class WebsocketRouteTransport(private val server: HttpServer,
                                 inbound,
                                 outbound,
                                 inbound.context())
-                        acceptor(connection).subscribe()
-                        outbound.neverComplete()
+                        acceptor(connection).andThen(outbound.neverComplete())
                     }
                 }.toSingle().map { NettyContextCloseable(it) }
     }

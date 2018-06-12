@@ -13,9 +13,6 @@ import okio.ByteString
 import org.reactivestreams.Publisher
 import java.nio.channels.ClosedChannelException
 
-/**
- * Created by Maksym Ostroverkhov on 27.10.17.
- */
 internal class OkWebsocket(client: OkHttpClient,
                            request: Request) {
     @Volatile

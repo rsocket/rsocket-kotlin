@@ -1,5 +1,6 @@
 package io.rsocket.kotlin.test.lease
 
+import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.processors.BehaviorProcessor
 import io.reactivex.subscribers.TestSubscriber
@@ -25,14 +26,14 @@ class LeaseServerTest {
     fun setUp() {
         serverLease = LeaseRefs()
         nettyContextCloseable = RSocketFactory.receive()
-                .enableLease(serverLease)
+                .lease(serverLease)
                 .acceptor {
                     { _, _ ->
                         Single.just(
                                 object : AbstractRSocket() {
-                                    override fun requestResponse(payload: Payload)
-                                            : Single<Payload> =
-                                            Single.just(payload)
+                                    override fun requestStream(payload: Payload)
+                                            : Flowable<Payload> =
+                                            Flowable.just(payload)
                                 })
                     }
                 }
@@ -43,7 +44,7 @@ class LeaseServerTest {
         val address = nettyContextCloseable.address()
         clientSocket = RSocketFactory
                 .connect()
-                .enableLease(LeaseRefs())
+                .lease(LeaseRefs())
                 .keepAlive { opts ->
                     opts.keepAliveInterval(Duration.ofMinutes(1))
                             .keepAliveMaxLifeTime(Duration.ofMinutes(20))
@@ -69,16 +70,15 @@ class LeaseServerTest {
                 .delay(100, TimeUnit.MILLISECONDS)
                 .blockingAwait()
         assertEquals(clientSocket.availability(), 1.0, 1e-5)
-        clientSocket.requestResponse(payload())
-                .blockingGet()
+        clientSocket.requestStream(payload())
+                .blockingSubscribe()
         assertEquals(clientSocket.availability(), 0.5, 1e-5)
-        clientSocket.requestResponse(payload())
-                .blockingGet()
+        clientSocket.requestStream(payload())
+                .blockingSubscribe()
         assertEquals(clientSocket.availability(), 0.0, 1e-5)
 
         val subscriber = TestSubscriber<Payload>()
-        clientSocket.requestResponse(payload())
-                .toFlowable()
+        clientSocket.requestStream(payload())
                 .blockingSubscribe(subscriber)
         assertEquals(1, subscriber.errorCount())
         assertTrue(subscriber.errors().first() is MissingLeaseException)
@@ -96,7 +96,7 @@ class LeaseServerTest {
 
         assertEquals(clientSocket.availability(), 0.0, 1e-5)
         val subscriber = TestSubscriber<Payload>()
-        clientSocket.requestResponse(payload()).toFlowable()
+        clientSocket.requestStream(payload())
                 .blockingSubscribe(subscriber)
 
         assertEquals(1, subscriber.errorCount())
