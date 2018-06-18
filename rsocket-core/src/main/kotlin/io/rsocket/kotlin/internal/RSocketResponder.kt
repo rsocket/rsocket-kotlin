@@ -20,7 +20,6 @@ import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
-import io.reactivex.processors.UnicastProcessor
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.Frame.Request.initialRequestN
 import io.rsocket.kotlin.internal.RSocketResponder.DisposableSubscription.Companion.subscription
@@ -49,15 +48,12 @@ internal class RSocketResponder(
             ConcurrentHashMap<Int, Subscription>(256)
     private val channelReceivers =
             ConcurrentHashMap<Int, Subscriber<Payload>>(256)
-    private val sentFrames =
-            UnicastProcessor
-                    .create<Frame>()
-                    .toSerialized()
+    private val frameSender = FrameSender()
     private val receiveDisposable: Disposable
 
     init {
         connection
-                .send(sentFrames)
+                .send(frameSender.sent())
                 .subscribe({}, { completion.error(it) })
 
         receiveDisposable = connection
@@ -193,7 +189,7 @@ internal class RSocketResponder(
                 }
                 .doOnError(errorConsumer)
                 .onErrorResumeNext { t -> Single.just(Frame.Error.from(streamId, t)) }
-                .doOnSuccess { sentFrames.onNext(it) }
+                .doOnSuccess { frameSender.send(it) }
                 .doFinally { sendingSubscriptions -= streamId }
                 .ignoreElement()
     }
@@ -212,7 +208,7 @@ internal class RSocketResponder(
                 .concatWith(Flowable.just(Frame.PayloadFrame.from(streamId, FrameType.COMPLETE)))
                 .onErrorResumeNext { t: Throwable -> Flowable.just(Frame.Error.from(streamId, t)) }
                 .doFinally { sendingSubscriptions -= streamId }
-                .subscribe { sentFrames.onNext(it) }
+                .subscribe { frameSender.send(it) }
         return Completable.complete()
     }
 
@@ -221,9 +217,9 @@ internal class RSocketResponder(
         channelReceivers[streamId] = receiver
 
         val request = receiver
-                .doOnRequestIfActive { request -> sentFrames.onNext(Frame.RequestN.from(streamId, request)) }
-                .doOnCancel { sentFrames.onNext(Frame.Cancel.from(streamId)) }
-                .doOnError { t -> sentFrames.onNext(Frame.Error.from(streamId, t)) }
+                .doOnRequestIfActive { request -> frameSender.send(Frame.RequestN.from(streamId, request)) }
+                .doOnCancel { frameSender.send(Frame.Cancel.from(streamId)) }
+                .doOnError { t -> frameSender.send(Frame.Error.from(streamId, t)) }
                 .doFinally { channelReceivers -= streamId }
 
         receiver.onNext(DefaultPayload(firstFrame))

@@ -11,8 +11,7 @@ It enables following symmetric interaction models:
 * request/response (stream of 1)
 * request/stream (finite/infinite stream of many)
 *  channel (bi-directional streams)
-
-Also, metadata can be associated with stream or RSocket itself
+*  per-stream and per-RSocket metadata 
 
 ## Build and Binaries
 
@@ -29,7 +28,7 @@ Also, metadata can be associated with stream or RSocket itself
     }
 ```
 ### Transports
-`Netty` based Websockets and TCP transport (`Client` and `Server`)
+`Netty` based Websockets and TCP transport (`Client` and `Server`)  
 `OkHttp` based Websockets transport (`Client` only)
 ```groovy
  dependencies {
@@ -51,15 +50,19 @@ Stream Metadata is optional
 val request = PayloadImpl.textPayload("data")
 ```
 #### Interactions
-   Fire and Forget  
+* Fire and Forget  
   `RSocket.fireAndForget(payload: Payload): Completable`  
-   Request-Response  
+
+* Request-Response  
    `RSocket.requestResponse(payload: Payload): Single<Payload>`  
-   Request-Stream  
+
+* Request-Stream  
    `RSocket.requestStream(payload: Payload): Flowable<Payload>`  
-   Request-Channel  
+
+* Request-Channel  
    `RSocket.requestChannel(payload: Publisher<Payload>): Flowable<Payload>`  
-   Metadata-Push  
+
+* Metadata-Push  
    `fun metadataPush(payload: Payload): Completable`  
 
 #### Client
@@ -81,7 +84,7 @@ val request = PayloadImpl.textPayload("data")
                   }
 ```
 #### Server
-Accepts `Connections` from `Clients`
+Server is acceptor of `Connections` from `Clients`
 ```kotlin
 val closeable: Single<Closeable> = RSocketFactory
                 .receive()
