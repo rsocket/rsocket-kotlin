@@ -121,7 +121,6 @@ internal constructor(capacityHint: Int, onTerminate: Runnable? = null,
 
             if (cancelled) {
                 releaseQueue(q)
-                //q.clear()
                 actual.lazySet(null)
                 return
             }
@@ -130,7 +129,6 @@ internal constructor(capacityHint: Int, onTerminate: Runnable? = null,
 
             if (failFast && d && error != null) {
                 releaseQueue(q)
-                //q.clear()
                 actual.lazySet(null)
                 a.onError(error)
                 return
@@ -190,7 +188,6 @@ internal constructor(capacityHint: Int, onTerminate: Runnable? = null,
                                  q: SpscLinkedArrayQueue<Frame>): Boolean {
         if (cancelled) {
             releaseQueue(q)
-            //q.clear()
             actual.lazySet(null)
             return true
         }
@@ -198,7 +195,6 @@ internal constructor(capacityHint: Int, onTerminate: Runnable? = null,
         if (d) {
             if (failFast && error != null) {
                 releaseQueue(q)
-                //q.clear()
                 actual.lazySet(null)
                 a.onError(error)
                 return true
@@ -305,7 +301,6 @@ internal constructor(capacityHint: Int, onTerminate: Runnable? = null,
 
         override fun clear() {
             releaseQueue(queue)
-            //queue.clear()
         }
 
         override fun requestFusion(requestedMode: Int): Int {
@@ -334,7 +329,6 @@ internal constructor(capacityHint: Int, onTerminate: Runnable? = null,
             if (!enableOperatorFusion) {
                 if (wip.andIncrement == 0) {
                     releaseQueue(queue)
-                    //queue.clear()
                     actual.lazySet(null)
                 }
             }
