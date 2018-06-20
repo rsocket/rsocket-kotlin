@@ -62,7 +62,7 @@ class InteractionsStressTest {
                 {
                     it.flatMapSingle { num ->
                         client.requestResponse(
-                                DefaultPayload.textPayload("response$num"))
+                                DefaultPayload.text("response$num"))
                     }
                 })
     }
@@ -74,7 +74,7 @@ class InteractionsStressTest {
                 {
                     it.flatMap { num ->
                         client.requestStream(
-                                DefaultPayload.textPayload("stream$num"))
+                                DefaultPayload.text("stream$num"))
                     }
                 })
     }
@@ -86,7 +86,7 @@ class InteractionsStressTest {
                 {
                     it.flatMap { num ->
                         client.requestChannel(
-                                Flowable.just(DefaultPayload.textPayload("channel$num")))
+                                Flowable.just(DefaultPayload.text("channel$num")))
                     }
                 })
     }
@@ -137,14 +137,14 @@ class InteractionsStressTest {
 
         override fun requestStream(payload: Payload): Flowable<Payload> =
                 Flowable.just(
-                        DefaultPayload.textPayload(payload.dataUtf8),
-                        DefaultPayload.textPayload(payload.dataUtf8))
+                        DefaultPayload.text(payload.dataUtf8),
+                        DefaultPayload.text(payload.dataUtf8))
 
         override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> {
             return Flowable.fromPublisher(payloads).flatMap { payload ->
                 Flowable.just(
-                        DefaultPayload.textPayload(payload.dataUtf8),
-                        DefaultPayload.textPayload(payload.dataUtf8))
+                        DefaultPayload.text(payload.dataUtf8),
+                        DefaultPayload.text(payload.dataUtf8))
             }
         }
     }

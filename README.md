@@ -43,11 +43,11 @@ Messages for all  interactions are represented as `Payload` of binary (`NIO Byte
 
 UTF-8 `text` payloads can be constructed as follows
 ```kotlin
-val request = PayloadImpl.textPayload("data", "metadata")
+val request = DefaultPayload.text("data", "metadata")
 ```
 Stream Metadata is optional
 ```kotlin
-val request = PayloadImpl.textPayload("data")
+val request = DefaultPayload.text("data")
 ```
 #### Interactions
 * Fire and Forget  
@@ -78,7 +78,7 @@ val request = PayloadImpl.textPayload("data")
               private fun handler(requester:RSocket): RSocket {
                       return object : AbstractRSocket() {
                           override fun requestStream(payload: Payload): Flowable<Payload> {
-                              return Flowable.just(PayloadImpl.textPayload("client handler response"))
+                              return Flowable.just(DefaultPayload.text("client handler response"))
                           }
                       }
                   }
@@ -96,7 +96,7 @@ val closeable: Single<Closeable> = RSocketFactory
 private fun handler(setup: Setup, rSocket: RSocket): Single<RSocket> {
         return Single.just(object : AbstractRSocket() {
             override fun requestStream(payload: Payload): Flowable<Payload> {
-                return Flowable.just(PayloadImpl.textPayload("server handler response"))
+                return Flowable.just(DefaultPayload.text("server handler response"))
             }
         })
     }

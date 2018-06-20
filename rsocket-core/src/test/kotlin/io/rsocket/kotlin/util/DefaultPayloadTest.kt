@@ -18,7 +18,7 @@ import org.hamcrest.Matchers.*
 
 import io.rsocket.kotlin.Payload
 import io.rsocket.kotlin.DefaultPayload
-import io.rsocket.kotlin.DefaultPayload.Companion.textPayload
+import io.rsocket.kotlin.DefaultPayload.Companion.text
 import org.junit.Test
 
 class DefaultPayloadTest {
@@ -50,8 +50,8 @@ class DefaultPayloadTest {
 
     @Test
     fun staticMethods() {
-        assertDataAndMetadata(textPayload(DATA_VAL, METADATA_VAL), DATA_VAL, METADATA_VAL)
-        assertDataAndMetadata(textPayload(DATA_VAL), DATA_VAL, null)
+        assertDataAndMetadata(text(DATA_VAL, METADATA_VAL), DATA_VAL, METADATA_VAL)
+        assertDataAndMetadata(text(DATA_VAL), DATA_VAL, null)
     }
 
     companion object {

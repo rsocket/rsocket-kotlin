@@ -87,7 +87,7 @@ class ClientServerChannelTest {
         internal fun textStream(intervalMillis: Long) =
                 Flowable.interval(intervalMillis, TimeUnit.MICROSECONDS)
                         .onBackpressureDrop()
-                        .map { DefaultPayload.textPayload(it.toString()) }
+                        .map { DefaultPayload.text(it.toString()) }
 
         internal const val intervalMillis: Long = 100
     }
