@@ -1,6 +1,8 @@
 package io.rsocket.kotlin.internal.lease
 
+import io.rsocket.kotlin.Lease
 import io.rsocket.kotlin.exceptions.MissingLeaseException
+import java.nio.ByteBuffer
 
 /** Updates Lease on use and grant  */
 internal class LeaseManager(private val tag: String) {
@@ -11,20 +13,23 @@ internal class LeaseManager(private val tag: String) {
         requireNotNull(tag, { "tag" })
     }
 
-    fun availability(): Double {
-        return currentLease.availability()
-    }
+    fun availability(): Double = currentLease.availability()
 
-    fun grantLease(numberOfRequests: Int, ttl: Int) {
+    fun grant(numberOfRequests: Int, ttl: Int, metadata: ByteBuffer): Lease {
         assertGrantedLease(numberOfRequests, ttl)
-        this.currentLease = LeaseImpl(numberOfRequests, ttl, null)
+        currentLease = LeaseImpl(numberOfRequests, ttl, metadata)
+        return hide(currentLease)
     }
 
-    fun useLease(): Result =
+    fun use(): Result =
             if (currentLease.use(1))
                 Success
             else
                 Error(MissingLeaseException(currentLease, tag))
+
+    private fun hide(l: Lease): Lease = HiddenLease(l)
+
+    private class HiddenLease(l: Lease) : Lease by l
 
     override fun toString(): String {
         return "LeaseManager{tag='$tag'}"

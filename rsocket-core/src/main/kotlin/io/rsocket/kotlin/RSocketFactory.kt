@@ -21,8 +21,8 @@ import io.reactivex.Single
 import io.rsocket.kotlin.interceptors.GlobalInterceptors
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.internal.fragmentation.FragmentationInterceptor
-import io.rsocket.kotlin.internal.lease.ClientLeaseSupport
-import io.rsocket.kotlin.internal.lease.ServerLeaseSupport
+import io.rsocket.kotlin.internal.lease.ClientLeaseFeature
+import io.rsocket.kotlin.internal.lease.ServerLeaseFeature
 import io.rsocket.kotlin.transport.ClientTransport
 import io.rsocket.kotlin.transport.ServerTransport
 import io.rsocket.kotlin.util.AbstractRSocket
@@ -49,7 +49,7 @@ object RSocketFactory {
         private var acceptor: ClientAcceptor = { { emptyRSocket } }
         private var errorConsumer: (Throwable) -> Unit = { it.printStackTrace() }
         private var mtu = 0
-        private var leaseRefConsumer: ((LeaseRef) -> Unit)? = null
+        private val leaseOptions = LeaseOptions()
         private val interceptors = GlobalInterceptors.create()
         private var flags = 0
         private var setupPayload: Payload = DefaultPayload.EMPTY
@@ -79,9 +79,11 @@ object RSocketFactory {
             return this
         }
 
-        fun lease(leaseRefConsumer: (LeaseRef) -> Unit): ClientRSocketFactory {
-            this.flags = Frame.Setup.enableLease(flags)
-            this.leaseRefConsumer = leaseRefConsumer
+        fun lease(configure: (LeaseOptions) -> Unit): ClientRSocketFactory {
+            configure(leaseOptions)
+            if (leaseOptions.leaseSupport() != null) {
+                this.flags = Frame.Setup.enableLease(flags)
+            }
             return this
         }
 
@@ -120,9 +122,9 @@ object RSocketFactory {
                 ClientStart(acceptor,
                         errorConsumer,
                         mtu,
-                        leaseRefConsumer,
                         flags,
                         setupPayload,
+                        leaseOptions.copy(),
                         keepAlive.copy(),
                         mediaType.copy(),
                         options.copy(),
@@ -133,9 +135,9 @@ object RSocketFactory {
                 private val acceptor: ClientAcceptor,
                 private val errorConsumer: (Throwable) -> Unit,
                 private var mtu: Int,
-                private val leaseRef: ((LeaseRef) -> Unit)?,
                 private val flags: Int,
                 private val setupPayload: Payload,
+                private val leaseOptions: LeaseOptions,
                 keepAliveOpts: KeepAliveOptions,
                 private val mediaType: MediaType,
                 options: ClientOptions,
@@ -217,13 +219,15 @@ object RSocketFactory {
             }
 
             private fun enableLease(parentInterceptors: InterceptorRegistry)
-                    : InterceptorRegistry =
-                    if (leaseRef != null) {
-                        parentInterceptors.copyWith(
-                                ClientLeaseSupport.enable(leaseRef)())
-                    } else {
-                        parentInterceptors.copy()
-                    }
+                    : InterceptorRegistry {
+                val leaseSupport = leaseOptions.leaseSupport()
+                return if (leaseSupport != null) {
+                    parentInterceptors.copyWith(
+                            ClientLeaseFeature.enable(leaseSupport)())
+                } else {
+                    parentInterceptors.copy()
+                }
+            }
         }
     }
 
@@ -231,7 +235,7 @@ object RSocketFactory {
 
         private var errorConsumer: (Throwable) -> Unit = { it.printStackTrace() }
         private var mtu = 0
-        private var leaseRefConsumer: ((LeaseRef) -> Unit)? = null
+        private val leaseOptions = LeaseOptions()
         private val interceptors = GlobalInterceptors.create()
         private val options = ServerOptions()
 
@@ -246,8 +250,8 @@ object RSocketFactory {
             return this
         }
 
-        fun lease(leaseRefConsumer: (LeaseRef) -> Unit): ServerRSocketFactory {
-            this.leaseRefConsumer = leaseRefConsumer
+        fun lease(configure: (LeaseOptions) -> Unit): ServerRSocketFactory {
+            configure(leaseOptions)
             return this
         }
 
@@ -270,7 +274,7 @@ object RSocketFactory {
                                 acceptor,
                                 errorConsumer,
                                 mtu,
-                                leaseRefConsumer,
+                                leaseOptions.copy(),
                                 interceptors.copy(),
                                 options.copy())
             }
@@ -281,7 +285,7 @@ object RSocketFactory {
                 private val acceptor: ServerAcceptor,
                 private val errorConsumer: (Throwable) -> Unit,
                 private val mtu: Int,
-                private val leaseRef: ((LeaseRef) -> Unit)?,
+                private val leaseOptions: LeaseOptions,
                 private val parentInterceptors: InterceptorRegistry,
                 options: ServerOptions) : Start<T> {
 
@@ -343,7 +347,7 @@ object RSocketFactory {
                 val handlerRSocket = acceptor()(setup, wrappedRequester)
 
                 val rejectingHandlerRSocket = RejectingRSocket(handlerRSocket)
-                                .with(demuxer.requesterConnection())
+                        .with(demuxer.requesterConnection())
 
                 return rejectingHandlerRSocket
                         .map { handler -> interceptors.interceptHandler(handler) }
@@ -358,19 +362,22 @@ object RSocketFactory {
             }
 
             private fun enableLease(parentInterceptors: InterceptorRegistry)
-                    : InterceptorRegistry =
-                    if (leaseRef != null) {
-                        parentInterceptors.copyWith(
-                                ServerLeaseSupport.enable(leaseRef)())
-                    } else {
-                        parentInterceptors.copy()
-                    }
+                    : InterceptorRegistry {
+                val leaseSupport = leaseOptions.leaseSupport()
+                return if (leaseSupport != null) {
+                    parentInterceptors.copyWith(
+                            ServerLeaseFeature.enable(leaseSupport)())
+                } else {
+                    parentInterceptors.copy()
+                }
+            }
 
             private fun enableServerContract(parentInterceptors: InterceptorRegistry)
                     : InterceptorRegistry {
 
                 parentInterceptors.connectionFirst(
-                        ServerContractInterceptor(errorConsumer, leaseRef != null))
+                        ServerContractInterceptor(errorConsumer,
+                                leaseOptions.leaseSupport() != null))
                 return parentInterceptors
             }
 

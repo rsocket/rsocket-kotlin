@@ -3,16 +3,18 @@ package io.rsocket.kotlin
 import io.reactivex.Completable
 import java.nio.ByteBuffer
 
-/** Provides means to grant lease to peer  */
-interface LeaseRef {
+/**
+ * Grants Lease to its peer
+ */
+interface LeaseGranter {
 
     fun grantLease(
             numberOfRequests: Int,
-            ttlMillis: Long,
+            ttlSeconds: Int,
             metadata: ByteBuffer): Completable
 
     fun grantLease(numberOfRequests: Int,
-                   timeToLiveMillis: Long): Completable
+                   ttlSeconds: Int): Completable
 
     fun onClose(): Completable
 }

@@ -1,16 +1,16 @@
 package io.rsocket.kotlin.internal.lease
 
-import io.rsocket.kotlin.LeaseRef
+import io.rsocket.kotlin.LeaseSupport
 import io.rsocket.kotlin.internal.InterceptorRegistry
 
-internal sealed class LeaseSupport {
+internal sealed class LeaseFeature {
 
-    abstract fun enable(leaseHandle: (LeaseRef) -> Unit): () -> InterceptorRegistry
+    abstract fun enable(leaseSupport: (LeaseSupport) -> Unit): () -> InterceptorRegistry
 }
 
-internal object ServerLeaseSupport : LeaseSupport() {
+internal object ServerLeaseFeature : LeaseFeature() {
 
-    override fun enable(leaseHandle: (LeaseRef) -> Unit)
+    override fun enable(leaseSupport: (LeaseSupport) -> Unit)
             : () -> InterceptorRegistry = {
 
         val sender = LeaseManager(serverRequester)
@@ -33,7 +33,7 @@ internal object ServerLeaseSupport : LeaseSupport() {
                 leaseContext,
                 sender,
                 receiver,
-                leaseHandle))
+                leaseSupport))
         /*enables lease for particular connection*/
         registry.connection(LeaseEnablingInterceptor(leaseContext))
         registry
@@ -43,10 +43,10 @@ internal object ServerLeaseSupport : LeaseSupport() {
     private const val serverResponder = "server responder"
 }
 
-internal object ClientLeaseSupport : LeaseSupport() {
+internal object ClientLeaseFeature : LeaseFeature() {
     private val leaseEnabled = LeaseContext()
 
-    override fun enable(leaseHandle: (LeaseRef) -> Unit)
+    override fun enable(leaseSupport: (LeaseSupport) -> Unit)
             : () -> InterceptorRegistry = {
 
         val sender = LeaseManager(clientRequester)
@@ -66,7 +66,7 @@ internal object ClientLeaseSupport : LeaseSupport() {
                 leaseEnabled,
                 sender,
                 receiver,
-                leaseHandle))
+                leaseSupport))
         registry
     }
 

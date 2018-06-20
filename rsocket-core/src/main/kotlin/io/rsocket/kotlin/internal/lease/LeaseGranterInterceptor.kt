@@ -1,27 +1,27 @@
 package io.rsocket.kotlin.internal.lease
 
 import io.rsocket.kotlin.DuplexConnection
-import io.rsocket.kotlin.LeaseRef
+import io.rsocket.kotlin.LeaseSupport
 import io.rsocket.kotlin.interceptors.DuplexConnectionInterceptor
 
 internal class LeaseGranterInterceptor(
         private val leaseContext: LeaseContext,
         private val sender: LeaseManager,
         private val receiver: LeaseManager,
-        private val leaseHandle: (LeaseRef) -> Unit)
+        private val leaseHandle: (LeaseSupport) -> Unit)
     : DuplexConnectionInterceptor {
 
     override fun invoke(type: DuplexConnectionInterceptor.Type,
                         connection: DuplexConnection): DuplexConnection {
         return if (type === DuplexConnectionInterceptor.Type.SERVICE) {
-            val leaseGranterConnection = LeaseGranterConnection(
+            val leaseConnection = LeaseConnection(
                     leaseContext,
                     connection,
                     sender,
                     receiver)
-            val leaseConnectionRef = ConnectionLeaseRef(leaseGranterConnection)
-            leaseHandle(leaseConnectionRef)
-            leaseGranterConnection
+            val leaseSupport = LeaseSupport(leaseConnection)
+            leaseHandle(leaseSupport)
+            leaseConnection
         } else {
             connection
         }

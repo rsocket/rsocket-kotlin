@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 
 class LeaseManagerTest {
@@ -24,7 +25,7 @@ class LeaseManagerTest {
 
     @Test
     fun useNoRequests() {
-        val result = leaseManager.useLease()
+        val result = leaseManager.use()
         assertTrue(result is Error)
         result as Error
         assertTrue(result.ex is MissingLeaseException)
@@ -32,34 +33,38 @@ class LeaseManagerTest {
 
     @Test
     fun grant() {
-        leaseManager.grantLease(2, 1_000)
+        leaseManager.grant(2, 1_000, EMPTY_DATA)
         assertEquals(1.0, leaseManager.availability(), 1e-5)
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun grantLeaseZeroRequests() {
-        leaseManager.grantLease(0, 1_000)
+        leaseManager.grant(0, 1_000, EMPTY_DATA)
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun grantLeaseZeroTtl() {
-        leaseManager.grantLease(1, 0)
+        leaseManager.grant(1, 0, EMPTY_DATA)
     }
 
     @Test
     fun use() {
-        leaseManager.grantLease(2, 1_000)
-        leaseManager.useLease()
+        leaseManager.grant(2, 1_000, EMPTY_DATA)
+        leaseManager.use()
         assertEquals(0.5, leaseManager.availability(), 1e-5)
     }
 
     @Test
     fun useTimeout() {
-        leaseManager.grantLease(2, 1_000)
+        leaseManager.grant(2, 1_000, EMPTY_DATA)
         Completable.timer(1500, TimeUnit.MILLISECONDS).blockingAwait()
-        val result = leaseManager.useLease()
+        val result = leaseManager.use()
         assertTrue(result is Error)
         result as Error
         assertTrue(result.ex is MissingLeaseException)
+    }
+
+    companion object {
+        private val EMPTY_DATA = ByteBuffer.allocateDirect(0)
     }
 }

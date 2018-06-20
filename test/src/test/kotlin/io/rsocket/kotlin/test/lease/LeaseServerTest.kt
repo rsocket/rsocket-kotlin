@@ -19,14 +19,14 @@ import java.util.concurrent.TimeUnit
 
 class LeaseServerTest {
     private lateinit var nettyContextCloseable: NettyContextCloseable
-    private lateinit var serverLease: LeaseRefs
+    private lateinit var serverLease: LeaseSupp
     private lateinit var clientSocket: RSocket
-    private lateinit var leaseRef: LeaseRef
+    private lateinit var leaseGranter: LeaseGranter
     @Before
     fun setUp() {
-        serverLease = LeaseRefs()
+        serverLease = LeaseSupp()
         nettyContextCloseable = RSocketFactory.receive()
-                .lease(serverLease)
+                .lease { opts -> opts.leaseSupport(serverLease) }
                 .acceptor {
                     { _, _ ->
                         Single.just(
@@ -44,7 +44,7 @@ class LeaseServerTest {
         val address = nettyContextCloseable.address()
         clientSocket = RSocketFactory
                 .connect()
-                .lease(LeaseRefs())
+                .lease { opts -> opts.leaseSupport(LeaseSupp()) }
                 .keepAlive { opts ->
                     opts.keepAliveInterval(Duration.ofMinutes(1))
                             .keepAliveMaxLifeTime(Duration.ofMinutes(20))
@@ -53,7 +53,7 @@ class LeaseServerTest {
                 .start()
                 .blockingGet()
 
-        leaseRef = serverLease.leaseRef().blockingGet()
+        leaseGranter = serverLease.leaseGranter().blockingGet()
     }
 
     @After
@@ -66,7 +66,7 @@ class LeaseServerTest {
     @Test
     fun grantLeaseNumberOfRequests() {
         assertEquals(clientSocket.availability(), 0.0, 1e-5)
-        leaseRef.grantLease(2, 10_000)
+        leaseGranter.grantLease(2, 10_000)
                 .delay(100, TimeUnit.MILLISECONDS)
                 .blockingAwait()
         assertEquals(clientSocket.availability(), 1.0, 1e-5)
@@ -82,7 +82,7 @@ class LeaseServerTest {
                 .blockingSubscribe(subscriber)
         assertEquals(1, subscriber.errorCount())
         assertTrue(subscriber.errors().first() is MissingLeaseException)
-        leaseRef.grantLease(1, 10_000)
+        leaseGranter.grantLease(1, 10_000)
                 .delay(100, TimeUnit.MILLISECONDS)
                 .blockingAwait()
         assertEquals(1.0, clientSocket.availability(), 1e-5)
@@ -90,7 +90,7 @@ class LeaseServerTest {
 
     @Test
     fun grantLeaseTtl() {
-        leaseRef.grantLease(2, 200)
+        leaseGranter.grantLease(2, 200)
                 .delay(250, TimeUnit.MILLISECONDS)
                 .blockingAwait()
 
@@ -105,14 +105,14 @@ class LeaseServerTest {
 
     private fun payload() = DefaultPayload("data")
 
-    private class LeaseRefs : (LeaseRef) -> Unit {
-        private val leaseRefs = BehaviorProcessor.create<LeaseRef>()
+    private class LeaseSupp : (LeaseSupport) -> Unit {
+        private val leaseRefs = BehaviorProcessor.create<LeaseGranter>()
 
-        fun leaseRef(): Single<LeaseRef> = leaseRefs.firstOrError()
-
-        override fun invoke(leaseRef: LeaseRef) {
-            leaseRefs.onNext(leaseRef)
+        override fun invoke(leaseSupport: LeaseSupport) {
+            leaseRefs.onNext(leaseSupport.granter())
         }
+
+        fun leaseGranter(): Single<LeaseGranter> = leaseRefs.firstOrError()
     }
 
 }

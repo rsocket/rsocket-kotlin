@@ -1,6 +1,6 @@
 package io.rsocket.kotlin.exceptions
 
-import io.rsocket.kotlin.internal.lease.Lease
+import io.rsocket.kotlin.Lease
 
 class MissingLeaseException(lease: Lease, tag: String)
     : RejectedException(leaseMessage(lease, tag)) {
