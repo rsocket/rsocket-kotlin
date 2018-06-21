@@ -43,6 +43,13 @@ internal class LeaseConnection(
                 })
     }
 
+    override fun onClose(): Completable {
+        return super.onClose().doOnComplete {
+            sentLease.onComplete()
+            receivedLease.onComplete()
+        }
+    }
+
     override fun receive(): Flowable<Frame> {
         return super.receive()
                 .doOnNext { f ->
