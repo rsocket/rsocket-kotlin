@@ -26,7 +26,7 @@ import io.rsocket.kotlin.internal.RSocketResponder.DisposableSubscription.Compan
 import io.rsocket.kotlin.exceptions.ApplicationException
 import io.rsocket.kotlin.internal.frame.FrameHeaderFlyweight.FLAGS_C
 import io.rsocket.kotlin.internal.frame.FrameHeaderFlyweight.FLAGS_M
-import io.rsocket.kotlin.internal.ExceptionUtil.noStacktrace
+import io.rsocket.kotlin.internal.Exceptions.noStacktrace
 import io.rsocket.kotlin.DefaultPayload
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
@@ -178,7 +178,7 @@ internal class RSocketResponder(
                 .doOnSubscribe { d -> sendingSubscriptions[streamId] = subscription(d) }
                 .map { payload ->
                     var flags = FLAGS_C
-                    if (payload.hasMetadata()) {
+                    if (payload.hasMetadata) {
                         flags = Frame.setFlag(flags, FLAGS_M)
                     }
                     Frame.PayloadFrame.from(

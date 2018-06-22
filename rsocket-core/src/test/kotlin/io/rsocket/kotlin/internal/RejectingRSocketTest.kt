@@ -5,7 +5,6 @@ import io.reactivex.processors.UnicastProcessor
 import io.rsocket.kotlin.Frame
 import io.rsocket.kotlin.FrameType
 import io.rsocket.kotlin.RSocket
-import io.rsocket.kotlin.exceptions.Exceptions
 import io.rsocket.kotlin.exceptions.RejectedSetupException
 import io.rsocket.kotlin.test.util.LocalDuplexConnection
 import org.junit.Assert.assertEquals

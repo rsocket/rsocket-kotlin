@@ -17,5 +17,7 @@ package io.rsocket.kotlin.util
 
 import io.rsocket.kotlin.RSocket
 
-/** Wrapper/Proxy for a RSocket. This is useful when we want to override a specific method.  */
-open class RSocketProxy(source: RSocket) : RSocket by source
+/**
+ * [RSocket] which delegates to given [source]
+ * */
+open class RSocketProxy(protected val source: RSocket) : RSocket by source

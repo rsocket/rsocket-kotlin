@@ -4,7 +4,6 @@ import io.reactivex.processors.UnicastProcessor
 import io.rsocket.kotlin.DuplexConnection
 import io.rsocket.kotlin.Frame
 import io.rsocket.kotlin.FrameType
-import io.rsocket.kotlin.exceptions.Exceptions
 
 internal abstract class ServiceHandler(private val serviceConnection: DuplexConnection,
                                        private val errorConsumer: (Throwable) -> Unit) {

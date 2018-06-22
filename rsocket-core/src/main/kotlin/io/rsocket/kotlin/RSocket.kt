@@ -31,7 +31,7 @@ interface RSocket : Availability, Closeable {
      * Fire and Forget interaction model of `RSocket`.
      *
      * @param payload Request payload.
-     * @return `Publisher` that completes when the passed `payload` is successfully
+     * @return [Completable] that completes when the passed [payload] is successfully
      * handled, otherwise errors.
      */
     fun fireAndForget(payload: Payload): Completable
@@ -40,7 +40,7 @@ interface RSocket : Availability, Closeable {
      * Request-Response interaction model of `RSocket`.
      *
      * @param payload Request payload.
-     * @return `Publisher` containing at most a single `Payload` representing the
+     * @return [Single] containing at most a single [Payload] representing the
      * response.
      */
     fun requestResponse(payload: Payload): Single<Payload>
@@ -49,15 +49,15 @@ interface RSocket : Availability, Closeable {
      * Request-Stream interaction model of `RSocket`.
      *
      * @param payload Request payload.
-     * @return `Publisher` containing the stream of `Payload`s representing the response.
+     * @return stream of [Payload] representing the response.
      */
     fun requestStream(payload: Payload): Flowable<Payload>
 
     /**
      * Request-Channel interaction model of `RSocket`.
      *
-     * @param payloads Stream of send payloads.
-     * @return Stream of response payloads.
+     * @param payloads stream of request payloads.
+     * @return stream of response payloads.
      */
     fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload>
 
@@ -65,7 +65,7 @@ interface RSocket : Availability, Closeable {
      * Metadata-Push interaction model of `RSocket`.
      *
      * @param payload Request payloads.
-     * @return `Publisher` that completes when the passed `payload` is successfully
+     * @return [Completable] which completes when the passed [payload] is successfully
      * handled, otherwise errors.
      */
     fun metadataPush(payload: Payload): Completable

@@ -15,7 +15,7 @@
  */
 package io.rsocket.kotlin
 
-/** Types of [Frame] that can be sent.  */
+/** RSocket [Frame] types */
 enum class FrameType(val encodedType: Int, private val flags: Int = 0) {
     // blank type that is not defined
     UNDEFINED(0x00),
@@ -44,15 +44,13 @@ enum class FrameType(val encodedType: Int, private val flags: Int = 0) {
                     Flags.IS_REQUEST_TYPE or
                     Flags.HAS_INITIAL_REQUEST_N or
                     Flags.IS_FRAGMENTABLE),
-    // Requester mid-stream
     REQUEST_N(0x08),
     CANCEL(0x09, Flags.CAN_HAVE_METADATA),
-    // Responder
     PAYLOAD(0x0A, Flags.CAN_HAVE_METADATA_AND_DATA),
     ERROR(0x0B, Flags.CAN_HAVE_METADATA_AND_DATA),
-    // Requester & Responder
+    // Requester & Responder metadata push
     METADATA_PUSH(0x0C, Flags.CAN_HAVE_METADATA),
-    // Resumption frames, not yet implemented
+    // Resumption frames
     RESUME(0x0D),
     RESUME_OK(0x0E),
     // synthetic types from Responder for use by the rest of the machinery

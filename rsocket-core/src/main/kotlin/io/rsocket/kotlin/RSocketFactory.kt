@@ -27,20 +27,17 @@ import io.rsocket.kotlin.transport.ClientTransport
 import io.rsocket.kotlin.transport.ServerTransport
 import io.rsocket.kotlin.util.AbstractRSocket
 
-/** Factory for creating RSocket clients and servers.  */
+/** Factory for creating RSocket clients and servers  */
 object RSocketFactory {
 
     /**
-     * Creates a factory that establishes client connections to other RSockets.
-     *
-     * @return a client factory
+     * @return factory that creates RSockets clients connecting to RSocket servers
      */
     fun connect(): ClientRSocketFactory = ClientRSocketFactory()
 
     /**
-     * Creates a factory that receives server connections from client RSockets.
-     *
-     * @return a server factory.
+     * @return factory that creates RSocket servers accepting connections
+     * from RSocket clients
      */
     fun receive(): ServerRSocketFactory = ServerRSocketFactory()
 
@@ -55,30 +52,61 @@ object RSocketFactory {
         private var setupPayload: Payload = DefaultPayload.EMPTY
         private val keepAlive = KeepAliveOptions()
         private val mediaType = MediaTypeOptions()
-        private val options = ClientOptions()
+        private val options = RSocketOptions()
 
+        /**
+         * Configure connection and RSocket interceptors
+         *
+         * @param configure function which configures RSocket [InterceptorOptions]
+         * @return this ClientRSocketFactory
+         */
         fun interceptors(configure: (InterceptorOptions) -> Unit): ClientRSocketFactory {
             configure(interceptors)
             return this
         }
 
+        /**
+         * Configure keep-alive options
+         *
+         * @param configure function which configures RSocket [KeepAliveOptions]
+         * @return this ClientRSocketFactory
+         */
         fun keepAlive(configure: (KeepAliveOptions) -> Unit): ClientRSocketFactory {
             configure(keepAlive)
             return this
         }
 
+        /**
+         * Configure data and metadata payloads MIME type of RSocket
+         *
+         * @param configure function which configures RSocket [MediaTypeOptions]
+         * @return this ClientRSocketFactory
+         */
         fun mimeType(configure: (MediaTypeOptions) -> Unit)
                 : ClientRSocketFactory {
             configure(mediaType)
             return this
         }
 
+        /**
+         * Configure frame fragmentation and reassembly of requester RSocket
+         *
+         * @param mtu sets payload length threshold for applying fragmentation.
+         *            0 value means fragmentation is disabled. Must be non-negative
+         * @return this ClientRSocketFactory
+         */
         fun fragment(mtu: Int): ClientRSocketFactory {
             assertFragmentation(mtu)
             this.mtu = mtu
             return this
         }
 
+        /**
+         * Configure lease support
+         *
+         * @param configure function which configures [LeaseOptions]
+         * @return this ClientRSocketFactory
+         */
         fun lease(configure: (LeaseOptions) -> Unit): ClientRSocketFactory {
             configure(leaseOptions)
             if (leaseOptions.leaseSupport() != null) {
@@ -87,27 +115,66 @@ object RSocketFactory {
             return this
         }
 
+        /**
+         * Sets consumer for errors which are out of scope of RSocket interaction
+         * requests (e.g. request-response, request-stream and so on)
+         *
+         * @param errorConsumer function which handles errors
+         * @return this ClientRSocketFactory
+         */
         fun errorConsumer(errorConsumer: (Throwable) -> Unit): ClientRSocketFactory {
             this.errorConsumer = errorConsumer
             return this
         }
 
+        /**
+         * Sets Setup frame payload of RSocket
+         *
+         * @param payload Setup frame payload of RSocket
+         * @return this ClientRSocketFactory
+         */
         fun setupPayload(payload: Payload): ClientRSocketFactory {
             this.setupPayload = payload
             return this
         }
 
-        fun options(configure: (ClientOptions) -> Unit): ClientRSocketFactory {
+        /**
+         * Configure auxilary capabilities of RSocket interactions (request-response,
+         * request-stream and so on)
+         *
+         * @param configure function which configures  [RSocketOptions]
+         * @return this ClientRSocketFactory
+         */
+        fun options(configure: (RSocketOptions) -> Unit): ClientRSocketFactory {
             configure(options)
             return this
         }
 
+        /**
+         * Sets transport of client RSocket
+         *
+         * @param transport supplier used to create [ClientTransport] of RSocket
+         * @return this ClientRSocketFactory
+         */
         fun transport(transport: () -> ClientTransport): Start<RSocket> =
                 clientStart(acceptor, transport)
 
+        /**
+         * Sets transport of client RSocket
+         *
+         * @param transport [ClientTransport] of RSocket
+         * @return this ClientRSocketFactory
+         */
         fun transport(transport: ClientTransport): Start<RSocket> =
                 transport { transport }
 
+        /**
+         * Sets requests acceptor of client RSocket
+         *
+         * @param acceptor handler of client RSocket which accepts requests
+         * from peer
+         * @return this ClientRSocketFactory
+         */
         fun acceptor(acceptor: ClientAcceptor): ClientTransportAcceptor {
             this.acceptor = acceptor
             return object : ClientTransportAcceptor {
@@ -140,7 +207,7 @@ object RSocketFactory {
                 private val leaseOptions: LeaseOptions,
                 keepAliveOpts: KeepAliveOptions,
                 private val mediaType: MediaType,
-                options: ClientOptions,
+                options: RSocketOptions,
                 private val transportClient: () -> ClientTransport,
                 private val parentInterceptors: InterceptorRegistry)
             : Start<RSocket> {
@@ -237,34 +304,74 @@ object RSocketFactory {
         private var mtu = 0
         private val leaseOptions = LeaseOptions()
         private val interceptors = GlobalInterceptors.create()
-        private val options = ServerOptions()
+        private val options = RSocketOptions()
 
+        /**
+         * Configure connection and RSocket interceptors
+         *
+         * @param configure function which configures RSocket [InterceptorOptions]
+         * @return this ServerRSocketFactory
+         */
         fun interceptors(configure: (InterceptorOptions) -> Unit): ServerRSocketFactory {
             configure(interceptors)
             return this
         }
 
+        /**
+         * Configure frame fragmentation and reassembly of requester RSocket
+         *
+         * @param mtu sets payload length threshold for applying fragmentation.
+         *            0 value means fragmentation is disabled. Must be non-negative
+         * @return this ServerRSocketFactory
+         */
         fun fragment(mtu: Int): ServerRSocketFactory {
             assertFragmentation(mtu)
             this.mtu = mtu
             return this
         }
 
+        /**
+         * Configure lease support
+         *
+         * @param configure function which configures [LeaseOptions]
+         * @return this ServerRSocketFactory
+         */
         fun lease(configure: (LeaseOptions) -> Unit): ServerRSocketFactory {
             configure(leaseOptions)
             return this
         }
 
+        /**
+         * Sets consumer for errors which are out of scope of RSocket interaction
+         * requests (e.g. request-response, request-stream and so on)
+         *
+         * @param errorConsumer function which handles errors
+         * @return this ServerRSocketFactory
+         */
         fun errorConsumer(errorConsumer: (Throwable) -> Unit): ServerRSocketFactory {
             this.errorConsumer = errorConsumer
             return this
         }
 
-        fun options(configure: (ServerOptions) -> Unit): ServerRSocketFactory {
+        /**
+         * Configure auxilary capabilities of RSocket interactions (request-response,
+         * request-stream and so on)
+         *
+         * @param configure function which configures  [RSocketOptions]
+         * @return this ServerRSocketFactory
+         */
+        fun options(configure: (RSocketOptions) -> Unit): ServerRSocketFactory {
             configure(options)
             return this
         }
 
+        /**
+         * Sets requests acceptor of client RSocket
+         *
+         * @param acceptor handler of server RSocket which accepts requests
+         * from peer
+         * @return [ServerTransportAcceptor] which accepts server RSocket transport
+         */
         fun acceptor(acceptor: ServerAcceptor): ServerTransportAcceptor {
             return object : ServerTransportAcceptor {
 
@@ -287,7 +394,7 @@ object RSocketFactory {
                 private val mtu: Int,
                 private val leaseOptions: LeaseOptions,
                 private val parentInterceptors: InterceptorRegistry,
-                options: ServerOptions) : Start<T> {
+                options: RSocketOptions) : Start<T> {
 
             private val streamRequestLimit = options.streamRequestLimit()
 
@@ -418,6 +525,14 @@ object RSocketFactory {
     private val emptyRSocket = object : AbstractRSocket() {}
 }
 
+/**
+ * Factory which creates requests acceptor of client RSocket. Takes requester
+ * RSocket and returns responder (handler) RSocket
+ */
 typealias ClientAcceptor = () -> (RSocket) -> RSocket
 
+/**
+ * Factory which creates requests acceptor of server RSocket. Takes setup payload
+ * and requester RSocket and returns responder (handler) RSocket
+ */
 typealias ServerAcceptor = () -> (Setup, RSocket) -> Single<RSocket>

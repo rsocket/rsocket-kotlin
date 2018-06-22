@@ -18,6 +18,9 @@ package io.rsocket.kotlin.interceptors
 
 import io.rsocket.kotlin.DuplexConnection
 
+/**
+ * Allows to intercept calls to [DuplexConnection] methods
+ */
 interface DuplexConnectionInterceptor : (DuplexConnectionInterceptor.Type,
                                          DuplexConnection) -> DuplexConnection {
     enum class Type {

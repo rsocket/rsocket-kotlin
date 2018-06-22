@@ -2,6 +2,9 @@ package io.rsocket.kotlin
 
 import java.util.concurrent.TimeUnit
 
+/**
+ * Represents duration with different time units
+ */
 data class Duration(private val value: Long, val unit: TimeUnit) {
 
     val millis = unit.toMillis(value)

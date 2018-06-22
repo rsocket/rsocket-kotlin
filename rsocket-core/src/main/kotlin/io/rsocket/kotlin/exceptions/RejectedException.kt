@@ -17,7 +17,7 @@ package io.rsocket.kotlin.exceptions
 
 import io.rsocket.kotlin.internal.frame.ErrorFrameFlyweight
 
-open class RejectedException : RSocketException, Retryable {
+open class RejectedException : RSocketException {
     constructor(message: String) : super(message)
 
     constructor(message: String, cause: Throwable) : super(message, cause)

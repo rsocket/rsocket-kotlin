@@ -236,7 +236,7 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
                 metadataMimeType: String,
                 dataMimeType: String,
                 payload: Payload): Frame {
-            val metadata = if (payload.hasMetadata())
+            val metadata = if (payload.hasMetadata)
                 Unpooled.wrappedBuffer(payload.metadata)
             else
                 Unpooled.EMPTY_BUFFER
@@ -424,7 +424,7 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
             if (initialRequestN < 1) {
                 throw IllegalStateException("initial request n must be greater than 0")
             }
-            val metadata = if (payload.hasMetadata()) Unpooled.wrappedBuffer(payload.metadata) else null
+            val metadata = if (payload.hasMetadata) Unpooled.wrappedBuffer(payload.metadata) else null
             val data = Unpooled.wrappedBuffer(payload.data)
 
             val frame = RECYCLER.get()
@@ -531,8 +531,8 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
         fun from(streamId: Int,
                  type: FrameType,
                  payload: Payload,
-                 flags: Int = if (payload.hasMetadata()) FLAGS_M else 0): Frame {
-            val metadata = if (payload.hasMetadata()) Unpooled.wrappedBuffer(payload.metadata) else null
+                 flags: Int = if (payload.hasMetadata) FLAGS_M else 0): Frame {
+            val metadata = if (payload.hasMetadata) Unpooled.wrappedBuffer(payload.metadata) else null
             val data = Unpooled.wrappedBuffer(payload.data)
             return from(streamId, type, metadata, data, flags)
         }
