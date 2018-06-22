@@ -45,6 +45,10 @@ abstract class EndToEndTest
         client = RSocketFactory
                 .connect()
                 .errorConsumer(errors.errorsConsumer())
+                .keepAlive {
+                    it.keepAliveInterval(Duration.ofSeconds(42))
+                            .keepAliveMaxLifeTime(Duration.ofMinutes(42))
+                }
                 .acceptor { { clientHandler } }
                 .transport { clientTransport(server.address()) }
                 .start()

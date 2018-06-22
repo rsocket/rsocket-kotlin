@@ -30,6 +30,13 @@ subprojects {
     group = 'io.rsocket.kotlin'
     version = '0.9-SNAPSHOT'
 
+    test {
+        testLogging {
+            events "failed"
+            exceptionFormat "full"
+        }
+    }
+
     task sourcesJar(type: Jar, dependsOn: classes) {
         classifier = 'sources'
         from sourceSets.main.allSource

@@ -74,7 +74,7 @@ internal abstract class ConnectionDemuxerTest {
         val metadata = Frame.Request.from(
                 0,
                 FrameType.METADATA_PUSH,
-                DefaultPayload.textPayload("", "md"),
+                DefaultPayload.text("", "md"),
                 1)
 
         source.addToReceivedBuffer(metadata)

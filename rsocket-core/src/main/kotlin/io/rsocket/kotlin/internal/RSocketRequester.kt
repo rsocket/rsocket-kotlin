@@ -18,9 +18,7 @@ package io.rsocket.kotlin.internal
 
 import io.reactivex.Completable
 import io.reactivex.Flowable
-import io.reactivex.FlowableSubscriber
 import io.reactivex.Single
-import io.reactivex.processors.FlowableProcessor
 import io.reactivex.processors.UnicastProcessor
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.exceptions.ApplicationException
@@ -45,13 +43,11 @@ internal class RSocketRequester(
     private val receivers = ConcurrentHashMap<Int, Subscriber<Payload>>(256)
     private val interactions = Interactions()
 
-    private val sentFrames: FlowableProcessor<Frame> = UnicastProcessor
-            .create<Frame>()
-            .toSerialized()
+    private val frameSender = FrameSender()
 
     init {
         connection
-                .send(sentFrames)
+                .send(frameSender.sent())
                 .subscribe(
                         {},
                         { interactions.error(it) })
@@ -101,7 +97,7 @@ internal class RSocketRequester(
                     FrameType.FIRE_AND_FORGET,
                     payload,
                     1)
-            sentFrames.onNext(requestFrame)
+            frameSender.send(requestFrame)
         }
     }
 
@@ -113,10 +109,10 @@ internal class RSocketRequester(
 
             val receiver = UnicastProcessor.create<Payload>()
             receivers[streamId] = receiver
-            sentFrames.onNext(requestFrame)
+            frameSender.send(requestFrame)
 
             receiver
-                    .doOnCancel { sentFrames.onNext(Frame.Cancel.from(streamId)) }
+                    .doOnCancel { frameSender.send(Frame.Cancel.from(streamId)) }
                     .doFinally { receivers -= streamId }
                     .firstOrError()
         }
@@ -141,9 +137,9 @@ internal class RSocketRequester(
                             streamId,
                             requestN)
                 }
-                sentFrames.onNext(frame)
+                frameSender.send(frame)
             }.doOnCancel {
-                sentFrames.onNext(Frame.Cancel.from(streamId))
+                frameSender.send(Frame.Cancel.from(streamId))
             }.doFinally {
                 receivers -= streamId
             }
@@ -185,7 +181,7 @@ internal class RSocketRequester(
                     val requestFrames = Flowable.concatArrayEager(first, rest)
                     requestFrames.subscribe(
                             ChannelRequestSubscriber(
-                                    { payload -> sentFrames.onNext(payload) },
+                                    { payload -> frameSender.send(payload) },
                                     {
                                         receiver.onError(ChannelRequestException(
                                                 "Channel request exception", it))
@@ -194,21 +190,21 @@ internal class RSocketRequester(
                                         if (empty) {
                                             receiver.onComplete()
                                         } else {
-                                            sentFrames.onNext(Frame.PayloadFrame.from(
+                                            frameSender.send(Frame.PayloadFrame.from(
                                                     streamId, FrameType.COMPLETE))
                                         }
                                     }))
 
                 } else {
-                    sentFrames.onNext(Frame.RequestN.from(streamId, requestN))
+                    frameSender.send(Frame.RequestN.from(streamId, requestN))
                 }
             }.doOnError { err ->
                 if (err is ChannelRequestException) {
-                    sentFrames.onNext(Frame.Error.from(streamId,
+                    frameSender.send(Frame.Error.from(streamId,
                             ApplicationException(err.message, err.cause)))
                 }
             }.doOnCancel {
-                sentFrames.onNext(Frame.Cancel.from(streamId))
+                frameSender.send(Frame.Cancel.from(streamId))
             }.doFinally {
                 receivers -= streamId
                 senders.remove(streamId)?.cancel()
@@ -223,7 +219,7 @@ internal class RSocketRequester(
                     FrameType.METADATA_PUSH,
                     payload,
                     1)
-            sentFrames.onNext(requestFrame)
+            frameSender.send(requestFrame)
         }
     }
 
@@ -357,7 +353,7 @@ internal class RSocketRequester(
     private class ChannelRequestSubscriber(private val next: (Frame) -> Unit,
                                            private val error: (Throwable) -> Unit,
                                            private val complete: (Boolean) -> Unit)
-        : FlowableSubscriber<Frame> {
+        : Subscriber<Frame> {
         private var empty = true
 
         override fun onComplete() {

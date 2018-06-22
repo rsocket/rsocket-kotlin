@@ -11,8 +11,7 @@ It enables following symmetric interaction models:
 * request/response (stream of 1)
 * request/stream (finite/infinite stream of many)
 *  channel (bi-directional streams)
-
-Also, metadata can be associated with stream or RSocket itself
+*  per-stream and per-RSocket metadata 
 
 ## Build and Binaries
 
@@ -29,7 +28,7 @@ Also, metadata can be associated with stream or RSocket itself
     }
 ```
 ### Transports
-`Netty` based Websockets and TCP transport (`Client` and `Server`)
+`Netty` based Websockets and TCP transport (`Client` and `Server`)  
 `OkHttp` based Websockets transport (`Client` only)
 ```groovy
  dependencies {
@@ -44,22 +43,26 @@ Messages for all  interactions are represented as `Payload` of binary (`NIO Byte
 
 UTF-8 `text` payloads can be constructed as follows
 ```kotlin
-val request = PayloadImpl.textPayload("data", "metadata")
+val request = DefaultPayload.text("data", "metadata")
 ```
 Stream Metadata is optional
 ```kotlin
-val request = PayloadImpl.textPayload("data")
+val request = DefaultPayload.text("data")
 ```
 #### Interactions
-   Fire and Forget  
+* Fire and Forget  
   `RSocket.fireAndForget(payload: Payload): Completable`  
-   Request-Response  
+
+* Request-Response  
    `RSocket.requestResponse(payload: Payload): Single<Payload>`  
-   Request-Stream  
+
+* Request-Stream  
    `RSocket.requestStream(payload: Payload): Flowable<Payload>`  
-   Request-Channel  
+
+* Request-Channel  
    `RSocket.requestChannel(payload: Publisher<Payload>): Flowable<Payload>`  
-   Metadata-Push  
+
+* Metadata-Push  
    `fun metadataPush(payload: Payload): Completable`  
 
 #### Client
@@ -75,13 +78,13 @@ val request = PayloadImpl.textPayload("data")
               private fun handler(requester:RSocket): RSocket {
                       return object : AbstractRSocket() {
                           override fun requestStream(payload: Payload): Flowable<Payload> {
-                              return Flowable.just(PayloadImpl.textPayload("client handler response"))
+                              return Flowable.just(DefaultPayload.text("client handler response"))
                           }
                       }
                   }
 ```
 #### Server
-Accepts `Connections` from `Clients`
+Server is acceptor of `Connections` from `Clients`
 ```kotlin
 val closeable: Single<Closeable> = RSocketFactory
                 .receive()
@@ -93,7 +96,7 @@ val closeable: Single<Closeable> = RSocketFactory
 private fun handler(setup: Setup, rSocket: RSocket): Single<RSocket> {
         return Single.just(object : AbstractRSocket() {
             override fun requestStream(payload: Payload): Flowable<Payload> {
-                return Flowable.just(PayloadImpl.textPayload("server handler response"))
+                return Flowable.just(DefaultPayload.text("server handler response"))
             }
         })
     }

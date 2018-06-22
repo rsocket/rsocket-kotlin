@@ -13,7 +13,7 @@ class SetupFrameTest {
         val setupFrame = Frame.Setup.from(0, 1, 100, 1000,
                 "metadataMime",
                 "dataMime",
-                DefaultPayload.textPayload("data", "metadata"))
+                DefaultPayload.text("data", "metadata"))
         val setup = SetupContents.create(setupFrame)
         assertEquals(setup.keepAliveInterval().millis, 100)
         assertEquals(setup.keepAliveMaxLifeTime().millis, 1000)

@@ -95,7 +95,7 @@ class DefaultPayload @JvmOverloads constructor(data: ByteBuffer,
          * @param data the data of the payload.
          * @return a payload.
          */
-        fun textPayload(data: String): Payload = DefaultPayload(data)
+        fun text(data: String): Payload = DefaultPayload(data)
 
         /**
          * Static factory method for a text payload. Mainly looks better than
@@ -105,7 +105,7 @@ class DefaultPayload @JvmOverloads constructor(data: ByteBuffer,
          * @param metadata the metadata for the payload.
          * @return a payload.
          */
-        fun textPayload(data: String, metadata: String?): Payload =
+        fun text(data: String, metadata: String?): Payload =
                 DefaultPayload(data, metadata)
     }
 }
