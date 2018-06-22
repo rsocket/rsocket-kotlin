@@ -9,6 +9,8 @@ import io.rsocket.kotlin.transport.netty.client.TcpClientTransport
 import io.rsocket.kotlin.transport.netty.server.TcpServerTransport
 import io.rsocket.kotlin.util.AbstractRSocket
 import org.slf4j.LoggerFactory
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -67,23 +69,39 @@ object LeaseClientServerExample {
                             .flatMapCompletable { _ ->
                                 connRef.grantLease(
                                         numberOfRequests = 7,
-                                        ttlSeconds = 5_000)
+                                        ttlSeconds = 5_000,
+                                        metadata = metadata("metadata"))
                             }
                 }.subscribe({}, { LOGGER.error("Granter error: $it") })
 
         serverLease.leaseWatcher().flatMapPublisher { it.granted() }
                 .subscribe(
-                        { LOGGER.info("Server granted Lease: ${it.allowedRequests}") },
+                        {
+                            LOGGER.info("Server granted Lease: " +
+                                    "requests: ${it.allowedRequests}, " +
+                                    "ttl: ${it.timeToLiveSeconds}, " +
+                                    "metadata: ${metadata(it.metadata)}")
+                        },
                         { LOGGER.error("Granted Watcher error: $it") })
 
         clientLease.leaseWatcher().flatMapPublisher { it.received() }
                 .subscribe(
-                        { LOGGER.info("Client received Lease: ${it.allowedRequests}") },
-                        {LOGGER.error("Received Watcher error: $it")})
+                        {
+                            LOGGER.info("Client received Lease: " +
+                                    "requests: ${it.allowedRequests}, " +
+                                    "ttl: ${it.timeToLiveSeconds}, " +
+                                    "metadata: ${metadata(it.metadata)}")
+                        },
+                        { LOGGER.error("Received Watcher error: $it") })
 
 
         clientSocket.onClose().blockingAwait()
     }
+
+    private fun metadata(md: String): ByteBuffer = ByteBuffer.wrap(md.toByteArray())
+
+    private fun metadata(md: ByteBuffer): String = StandardCharsets.UTF_8
+            .decode(md).toString()
 
     private class LeaseSupp : (LeaseSupport) -> Unit {
         private val leaseGranter = BehaviorProcessor.create<LeaseGranter>()

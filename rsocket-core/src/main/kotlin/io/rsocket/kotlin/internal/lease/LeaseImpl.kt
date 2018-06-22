@@ -4,38 +4,34 @@ import io.rsocket.kotlin.Lease
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 
-internal class LeaseImpl(private val startingNumberOfRequests: Int,
-                         override val ttl: Int,
+internal class LeaseImpl(override val initialAllowedRequests: Int,
+                         override val timeToLiveSeconds: Int,
                          override val metadata: ByteBuffer) : Lease {
-    private val numberOfRequests: AtomicInteger
-    private val expiry: Long
+    private val allowedReqs: AtomicInteger
+    override val expiry: Long
 
     init {
-        assertNumberOfRequests(startingNumberOfRequests, ttl)
-        this.numberOfRequests = AtomicInteger(startingNumberOfRequests)
-        this.expiry = now() + ttl
+        assertNumberOfRequests(initialAllowedRequests, timeToLiveSeconds)
+        this.allowedReqs = AtomicInteger(initialAllowedRequests)
+        this.expiry = now() + timeToLiveSeconds
     }
 
     override val allowedRequests: Int
-        get() = Math.max(0, numberOfRequests.get())
+        get() = Math.max(0, allowedReqs.get())
 
     override val isValid: Boolean
-        get() = startingNumberOfRequests > 0
+        get() = initialAllowedRequests > 0
                 && allowedRequests > 0
                 && !isExpired
 
-    override fun expiry(): Long {
-        return expiry
-    }
-
     fun availability(): Double {
         return if (isValid) allowedRequests /
-                startingNumberOfRequests.toDouble() else 0.0
+                initialAllowedRequests.toDouble() else 0.0
     }
 
     fun use(useRequestCount: Int): Boolean {
         assertUseRequests(useRequestCount)
-        return !isExpired && numberOfRequests.accAndGet(
+        return !isExpired && allowedReqs.accAndGet(
                 useRequestCount,
                 { cur, update -> Math.max(-1, cur - update) }) >= 0
     }

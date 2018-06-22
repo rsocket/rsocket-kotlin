@@ -11,8 +11,10 @@ class MissingLeaseException(lease: Lease, tag: String)
         internal fun leaseMessage(lease: Lease, tag: String): String {
             val expired = lease.isExpired
             val allowedRequests = lease.allowedRequests
+            val initialAllowedRequests = lease.initialAllowedRequests
             return "$tag: Missing lease. " +
-                    "Expired: $expired, allowedRequests: $allowedRequests"
+                    "Expired: $expired, allowedRequests:" +
+                    " $allowedRequests/$initialAllowedRequests"
         }
     }
 }

@@ -4,7 +4,9 @@ import io.rsocket.kotlin.Lease
 import io.rsocket.kotlin.exceptions.MissingLeaseException
 import java.nio.ByteBuffer
 
-/** Updates Lease on use and grant  */
+/**
+ * Updates Lease on use and grant
+ */
 internal class LeaseManager(private val tag: String) {
     @Volatile
     private var currentLease = INVALID_MUTABLE_LEASE
@@ -27,9 +29,9 @@ internal class LeaseManager(private val tag: String) {
             else
                 Error(MissingLeaseException(currentLease, tag))
 
-    private fun hide(l: Lease): Lease = HiddenLease(l)
+    private fun hide(l: Lease): Lease = DelegatingLease(l)
 
-    private class HiddenLease(l: Lease) : Lease by l
+    private class DelegatingLease(l: Lease) : Lease by l
 
     override fun toString(): String {
         return "LeaseManager{tag='$tag'}"
