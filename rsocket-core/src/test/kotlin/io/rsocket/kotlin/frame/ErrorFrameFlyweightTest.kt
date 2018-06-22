@@ -16,13 +16,11 @@
 
 package io.rsocket.kotlin.frame
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-
 import io.netty.buffer.ByteBufUtil
 import io.netty.buffer.Unpooled
 import io.rsocket.kotlin.Frame
 import io.rsocket.kotlin.exceptions.*
+import io.rsocket.kotlin.internal.Exceptions
 import io.rsocket.kotlin.internal.frame.ErrorFrameFlyweight
 import io.rsocket.kotlin.internal.frame.ErrorFrameFlyweight.APPLICATION_ERROR
 import io.rsocket.kotlin.internal.frame.ErrorFrameFlyweight.CANCELED
@@ -34,8 +32,10 @@ import io.rsocket.kotlin.internal.frame.ErrorFrameFlyweight.REJECTED
 import io.rsocket.kotlin.internal.frame.ErrorFrameFlyweight.REJECTED_RESUME
 import io.rsocket.kotlin.internal.frame.ErrorFrameFlyweight.REJECTED_SETUP
 import io.rsocket.kotlin.internal.frame.ErrorFrameFlyweight.UNSUPPORTED_SETUP
-import java.nio.charset.StandardCharsets
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.nio.charset.StandardCharsets
 
 class ErrorFrameFlyweightTest {
     private val byteBuf = Unpooled.buffer(1024)

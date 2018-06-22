@@ -1,5 +1,8 @@
 package io.rsocket.kotlin
 
+/**
+ * Configures [Payload] data and metadata MIME types
+ */
 class MediaTypeOptions : MediaType {
     private var dataMimeType: String = "application/binary"
     private var metadataMimeType: String = "application/binary"

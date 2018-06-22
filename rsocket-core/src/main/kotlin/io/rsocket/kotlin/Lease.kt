@@ -14,58 +14,54 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.internal.lease
+package io.rsocket.kotlin
 
 import java.nio.ByteBuffer
 
-/** A contract for RSocket lease, which is sent by a request acceptor and is time bound.  */
+/** A contract for RSocket lease, which is time bound.  */
 interface Lease {
 
     /**
-     * Number of requests allowed by this lease.
-     *
      * @return The number of requests allowed by this lease.
      */
     val allowedRequests: Int
 
     /**
-     * Number of milliseconds that this lease is valid from the time it is received.
-     *
-     * @return Number of milliseconds that this lease is valid from the time it is received.
+     * @return Initial number of requests allowed by this lease.
      */
-    val ttl: Int
+    val initialAllowedRequests: Int
 
     /**
-     * Metadata for the lease.
-     *
-     * @return Metadata for the lease.
+     * @return Number of seconds that this lease is valid from the time
+     * it is received.
      */
-    val metadata: ByteBuffer?
+    val timeToLiveSeconds: Int
 
     /**
-     * Checks if the lease is expired now.
-     *
-     * @return `true` if the lease has expired.
+     * @return lease metadata.
+     */
+    val metadata: ByteBuffer
+
+    /**
+     * @return `true` if the lease has expired, false otherwise.
      */
     val isExpired: Boolean
         get() = isExpired(System.currentTimeMillis())
 
-    /** Checks if the lease has not expired and there are allowed requests available  */
+    /**
+     * @return true if lease has not expired, and there are allowed requests
+     * available, false otherwise
+     */
     val isValid: Boolean
-        get() = !isExpired && allowedRequests > 0
 
     /**
-     * Absolute time since epoch at which this lease will expire.
-     *
      * @return Absolute time since epoch at which this lease will expire.
      */
-    fun expiry(): Long
+    val expiry: Long
 
     /**
-     * Checks if the lease is expired for the passed `now`.
-     *
      * @param now current time in millis.
-     * @return `true` if the lease has expired.
+     * @return `true` if the lease has expired for given `now`, false otherwise.
      */
-    fun isExpired(now: Long): Boolean = now >= expiry()
+    fun isExpired(now: Long): Boolean = now >= expiry
 }

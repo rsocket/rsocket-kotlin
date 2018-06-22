@@ -9,6 +9,8 @@ import io.rsocket.kotlin.transport.netty.client.TcpClientTransport
 import io.rsocket.kotlin.transport.netty.server.TcpServerTransport
 import io.rsocket.kotlin.util.AbstractRSocket
 import org.slf4j.LoggerFactory
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -18,9 +20,9 @@ object LeaseClientServerExample {
     @JvmStatic
     fun main(args: Array<String>) {
 
-        val serverLease = LeaseRefs()
+        val serverLease = LeaseSupp()
         val nettyContextCloseable = RSocketFactory.receive()
-                .lease(serverLease)
+                .lease { opts -> opts.leaseSupport(serverLease) }
                 .acceptor {
                     { _, _ ->
                         Single.just(
@@ -34,10 +36,10 @@ object LeaseClientServerExample {
                 .transport(TcpServerTransport.create("localhost", 0))
                 .start()
                 .blockingGet()
-
+        val clientLease = LeaseSupp()
         val address = nettyContextCloseable.address()
         val clientSocket = RSocketFactory.connect()
-                .lease(LeaseRefs())
+                .lease { opts -> opts.leaseSupport(clientLease) }
                 .keepAlive { opts ->
                     opts.keepAliveInterval(Duration.ofMinutes(1))
                             .keepAliveMaxLifeTime(Duration.ofMinutes(20))
@@ -61,26 +63,57 @@ object LeaseClientServerExample {
                 .subscribe { resp -> LOGGER.info("Client response: ${resp.dataUtf8}") }
 
         serverLease
-                .leaseRef()
+                .leaseGranter()
                 .flatMapCompletable { connRef ->
                     Flowable.interval(1, 10, TimeUnit.SECONDS)
                             .flatMapCompletable { _ ->
                                 connRef.grantLease(
                                         numberOfRequests = 7,
-                                        timeToLiveMillis = 5_000)
+                                        ttlSeconds = 5_000,
+                                        metadata = metadata("metadata"))
                             }
-                }.subscribe()
+                }.subscribe({}, { LOGGER.error("Granter error: $it") })
+
+        serverLease.leaseWatcher().flatMapPublisher { it.granted() }
+                .subscribe(
+                        {
+                            LOGGER.info("Server granted Lease: " +
+                                    "requests: ${it.allowedRequests}, " +
+                                    "ttl: ${it.timeToLiveSeconds}, " +
+                                    "metadata: ${metadata(it.metadata)}")
+                        },
+                        { LOGGER.error("Granted Watcher error: $it") })
+
+        clientLease.leaseWatcher().flatMapPublisher { it.received() }
+                .subscribe(
+                        {
+                            LOGGER.info("Client received Lease: " +
+                                    "requests: ${it.allowedRequests}, " +
+                                    "ttl: ${it.timeToLiveSeconds}, " +
+                                    "metadata: ${metadata(it.metadata)}")
+                        },
+                        { LOGGER.error("Received Watcher error: $it") })
+
 
         clientSocket.onClose().blockingAwait()
     }
 
-    private class LeaseRefs : (LeaseRef) -> Unit {
-        private val leaseRefs = BehaviorProcessor.create<LeaseRef>()
+    private fun metadata(md: String): ByteBuffer = ByteBuffer.wrap(md.toByteArray())
 
-        fun leaseRef(): Single<LeaseRef> = leaseRefs.firstOrError()
+    private fun metadata(md: ByteBuffer): String = StandardCharsets.UTF_8
+            .decode(md).toString()
 
-        override fun invoke(leaseRef: LeaseRef) {
-            leaseRefs.onNext(leaseRef)
+    private class LeaseSupp : (LeaseSupport) -> Unit {
+        private val leaseGranter = BehaviorProcessor.create<LeaseGranter>()
+        private val leaseWatcher = BehaviorProcessor.create<LeaseWatcher>()
+
+        override fun invoke(leaseSupport: LeaseSupport) {
+            leaseGranter.onNext(leaseSupport.granter())
+            leaseWatcher.onNext(leaseSupport.watcher())
         }
+
+        fun leaseGranter(): Single<LeaseGranter> = leaseGranter.firstOrError()
+
+        fun leaseWatcher(): Single<LeaseWatcher> = leaseWatcher.firstOrError()
     }
 }

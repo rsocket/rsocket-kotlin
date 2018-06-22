@@ -16,12 +16,7 @@
 package io.rsocket.kotlin
 
 /**
- * Exposed to server for determination of RequestHandler based on mime types
- * and SETUP metadata/data
+ * Exposed to server for selecting RequestHandler based on payloads MIME types
+ * and SETUP frame metadata and data.
  */
-interface Setup : Payload {
-
-    fun metadataMimeType(): String
-
-    fun dataMimeType(): String
-}
+interface Setup : Payload, MediaType

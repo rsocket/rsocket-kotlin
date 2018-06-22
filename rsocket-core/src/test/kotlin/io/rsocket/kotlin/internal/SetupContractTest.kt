@@ -4,7 +4,6 @@ import io.reactivex.processors.ReplayProcessor
 import io.reactivex.subscribers.TestSubscriber
 import io.rsocket.kotlin.Frame
 import io.rsocket.kotlin.FrameType
-import io.rsocket.kotlin.exceptions.Exceptions
 import io.rsocket.kotlin.exceptions.InvalidSetupException
 import io.rsocket.kotlin.exceptions.RejectedSetupException
 import io.rsocket.kotlin.internal.frame.SetupFrameFlyweight

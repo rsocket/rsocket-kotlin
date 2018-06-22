@@ -14,25 +14,20 @@ internal class LeaseRSocket(
         val tag: String,
         private val leaseManager: LeaseManager) : RSocketProxy(source) {
 
-    override fun fireAndForget(payload: Payload): Completable {
-        return request(super.fireAndForget(payload))
-    }
+    override fun fireAndForget(payload: Payload): Completable =
+            request(super.fireAndForget(payload))
 
-    override fun requestResponse(payload: Payload): Single<Payload> {
-        return request(super.requestResponse(payload))
-    }
+    override fun requestResponse(payload: Payload): Single<Payload> =
+            request(super.requestResponse(payload))
 
-    override fun requestStream(payload: Payload): Flowable<Payload> {
-        return request(super.requestStream(payload))
-    }
+    override fun requestStream(payload: Payload): Flowable<Payload> =
+            request(super.requestStream(payload))
 
-    override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> {
-        return request(super.requestChannel(payloads))
-    }
+    override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> =
+            request(super.requestChannel(payloads))
 
-    override fun availability(): Double {
-        return Math.min(super.availability(), leaseManager.availability())
-    }
+    override fun availability(): Double =
+            Math.min(super.availability(), leaseManager.availability())
 
     override fun toString(): String =
             "LeaseRSocket(leaseContext=$leaseContext," +
@@ -60,20 +55,18 @@ internal class LeaseRSocket(
     private fun <T> request(
             defer: (() -> T) -> T,
             actual: T,
-            error: (Throwable) -> T): T {
-
-        return defer {
-            if (isEnabled()) {
-                val result = leaseManager.useLease()
-                when (result) {
-                    is Success -> actual
-                    is Error -> error(result.ex)
+            error: (Throwable) -> T): T =
+            defer {
+                if (isEnabled()) {
+                    val result = leaseManager.use()
+                    when (result) {
+                        is Success -> actual
+                        is Error -> error(result.ex)
+                    }
+                } else {
+                    actual
                 }
-            } else {
-                actual
             }
-        }
-    }
 
     private fun isEnabled() = leaseContext.leaseEnabled
 }

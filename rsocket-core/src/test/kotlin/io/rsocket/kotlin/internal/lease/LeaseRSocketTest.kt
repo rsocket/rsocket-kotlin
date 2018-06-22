@@ -12,6 +12,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.reactivestreams.Publisher
+import java.nio.ByteBuffer
 
 class LeaseRSocketTest {
 
@@ -29,20 +30,20 @@ class LeaseRSocketTest {
 
     @Test
     fun grantedLease() {
-        leaseManager.grantLease(2, 1_000)
+        leaseManager.grant(2, 1_000, EMPTY_DATA)
         assertEquals(1.0, leaseRSocket.availability(), 1e-5)
     }
 
     @Test
     fun usedLease() {
-        leaseManager.grantLease(2, 1_000)
+        leaseManager.grant(2, 1_000, EMPTY_DATA)
         leaseRSocket.fireAndForget(DefaultPayload("test")).subscribe()
         assertEquals(0.5, leaseRSocket.availability(), 1e-5)
     }
 
     @Test
     fun depletedLease() {
-        leaseManager.grantLease(1, 1_000)
+        leaseManager.grant(1, 1_000, EMPTY_DATA)
         val fireAndForget = leaseRSocket.fireAndForget(DefaultPayload("test"))
         val firstErr = fireAndForget.blockingGet()
         assertTrue(firstErr == null)
@@ -52,7 +53,7 @@ class LeaseRSocketTest {
 
     @Test
     fun connectionNotAvailable() {
-        leaseManager.grantLease(1, 1_000)
+        leaseManager.grant(1, 1_000, EMPTY_DATA)
         rSocket.setAvailability(0.0f)
         assertEquals(0.0, leaseRSocket.availability(), 1e-5)
     }
@@ -84,5 +85,9 @@ class LeaseRSocketTest {
         override fun close(): Completable = Completable.complete()
 
         override fun onClose(): Completable = Completable.complete()
+    }
+
+    companion object {
+        private val EMPTY_DATA = ByteBuffer.allocateDirect(0)
     }
 }

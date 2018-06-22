@@ -18,4 +18,7 @@ package io.rsocket.kotlin.interceptors
 
 import io.rsocket.kotlin.RSocket
 
+/**
+ * Allows to intercept calls to [RSocket] methods
+ */
 interface RSocketInterceptor : (RSocket) -> RSocket

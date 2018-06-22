@@ -83,7 +83,7 @@ class RequestFrameFlyweightTest {
 
         val payload = DefaultPayload(Frame.from(stringToBuf("00000b0000000118000000000164")))
 
-        assertFalse(payload.hasMetadata())
+        assertFalse(payload.hasMetadata)
     }
 
     private fun bufToString(encoded: Int): String {

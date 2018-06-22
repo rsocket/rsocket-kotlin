@@ -81,7 +81,7 @@ class DefaultPayload @JvmOverloads constructor(data: ByteBuffer,
             return _metadata
         }
 
-    override fun hasMetadata(): Boolean = _metadata != null
+    override val hasMetadata: Boolean = _metadata != null
 
     companion object {
 

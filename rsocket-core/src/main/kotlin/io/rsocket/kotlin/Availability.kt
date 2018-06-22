@@ -16,8 +16,8 @@ package io.rsocket.kotlin
 interface Availability {
 
     /**
-     * @return a positive numbers representing the availability of the entity. Higher is better, 0.0
-     * means not available
+     * @return a positive numbers representing the availability of the entity.
+     * Higher is better, 0.0 means not available
      */
     fun availability(): Double
 }

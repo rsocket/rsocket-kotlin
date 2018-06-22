@@ -17,7 +17,7 @@ package io.rsocket.kotlin.exceptions
 
 import io.rsocket.kotlin.internal.frame.ErrorFrameFlyweight
 
-class RejectedSetupException : SetupException, Retryable {
+class RejectedSetupException : SetupException {
     constructor(message: String) : super(message)
 
     constructor(message: String, cause: Throwable) : super(message, cause)

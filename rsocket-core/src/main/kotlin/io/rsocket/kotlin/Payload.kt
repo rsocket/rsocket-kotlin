@@ -21,31 +21,30 @@ import java.nio.charset.StandardCharsets
 /** Payload of a [Frame].  */
 interface Payload {
     /**
-     * Returns whether the payload has metadata, useful for tell if metadata is
-     * empty or not present.
-     *
-     * @return whether payload has non-null (possibly empty) metadata
+     * @return true if payload has non-null (possibly empty) metadata, false otherwise
      */
-    fun hasMetadata(): Boolean
+    val hasMetadata: Boolean
 
     /**
-     * Returns the Payload metadata. Always non-null, check [.hasMetadata] to
-     * differentiate null from "".
-     *
-     * @return payload metadata.
+     * @return payload metadata. [hasMetadata]  is used to distinguish
+     * null and empty value.
      */
     val metadata: ByteBuffer
 
     /**
-     * Returns the Payload data. Always non-null.
-     *
      * @return payload data.
      */
     val data: ByteBuffer
 
+    /**
+     * @return string representation of payload metadata using UTF-8 character encoding.
+     */
     val metadataUtf8: String
         get() = StandardCharsets.UTF_8.decode(metadata).toString()
 
+    /**
+     * @return string representation of payload data using UTF-8 character encoding.
+     */
     val dataUtf8: String
         get() = StandardCharsets.UTF_8.decode(data).toString()
 }

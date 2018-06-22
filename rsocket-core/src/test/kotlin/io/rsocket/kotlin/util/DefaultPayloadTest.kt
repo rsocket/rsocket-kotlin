@@ -41,9 +41,9 @@ class DefaultPayloadTest {
     fun assertDataAndMetadata(p: Payload, dataVal: String, metadataVal: String?) {
         assertThat("Unexpected data.", p.dataUtf8, equalTo(dataVal))
         if (metadataVal == null) {
-            assertThat("Non-null metadata", p.hasMetadata(), equalTo(false))
+            assertThat("Non-null metadata", p.hasMetadata, equalTo(false))
         } else {
-            assertThat("Null metadata", p.hasMetadata(), equalTo(true))
+            assertThat("Null metadata", p.hasMetadata, equalTo(true))
             assertThat("Unexpected metadata.", p.metadataUtf8, equalTo(metadataVal))
         }
     }

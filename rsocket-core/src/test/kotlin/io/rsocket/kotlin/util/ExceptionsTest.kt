@@ -1,13 +1,13 @@
 package io.rsocket.kotlin.util
 
-import io.rsocket.kotlin.internal.ExceptionUtil.noStacktrace
+import io.rsocket.kotlin.internal.Exceptions.noStacktrace
 import org.junit.Assert.assertEquals
 
 import java.io.PrintWriter
 import java.io.StringWriter
 import org.junit.Test
 
-class ExceptionUtilTest {
+class ExceptionsTest {
     @Test
     fun testNoStacktrace() {
         val ex = noStacktrace(RuntimeException("RE"))

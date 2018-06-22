@@ -6,9 +6,6 @@ import io.reactivex.Flowable
 import io.reactivex.processors.PublishProcessor
 import io.rsocket.kotlin.Frame
 import io.rsocket.kotlin.FrameType
-import io.rsocket.kotlin.internal.lease.LeaseContext
-import io.rsocket.kotlin.internal.lease.LeaseGranterConnection
-import io.rsocket.kotlin.internal.lease.LeaseManager
 import io.rsocket.kotlin.test.util.LocalDuplexConnection
 import org.junit.Assert.*
 import org.junit.Before
@@ -16,9 +13,9 @@ import org.junit.Test
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 
-class LeaseGranterConnectionTest {
+class LeaseConnectionTest {
 
-    private lateinit var leaseGranterConnection: LeaseGranterConnection
+    private lateinit var leaseGranterConnection: LeaseConnection
     private lateinit var sender: PublishProcessor<Frame>
     private lateinit var receiver: PublishProcessor<Frame>
     private lateinit var send: LeaseManager
@@ -32,7 +29,7 @@ class LeaseGranterConnectionTest {
         sender = PublishProcessor.create()
         receiver = PublishProcessor.create()
         val local = LocalDuplexConnection("test", sender, receiver)
-        leaseGranterConnection = LeaseGranterConnection(
+        leaseGranterConnection = LeaseConnection(
                 leaseContext,
                 local,
                 send,

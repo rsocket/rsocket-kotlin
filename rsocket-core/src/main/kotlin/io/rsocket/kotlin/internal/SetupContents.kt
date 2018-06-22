@@ -23,7 +23,7 @@ internal class SetupContents(
 
     override fun dataMimeType(): String = dataMimeType
 
-    override fun hasMetadata(): Boolean = Frame.isFlagSet(flags, FrameHeaderFlyweight.FLAGS_M)
+    override val hasMetadata: Boolean = Frame.isFlagSet(flags, FrameHeaderFlyweight.FLAGS_M)
 
     companion object {
 
