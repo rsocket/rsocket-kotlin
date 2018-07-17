@@ -28,3 +28,5 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.6"
 }
+
+description = "Websockets transport based on OkHttp"

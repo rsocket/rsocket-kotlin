@@ -27,3 +27,7 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
+
+sourceCompatibility = 1.8
+
+description = "Websockets and TCP transport based on reactor-netty"
