@@ -14,7 +14,6 @@
  *  limitations under the License.
  */
 
-
 package io.rsocket.kotlin.internal
 
 import io.netty.buffer.Unpooled.EMPTY_BUFFER

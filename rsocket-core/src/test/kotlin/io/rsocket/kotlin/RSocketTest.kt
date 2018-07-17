@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package io.rsocket.kotlin
 
 import io.reactivex.Flowable
