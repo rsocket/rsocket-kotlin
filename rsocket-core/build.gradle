@@ -25,3 +25,5 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.6"
 }
+
+description = "Core functionality for the RSocket-kotlin library"

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package io.rsocket.kotlin.test.util
 
 import io.reactivex.Completable
@@ -33,7 +32,6 @@ import org.slf4j.LoggerFactory
  * An implementation of [DuplexConnection] that provides functionality to modify the behavior
  * dynamically.
  */
-
 class TestDuplexConnection : DuplexConnection {
 
     internal val sent: LinkedBlockingQueue<Frame> = LinkedBlockingQueue()
