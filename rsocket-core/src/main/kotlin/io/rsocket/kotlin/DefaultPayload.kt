@@ -16,6 +16,7 @@
 
 package io.rsocket.kotlin
 
+import io.netty.buffer.ByteBuf
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
@@ -62,6 +63,8 @@ class DefaultPayload @JvmOverloads constructor(data: ByteBuffer,
             ByteBuffer.wrap(data),
             if (metadata == null) null else ByteBuffer.wrap(metadata))
 
+    constructor(data: ByteBuf, metadata: ByteBuf?) : this(copy(data), copy(metadata))
+
     override val data = data
         get() {
             if (reusable) {
@@ -107,5 +110,13 @@ class DefaultPayload @JvmOverloads constructor(data: ByteBuffer,
          */
         fun text(data: String, metadata: String?): Payload =
                 DefaultPayload(data, metadata)
+
+        private fun copy(byteBuf: ByteBuf?): ByteBuffer {
+            return byteBuf?.let {
+                val bytes = ByteArray(byteBuf.readableBytes())
+                byteBuf.readBytes(bytes)
+                ByteBuffer.wrap(bytes)
+            } ?: Frame.NULL_BYTEBUFFER
+        }
     }
 }
