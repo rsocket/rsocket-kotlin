@@ -16,10 +16,11 @@
 
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'maven-publish'
 
 dependencies {
-    api project(":rsocket-core")
-    api 'com.squareup.okhttp3:okhttp:3.11.0'
+    api project(':rsocket-core')
+    api 'com.squareup.okhttp3:okhttp'
 }
 
 compileKotlin {

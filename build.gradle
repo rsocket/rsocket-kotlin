@@ -15,17 +15,66 @@
  */
 
 plugins {
-    id "com.gradle.build-scan" version "1.12.1"
-    id 'com.jfrog.bintray' version '1.7.3' apply false
-    id 'com.jfrog.artifactory' version '4.7.1' apply false
-    id "org.jetbrains.kotlin.jvm" version "1.2.50" apply false
+    id 'com.gradle.build-scan' version '1.16'
+    id 'io.spring.dependency-management' version '1.0.6.RELEASE' apply false
+    id 'com.jfrog.bintray' version '1.8.4' apply false
+    id 'com.jfrog.artifactory' version '4.7.3' apply false
+    id 'org.jetbrains.kotlin.jvm' version '1.2.71' apply false
 }
 
 subprojects {
-    apply plugin: 'java'
     apply plugin: 'java-library'
     apply plugin: 'kotlin'
-    apply plugin: 'maven-publish'
+    apply plugin: 'io.spring.dependency-management'
+
+    ext['netty-buffer.version'] = '4.1.30.Final'
+    ext['jsr305.version'] = '3.0.2'
+    ext['kotlin-stdlib-jdk7.version'] = '1.2.71'
+    ext['rxjava.version'] = '2.2.2'
+    ext['slf4j-api.version'] = '1.7.25'
+    ext['junit.version'] = '4.12'
+    ext['mockito.version'] = '2.23.0'
+    ext['hamcrest-library.version'] = '1.3'
+    ext['slf4j-log4j.version'] = '1.7.25'
+    ext['reactor-netty.version'] = '0.7.10.RELEASE'
+    ext['okhttp.version'] = '3.11.0'
+
+    dependencyManagement {
+
+        dependencies {
+            /*common*/
+            dependency "io.netty:netty-buffer:${ext['netty-buffer.version']}"
+            dependency "com.google.code.findbugs:jsr305:${ext['jsr305.version']}"
+            dependency "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${ext['kotlin-stdlib-jdk7.version']}"
+            dependency "io.reactivex.rxjava2:rxjava:${ext['rxjava.version']}"
+            dependency "org.slf4j:slf4j-api:${ext['slf4j-api.version']}"
+            /*transports*/
+            dependency "io.projectreactor.ipc:reactor-netty:${ext['reactor-netty.version']}"
+            dependency "com.squareup.okhttp3:okhttp:${ext['okhttp.version']}"
+            /*test*/
+            dependency "junit:junit:${ext['junit.version']}"
+            dependency "org.mockito:mockito-core:${ext['mockito.version']}"
+            dependency "org.hamcrest:hamcrest-library:${ext['hamcrest-library.version']}"
+            dependency "org.slf4j:slf4j-log4j12:${ext['slf4j-log4j.version']}"
+        }
+    }
+
+    dependencies {
+        api 'io.netty:netty-buffer'
+        api 'com.google.code.findbugs:jsr305'
+        api 'org.jetbrains.kotlin:kotlin-stdlib-jdk7'
+        api 'io.reactivex.rxjava2:rxjava'
+        api 'org.slf4j:slf4j-api'
+
+        testImplementation 'junit:junit'
+        testImplementation 'org.mockito:mockito-core'
+        testImplementation 'org.hamcrest:hamcrest-library'
+        testImplementation 'org.slf4j:slf4j-log4j12'
+    }
+
+    repositories {
+        jcenter()
+    }
 
     test {
         testLogging {
@@ -46,24 +95,6 @@ subprojects {
 
     artifacts {
         archives sourcesJar, javadocJar, jar
-    }
-
-    repositories {
-        jcenter()
-    }
-
-    dependencies {
-        api "io.netty:netty-buffer:4.1.30.Final"
-        api "org.reactivestreams:reactive-streams:1.0.2"
-        api "com.google.code.findbugs:jsr305:3.0.2"
-        api "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.2.71"
-        api 'io.reactivex.rxjava2:rxjava:2.2.2'
-        api "org.slf4j:slf4j-api:1.7.25"
-
-        testImplementation "junit:junit:4.12"
-        testImplementation "org.mockito:mockito-core:2.23.0"
-        testImplementation "org.hamcrest:hamcrest-library:1.3"
-        testImplementation "org.slf4j:slf4j-log4j12:1.7.25"
     }
 
     plugins.withType(MavenPublishPlugin) {
