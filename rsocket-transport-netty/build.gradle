@@ -16,10 +16,11 @@
 
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'maven-publish'
 
 dependencies {
-    api project(":rsocket-core")
-    implementation ('io.projectreactor.ipc:reactor-netty:0.7.10.RELEASE')
+    api project(':rsocket-core')
+    implementation ('io.projectreactor.ipc:reactor-netty')
 }
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"

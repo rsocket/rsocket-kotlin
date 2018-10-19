@@ -15,6 +15,7 @@
  */
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'maven-publish'
 
 targetCompatibility = 1.7
 sourceCompatibility = 1.7
