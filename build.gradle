@@ -61,10 +61,10 @@ subprojects {
 
     dependencies {
         api 'io.netty:netty-buffer'
-        api 'com.google.code.findbugs:jsr305'
-        api 'org.jetbrains.kotlin:kotlin-stdlib-jdk7'
         api 'io.reactivex.rxjava2:rxjava'
-        api 'org.slf4j:slf4j-api'
+        api 'org.jetbrains.kotlin:kotlin-stdlib-jdk7'
+        implementation 'org.slf4j:slf4j-api'
+        compileOnly 'com.google.code.findbugs:jsr305'
 
         testImplementation 'junit:junit'
         testImplementation 'org.mockito:mockito-core'
@@ -96,126 +96,10 @@ subprojects {
     artifacts {
         archives sourcesJar, javadocJar, jar
     }
-
-    plugins.withType(MavenPublishPlugin) {
-        publishing {
-            publications {
-                maven(MavenPublication) {
-                    groupId 'io.rsocket.kotlin'
-
-                    from components.java
-
-                    artifact sourcesJar {
-                        classifier "sources"
-                    }
-
-                    artifact javadocJar {
-                        classifier "javadoc"
-                    }
-
-                    pom.withXml {
-                        asNode().':version' + {
-                            resolveStrategy = DELEGATE_FIRST
-
-                            name project.name
-                            description project.description
-                            url 'http://rsocket.io'
-
-                            licenses {
-                                license {
-                                    name 'The Apache Software License, Version 2.0'
-                                    url 'http://www.apache.org/license/LICENSE-2.0.txt'
-                                }
-                            }
-
-                            developers {
-
-                                developer {
-                                    id 'mostroverkhov'
-                                    name 'Maksym Ostroverkhov'
-                                    email 'm.ostroverkhov@gmail.com'
-                                }
-
-                                developer {
-                                    id 'robertroeser'
-                                    name 'Robert Roeser'
-                                    email 'robert@netifi.com'
-                                }
-                            }
-
-                            scm {
-                                connection 'scm:git:https://github.com/rsocket/rsocket-kotlin.git'
-                                developerConnection 'scm:git:https://github.com/rsocket/rsocket-kotlin.git'
-                                url 'https://github.com/rsocket/rsocket-kotlin'
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
-if (project.hasProperty('bintrayUser') && project.hasProperty('bintrayKey')) {
-
-    subprojects {
-        plugins.withId('com.jfrog.bintray') {
-            bintray {
-                user = project.property('bintrayUser')
-                key = project.property('bintrayKey')
-
-                publications = ['maven']
-                publish = true
-
-                pkg {
-                    repo = 'RSocket'
-                    name = 'rsocket-kotlin'
-                    licenses = ['Apache-2.0']
-
-                    issueTrackerUrl = 'https://github.com/rsocket/rsocket-kotlin/issues'
-                    websiteUrl = 'https://github.com/rsocket/rsocket-kotlin'
-                    vcsUrl = 'https://github.com/rsocket/rsocket-kotlin.git'
-                    githubRepo = 'rsocket/rsocket-kotlin'
-                    githubReleaseNotesFile = 'README.md'
-
-                    version {
-                        name = project.version
-                        released = new Date()
-                        vcsTag = project.version
-
-                        gpg {
-                            sign = true
-                        }
-                    }
-                }
-            }
-
-            tasks.bintrayUpload.dependsOn tasks.jar, tasks.sourcesJar, tasks.javadocJar
-        }
-
-        plugins.withId('com.jfrog.artifactory') {
-            artifactory {
-                publish {
-                    contextUrl = 'https://oss.jfrog.org'
-
-                    repository {
-                        repoKey = 'oss-snapshot-local'
-                        username = project.property('bintrayUser')
-                        password = project.property('bintrayKey')
-                    }
-
-                    defaults {
-                        publications('maven')
-                    }
-                }
-            }
-
-            artifactoryPublish {
-                dependsOn jar
-            }
-        }
-    }
-}
+apply from: 'gradle/publishing.gradle'
+apply from: 'gradle/bintray.gradle'
 
 description = 'RSocket-kotlin: Reactive Streams over network boundary with Kotlin/Rxjava'
 
