@@ -23,7 +23,7 @@ addons:
     - oracle-java8-installer
 dist: trusty
 sudo: false
-script: gradle/buildViaTravis.sh
+script: ci/buildViaTravis.sh
 cache:
   directories:
   - "$HOME/.m2"
