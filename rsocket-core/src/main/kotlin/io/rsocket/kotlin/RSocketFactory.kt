@@ -109,7 +109,7 @@ object RSocketFactory {
          */
         fun lease(configure: (LeaseOptions) -> Unit): ClientRSocketFactory {
             configure(leaseOptions)
-            if (leaseOptions.leaseSupport() != null) {
+            if (leaseOptions.rSocketLeaseConsumer() != null) {
                 this.flags = Frame.Setup.enableLease(flags)
             }
             return this
@@ -287,7 +287,7 @@ object RSocketFactory {
 
             private fun enableLease(parentInterceptors: InterceptorRegistry)
                     : InterceptorRegistry {
-                val leaseSupport = leaseOptions.leaseSupport()
+                val leaseSupport = leaseOptions.rSocketLeaseConsumer()
                 return if (leaseSupport != null) {
                     parentInterceptors.copyWith(
                             ClientLeaseFeature.enable(leaseSupport)())
@@ -470,10 +470,10 @@ object RSocketFactory {
 
             private fun enableLease(parentInterceptors: InterceptorRegistry)
                     : InterceptorRegistry {
-                val leaseSupport = leaseOptions.leaseSupport()
-                return if (leaseSupport != null) {
+                val rSocketLeaseConsumer = leaseOptions.rSocketLeaseConsumer()
+                return if (rSocketLeaseConsumer != null) {
                     parentInterceptors.copyWith(
-                            ServerLeaseFeature.enable(leaseSupport)())
+                            ServerLeaseFeature.enable(rSocketLeaseConsumer)())
                 } else {
                     parentInterceptors.copy()
                 }
@@ -484,7 +484,7 @@ object RSocketFactory {
 
                 parentInterceptors.connectionFirst(
                         ServerContractInterceptor(errorConsumer,
-                                leaseOptions.leaseSupport() != null))
+                                leaseOptions.rSocketLeaseConsumer() != null))
                 return parentInterceptors
             }
 

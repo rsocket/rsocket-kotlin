@@ -25,20 +25,18 @@ import io.rsocket.kotlin.transport.netty.client.TcpClientTransport
 import io.rsocket.kotlin.transport.netty.server.TcpServerTransport
 import io.rsocket.kotlin.util.AbstractRSocket
 import org.slf4j.LoggerFactory
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.TimeUnit
 
 object LeaseClientServerExample {
-    private val LOGGER = LoggerFactory.getLogger(LeaseClientServerExample::class.java)
+    private val logger = LoggerFactory.getLogger(LeaseClientServerExample::class.java)
 
     @JvmStatic
     fun main(args: Array<String>) {
 
-        val serverLease = LeaseSupp()
+        val serverLeaseConsumer = RSocketLeaseConsumer()
         val nettyContextCloseable = RSocketFactory.receive()
-                .lease { opts -> opts.leaseSupport(serverLease) }
+                .lease { opts -> opts.enableLease(serverLeaseConsumer) }
                 .acceptor {
                     { _, _ ->
                         Single.just(
@@ -52,10 +50,10 @@ object LeaseClientServerExample {
                 .transport(TcpServerTransport.create("localhost", 0))
                 .start()
                 .blockingGet()
-        val clientLease = LeaseSupp()
+        val clientLeaseConsumer = RSocketLeaseConsumer()
         val address = nettyContextCloseable.address()
         val clientSocket = RSocketFactory.connect()
-                .lease { opts -> opts.leaseSupport(clientLease) }
+                .lease { opts -> opts.enableLease(clientLeaseConsumer) }
                 .keepAlive { opts ->
                     opts.keepAliveInterval(Duration.ofMinutes(1))
                             .keepAliveMaxLifeTime(Duration.ofMinutes(20))
@@ -67,69 +65,36 @@ object LeaseClientServerExample {
         Flowable.interval(1, TimeUnit.SECONDS)
                 .observeOn(Schedulers.io())
                 .flatMap {
-                    LOGGER.info("Availability: ${clientSocket.availability()}")
+                    logger.info("Availability: ${clientSocket.availability()}")
                     clientSocket
                             .requestResponse(DefaultPayload("Client request ${Date()}"))
                             .toFlowable()
-                            .doOnError { LOGGER.info("Error: $it") }
-                            .onErrorResumeNext { _: Throwable ->
-                                Flowable.empty<Payload>()
-                            }
+                            .doOnError { logger.info("Error: $it") }
+                            .onErrorResumeNext { _: Throwable -> Flowable.empty() }
                 }
-                .subscribe { resp -> LOGGER.info("Client response: ${resp.dataUtf8}") }
+                .subscribe { resp -> logger.info("Client response: ${resp.dataUtf8}") }
 
-        serverLease
-                .leaseGranter()
-                .flatMapCompletable { connRef ->
+        serverLeaseConsumer
+                .rSocketLease()
+                .flatMapCompletable { rSocketLease ->
                     Flowable.interval(1, 10, TimeUnit.SECONDS)
-                            .flatMapCompletable { _ ->
-                                connRef.grantLease(
+                            .flatMapCompletable {
+                                rSocketLease.granter().grant(
                                         numberOfRequests = 7,
-                                        ttlSeconds = 5_000,
-                                        metadata = metadata("metadata"))
+                                        ttlSeconds = 5_000)
                             }
-                }.subscribe({}, { LOGGER.error("Granter error: $it") })
-
-        serverLease.leaseWatcher().flatMapPublisher { it.granted() }
-                .subscribe(
-                        {
-                            LOGGER.info("Server granted Lease: " +
-                                    "requests: ${it.allowedRequests}, " +
-                                    "ttl: ${it.timeToLiveSeconds}, " +
-                                    "metadata: ${metadata(it.metadata)}")
-                        },
-                        { LOGGER.error("Granted Watcher error: $it") })
-
-        clientLease.leaseWatcher().flatMapPublisher { it.received() }
-                .subscribe(
-                        {
-                            LOGGER.info("Client received Lease: " +
-                                    "requests: ${it.allowedRequests}, " +
-                                    "ttl: ${it.timeToLiveSeconds}, " +
-                                    "metadata: ${metadata(it.metadata)}")
-                        },
-                        { LOGGER.error("Received Watcher error: $it") })
-
+                }.subscribe({}, { logger.error("Granter error: $it") })
 
         clientSocket.onClose().blockingAwait()
     }
 
-    private fun metadata(md: String): ByteBuffer = ByteBuffer.wrap(md.toByteArray())
+    private class RSocketLeaseConsumer : (RSocketLease) -> Unit {
+        private val leaseSupport = BehaviorProcessor.create<RSocketLease>()
 
-    private fun metadata(md: ByteBuffer): String = StandardCharsets.UTF_8
-            .decode(md).toString()
-
-    private class LeaseSupp : (LeaseSupport) -> Unit {
-        private val leaseGranter = BehaviorProcessor.create<LeaseGranter>()
-        private val leaseWatcher = BehaviorProcessor.create<LeaseWatcher>()
-
-        override fun invoke(leaseSupport: LeaseSupport) {
-            leaseGranter.onNext(leaseSupport.granter())
-            leaseWatcher.onNext(leaseSupport.watcher())
+        override fun invoke(rSocketLease: RSocketLease) {
+            this.leaseSupport.onNext(rSocketLease)
         }
 
-        fun leaseGranter(): Single<LeaseGranter> = leaseGranter.firstOrError()
-
-        fun leaseWatcher(): Single<LeaseWatcher> = leaseWatcher.firstOrError()
+        fun rSocketLease(): Single<RSocketLease> = this.leaseSupport.firstOrError()
     }
 }

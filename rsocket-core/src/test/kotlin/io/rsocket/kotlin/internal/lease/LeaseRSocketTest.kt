@@ -46,20 +46,20 @@ class LeaseRSocketTest {
 
     @Test
     fun grantedLease() {
-        leaseManager.grant(2, 1_000, EMPTY_DATA)
+        leaseManager.grant(2, 1_000)
         assertEquals(1.0, leaseRSocket.availability(), 1e-5)
     }
 
     @Test
     fun usedLease() {
-        leaseManager.grant(2, 1_000, EMPTY_DATA)
+        leaseManager.grant(2, 1_000)
         leaseRSocket.fireAndForget(DefaultPayload("test")).subscribe()
         assertEquals(0.5, leaseRSocket.availability(), 1e-5)
     }
 
     @Test
     fun depletedLease() {
-        leaseManager.grant(1, 1_000, EMPTY_DATA)
+        leaseManager.grant(1, 1_000)
         val fireAndForget = leaseRSocket.fireAndForget(DefaultPayload("test"))
         val firstErr = fireAndForget.blockingGet()
         assertTrue(firstErr == null)
@@ -69,7 +69,7 @@ class LeaseRSocketTest {
 
     @Test
     fun connectionNotAvailable() {
-        leaseManager.grant(1, 1_000, EMPTY_DATA)
+        leaseManager.grant(1, 1_000)
         rSocket.setAvailability(0.0f)
         assertEquals(0.0, leaseRSocket.availability(), 1e-5)
     }

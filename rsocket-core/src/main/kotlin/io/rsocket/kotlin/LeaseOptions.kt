@@ -21,25 +21,25 @@ package io.rsocket.kotlin
  */
 class LeaseOptions {
 
-    private var leaseSupport: ((LeaseSupport) -> Unit)? = null
+    private var rSocketLeaseConsumer: ((RSocketLease) -> Unit)? = null
 
     /**
      * Enables lease feature of RSocket
 
-     * @param leaseSupport consumer of [LeaseSupport] for each established connection
+     * @param rSocketLeaseConsumer consumer of [RSocketLease] for each established RSocket
      * @return this [LeaseOptions]
      */
-    fun leaseSupport(leaseSupport: (LeaseSupport) -> Unit): LeaseOptions {
-        this.leaseSupport = leaseSupport
+    fun enableLease(rSocketLeaseConsumer: (RSocketLease) -> Unit): LeaseOptions {
+        this.rSocketLeaseConsumer = rSocketLeaseConsumer
         return this
     }
 
-    fun leaseSupport(): ((LeaseSupport) -> Unit)? = leaseSupport
+    internal fun rSocketLeaseConsumer(): ((RSocketLease) -> Unit)? = rSocketLeaseConsumer
 
     internal fun copy(): LeaseOptions {
         val opts = LeaseOptions()
-        leaseSupport?.let {
-            opts.leaseSupport(it)
+        rSocketLeaseConsumer?.let {
+            opts.enableLease(it)
         }
         return opts
     }

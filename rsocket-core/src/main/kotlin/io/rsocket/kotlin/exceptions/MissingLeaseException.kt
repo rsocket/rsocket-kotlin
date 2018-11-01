@@ -16,9 +16,9 @@
 
 package io.rsocket.kotlin.exceptions
 
-import io.rsocket.kotlin.Lease
+import io.rsocket.kotlin.internal.lease.Lease
 
-class MissingLeaseException(lease: Lease, tag: String)
+class MissingLeaseException internal constructor(lease: Lease, tag: String)
     : RejectedException(leaseMessage(lease, tag)) {
 
     override fun fillInStackTrace(): Throwable = this

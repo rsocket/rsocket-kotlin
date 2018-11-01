@@ -49,30 +49,30 @@ class LeaseManagerTest {
 
     @Test
     fun grant() {
-        leaseManager.grant(2, 1_000, EMPTY_DATA)
+        leaseManager.grant(2, 1_000)
         assertEquals(1.0, leaseManager.availability(), 1e-5)
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun grantLeaseZeroRequests() {
-        leaseManager.grant(0, 1_000, EMPTY_DATA)
+        leaseManager.grant(0, 1_000)
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun grantLeaseZeroTtl() {
-        leaseManager.grant(1, 0, EMPTY_DATA)
+        leaseManager.grant(1, 0)
     }
 
     @Test
     fun use() {
-        leaseManager.grant(2, 1_000, EMPTY_DATA)
+        leaseManager.grant(2, 1_000)
         leaseManager.use()
         assertEquals(0.5, leaseManager.availability(), 1e-5)
     }
 
     @Test
     fun useTimeout() {
-        leaseManager.grant(2, 1_000, EMPTY_DATA)
+        leaseManager.grant(2, 1_000)
         Completable.timer(1500, TimeUnit.MILLISECONDS).blockingAwait()
         val result = leaseManager.use()
         assertTrue(result is Error)
