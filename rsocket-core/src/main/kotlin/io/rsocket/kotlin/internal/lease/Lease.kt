@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
-
-import java.nio.ByteBuffer
+package io.rsocket.kotlin.internal.lease
 
 /** A contract for RSocket lease, which is time bound.  */
-interface Lease {
+internal interface Lease {
 
     /**
      * @return The number of requests allowed by this lease.
@@ -36,11 +34,6 @@ interface Lease {
      * it is received.
      */
     val timeToLiveSeconds: Int
-
-    /**
-     * @return lease metadata.
-     */
-    val metadata: ByteBuffer
 
     /**
      * @return `true` if the lease has expired, false otherwise.

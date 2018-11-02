@@ -20,6 +20,7 @@ import io.netty.buffer.Unpooled
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.processors.PublishProcessor
+import io.rsocket.kotlin.DuplexConnection
 import io.rsocket.kotlin.Frame
 import io.rsocket.kotlin.FrameType
 import io.rsocket.kotlin.test.util.LocalDuplexConnection
@@ -27,6 +28,7 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import java.nio.ByteBuffer
+import java.nio.channels.ClosedChannelException
 import java.util.concurrent.TimeUnit
 
 class LeaseConnectionTest {
@@ -36,6 +38,7 @@ class LeaseConnectionTest {
     private lateinit var receiver: PublishProcessor<Frame>
     private lateinit var send: LeaseManager
     private lateinit var receive: LeaseManager
+    private lateinit var conn: DuplexConnection
 
     @Before
     fun setUp() {
@@ -44,10 +47,10 @@ class LeaseConnectionTest {
         receive = LeaseManager("receive")
         sender = PublishProcessor.create()
         receiver = PublishProcessor.create()
-        val local = LocalDuplexConnection("test", sender, receiver)
+        conn = LocalDuplexConnection("test", sender, receiver)
         leaseGranterConnection = LeaseConnection(
                 leaseContext,
-                local,
+                conn,
                 send,
                 receive)
     }
@@ -74,7 +77,7 @@ class LeaseConnectionTest {
         Completable.timer(100, TimeUnit.MILLISECONDS)
                 .andThen(Completable.defer {
                     leaseGranterConnection
-                            .grantLease(2, 1, ByteBuffer.allocateDirect(0))
+                            .grant(2, 1)
                 })
                 .subscribe()
         val f = sender.firstOrError().blockingGet()
@@ -83,5 +86,14 @@ class LeaseConnectionTest {
         assertTrue(f.type === FrameType.LEASE)
         assertEquals(2, Frame.Lease.numberOfRequests(f))
         assertEquals(1, Frame.Lease.ttl(f))
+    }
+
+    @Test
+    fun grantLeaseAfterClose() {
+        leaseGranterConnection.onClose().subscribe()
+        conn.close().blockingAwait(5, TimeUnit.SECONDS)
+        leaseGranterConnection.grant(2,1)
+                .test()
+                .assertError(ClosedChannelException::class.java)
     }
 }

@@ -42,7 +42,7 @@ class LeaseServerTest {
     fun setUp() {
         serverLease = LeaseSupp()
         nettyContextCloseable = RSocketFactory.receive()
-                .lease { opts -> opts.leaseSupport(serverLease) }
+                .lease { opts -> opts.enableLease(serverLease) }
                 .acceptor {
                     { _, _ ->
                         Single.just(
@@ -60,7 +60,7 @@ class LeaseServerTest {
         val address = nettyContextCloseable.address()
         clientSocket = RSocketFactory
                 .connect()
-                .lease { opts -> opts.leaseSupport(LeaseSupp()) }
+                .lease { opts -> opts.enableLease(LeaseSupp()) }
                 .keepAlive { opts ->
                     opts.keepAliveInterval(Duration.ofMinutes(1))
                             .keepAliveMaxLifeTime(Duration.ofMinutes(20))
@@ -82,7 +82,7 @@ class LeaseServerTest {
     @Test
     fun grantLeaseNumberOfRequests() {
         assertEquals(clientSocket.availability(), 0.0, 1e-5)
-        leaseGranter.grantLease(2, 10_000)
+        leaseGranter.grant(2, 10_000)
                 .delay(100, TimeUnit.MILLISECONDS)
                 .blockingAwait()
         assertEquals(clientSocket.availability(), 1.0, 1e-5)
@@ -98,7 +98,7 @@ class LeaseServerTest {
                 .blockingSubscribe(subscriber)
         assertEquals(1, subscriber.errorCount())
         assertTrue(subscriber.errors().first() is MissingLeaseException)
-        leaseGranter.grantLease(1, 10_000)
+        leaseGranter.grant(1, 10_000)
                 .delay(100, TimeUnit.MILLISECONDS)
                 .blockingAwait()
         assertEquals(1.0, clientSocket.availability(), 1e-5)
@@ -106,7 +106,7 @@ class LeaseServerTest {
 
     @Test
     fun grantLeaseTtl() {
-        leaseGranter.grantLease(2, 200)
+        leaseGranter.grant(2, 200)
                 .delay(250, TimeUnit.MILLISECONDS)
                 .blockingAwait()
 
@@ -121,11 +121,11 @@ class LeaseServerTest {
 
     private fun payload() = DefaultPayload("data")
 
-    private class LeaseSupp : (LeaseSupport) -> Unit {
+    private class LeaseSupp : (RSocketLease) -> Unit {
         private val leaseRefs = BehaviorProcessor.create<LeaseGranter>()
 
-        override fun invoke(leaseSupport: LeaseSupport) {
-            leaseRefs.onNext(leaseSupport.granter())
+        override fun invoke(RSocketLease: RSocketLease) {
+            leaseRefs.onNext(RSocketLease.granter())
         }
 
         fun leaseGranter(): Single<LeaseGranter> = leaseRefs.firstOrError()

@@ -16,13 +16,10 @@
 
 package io.rsocket.kotlin.internal.lease
 
-import io.rsocket.kotlin.Lease
-import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 
 internal class LeaseImpl(override val initialAllowedRequests: Int,
-                         override val timeToLiveSeconds: Int,
-                         override val metadata: ByteBuffer) : Lease {
+                         override val timeToLiveSeconds: Int) : Lease {
     private val allowedReqs: AtomicInteger
     override val expiry: Long
 
@@ -67,9 +64,7 @@ internal class LeaseImpl(override val initialAllowedRequests: Int,
             return next
         }
 
-        fun invalidLease(): LeaseImpl = LeaseImpl(0,
-                0,
-                ByteBuffer.allocateDirect(0))
+        fun expired(): LeaseImpl = LeaseImpl(0, 0)
 
         fun assertUseRequests(useRequestCount: Int) {
             if (useRequestCount <= 0) {

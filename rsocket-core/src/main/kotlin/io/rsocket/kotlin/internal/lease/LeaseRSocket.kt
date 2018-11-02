@@ -26,8 +26,8 @@ import org.reactivestreams.Publisher
 
 internal class LeaseRSocket(
         private val leaseContext: LeaseContext,
-        source: RSocket, private
-        val tag: String,
+        source: RSocket,
+        private val tag: String,
         private val leaseManager: LeaseManager) : RSocketProxy(source) {
 
     override fun fireAndForget(payload: Payload): Completable =
@@ -72,17 +72,13 @@ internal class LeaseRSocket(
             defer: (() -> T) -> T,
             actual: T,
             error: (Throwable) -> T): T =
-            defer {
-                if (isEnabled()) {
-                    val result = leaseManager.use()
-                    when (result) {
-                        is Success -> actual
-                        is Error -> error(result.ex)
-                    }
-                } else {
-                    actual
+            if (isEnabled()) defer {
+                val result = leaseManager.use()
+                when (result) {
+                    is Success -> actual
+                    is Error -> error(result.ex)
                 }
-            }
+            } else actual
 
     private fun isEnabled() = leaseContext.leaseEnabled
 }
