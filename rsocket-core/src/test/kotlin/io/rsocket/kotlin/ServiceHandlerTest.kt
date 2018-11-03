@@ -181,7 +181,7 @@ private class TestKeepAliveData(private val data: String) : KeepAliveData {
         ByteBuffer.wrap(data.bytes())
     }
 
-    override fun handler(): (ByteBuffer) -> Unit = {
+    override fun consumer(): (ByteBuffer) -> Unit = {
         handled += it.asString()
     }
 

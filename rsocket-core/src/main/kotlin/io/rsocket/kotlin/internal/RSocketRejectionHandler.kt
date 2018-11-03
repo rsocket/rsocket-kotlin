@@ -22,9 +22,9 @@ import io.rsocket.kotlin.Frame
 import io.rsocket.kotlin.RSocket
 import io.rsocket.kotlin.exceptions.RejectedSetupException
 
-internal class RejectingRSocket(private val rSocket: Single<RSocket>) {
+internal class RSocketRejectionHandler(private val connection: DuplexConnection) {
 
-    fun with(connection: DuplexConnection): Single<RSocket> = rSocket
+    fun rejectOnError(rSocket: Single<RSocket>): Single<RSocket> = rSocket
             .onErrorResumeNext { err ->
                 connection
                         .sendOne(Frame.Error.from(0,

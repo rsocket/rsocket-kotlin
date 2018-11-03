@@ -40,7 +40,7 @@ internal class RSocketRequester(
 
     private val senders = ConcurrentHashMap<Int, Subscription>(256)
     private val receivers = ConcurrentHashMap<Int, Subscriber<Payload>>(256)
-    private val interactions = Interactions()
+    private val lifecycle = Lifecycle()
 
     private val frameSender = FrameSender()
 
@@ -49,38 +49,38 @@ internal class RSocketRequester(
                 .send(frameSender.sent())
                 .subscribe(
                         {},
-                        { interactions.error(it) })
+                        { lifecycle.error(it) })
         connection
                 .receive()
                 .subscribe(
                         { handleFrame(it) },
-                        { interactions.error(it) })
+                        { lifecycle.error(it) })
         connection
                 .onClose()
                 .subscribe(
-                        { interactions.complete() },
+                        { lifecycle.complete() },
                         errorConsumer)
     }
 
     override fun fireAndForget(payload: Payload) =
-            interactions.fireAndForget(handleFireAndForget(payload))
+            lifecycle.fireAndForget(handleFireAndForget(payload))
 
     override fun requestResponse(payload: Payload) =
-            interactions.requestResponse(handleRequestResponse(payload))
+            lifecycle.requestResponse(handleRequestResponse(payload))
 
     override fun requestStream(payload: Payload): Flowable<Payload> =
-            interactions.requestStream(
+            lifecycle.requestStream(
                     handleRequestStream(payload).rebatchRequests(streamRequestLimit))
 
     override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> =
-            interactions.requestChannel(
+            lifecycle.requestChannel(
                     handleChannel(
                             Flowable.fromPublisher(payloads)
                                     .rebatchRequests(streamRequestLimit)
                     ).rebatchRequests(streamRequestLimit))
 
     override fun metadataPush(payload: Payload): Completable =
-            interactions.metadataPush(handleMetadataPush(payload))
+            lifecycle.metadataPush(handleMetadataPush(payload))
 
     override fun availability(): Double = connection.availability()
 
@@ -283,7 +283,7 @@ internal class RSocketRequester(
         }
     }
 
-    private inner class Interactions {
+    private inner class Lifecycle {
         private val terminated = AtomicReference<Throwable>()
 
         fun fireAndForget(request: Completable): Completable =

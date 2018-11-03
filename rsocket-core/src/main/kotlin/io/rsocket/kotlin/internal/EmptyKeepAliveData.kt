@@ -23,7 +23,7 @@ internal class EmptyKeepAliveData : KeepAliveData {
 
     override fun producer(): () -> ByteBuffer = noopProducer
 
-    override fun handler(): (ByteBuffer) -> Unit = noopHandler
+    override fun consumer(): (ByteBuffer) -> Unit = noopHandler
 
     companion object {
         private val emptyBuffer = ByteBuffer.allocateDirect(0)

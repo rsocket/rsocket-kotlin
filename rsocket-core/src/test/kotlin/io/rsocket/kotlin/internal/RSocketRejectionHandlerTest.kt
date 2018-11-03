@@ -28,7 +28,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-class RejectingRSocketTest {
+class RSocketRejectionHandlerTest {
     private lateinit var sender: UnicastProcessor<Frame>
     private lateinit var receiver: UnicastProcessor<Frame>
     private lateinit var conn: LocalDuplexConnection
@@ -65,6 +65,6 @@ class RejectingRSocketTest {
 
     private fun rejectingRSocket(err: Throwable): Single<RSocket> {
         val rSocket = Single.error<RSocket>(err)
-        return RejectingRSocket(rSocket).with(conn)
+        return RSocketRejectionHandler(conn).rejectOnError(rSocket)
     }
 }

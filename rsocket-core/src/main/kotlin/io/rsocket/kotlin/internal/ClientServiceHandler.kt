@@ -38,7 +38,7 @@ internal class ClientServiceHandler(serviceConnection: DuplexConnection,
     private var keepAliveReceivedMillis = System.currentTimeMillis()
     private var subscription: Disposable? = null
     private val dataProducer: () -> ByteBuffer = keepAliveData.producer()
-    private val dataHandler: (ByteBuffer) -> Unit = keepAliveData.handler()
+    private val dataConsumer: (ByteBuffer) -> Unit = keepAliveData.consumer()
 
     init {
         val tickPeriod = keepAlive.keepAliveInterval().millis
@@ -56,7 +56,7 @@ internal class ClientServiceHandler(serviceConnection: DuplexConnection,
     override fun handleKeepAlive(frame: Frame) {
         if (!Frame.Keepalive.hasRespondFlag(frame)) {
             keepAliveReceivedMillis = System.currentTimeMillis()
-            dataHandler(frame.data)
+            dataConsumer(frame.data)
         } else {
             sendKeepAliveFrame(frame.data, false)
         }
