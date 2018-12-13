@@ -1,53 +1,55 @@
-plugins.withType(MavenPublishPlugin) {
-    publishing {
-        publications {
-            maven(MavenPublication) {
-                groupId 'io.rsocket.kotlin'
+subprojects {
+    plugins.withType(MavenPublishPlugin) {
+        publishing {
+            publications {
+                maven(MavenPublication) {
+                    groupId 'io.rsocket.kotlin'
 
-                from components.java
+                    from components.java
 
-                artifact sourcesJar {
-                    classifier "sources"
-                }
+                    artifact sourcesJar {
+                        classifier "sources"
+                    }
 
-                artifact javadocJar {
-                    classifier "javadoc"
-                }
+                    artifact javadocJar {
+                        classifier "javadoc"
+                    }
 
-                pom.withXml {
-                    asNode().':version' + {
-                        resolveStrategy = DELEGATE_FIRST
+                    pom.withXml {
+                        asNode().':version' + {
+                            resolveStrategy = DELEGATE_FIRST
 
-                        name project.name
-                        description project.description
-                        url 'http://rsocket.io'
+                            name project.name
+                            description project.description
+                            url 'http://rsocket.io'
 
-                        licenses {
-                            license {
-                                name 'The Apache Software License, Version 2.0'
-                                url 'http://www.apache.org/license/LICENSE-2.0.txt'
-                            }
-                        }
-
-                        developers {
-
-                            developer {
-                                id 'mostroverkhov'
-                                name 'Maksym Ostroverkhov'
-                                email 'm.ostroverkhov@gmail.com'
+                            licenses {
+                                license {
+                                    name 'The Apache Software License, Version 2.0'
+                                    url 'http://www.apache.org/license/LICENSE-2.0.txt'
+                                }
                             }
 
-                            developer {
-                                id 'robertroeser'
-                                name 'Robert Roeser'
-                                email 'robert@netifi.com'
-                            }
-                        }
+                            developers {
 
-                        scm {
-                            connection 'scm:git:https://github.com/rsocket/rsocket-kotlin.git'
-                            developerConnection 'scm:git:https://github.com/rsocket/rsocket-kotlin.git'
-                            url 'https://github.com/rsocket/rsocket-kotlin'
+                                developer {
+                                    id 'mostroverkhov'
+                                    name 'Maksym Ostroverkhov'
+                                    email 'm.ostroverkhov@gmail.com'
+                                }
+
+                                developer {
+                                    id 'robertroeser'
+                                    name 'Robert Roeser'
+                                    email 'robert@netifi.com'
+                                }
+                            }
+
+                            scm {
+                                connection 'scm:git:https://github.com/rsocket/rsocket-kotlin.git'
+                                developerConnection 'scm:git:https://github.com/rsocket/rsocket-kotlin.git'
+                                url 'https://github.com/rsocket/rsocket-kotlin'
+                            }
                         }
                     }
                 }
