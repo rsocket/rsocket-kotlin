@@ -98,8 +98,12 @@ internal class OkWebsocket(client: OkHttpClient,
     fun send(frames: Publisher<Frame>): Completable =
             Flowable.fromPublisher(frames)
                     .map { it.content() }
-                    .map { it.skipBytes(frameLengthSize).slice().nioBuffer() }
-                    .map { ByteString.of(it) }
+                    .map { byteBuf ->
+                        val byteString = ByteString.of(
+                                byteBuf.skipBytes(frameLengthSize).nioBuffer())
+                        byteBuf.release()
+                        byteString
+                    }
                     .flatMapCompletable { ws.sendAsync(it) }
 
     fun close(): Completable = Completable.create { e ->
