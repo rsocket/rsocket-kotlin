@@ -187,7 +187,6 @@ internal class RSocketResponder(
                             payload,
                             flags)
                 }
-                .doOnError(errorConsumer)
                 .onErrorResumeNext { t -> Single.just(Frame.Error.from(streamId, t)) }
                 .doOnSuccess { frameSender.send(it) }
                 .doFinally { sendingSubscriptions -= streamId }
