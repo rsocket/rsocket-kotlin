@@ -23,9 +23,9 @@ import io.reactivex.internal.observers.BlockingMultiObserver
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.subscribers.TestSubscriber
 import io.rsocket.kotlin.exceptions.ApplicationException
-import io.rsocket.kotlin.internal.frame.RequestFrameFlyweight
 import io.rsocket.kotlin.internal.ClientStreamIds
 import io.rsocket.kotlin.internal.RSocketRequester
+import io.rsocket.kotlin.internal.frame.RequestFrameFlyweight
 import io.rsocket.kotlin.test.util.LocalDuplexConnection
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.*
@@ -139,6 +139,20 @@ class RSocketRequesterTest {
         val streamId2 = framesSubs.values()[1].streamId
 
         assertThat("Stream ID reused.", streamId2, not(equalTo(streamId1)))
+    }
+
+    @Test
+    fun testChannelResponseIsReceivedAfterRequestCancellation() {
+        val subs = TestSubscriber<Payload>()
+        rule.requester.requestChannel(Flowable.just(DefaultPayload.EMPTY))
+                .subscribe(subs)
+
+        val prevRequestStreamId = 1
+        rule.receiver.onNext(Frame.Cancel.from(prevRequestStreamId))
+        rule.receiver.onNext(Frame.Error.from(prevRequestStreamId, RuntimeException("expected_error")))
+
+        subs.assertValueCount(0)
+                .assertError { e -> e is ApplicationException && "expected_error" == e.message }
     }
 
     @Test(timeout = 3_000)

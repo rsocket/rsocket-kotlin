@@ -245,7 +245,6 @@ internal class RSocketRequester(
                 FrameType.CANCEL -> {
                     val sender = senders.remove(streamId)
                     sender?.cancel()
-                    receivers -= streamId
                 }
                 FrameType.NEXT -> receiver.onNext(DefaultPayload(frame))
                 FrameType.REQUEST_N -> {
