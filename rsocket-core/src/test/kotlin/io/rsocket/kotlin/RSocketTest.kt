@@ -65,10 +65,7 @@ class RSocketTest {
         assertThat("unexpected frames", subscriber.errorCount(), `is`(1))
         assertThat("unexpected frames", subscriber.valueCount(), `is`(0))
         assertThat("unexpected frames", subscriber.completions(), `is`(0L))
-
         rule.assertNoClientErrors()
-        rule.assertServerErrorCount(1)
-
     }
 
     @Test(timeout = 2000)
