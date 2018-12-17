@@ -15,16 +15,15 @@ It enables following symmetric interaction models:
 
 ## Build and Binaries
 
-  Snapshots are available on Bintray
    ```groovy
     repositories {
-        maven { url 'https://oss.jfrog.org/libs-snapshot' }
+        maven { url 'https://oss.jfrog.org/oss-release-local' }
     }
 ```
 
 ```groovy
     dependencies {
-        compile 'io.rsocket.kotlin:rsocket-core:0.9-SNAPSHOT'
+        compile 'io.rsocket.kotlin:rsocket-core:0.9.6'
     }
 ```
 ### Transports
@@ -32,8 +31,8 @@ It enables following symmetric interaction models:
 `OkHttp` based Websockets transport (`Client` only)
 ```groovy
  dependencies {
-                compile 'io.rsocket.kotlin:rsocket-transport-netty:0.9-SNAPSHOT'
-                compile 'io.rsocket.kotlin:rsocket-transport-okhttp:0.9-SNAPSHOT'
+                compile 'io.rsocket.kotlin:rsocket-transport-netty:0.9.6'
+                compile 'io.rsocket.kotlin:rsocket-transport-okhttp:0.9.6'
  }
 ```
 ### Usage
