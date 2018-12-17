@@ -25,7 +25,6 @@ import io.netty.util.Recycler.Handle
 import io.netty.util.ResourceLeakDetector
 import io.rsocket.kotlin.internal.frame.*
 import io.rsocket.kotlin.internal.frame.FrameHeaderFlyweight.FLAGS_M
-import org.slf4j.LoggerFactory
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
@@ -333,13 +332,8 @@ class Frame private constructor(private val handle: Handle<Frame>) : ByteBufHold
     }
 
     object Error {
-        private val errorLogger = LoggerFactory.getLogger(Error::class.java)
 
         fun from(streamId: Int, throwable: Throwable, dataBuffer: ByteBuf): Frame {
-            if (errorLogger.isDebugEnabled) {
-                errorLogger.debug("an error occurred, creating error frame", throwable)
-            }
-
             val code = ErrorFrameFlyweight.errorCodeFromException(throwable)
             val frame = RECYCLER.get()
             frame.content = ByteBufAllocator.DEFAULT.buffer(

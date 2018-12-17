@@ -26,7 +26,6 @@ import io.rsocket.kotlin.FrameType.SETUP
 import io.rsocket.kotlin.interceptors.DuplexConnectionInterceptor.Type
 import io.rsocket.kotlin.interceptors.DuplexConnectionInterceptor.Type.*
 import org.reactivestreams.Publisher
-import org.slf4j.LoggerFactory
 
 internal class ServerConnectionDemuxer(source: DuplexConnection,
                                        interceptors: InterceptConnection)
@@ -118,19 +117,10 @@ sealed class ConnectionDemuxer(private val source: DuplexConnection,
 
     private class DemuxedConnection(private val sender: DuplexConnection)
         : DuplexConnection {
-        private val debugEnabled: Boolean = LOGGER.isDebugEnabled
         private val receivers = BehaviorProcessor.create<Flowable<Frame>>()
         private val receiver = receivers.firstOrError()
         override fun send(frame: Publisher<Frame>): Completable {
-            val frames = if (debugEnabled) {
-                Flowable.fromPublisher(frame)
-                        .doOnNext { f ->
-                            LOGGER.debug("sending -> " + f.toString())
-                        }
-            } else {
-                frame
-            }
-            return sender.send(frames)
+            return sender.send(frame)
         }
 
         fun accept(receiver: Flowable<Frame>) {
@@ -138,21 +128,11 @@ sealed class ConnectionDemuxer(private val source: DuplexConnection,
         }
 
         override fun sendOne(frame: Frame): Completable {
-            if (debugEnabled) {
-                LOGGER.debug("sending -> " + frame.toString())
-            }
             return sender.sendOne(frame)
         }
 
         override fun receive(): Flowable<Frame> {
-            return receiver.flatMapPublisher { f ->
-                if (debugEnabled)
-                    f
-                            .doOnNext { frame ->
-                                LOGGER.debug("receiving -> " + frame.toString())
-                            }
-                else f
-            }
+            return receiver.flatMapPublisher { it }
         }
 
         override fun close(): Completable = sender.close()
@@ -160,10 +140,6 @@ sealed class ConnectionDemuxer(private val source: DuplexConnection,
         override fun onClose(): Completable = sender.onClose()
 
         override fun availability(): Double = sender.availability()
-    }
-
-    companion object {
-        private val LOGGER = LoggerFactory.getLogger("io.rsocket.FrameLogger")
     }
 }
 
