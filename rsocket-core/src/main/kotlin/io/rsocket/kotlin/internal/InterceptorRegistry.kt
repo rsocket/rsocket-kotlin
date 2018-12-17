@@ -73,7 +73,7 @@ internal class InterceptorRegistry :
         return rs
     }
 
-    override fun interceptHandler(rSocket: RSocket): RSocket {
+    override fun interceptAcceptor(rSocket: RSocket): RSocket {
         var rs = rSocket
         for (interceptor in handlers) {
             rs = interceptor(rs)
@@ -103,7 +103,7 @@ internal interface InterceptRSocket {
 
     fun interceptRequester(rSocket: RSocket): RSocket
 
-    fun interceptHandler(rSocket: RSocket): RSocket
+    fun interceptAcceptor(rSocket: RSocket): RSocket
 }
 
 

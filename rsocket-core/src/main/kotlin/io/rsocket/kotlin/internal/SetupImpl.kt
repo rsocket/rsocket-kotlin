@@ -20,7 +20,7 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.internal.frame.FrameHeaderFlyweight
 import java.nio.ByteBuffer
 
-internal class SetupContents(
+internal class SetupImpl(
         private val metadataMimeType: String,
         private val dataMimeType: String,
         override val data: ByteBuffer,
@@ -43,10 +43,10 @@ internal class SetupContents(
 
     companion object {
 
-        internal fun create(setupFrame: Frame): SetupContents {
+        internal fun create(setupFrame: Frame): SetupImpl {
             Frame.ensureFrameType(FrameType.SETUP, setupFrame)
             return try {
-                SetupContents(
+                SetupImpl(
                         Frame.Setup.metadataMimeType(setupFrame),
                         Frame.Setup.dataMimeType(setupFrame),
                         setupFrame.data,

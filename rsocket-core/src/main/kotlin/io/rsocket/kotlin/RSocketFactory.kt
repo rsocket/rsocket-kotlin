@@ -139,7 +139,7 @@ object RSocketFactory {
         }
 
         /**
-         * Configure auxilary capabilities of RSocket interactions (request-response,
+         * Configure auxiliary capabilities of RSocket interactions (request-response,
          * request-stream and so on)
          *
          * @param configure function which configures  [RSocketOptions]
@@ -221,36 +221,36 @@ object RSocketFactory {
                         .connect()
                         .flatMap { connection ->
 
-                            val withLease =
+                            val enabledLease =
                                     enableLease(parentInterceptors)
-
-                            val interceptors =
-                                    enableFragmentation(withLease)
-
-                            val interceptConnection = interceptors as InterceptConnection
-                            val interceptRSocket = interceptors as InterceptRSocket
+                            val enabledFragmentation =
+                                    enableFragmentation(enabledLease)
+                            val interceptConnection =
+                                    enabledFragmentation as InterceptConnection
+                            val interceptRSocket =
+                                    enabledFragmentation as InterceptRSocket
 
                             val demuxer = ClientConnectionDemuxer(
                                     connection,
                                     interceptConnection)
 
-                            val rSocketRequester = RSocketRequester(
+                            val requesterRSocket = RSocketRequester(
                                     demuxer.requesterConnection(),
                                     errorConsumer,
                                     ClientStreamIds(),
                                     streamRequestLimit)
 
-                            val wrappedRequester = interceptRSocket
-                                    .interceptRequester(rSocketRequester)
+                            val wrappedRequesterRSocket = interceptRSocket
+                                    .interceptRequester(requesterRSocket)
 
-                            val handlerRSocket = acceptor()(wrappedRequester)
+                            val acceptorRSocket = acceptor()(wrappedRequesterRSocket)
 
-                            val wrappedHandler = interceptRSocket
-                                    .interceptHandler(handlerRSocket)
+                            val wrappedAcceptorRSocket = interceptRSocket
+                                    .interceptAcceptor(acceptorRSocket)
 
                             RSocketResponder(
                                     demuxer.responderConnection(),
-                                    wrappedHandler,
+                                    wrappedAcceptorRSocket,
                                     errorConsumer,
                                     streamRequestLimit)
 
@@ -264,7 +264,7 @@ object RSocketFactory {
 
                             connection
                                     .sendOne(setupFrame)
-                                    .andThen(Single.just(wrappedRequester))
+                                    .andThen(Single.just(wrappedRequesterRSocket))
                         }
             }
 
@@ -287,10 +287,11 @@ object RSocketFactory {
 
             private fun enableLease(parentInterceptors: InterceptorRegistry)
                     : InterceptorRegistry {
-                val leaseSupport = leaseOptions.rSocketLeaseConsumer()
-                return if (leaseSupport != null) {
+                val rSocketLeaseConsumer =
+                        leaseOptions.rSocketLeaseConsumer()
+                return if (rSocketLeaseConsumer != null) {
                     parentInterceptors.copyWith(
-                            ClientLeaseFeature.enable(leaseSupport)())
+                            ClientLeaseFeature.enable(rSocketLeaseConsumer)())
                 } else {
                     parentInterceptors.copy()
                 }
@@ -405,18 +406,20 @@ object RSocketFactory {
                     override fun invoke(duplexConnection: DuplexConnection)
                             : Completable {
 
-                        val withLease =
+                        val enabledLease =
                                 enableLease(parentInterceptors)
-
-                        val withServerContract =
-                                enableServerContract(withLease)
-
-                        val interceptors =
-                                enableFragmentation(withServerContract)
+                        val enabledServerContract =
+                                enableServerContract(enabledLease)
+                        val enabledFragmentation =
+                                enableFragmentation(enabledServerContract)
+                        val interceptConnection =
+                                enabledFragmentation as InterceptConnection
+                        val interceptRSocket =
+                                enabledFragmentation as InterceptRSocket
 
                         val demuxer = ServerConnectionDemuxer(
                                 duplexConnection,
-                                interceptors as InterceptConnection)
+                                interceptConnection)
 
                         return demuxer
                                 .setupConnection()
@@ -424,7 +427,7 @@ object RSocketFactory {
                                 .firstOrError()
                                 .flatMapCompletable { setup ->
                                     accept(setup,
-                                            interceptors as InterceptRSocket,
+                                            interceptRSocket,
                                             demuxer)
                                 }
                     }
@@ -435,33 +438,34 @@ object RSocketFactory {
                                interceptors: InterceptRSocket,
                                demuxer: ConnectionDemuxer): Completable {
 
-                val setup = SetupContents.create(setupFrame)
+                val setup = SetupImpl.create(setupFrame)
 
-                val rSocketRequester = RSocketRequester(
+                val requesterRSocket = RSocketRequester(
                         demuxer.requesterConnection(),
                         errorConsumer,
                         ServerStreamIds(),
                         streamRequestLimit)
 
-                val wrappedRequester =
-                        interceptors.interceptRequester(rSocketRequester)
+                val wrappedRequesterRSocket =
+                        interceptors.interceptRequester(requesterRSocket)
 
                 ServerServiceHandler(
                         demuxer.serviceConnection(),
                         setup,
                         errorConsumer)
 
-                val handlerRSocket = acceptor()(setup, wrappedRequester)
+                val acceptorRSocket = acceptor()(setup, wrappedRequesterRSocket)
 
-                val rejectingHandlerRSocket = RejectingRSocket(handlerRSocket)
-                        .with(demuxer.requesterConnection())
+                val rejectingAcceptorRSocket =
+                        RSocketRejectionHandler(demuxer.requesterConnection())
+                                .rejectOnError(acceptorRSocket)
 
-                return rejectingHandlerRSocket
-                        .map { handler -> interceptors.interceptHandler(handler) }
-                        .doOnSuccess { handler ->
+                return rejectingAcceptorRSocket
+                        .map { acceptor -> interceptors.interceptAcceptor(acceptor) }
+                        .doOnSuccess { acceptor ->
                             RSocketResponder(
                                     demuxer.responderConnection(),
-                                    handler,
+                                    acceptor,
                                     errorConsumer,
                                     streamRequestLimit)
                         }
@@ -470,7 +474,8 @@ object RSocketFactory {
 
             private fun enableLease(parentInterceptors: InterceptorRegistry)
                     : InterceptorRegistry {
-                val rSocketLeaseConsumer = leaseOptions.rSocketLeaseConsumer()
+                val rSocketLeaseConsumer =
+                        leaseOptions.rSocketLeaseConsumer()
                 return if (rSocketLeaseConsumer != null) {
                     parentInterceptors.copyWith(
                             ServerLeaseFeature.enable(rSocketLeaseConsumer)())
@@ -499,7 +504,8 @@ object RSocketFactory {
 
     private fun assertFragmentation(mtu: Int) {
         if (mtu < 0) {
-            throw IllegalArgumentException("fragmentation mtu must be non-negative")
+            throw IllegalArgumentException(
+                    "fragmentation mtu must be non-negative")
         }
     }
 

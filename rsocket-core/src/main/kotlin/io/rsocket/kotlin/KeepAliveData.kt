@@ -31,6 +31,6 @@ interface KeepAliveData {
     /**
      * @return consumer of Keep-alive data [ByteBuffer] returned by server
      */
-    fun handler(): (ByteBuffer) -> Unit
+    fun consumer(): (ByteBuffer) -> Unit
 }
 
