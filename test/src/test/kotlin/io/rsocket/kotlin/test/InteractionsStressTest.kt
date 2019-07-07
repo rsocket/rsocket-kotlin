@@ -21,7 +21,6 @@ import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.processors.UnicastProcessor
-import io.reactivex.schedulers.Schedulers
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.netty.client.TcpClientTransport
 import io.rsocket.kotlin.transport.netty.server.NettyContextCloseable
@@ -33,6 +32,7 @@ import org.junit.Test
 import org.reactivestreams.Publisher
 import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit
+import kotlin.math.max
 
 class InteractionsStressTest {
     private lateinit var server: NettyContextCloseable
@@ -75,10 +75,10 @@ class InteractionsStressTest {
         interaction(
                 { payload -> payload.matches("response") },
                 {
-                    it.flatMapSingle { num ->
+                    it.flatMapSingle( { num ->
                         client.requestResponse(
                                 DefaultPayload.text("response$num"))
-                    }
+                    }, false, interactionConcurrency)
                 })
     }
 
@@ -87,10 +87,10 @@ class InteractionsStressTest {
         interaction(
                 { payload -> payload.matches("stream") },
                 {
-                    it.flatMap { num ->
+                    it.flatMap ({ num ->
                         client.requestStream(
                                 DefaultPayload.text("stream$num"))
-                    }
+                    }, false, interactionConcurrency)
                 })
     }
 
@@ -99,10 +99,10 @@ class InteractionsStressTest {
         interaction(
                 { payload -> payload.matches("channel") },
                 {
-                    it.flatMap { num ->
+                    it.flatMap ({ num ->
                         client.requestChannel(
                                 Flowable.just(DefaultPayload.text("channel$num")))
-                    }
+                    },false, interactionConcurrency)
                 })
     }
 
@@ -116,8 +116,8 @@ class InteractionsStressTest {
 
         val errors = UnicastProcessor.create<Long>()
         val disposable = CompositeDisposable()
-        repeat(threadsNum()) {
-            disposable += interaction(source().observeOn(Schedulers.io()))
+        repeat(interactionCount) {
+            disposable += interaction(source())
                     .subscribe({ res ->
                         if (!pred(res)) {
                             errors.onError(
@@ -141,8 +141,6 @@ class InteractionsStressTest {
                 data.substringAfter(str).toLong() >= 0
 
     }
-
-    private fun threadsNum() = Runtime.getRuntime().availableProcessors()
 
     internal class TestHandler
         : AbstractRSocket() {
@@ -170,11 +168,15 @@ class InteractionsStressTest {
 
     companion object {
         private fun source() =
-                Flowable.interval(intervalMillis, TimeUnit.MICROSECONDS)
+                Flowable.interval(intervalMillis, TimeUnit.MILLISECONDS)
                         .onBackpressureDrop()
 
-        private const val intervalMillis: Long = 100
+        private const val intervalMillis: Long = 1
 
         private const val testDuration = 20L
+
+        private val interactionCount = max(1, Runtime.getRuntime().availableProcessors() / 2)
+
+        private const val interactionConcurrency = 4
     }
 }
