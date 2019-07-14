@@ -18,6 +18,5 @@ include ':rsocket-transport-okhttp'
 rootProject.name='rsocket-kotlin'
 include 'rsocket-core'
 include 'rsocket-transport-okhttp'
-include 'rsocket-transport-netty'
 include 'test'
 

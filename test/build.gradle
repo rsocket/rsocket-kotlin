@@ -16,7 +16,7 @@
 
 dependencies {
     testImplementation project(":rsocket-transport-okhttp")
-    testImplementation project(":rsocket-transport-netty")
+    testImplementation 'io.rsocket:rsocket-transport-netty'
     testImplementation 'org.assertj:assertj-core:3.9.1'
 }
 

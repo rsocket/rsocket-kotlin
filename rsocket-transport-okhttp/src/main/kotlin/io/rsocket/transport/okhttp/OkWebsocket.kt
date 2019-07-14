@@ -28,11 +28,11 @@ import okhttp3.*
 import okio.ByteString
 import org.reactivestreams.Publisher
 import java.nio.channels.ClosedChannelException
+import java.util.concurrent.atomic.AtomicBoolean
 
 internal class OkWebsocket(client: OkHttpClient,
                            request: Request) {
-    @Volatile
-    internal var isOpen = false
+    private val isOpen = AtomicBoolean()
     @Volatile
     private var failErr: ClosedChannelException? = null
     private val defFailErr by lazy {
@@ -43,7 +43,7 @@ internal class OkWebsocket(client: OkHttpClient,
 
     private val listener = object : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket?, response: Response?) {
-            isOpen = true
+            isOpen.set(true)
             connection.onNext(OkHttpWebSocketConnection(this@OkWebsocket))
         }
 
@@ -70,15 +70,16 @@ internal class OkWebsocket(client: OkHttpClient,
         override fun onClosed(webSocket: WebSocket?,
                               code: Int,
                               reason: String?) {
-            isOpen = false
-            connection.onComplete()
+            if (isOpen.compareAndSet(true, false)) {
+                connection.onComplete()
+            }
         }
 
         override fun onFailure(webSocket: WebSocket,
                                t: Throwable,
                                response: Response?) {
-            connection.onError(t)
-            if (isOpen) {
+            if (isOpen.compareAndSet(true, false)) {
+                connection.onError(t)
                 val closedChannelException = ClosedChannelException()
                 closedChannelException.initCause(t)
                 failErr = closedChannelException
@@ -114,6 +115,8 @@ internal class OkWebsocket(client: OkHttpClient,
     fun onClose(): Completable = connection
             .onErrorResumeNext(Flowable.empty())
             .ignoreElements()
+
+    internal fun isOpen(): Boolean = isOpen.get()
 
     private fun WebSocket.sendAsync(bytes: ByteString): Completable =
             Completable.create { e ->
