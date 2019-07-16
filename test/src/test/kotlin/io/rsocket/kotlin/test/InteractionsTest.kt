@@ -17,42 +17,50 @@
 package io.rsocket.kotlin.test
 
 import io.reactivex.Flowable
-import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.processors.UnicastProcessor
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.transport.netty.client.TcpClientTransport
-import io.rsocket.kotlin.transport.netty.server.NettyContextCloseable
-import io.rsocket.kotlin.transport.netty.server.TcpServerTransport
-import io.rsocket.kotlin.util.AbstractRSocket
+import io.rsocket.transport.netty.server.CloseableChannel
+import io.rsocket.transport.netty.server.WebsocketServerTransport
+import io.rsocket.transport.okhttp.client.OkhttpWebsocketClientTransport
+import okhttp3.HttpUrl
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.reactivestreams.Publisher
-import java.net.InetSocketAddress
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
+typealias RSocketFactoryJava = io.rsocket.RSocketFactory
+typealias AbstractRSocketJava = io.rsocket.AbstractRSocket
+typealias PayloadJava = io.rsocket.Payload
+typealias DefaultPayloadJava = io.rsocket.util.DefaultPayload
+
 class InteractionsStressTest {
-    private lateinit var server: NettyContextCloseable
+    private lateinit var server: CloseableChannel
     private lateinit var client: RSocket
     private lateinit var testHandler: TestHandler
     @Before
     fun setUp() {
-        val address = InetSocketAddress
-                .createUnresolved("localhost", 0)
-        val serverTransport = TcpServerTransport.create(address)
+        val serverTransport = WebsocketServerTransport.create("localhost", 0)
         testHandler = TestHandler()
-        server = RSocketFactory
+        server = RSocketFactoryJava
                 .receive()
-                .acceptor { { _, _ -> Single.just(testHandler) } }
+                .acceptor { _, _ -> Mono.just(testHandler) }
                 .transport(serverTransport)
                 .start()
-                .blockingGet()
+                .block(java.time.Duration.ofSeconds(5))!!
 
-        val clientTransport = TcpClientTransport
-                .create(server.address())
+        val address = server.address()
+        val clientTransport = OkhttpWebsocketClientTransport
+                .create(HttpUrl.Builder()
+                        .scheme("http")
+                        .host(address.hostName)
+                        .port(address.port)
+                        .build())
 
         client = RSocketFactory
                 .connect()
@@ -67,7 +75,8 @@ class InteractionsStressTest {
 
     @After
     fun tearDown() {
-        server.close().andThen(server.onClose()).blockingAwait()
+        server.dispose()
+        server.onClose().block(java.time.Duration.ofSeconds(5))
     }
 
     @Test
@@ -117,7 +126,7 @@ class InteractionsStressTest {
         val errors = UnicastProcessor.create<Long>()
         val disposable = CompositeDisposable()
         repeat(interactionCount) {
-            disposable += interaction(source())
+            disposable += interaction(source()).timeout(1, TimeUnit.SECONDS)
                     .subscribe({ res ->
                         if (!pred(res)) {
                             errors.onError(
@@ -143,21 +152,24 @@ class InteractionsStressTest {
     }
 
     internal class TestHandler
-        : AbstractRSocket() {
+        : AbstractRSocketJava() {
 
-        override fun requestResponse(payload: Payload): Single<Payload> =
-                Single.just(payload)
+        override fun requestResponse(payload: PayloadJava): Mono<PayloadJava> =
+                Mono.just(payload)
 
-        override fun requestStream(payload: Payload): Flowable<Payload> =
-                Flowable.just(
-                        DefaultPayload.text(payload.dataUtf8),
-                        DefaultPayload.text(payload.dataUtf8))
+        override fun requestStream(payload: PayloadJava): Flux<PayloadJava> {
+            val data = payload.dataUtf8
+            return Flux.just(
+                    DefaultPayloadJava.create(data),
+                    DefaultPayloadJava.create(data))
+        }
 
-        override fun requestChannel(payloads: Publisher<Payload>): Flowable<Payload> {
-            return Flowable.fromPublisher(payloads).flatMap { payload ->
-                Flowable.just(
-                        DefaultPayload.text(payload.dataUtf8),
-                        DefaultPayload.text(payload.dataUtf8))
+        override fun requestChannel(payloads: Publisher<PayloadJava>): Flux<PayloadJava> {
+            return Flux.from(payloads).flatMap { payload ->
+                val data = payload.dataUtf8
+                Flux.just(
+                        DefaultPayloadJava.create(data),
+                        DefaultPayloadJava.create(data))
             }
         }
     }
@@ -168,10 +180,8 @@ class InteractionsStressTest {
 
     companion object {
         private fun source() =
-                Flowable.interval(intervalMillis, TimeUnit.MILLISECONDS)
+                Flowable.interval(100, TimeUnit.MICROSECONDS)
                         .onBackpressureDrop()
-
-        private const val intervalMillis: Long = 1
 
         private const val testDuration = 20L
 

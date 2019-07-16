@@ -16,7 +16,7 @@
 
 package io.rsocket.kotlin.test.transport
 
-import io.rsocket.kotlin.transport.netty.server.WebsocketServerTransport
+import io.rsocket.transport.netty.server.WebsocketServerTransport
 import io.rsocket.transport.okhttp.client.OkhttpWebsocketClientTransport
 import okhttp3.HttpUrl
 

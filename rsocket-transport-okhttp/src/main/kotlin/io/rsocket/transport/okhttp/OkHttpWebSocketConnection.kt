@@ -24,7 +24,7 @@ import org.reactivestreams.Publisher
 class OkHttpWebSocketConnection internal constructor(private val ws: OkWebsocket)
     : DuplexConnection {
 
-    override fun availability(): Double = if (ws.isOpen) 1.0 else 0.0
+    override fun availability(): Double = if (ws.isOpen()) 1.0 else 0.0
 
     override fun close() = ws.close()
 
