@@ -16,19 +16,38 @@
 
 package io.rsocket.kotlin.internal
 
-internal sealed class StreamIds(private var streamId: Int) {
+import java.util.concurrent.atomic.AtomicLongFieldUpdater
 
-    @Synchronized
-    fun nextStreamId(): Int {
-        streamId += 2
+
+internal sealed class StreamIds(streamId: Int) {
+
+    @JvmField
+    @Volatile
+    internal var streamId: Long = streamId.toLong()
+
+    fun nextStreamId(streamIds: Map<Int, *>): Int {
+        var streamId: Int
+        do {
+            val next = STREAM_ID.addAndGet(this, 2)
+            if (next <= MAX_STREAM_ID) {
+                return next.toInt()
+            }
+            streamId = (next and MASK).toInt()
+        } while (streamId == 0 || streamIds.containsKey(streamId))
         return streamId
     }
 
-    @Synchronized
-    fun isBeforeOrCurrent(streamId: Int): Boolean =
-            this.streamId >= streamId && streamId > 0
+    companion object {
+        private val STREAM_ID = AtomicLongFieldUpdater.newUpdater(StreamIds::class.java, "streamId")
+        private const val MASK: Long = 0x7FFFFFFF
+        internal const val MAX_STREAM_ID = Int.MAX_VALUE
+
+
+    }
 }
 
 internal class ClientStreamIds : StreamIds(-1)
 
 internal class ServerStreamIds : StreamIds(0)
+
+internal class TestStreamIds(streamId: Int) : StreamIds(streamId)
