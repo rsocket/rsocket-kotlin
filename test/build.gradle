@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+repositories {
+    maven { url 'http://repo.spring.io/milestone' }
+}
 
 dependencies {
     testImplementation project(":rsocket-transport-okhttp")

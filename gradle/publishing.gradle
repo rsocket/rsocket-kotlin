@@ -3,7 +3,7 @@ subprojects {
         publishing {
             publications {
                 maven(MavenPublication) {
-                    groupId 'io.rsocket.kotlin'
+                    groupId project.group
 
                     from components.java
 
