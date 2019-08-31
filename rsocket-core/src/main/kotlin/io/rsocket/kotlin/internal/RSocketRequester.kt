@@ -90,7 +90,7 @@ internal class RSocketRequester(
 
     private fun handleFireAndForget(payload: Payload): Completable {
         return Completable.fromRunnable {
-            val streamId = streamIds.nextStreamId()
+            val streamId = streamIds.nextStreamId(receivers)
             val requestFrame = Frame.Request.from(
                     streamId,
                     FrameType.FIRE_AND_FORGET,
@@ -102,7 +102,7 @@ internal class RSocketRequester(
 
     private fun handleRequestResponse(payload: Payload): Single<Payload> {
         return Single.defer {
-            val streamId = streamIds.nextStreamId()
+            val streamId = streamIds.nextStreamId(receivers)
             val requestFrame = Frame.Request.from(
                     streamId, FrameType.REQUEST_RESPONSE, payload, 1)
 
@@ -119,7 +119,7 @@ internal class RSocketRequester(
 
     private fun handleRequestStream(payload: Payload): Flowable<Payload> {
         return Flowable.defer {
-            val streamId = streamIds.nextStreamId()
+            val streamId = streamIds.nextStreamId(receivers)
             val receiver = StreamReceiver.create()
             receivers[streamId] = receiver
             val reqN = Cond()
@@ -148,7 +148,7 @@ internal class RSocketRequester(
     private fun handleChannel(request: Flowable<Payload>): Flowable<Payload> {
         return Flowable.defer {
             val receiver = StreamReceiver.create()
-            val streamId = streamIds.nextStreamId()
+            val streamId = streamIds.nextStreamId(receivers)
             val reqN = Cond()
 
             receiver.doOnRequestIfActive { requestN ->
@@ -259,28 +259,13 @@ internal class RSocketRequester(
                 }
                 else -> unsupportedFrame(streamId, frame)
             }
-        } ?: missingReceiver(streamId, type, frame)
+        }
     }
 
     private fun unsupportedFrame(streamId: Int, frame: Frame) {
         errorConsumer(IllegalStateException(
                 "Client received unsupported frame on stream " +
                         "$streamId : $frame"))
-    }
-
-    private fun missingReceiver(streamId: Int, type: FrameType, frame: Frame) {
-        if (!streamIds.isBeforeOrCurrent(streamId)) {
-            val err = if (type === FrameType.ERROR) {
-                IllegalStateException(
-                        "Client received error for non-existent stream: " +
-                                "$streamId Message: ${frame.dataUtf8}")
-            } else {
-                IllegalStateException(
-                        "Client received message for non-existent stream: " +
-                                "$streamId, frame type: $type")
-            }
-            errorConsumer(err)
-        }
     }
 
     private inner class Lifecycle {

@@ -18,71 +18,62 @@ package io.rsocket.kotlin
 
 import io.rsocket.kotlin.internal.ClientStreamIds
 import io.rsocket.kotlin.internal.ServerStreamIds
+import io.rsocket.kotlin.internal.StreamIds
+import io.rsocket.kotlin.internal.TestStreamIds
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-
 import org.junit.Test
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 class StreamIdsTest {
 
     @Test
     fun testClientSequence() {
+        val map = Collections.emptyMap<Int, Any>()
         val s = ClientStreamIds()
-        assertEquals(1, s.nextStreamId().toLong())
-        assertEquals(3, s.nextStreamId().toLong())
-        assertEquals(5, s.nextStreamId().toLong())
+        assertEquals(1, s.nextStreamId(map).toLong())
+        assertEquals(3, s.nextStreamId(map).toLong())
+        assertEquals(5, s.nextStreamId(map).toLong())
     }
 
     @Test
     fun testServerSequence() {
+        val map = Collections.emptyMap<Int, Any>()
         val s = ServerStreamIds()
-        assertEquals(2, s.nextStreamId().toLong())
-        assertEquals(4, s.nextStreamId().toLong())
-        assertEquals(6, s.nextStreamId().toLong())
+        assertEquals(2, s.nextStreamId(map).toLong())
+        assertEquals(4, s.nextStreamId(map).toLong())
+        assertEquals(6, s.nextStreamId(map).toLong())
     }
 
     @Test
-    fun testClientIsValid() {
-        val s = ClientStreamIds()
+    fun testClientSequenceWrap() {
+        val map = ConcurrentHashMap<Int, Any>()
+        val s = TestStreamIds(Integer.MAX_VALUE - 2)
 
-        assertFalse(s.isBeforeOrCurrent(1))
-        assertFalse(s.isBeforeOrCurrent(3))
-
-        s.nextStreamId()
-        assertTrue(s.isBeforeOrCurrent(1))
-        assertFalse(s.isBeforeOrCurrent(3))
-
-        s.nextStreamId()
-        assertTrue(s.isBeforeOrCurrent(3))
-
-        // negative
-        assertFalse(s.isBeforeOrCurrent(-1))
-        // connection
-        assertFalse(s.isBeforeOrCurrent(0))
-        // server also accepted (checked externally)
-        assertTrue(s.isBeforeOrCurrent(2))
+        assertEquals(2147483647, s.nextStreamId(map).toLong())
+        assertEquals(1, s.nextStreamId(map).toLong())
+        assertEquals(3, s.nextStreamId(map).toLong())
     }
 
     @Test
-    fun testServerIsValid() {
-        val s = ServerStreamIds()
+    fun testServerSequenceWrap() {
+        val map = ConcurrentHashMap<Int, Any>()
+        val s = TestStreamIds(Integer.MAX_VALUE - 3)
 
-        assertFalse(s.isBeforeOrCurrent(2))
-        assertFalse(s.isBeforeOrCurrent(4))
+        assertEquals(2147483646, s.nextStreamId(map).toLong())
+        assertEquals(2, s.nextStreamId(map).toLong())
+        assertEquals(4, s.nextStreamId(map).toLong())
+    }
 
-        s.nextStreamId()
-        assertTrue(s.isBeforeOrCurrent(2))
-        assertFalse(s.isBeforeOrCurrent(4))
-
-        s.nextStreamId()
-        assertTrue(s.isBeforeOrCurrent(4))
-
-        // negative
-        assertFalse(s.isBeforeOrCurrent(-2))
-        // connection
-        assertFalse(s.isBeforeOrCurrent(0))
-        // client also accepted (checked externally)
-        assertTrue(s.isBeforeOrCurrent(1))
+    @Test
+    fun testSequenceSkipsExistingStreamIds() {
+        val map = ConcurrentHashMap<Int, Any>()
+        map.put(5, Any())
+        map.put(9, Any())
+        val s = TestStreamIds(StreamIds.MAX_STREAM_ID)
+        assertEquals(1, s.nextStreamId(map).toLong())
+        assertEquals(3, s.nextStreamId(map).toLong())
+        assertEquals(7, s.nextStreamId(map).toLong())
+        assertEquals(11, s.nextStreamId(map).toLong())
     }
 }

@@ -43,21 +43,6 @@ class RSocketRequesterTest {
     val rule = ClientSocketRule()
 
     @Test(timeout = 2000)
-    fun testInvalidFrameOnStream0() {
-
-        rule.receiver.onNext(Frame.RequestN.from(0, 10))
-        val errors = rule.errors
-
-        assertThat("Unexpected errors.",
-                errors,
-                hasSize<Throwable>(1))
-        assertThat(
-                "Unexpected error received.",
-                errors,
-                contains(instanceOf<Throwable>(IllegalStateException::class.java)))
-    }
-
-    @Test(timeout = 2000)
     fun testStreamInitialN() {
         val stream = rule.requester.requestStream(DefaultPayload.EMPTY)
         Completable.timer(100, TimeUnit.MILLISECONDS)
