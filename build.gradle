@@ -88,7 +88,7 @@ buildScan {
 }
 
 def versionSuffix() {
-    def versionSuffix = ''
+    def versionSuffix
     def branchName = project.findProperty('branch');
     if (branchName == null) {
         def details = versionDetails()
@@ -96,13 +96,18 @@ def versionSuffix() {
             branchName = details.branchName
         }
     }
-
+    /*branch*/
     if (branchName != null) {
         if (branchName == 'master') {
+            versionSuffix = ''
+        } else if (branchName == 'develop') {
             versionSuffix = '-SNAPSHOT'
         } else {
             versionSuffix = "-${branchName.replace("/", "-")}-SNAPSHOT"
         }
+    /*tag*/
+    } else {
+        versionSuffix = ''
     }
     return versionSuffix
 }
