@@ -16,16 +16,21 @@
 
 plugins {
     id 'com.gradle.build-scan'
+    id 'com.palantir.git-version'
     id 'io.spring.dependency-management' apply false
     id 'com.jfrog.bintray' apply false
     id 'com.jfrog.artifactory' apply false
     id 'org.jetbrains.kotlin.jvm' apply false
 }
 
+def versionSuffix = versionSuffix()
+
 allprojects {
     dependencyLocking {
         lockAllConfigurations()
     }
+    project.version += versionSuffix
+    println "version: ${project.version}"
 }
 
 subprojects {
@@ -80,4 +85,24 @@ description = 'RSocket-kotlin: Reactive Streams over network boundary with Kotli
 buildScan {
     termsOfServiceUrl = 'https://gradle.com/terms-of-service'
     termsOfServiceAgree = 'yes'
+}
+
+def versionSuffix() {
+    def versionSuffix = ''
+    def branchName = project.findProperty('branch');
+    if (branchName == null) {
+        def details = versionDetails()
+        if (details != null) {
+            branchName = details.branchName
+        }
+    }
+
+    if (branchName != null) {
+        if (branchName == 'master') {
+            versionSuffix = '-SNAPSHOT'
+        } else {
+            versionSuffix = "-${branchName.replace("/", "-")}-SNAPSHOT"
+        }
+    }
+    return versionSuffix
 }
