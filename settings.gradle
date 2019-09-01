@@ -21,6 +21,7 @@ pluginManagement {
         id 'com.jfrog.bintray' version "${bintrayPluginVersion}"
         id 'com.jfrog.artifactory' version "${artifactoryPluginVersion}"
         id 'org.jetbrains.kotlin.jvm' version "${kotlinPluginVersion}"
+        id "com.palantir.git-version" version "${gitPluginVersion}"
     }
 }
 
