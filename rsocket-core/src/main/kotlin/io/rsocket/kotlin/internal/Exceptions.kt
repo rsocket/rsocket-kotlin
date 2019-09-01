@@ -23,18 +23,6 @@ import io.rsocket.kotlin.internal.frame.ErrorFrameFlyweight
 internal object Exceptions {
 
     /**
-     * Creates [Throwable] with no stack trace
-     */
-    fun <T : Throwable> noStacktrace(ex: T): T {
-        ex.stackTrace = arrayOf(StackTraceElement(
-                ex.javaClass.name,
-                "<init>",
-                null,
-                -1))
-        return ex
-    }
-
-    /**
      * Creates [RuntimeException] from given Error [Frame]
      */
     fun from(frame: Frame): RuntimeException {

@@ -26,7 +26,6 @@ import io.rsocket.kotlin.internal.RSocketResponder.DisposableSubscription.Compan
 import io.rsocket.kotlin.exceptions.ApplicationException
 import io.rsocket.kotlin.internal.frame.FrameHeaderFlyweight.FLAGS_C
 import io.rsocket.kotlin.internal.frame.FrameHeaderFlyweight.FLAGS_M
-import io.rsocket.kotlin.internal.Exceptions.noStacktrace
 import io.rsocket.kotlin.DefaultPayload
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
@@ -298,6 +297,6 @@ internal class RSocketResponder(
     }
 
     companion object {
-        private val closedException = noStacktrace(ClosedChannelException())
+        private val closedException = ClosedChannelException()
     }
 }

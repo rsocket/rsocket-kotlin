@@ -16,8 +16,7 @@
 
 package io.rsocket.transport.okhttp
 
-import io.netty.buffer.ByteBuf
-import io.netty.buffer.Unpooled
+import io.netty.buffer.ByteBufAllocator
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
@@ -35,9 +34,7 @@ internal class OkWebsocket(client: OkHttpClient,
     private val isOpen = AtomicBoolean()
     @Volatile
     private var failErr: ClosedChannelException? = null
-    private val defFailErr by lazy {
-        noStacktrace(ClosedChannelException())
-    }
+    private val defFailErr by lazy { ClosedChannelException() }
     private val connection = BehaviorProcessor.create<OkHttpWebSocketConnection>()
     private val frames = UnicastProcessor.create<Frame>()
 
@@ -48,23 +45,15 @@ internal class OkWebsocket(client: OkHttpClient,
         }
 
         override fun onMessage(webSocket: WebSocket?, bytes: ByteString) {
-            val msgBuffer = Unpooled.wrappedBuffer(bytes.asByteBuffer())
-            val frameBuffer = writeFrame(msgBuffer)
+            val messageSize = bytes.size()
+            val buffer = allocator.buffer(messageSize + frameLengthSize)
 
-            frames.onNext(Frame.from(frameBuffer))
-        }
+            buffer.writeByte(messageSize shr 16)
+            buffer.writeByte(messageSize shr 8)
+            buffer.writeByte(messageSize)
+            buffer.writeBytes(bytes.toByteArray())
 
-        private fun writeFrame(msgBuffer: ByteBuf): ByteBuf {
-            val msgSize = msgBuffer.readableBytes()
-            val frameSize = msgSize + frameLengthSize
-            val frameBuffer = Unpooled.buffer(frameSize, frameSize)
-
-            frameBuffer.writeByte(msgSize shr 16)
-            frameBuffer.writeByte(msgSize shr 8)
-            frameBuffer.writeByte(msgSize)
-            frameBuffer.writeBytes(msgBuffer)
-
-            return frameBuffer
+            frames.onNext(Frame.from(buffer))
         }
 
         override fun onClosed(webSocket: WebSocket?,
@@ -98,14 +87,12 @@ internal class OkWebsocket(client: OkHttpClient,
 
     fun send(frames: Publisher<Frame>): Completable =
             Flowable.fromPublisher(frames)
-                    .map { it.content() }
-                    .map { byteBuf ->
-                        val byteString = ByteString.of(
-                                byteBuf.skipBytes(frameLengthSize).nioBuffer())
-                        byteBuf.release()
-                        byteString
-                    }
-                    .flatMapCompletable { ws.sendAsync(it) }
+                    .map { frame ->
+                        val content = frame.content()
+                        val contentByteString = ByteString.of(content.skipBytes(frameLengthSize).nioBuffer())
+                        frame.release()
+                        ws.sendOrThrowOnFailure(contentByteString)
+                    }.ignoreElements()
 
     fun close(): Completable = Completable.create { e ->
         ws.close(normalClose, "close")
@@ -118,27 +105,16 @@ internal class OkWebsocket(client: OkHttpClient,
 
     internal fun isOpen(): Boolean = isOpen.get()
 
-    private fun WebSocket.sendAsync(bytes: ByteString): Completable =
-            Completable.create { e ->
-                if (send(bytes))
-                    e.onComplete()
-                else
-                    e.onError(failErr ?: defFailErr)
-            }
+    private fun WebSocket.sendOrThrowOnFailure(bytes: ByteString) {
+        if (!send(bytes)) {
+            throw (failErr ?: defFailErr)
+        }
+    }
 
     companion object {
         private const val normalClose = 1000
         private const val frameLengthSize = 3
-
-        private fun <T : Throwable> noStacktrace(ex: T): T {
-            ex.stackTrace = arrayOf(StackTraceElement(
-                    ex.javaClass.name,
-                    "<init>",
-                    null,
-                    -1))
-            return ex
-        }
-
+        private val allocator = ByteBufAllocator.DEFAULT
     }
 }
 
