@@ -13,6 +13,8 @@ It enables following symmetric interaction models:
 *  channel (bi-directional streams)
 *  per-stream and per-RSocket metadata 
 
+##### RPC style interactions support is provided by [RSOCKET RPC - KOTLIN](https://github.com/rsocket/rsocket-rpc-kotlin) 
+
 ## Build and Binaries
 
    ```groovy
