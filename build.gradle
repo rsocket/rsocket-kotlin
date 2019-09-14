@@ -41,9 +41,10 @@ subprojects {
         api 'io.netty:netty-buffer'
         api 'io.reactivex.rxjava2:rxjava'
         api 'org.jetbrains.kotlin:kotlin-stdlib-jdk7'
+        api 'org.slf4j:slf4j-api'
+
         compileOnly 'com.google.code.findbugs:jsr305'
 
-        testImplementation 'org.slf4j:slf4j-api'
         testImplementation 'junit:junit'
         testImplementation 'org.mockito:mockito-core'
         testImplementation 'org.hamcrest:hamcrest-library'
