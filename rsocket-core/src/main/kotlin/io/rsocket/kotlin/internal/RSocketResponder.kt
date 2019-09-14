@@ -61,6 +61,10 @@ internal class RSocketResponder(
         connection
                 .onClose()
                 .subscribe({ completion.complete() }, errorConsumer)
+
+        requestHandler
+                .onClose()
+                .subscribe({ completion.complete() }, errorConsumer)
     }
 
     override fun fireAndForget(payload: Payload): Completable {
@@ -291,7 +295,13 @@ internal class RSocketResponder(
 
         private fun completeOnce(err: Throwable) {
             if (completed.compareAndSet(false, true)) {
+
                 receiveDisposable.dispose()
+
+                connection
+                        .close()
+                        .subscribe({}, errorConsumer)
+
                 requestHandler
                         .close()
                         .subscribe({}, errorConsumer)
