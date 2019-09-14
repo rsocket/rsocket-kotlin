@@ -23,6 +23,7 @@ import io.reactivex.processors.UnicastProcessor
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.exceptions.ApplicationException
 import io.rsocket.kotlin.exceptions.ChannelRequestException
+import io.rsocket.kotlin.internal.util.reactiveStreamsRequestN
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
@@ -121,10 +122,11 @@ internal class RSocketRequester(
             val streamId = streamIds.nextStreamId(receivers)
             val receiver = StreamReceiver.create()
             receivers[streamId] = receiver
-            val reqN = Cond()
+            var isFirstRequestN = true
 
             receiver.doOnRequestIfActive { requestN ->
-                val frame = if (reqN.first()) {
+                val frame = if (isFirstRequestN) {
+                    isFirstRequestN = false
                     Frame.Request.from(
                             streamId,
                             FrameType.REQUEST_STREAM,
@@ -148,35 +150,37 @@ internal class RSocketRequester(
         return Flowable.defer {
             val receiver = StreamReceiver.create()
             val streamId = streamIds.nextStreamId(receivers)
-            val reqN = Cond()
+            var firstReqN = true
+            var firstReqPayload = true
 
             receiver.doOnRequestIfActive { requestN ->
 
-                if (reqN.first()) {
-                    val wrappedRequest = request.compose {
-                        val sender = RequestingPublisher.wrap(it)
-                        sender.request(1)
-                        senders[streamId] = sender
-                        receivers[streamId] = receiver
-                        sender
-                    }.publish().autoConnect(2)
+                if (firstReqN) {
+                    firstReqN = false
 
-                    val first = wrappedRequest.take(1)
-                            .map { payload ->
-                                Frame.Request.from(
-                                        streamId,
-                                        FrameType.REQUEST_CHANNEL,
-                                        payload,
-                                        requestN)
+                    val requestFrames = request
+                            .compose {
+                                val sender = RequestingPublisher.wrap(it)
+                                sender.request(1)
+                                senders[streamId] = sender
+                                receivers[streamId] = receiver
+                                sender
                             }
-                    val rest = wrappedRequest.skip(1)
                             .map { payload ->
-                                Frame.PayloadFrame.from(
-                                        streamId,
-                                        FrameType.NEXT,
-                                        payload)
+                                if (firstReqPayload) {
+                                    firstReqPayload = false
+                                    Frame.Request.from(
+                                            streamId,
+                                            FrameType.REQUEST_CHANNEL,
+                                            payload,
+                                            requestN)
+                                } else {
+                                    Frame.PayloadFrame.from(
+                                            streamId,
+                                            FrameType.NEXT,
+                                            payload)
+                                }
                             }
-                    val requestFrames = Flowable.concatArrayEager(first, rest)
                     requestFrames.subscribe(
                             ChannelRequestSubscriber(
                                     { payload -> frameSender.send(payload) },
@@ -248,10 +252,7 @@ internal class RSocketRequester(
                 FrameType.NEXT -> receiver.onNext(DefaultPayload(frame))
                 FrameType.REQUEST_N -> {
                     val sender = senders[streamId]
-                    sender?.let {
-                        val n = Frame.RequestN.requestN(frame).toLong()
-                        it.request(n)
-                    }
+                    sender?.request(reactiveStreamsRequestN(Frame.RequestN.requestN(frame)))
                 }
                 FrameType.COMPLETE -> {
                     receiver.onComplete()
@@ -318,18 +319,6 @@ internal class RSocketRequester(
             }
             map.clear()
         }
-    }
-
-    private class Cond {
-        private var first = true
-
-        fun first(): Boolean =
-                if (first) {
-                    first = false
-                    true
-                } else {
-                    false
-                }
     }
 
     private class ChannelRequestSubscriber(private val next: (Frame) -> Unit,
