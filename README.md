@@ -25,7 +25,7 @@ It enables following symmetric interaction models:
 
 ```groovy
     dependencies {
-        compile 'io.rsocket.kotlin:rsocket-core:0.9.7'
+        compile 'io.rsocket.kotlin:rsocket-core:0.9.8'
     }
 ```
 ### Transports
@@ -33,7 +33,7 @@ It enables following symmetric interaction models:
 `OkHttp` based Websockets transport (`Client` only)
 ```groovy
  dependencies {
-        compile 'io.rsocket.kotlin:rsocket-transport-okhttp:0.9.7'
+        compile 'io.rsocket.kotlin:rsocket-transport-okhttp:0.9.8'
  }
 ```
 ### Usage
