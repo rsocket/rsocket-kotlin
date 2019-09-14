@@ -16,9 +16,7 @@
 
 package io.rsocket.kotlin.internal
 
-import io.reactivex.Completable
-import io.reactivex.Flowable
-import io.reactivex.Single
+import io.reactivex.*
 import io.reactivex.disposables.Disposable
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.Frame.Request.initialRequestN
@@ -27,6 +25,7 @@ import io.rsocket.kotlin.exceptions.ApplicationException
 import io.rsocket.kotlin.internal.frame.FrameHeaderFlyweight.FLAGS_C
 import io.rsocket.kotlin.internal.frame.FrameHeaderFlyweight.FLAGS_M
 import io.rsocket.kotlin.DefaultPayload
+import io.rsocket.kotlin.internal.util.reactiveStreamsRequestN
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
@@ -57,8 +56,7 @@ internal class RSocketResponder(
 
         receiveDisposable = connection
                 .receive()
-                .concatMap { frame -> handleFrame(frame) }
-                .subscribe({}, { completion.error(it) })
+                .subscribe({ handleFrame(it) }, { completion.error(it) })
 
         connection
                 .onClose()
@@ -111,8 +109,8 @@ internal class RSocketResponder(
 
     override fun onClose(): Completable = connection.onClose()
 
-    private fun handleFrame(frame: Frame): Flowable<Void> {
-        return try {
+    private fun handleFrame(frame: Frame) {
+        try {
             val streamId = frame.streamId
             when (frame.type) {
                 FrameType.FIRE_AND_FORGET -> handleFireAndForget(streamId, fireAndForget(DefaultPayload(frame)))
@@ -121,96 +119,126 @@ internal class RSocketResponder(
                 FrameType.REQUEST_N -> handleRequestN(streamId, frame)
                 FrameType.REQUEST_STREAM -> handleStream(streamId, requestStream(DefaultPayload(frame)), initialRequestN(frame))
                 FrameType.REQUEST_CHANNEL -> handleChannel(streamId, frame)
-                FrameType.METADATA_PUSH -> metadataPush(DefaultPayload(frame))
+                FrameType.METADATA_PUSH -> handleMetadataPush(metadataPush(DefaultPayload(frame)))
                 FrameType.NEXT -> handleNext(streamId, frame)
                 FrameType.COMPLETE -> handleComplete(streamId)
                 FrameType.ERROR -> handleError(streamId, frame)
                 FrameType.NEXT_COMPLETE -> handleNextComplete(streamId, frame)
                 else -> handleUnsupportedFrame(frame)
-            }.toFlowable()
+            }
         } finally {
             frame.release()
         }
     }
 
-    private fun handleUnsupportedFrame(frame: Frame): Completable {
+    private fun handleUnsupportedFrame(frame: Frame) {
         errorConsumer(IllegalArgumentException("Unsupported frame: $frame"))
-        return Completable.complete()
     }
 
-    private fun handleNextComplete(streamId: Int, frame: Frame): Completable {
+    private fun handleNextComplete(streamId: Int, frame: Frame) {
         val receiver = channelReceivers[streamId]
         receiver?.onNext(DefaultPayload(frame))
         receiver?.onComplete()
-        return Completable.complete()
     }
 
-    private fun handleError(streamId: Int, frame: Frame): Completable {
+    private fun handleError(streamId: Int, frame: Frame) {
         val receiver = channelReceivers[streamId]
         receiver?.onError(ApplicationException(Frame.Error.message(frame)))
-        return Completable.complete()
     }
 
-    private fun handleComplete(streamId: Int): Completable {
+    private fun handleComplete(streamId: Int) {
         val receiver = channelReceivers[streamId]
         receiver?.onComplete()
-        return Completable.complete()
     }
 
-    private fun handleNext(streamId: Int, frame: Frame): Completable {
+    private fun handleNext(streamId: Int, frame: Frame) {
         val receiver = channelReceivers[streamId]
         receiver?.onNext(DefaultPayload(frame))
-        return Completable.complete()
     }
 
     private fun handleFireAndForget(streamId: Int,
-                                    result: Completable): Completable {
-        return result
-                .doOnSubscribe { d -> sendingSubscriptions[streamId] = subscription(d) }
-                .doOnError(errorConsumer)
-                .doFinally { sendingSubscriptions -= streamId }
+                                    result: Completable) {
+        result.subscribe(object : CompletableObserver {
+            override fun onComplete() {
+                sendingSubscriptions -= streamId
+            }
+
+            override fun onSubscribe(d: Disposable) {
+                sendingSubscriptions[streamId] = subscription(d)
+            }
+
+            override fun onError(e: Throwable) {
+                sendingSubscriptions -= streamId
+                errorConsumer(e)
+            }
+        })
     }
 
     private fun handleRequestResponse(streamId: Int,
-                                      response: Single<Payload>): Completable {
-        return response
-                .doOnSubscribe { d -> sendingSubscriptions[streamId] = subscription(d) }
-                .map { payload ->
-                    var flags = FLAGS_C
-                    if (payload.hasMetadata) {
-                        flags = Frame.setFlag(flags, FLAGS_M)
-                    }
-                    Frame.PayloadFrame.from(
-                            streamId,
-                            FrameType.NEXT_COMPLETE,
-                            payload,
-                            flags)
+                                      response: Single<Payload>) {
+        response.subscribe(object : SingleObserver<Payload> {
+
+            override fun onSuccess(payload: Payload) {
+                sendingSubscriptions -= streamId
+                var flags = FLAGS_C
+                if (payload.hasMetadata) {
+                    flags = Frame.setFlag(flags, FLAGS_M)
                 }
-                .onErrorResumeNext { t -> Single.just(Frame.Error.from(streamId, t)) }
-                .doOnSuccess { frameSender.send(it) }
-                .doFinally { sendingSubscriptions -= streamId }
-                .ignoreElement()
+                frameSender.send(Frame.PayloadFrame.from(
+                        streamId,
+                        FrameType.NEXT_COMPLETE,
+                        payload,
+                        flags))
+            }
+
+            override fun onSubscribe(d: Disposable) {
+                sendingSubscriptions[streamId] = subscription(d)
+            }
+
+            override fun onError(e: Throwable) {
+                sendingSubscriptions -= streamId
+                val frame = when (e) {
+                    is NoSuchElementException -> Frame.PayloadFrame.from(streamId, FrameType.COMPLETE)
+                    else -> Frame.Error.from(streamId, e)
+                }
+                frameSender.send(frame)
+            }
+        })
     }
 
     private fun handleStream(streamId: Int,
                              response: Flowable<Payload>,
-                             initialRequestN: Int): Completable {
+                             initialRequestN: Int) {
         response
-                .map { payload -> Frame.PayloadFrame.from(streamId, FrameType.NEXT, payload) }
                 .compose { frameFlux ->
                     val frames = RequestingPublisher.wrap(frameFlux)
                     sendingSubscriptions[streamId] = frames
-                    frames.request(initialRequestN.toLong())
+                    frames.request(reactiveStreamsRequestN(initialRequestN))
                     frames
                 }
-                .concatWith(Flowable.just(Frame.PayloadFrame.from(streamId, FrameType.COMPLETE)))
-                .onErrorResumeNext { t: Throwable -> Flowable.just(Frame.Error.from(streamId, t)) }
-                .doFinally { sendingSubscriptions -= streamId }
-                .subscribe { frameSender.send(it) }
-        return Completable.complete()
+                .subscribe(object : Subscriber<Payload> {
+
+                    override fun onSubscribe(s: Subscription) {
+                        s.request(Long.MAX_VALUE)
+                    }
+
+                    override fun onNext(payload: Payload) {
+                        frameSender.send(Frame.PayloadFrame.from(streamId, FrameType.NEXT, payload))
+                    }
+
+                    override fun onComplete() {
+                        sendingSubscriptions -= streamId
+                        frameSender.send(Frame.PayloadFrame.from(streamId, FrameType.COMPLETE))
+                    }
+
+                    override fun onError(t: Throwable) {
+                        sendingSubscriptions -= streamId
+                        frameSender.send(Frame.Error.from(streamId, t))
+                    }
+                })
     }
 
-    private fun handleChannel(streamId: Int, firstFrame: Frame): Completable {
+    private fun handleChannel(streamId: Int, firstFrame: Frame) {
         val receiver = StreamReceiver.create()
         channelReceivers[streamId] = receiver
 
@@ -222,25 +250,32 @@ internal class RSocketResponder(
 
         receiver.onNext(DefaultPayload(firstFrame))
 
-        return handleStream(
+        handleStream(
                 streamId,
                 requestChannel(request),
                 initialRequestN(firstFrame))
     }
 
-    private fun handleCancel(streamId: Int): Completable {
-        val subscription = sendingSubscriptions.remove(streamId)
-        subscription?.cancel()
-        return Completable.complete()
+    private fun handleMetadataPush(result: Completable) {
+        result.subscribe(object : CompletableObserver {
+            override fun onComplete() {
+            }
+
+            override fun onSubscribe(d: Disposable) {
+            }
+
+            override fun onError(e: Throwable) = errorConsumer(e)
+        })
     }
 
-    private fun handleRequestN(streamId: Int, frame: Frame): Completable {
+    private fun handleCancel(streamId: Int) {
+        val subscription = sendingSubscriptions.remove(streamId)
+        subscription?.cancel()
+    }
+
+    private fun handleRequestN(streamId: Int, frame: Frame) {
         val subscription = sendingSubscriptions[streamId]
-        subscription?.let {
-            val n = Frame.RequestN.requestN(frame).toLong()
-            it.request(if (n >= Integer.MAX_VALUE) Long.MAX_VALUE else n)
-        }
-        return Completable.complete()
+        subscription?.request(reactiveStreamsRequestN(Frame.RequestN.requestN(frame)))
     }
 
     private inner class Lifecycle {
@@ -261,8 +296,8 @@ internal class RSocketResponder(
                         .close()
                         .subscribe({}, errorConsumer)
 
-                cleanUp(sendingSubscriptions, { it.cancel() })
-                cleanUp(channelReceivers, { it.onError(err) })
+                cleanUp(sendingSubscriptions) { it.cancel() }
+                cleanUp(channelReceivers) { it.onError(err) }
             }
         }
 
