@@ -40,6 +40,15 @@ class RSocketResponderTest {
     val rule = ServerSocketRule()
 
     @Test(timeout = 2000)
+    fun testRequestHandlerCloseTerminatesRSocket() {
+        rule.acceptingSocket.close()
+                .andThen(
+                        rule.rsocket.onClose()
+                                .mergeWith(rule.conn.onClose())
+                ).blockingAwait()
+    }
+
+    @Test(timeout = 2000)
     @Throws(Exception::class)
     fun testHandleResponseFrameNoError() {
         Completable.timer(100, TimeUnit.MILLISECONDS).subscribe {
@@ -110,7 +119,7 @@ class RSocketResponderTest {
 
         lateinit var sender: PublishProcessor<Frame>
         lateinit var receiver: PublishProcessor<Frame>
-        private lateinit var conn: LocalDuplexConnection
+        lateinit var conn: LocalDuplexConnection
         lateinit var errors: MutableList<Throwable>
         internal lateinit var rsocket: RSocketResponder
 
@@ -137,9 +146,10 @@ class RSocketResponderTest {
         }
 
         fun setAccSocket(acceptingSocket: RSocket) {
+            val cur = this.acceptingSocket
+            cur.close().subscribe()
+            cur.onClose().blockingAwait()
             this.acceptingSocket = acceptingSocket
-            acceptingSocket.close().subscribe()
-            acceptingSocket.onClose().blockingAwait()
             init()
         }
 
