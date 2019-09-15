@@ -88,8 +88,12 @@ val request = DefaultPayload.text("data")
   val rSocket: Single<RSocket> = RSocketFactory               // Requester RSocket
               .connect()
               .acceptor { { requesterRSocket -> handler(requesterRSocket) } }  // Optional handler RSocket
-              .transport(OkhttpWebsocketClientTransport       // WebSockets transport
-                    .create(protocol, host, port))
+              .transport(OkhttpWebsocketClientTransport.create(
+                             HttpUrl.Builder()
+                            .host(hostName)
+                            .port(port)
+                            .scheme(scheme)
+                            .build()))
               .start()
 
               private fun handler(requester:RSocket): RSocket {
