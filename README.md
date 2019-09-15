@@ -17,9 +17,11 @@ It enables following symmetric interaction models:
 
 ## Build and Binaries
 
+Releases  
+
    ```groovy
     repositories {
-        maven { url 'https://oss.jfrog.org/oss-release-local' }
+        maven { url 'https://oss.jfrog.org/libs-release' }
     }
 ```
 
@@ -28,6 +30,21 @@ It enables following symmetric interaction models:
         compile 'io.rsocket.kotlin:rsocket-core:0.9.8'
     }
 ```
+
+Snapshots  
+
+   ```groovy
+    repositories {
+        maven { url 'https://oss.jfrog.org/libs-snapshot' }
+    }
+```
+
+```groovy
+    dependencies {
+        compile 'io.rsocket.kotlin:rsocket-core:0.9.9-SNAPSHOT'
+    }
+```
+
 ### Transports
 
 `OkHttp` based Websockets transport (`Client` only)
