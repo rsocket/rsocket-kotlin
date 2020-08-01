@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015-2020 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.rsocket.frame
 
 import io.ktor.utils.io.core.*
@@ -28,24 +44,24 @@ fun ByteArray.toFrame(): Frame = ByteReadPacket(this).run {
     val flags = typeAndFlags and FlagsMask
     when (val type = FrameType(typeAndFlags shr FrameTypeShift)) {
         //stream id = 0
-        FrameType.Setup -> readSetup(flags)
-        FrameType.Resume -> readResume()
-        FrameType.ResumeOk -> readResumeOk()
+        FrameType.Setup        -> readSetup(flags)
+        FrameType.Resume       -> readResume()
+        FrameType.ResumeOk     -> readResumeOk()
         FrameType.MetadataPush -> readMetadataPush()
-        FrameType.Lease -> readLease(flags)
-        FrameType.KeepAlive -> readKeepAlive(flags)
+        FrameType.Lease        -> readLease(flags)
+        FrameType.KeepAlive    -> readKeepAlive(flags)
         //stream id != 0
-        FrameType.Cancel -> CancelFrame(streamId)
-        FrameType.Error -> readError(streamId)
-        FrameType.RequestN -> readRequestN(streamId)
-        FrameType.Extension -> readExtension(streamId, flags)
+        FrameType.Cancel       -> CancelFrame(streamId)
+        FrameType.Error        -> readError(streamId)
+        FrameType.RequestN     -> readRequestN(streamId)
+        FrameType.Extension    -> readExtension(streamId, flags)
         FrameType.Payload,
         FrameType.RequestFnF,
         FrameType.RequestResponse
-        -> readRequest(type, streamId, flags, withInitial = false)
+                               -> readRequest(type, streamId, flags, withInitial = false)
         FrameType.RequestStream,
         FrameType.RequestChannel
-        -> readRequest(type, streamId, flags, withInitial = true)
-        FrameType.Reserved -> error("Reserved")
+                               -> readRequest(type, streamId, flags, withInitial = true)
+        FrameType.Reserved     -> error("Reserved")
     }
 }

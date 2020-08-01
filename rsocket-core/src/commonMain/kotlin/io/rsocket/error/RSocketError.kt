@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015-2020 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.rsocket.error
 
 sealed class RSocketError(val errorCode: Int, message: String) : Throwable(message) {
@@ -30,22 +46,22 @@ sealed class RSocketError(val errorCode: Int, message: String) : Throwable(messa
 //TODO format error codes 0x%08X or use enum
 internal fun RSocketError(streamId: Int, errorCode: Int, message: String): Throwable =
     when (streamId) {
-        0 -> when (errorCode) {
-            ErrorCode.InvalidSetup -> RSocketError.Setup.Invalid(message)
+        0    -> when (errorCode) {
+            ErrorCode.InvalidSetup     -> RSocketError.Setup.Invalid(message)
             ErrorCode.UnsupportedSetup -> RSocketError.Setup.Unsupported(message)
-            ErrorCode.RejectedSetup -> RSocketError.Setup.Rejected(message)
-            ErrorCode.RejectedResume -> RSocketError.RejectedResume(message)
-            ErrorCode.ConnectionError -> RSocketError.ConnectionError(message)
-            ErrorCode.ConnectionClose -> RSocketError.ConnectionClose(message)
+            ErrorCode.RejectedSetup    -> RSocketError.Setup.Rejected(message)
+            ErrorCode.RejectedResume   -> RSocketError.RejectedResume(message)
+            ErrorCode.ConnectionError  -> RSocketError.ConnectionError(message)
+            ErrorCode.ConnectionClose  -> RSocketError.ConnectionClose(message)
             else                       -> IllegalArgumentException("Invalid Error frame in Stream ID 0: $errorCode '%$message'")
         }
         else -> when (errorCode) {
             ErrorCode.ApplicationError -> RSocketError.ApplicationError(message)
-            ErrorCode.Rejected -> RSocketError.Rejected(message)
-            ErrorCode.Canceled -> RSocketError.Canceled(message)
-            ErrorCode.Invalid -> RSocketError.Invalid(message)
+            ErrorCode.Rejected         -> RSocketError.Rejected(message)
+            ErrorCode.Canceled         -> RSocketError.Canceled(message)
+            ErrorCode.Invalid          -> RSocketError.Invalid(message)
             else                       -> when (errorCode >= ErrorCode.CustomMin || errorCode <= ErrorCode.CustomMax) {
-                true -> RSocketError.Custom(errorCode, message)
+                true  -> RSocketError.Custom(errorCode, message)
                 false -> IllegalArgumentException("Invalid Error frame in Stream ID $streamId: $errorCode '$message'")
             }
         }

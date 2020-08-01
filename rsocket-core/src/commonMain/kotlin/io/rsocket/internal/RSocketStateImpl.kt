@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015-2020 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.rsocket.internal
 
 import io.rsocket.*
@@ -114,24 +130,24 @@ internal class RSocketStateImpl(
 
     private fun handleFrame(responder: RSocketResponder, frame: Frame) {
         when (val streamId = frame.streamId) {
-            0 -> when (frame) {
-                is ErrorFrame -> cancel("Zero stream error", frame.throwable)
-                is KeepAliveFrame -> keepAliveHandler.receive(frame)
-                is LeaseFrame -> error("lease isn't implemented")
+            0    -> when (frame) {
+                is ErrorFrame        -> cancel("Zero stream error", frame.throwable)
+                is KeepAliveFrame    -> keepAliveHandler.receive(frame)
+                is LeaseFrame        -> error("lease isn't implemented")
 
                 is MetadataPushFrame -> responder.handleMetadataPush(frame)
                 else                 -> ignoredFrameConsumer(frame)
             }
             else -> when (frame) {
                 is RequestNFrame -> limits[streamId]?.saveRequest(frame.requestN)
-                is CancelFrame -> senders.remove(streamId)?.cancel()
-                is ErrorFrame -> receivers.remove(streamId)?.close(frame.throwable)
-                is RequestFrame -> when (frame.type) {
-                    FrameType.Payload -> receivers[streamId]?.offer(frame)
-                    FrameType.RequestFnF -> responder.handleFireAndForget(frame)
+                is CancelFrame   -> senders.remove(streamId)?.cancel()
+                is ErrorFrame    -> receivers.remove(streamId)?.close(frame.throwable)
+                is RequestFrame  -> when (frame.type) {
+                    FrameType.Payload         -> receivers[streamId]?.offer(frame)
+                    FrameType.RequestFnF      -> responder.handleFireAndForget(frame)
                     FrameType.RequestResponse -> responder.handlerRequestResponse(frame)
-                    FrameType.RequestStream -> responder.handleRequestStream(frame)
-                    FrameType.RequestChannel -> responder.handleRequestChannel(frame)
+                    FrameType.RequestStream   -> responder.handleRequestStream(frame)
+                    FrameType.RequestChannel  -> responder.handleRequestChannel(frame)
                     else                      -> error("never happens")
                 }
                 else             -> ignoredFrameConsumer(frame)
