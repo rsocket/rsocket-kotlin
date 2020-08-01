@@ -1,7 +1,7 @@
-import dev.whyoleg.rsocket.*
-import dev.whyoleg.rsocket.error.*
-import dev.whyoleg.rsocket.flow.*
-import dev.whyoleg.rsocket.payload.*
+import io.rsocket.*
+import io.rsocket.error.*
+import io.rsocket.flow.*
+import io.rsocket.payload.*
 import kotlinx.coroutines.*
 import kotlin.random.*
 

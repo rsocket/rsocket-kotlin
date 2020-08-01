@@ -1,10 +1,10 @@
 package ws
 
-import dev.whyoleg.rsocket.client.*
 import doSomething
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.features.websocket.*
+import io.rsocket.client.*
 
 expect val engine: HttpClientEngineFactory<*>
 

@@ -1,9 +1,9 @@
 package tcp
 
-import dev.whyoleg.rsocket.*
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.util.*
+import io.rsocket.*
 import kotlinx.coroutines.*
 import rSocketAcceptor
 import java.util.concurrent.*

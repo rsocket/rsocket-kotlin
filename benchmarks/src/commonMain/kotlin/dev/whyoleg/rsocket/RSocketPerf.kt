@@ -1,8 +1,8 @@
-package dev.whyoleg.rsocket
+package io.rsocket
 
-//import dev.whyoleg.rsocket.connection.*
-//import dev.whyoleg.rsocket.flow.*
-//import dev.whyoleg.rsocket.payload.*
+//import io.rsocket.connection.*
+//import io.rsocket.flow.*
+//import io.rsocket.payload.*
 //import kotlinx.coroutines.*
 //import kotlinx.coroutines.channels.*
 //import kotlinx.coroutines.flow.*
