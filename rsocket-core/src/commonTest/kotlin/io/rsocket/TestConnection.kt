@@ -16,6 +16,7 @@
 
 package io.rsocket
 
+import io.ktor.utils.io.core.*
 import io.rsocket.connection.*
 import io.rsocket.frame.*
 import kotlinx.coroutines.*
@@ -24,10 +25,10 @@ import kotlinx.coroutines.flow.*
 
 class TestConnection : Connection {
     override val job: Job = Job()
-    private val sender = Channel<ByteArray>(Channel.UNLIMITED)
-    private val receiver = Channel<ByteArray>(Channel.UNLIMITED)
-    private val _sentFrames = mutableListOf<ByteArray>()
-    val sentFrames: List<Frame> get() = _sentFrames.map { it.toFrame() }
+    private val sender = Channel<ByteReadPacket>(Channel.UNLIMITED)
+    private val receiver = Channel<ByteReadPacket>(Channel.UNLIMITED)
+    private val _sentFrames = mutableListOf<ByteReadPacket>()
+    val sentFrames: List<Frame> get() = _sentFrames.map { it.copy().toFrame() }
 
     init {
         job.invokeOnCompletion {
@@ -36,19 +37,19 @@ class TestConnection : Connection {
         }
     }
 
-    override suspend fun send(bytes: ByteArray) {
-        sender.send(bytes)
-        _sentFrames += bytes
+    override suspend fun send(packet: ByteReadPacket) {
+        sender.send(packet)
+        _sentFrames += packet.copy()
     }
 
-    override suspend fun receive(): ByteArray {
+    override suspend fun receive(): ByteReadPacket {
         return receiver.receive()
     }
 
     suspend fun receiveFromSender() = sender.receive().toFrame()
 
     suspend fun sendToReceiver(vararg frames: Frame) {
-        frames.forEach { receiver.send(it.toByteArray()) }
+        frames.forEach { receiver.send(it.toPacket()) }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

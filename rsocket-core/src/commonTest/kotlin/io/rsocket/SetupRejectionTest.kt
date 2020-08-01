@@ -17,12 +17,12 @@
 package io.rsocket
 
 import io.rsocket.connection.*
+import io.rsocket.core.*
 import io.rsocket.error.*
 import io.rsocket.frame.*
 import io.rsocket.frame.io.*
 import io.rsocket.keepalive.*
 import io.rsocket.payload.*
-import io.rsocket.server.*
 import kotlinx.coroutines.*
 import kotlin.test.*
 

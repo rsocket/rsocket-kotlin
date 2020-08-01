@@ -18,7 +18,7 @@ package io.rsocket.frame
 
 import io.ktor.utils.io.core.*
 
-data class RequestNFrame(
+class RequestNFrame(
     override val streamId: Int,
     val requestN: Int
 ) : Frame(FrameType.RequestN) {

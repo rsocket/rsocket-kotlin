@@ -16,6 +16,7 @@
 
 package io.rsocket.internal
 
+import io.ktor.utils.io.core.*
 import io.rsocket.*
 import io.rsocket.flow.*
 import io.rsocket.frame.*
@@ -29,7 +30,7 @@ internal class RSocketRequester(
 ) : RSocket, RSocketState by state {
     private fun nextStreamId(): Int = streamId.next(streamIds)
 
-    override fun metadataPush(metadata: ByteArray) {
+    override fun metadataPush(metadata: ByteReadPacket) {
         checkAvailable()
         sendPrioritized(MetadataPushFrame(metadata))
     }

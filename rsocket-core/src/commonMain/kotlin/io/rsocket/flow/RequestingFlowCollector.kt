@@ -21,8 +21,8 @@ import kotlinx.coroutines.flow.*
 class RequestingFlowCollector<T>
 @PublishedApi
 internal constructor(
-    private val flowCollector: FlowCollector<T>,
-    internal val requestStrategy: RequestStrategy
+    @PublishedApi internal val flowCollector: FlowCollector<T>,
+    @PublishedApi internal val requestStrategy: RequestStrategy
 ) {
     val initialRequest: Int = requestStrategy.initialRequest
 
@@ -30,15 +30,14 @@ internal constructor(
         require(initialRequest > 0) { "Initial request must be positive, but was '$initialRequest'" }
     }
 
-    suspend inline fun emit(value: T, request: (n: Int) -> Unit = {}) {
-        val n = emitAndRequest(value)
-        if (n > 0) request(n)
+    suspend fun emit(value: T) {
+        requestStrategy.requestOnEmit()
+        flowCollector.emit(value)
     }
 
-    @PublishedApi
-    internal suspend fun emitAndRequest(value: T): Int {
+    suspend inline fun emit(value: T, request: (n: Int) -> Unit) {
         val n = requestStrategy.requestOnEmit()
         flowCollector.emit(value)
-        return n
+        if (n > 0) request(n)
     }
 }

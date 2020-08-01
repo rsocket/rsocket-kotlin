@@ -19,9 +19,9 @@ package io.rsocket.frame
 import io.ktor.utils.io.core.*
 import io.rsocket.frame.io.*
 
-data class ResumeFrame(
+class ResumeFrame(
     val version: Version,
-    val resumeToken: ByteArray,
+    val resumeToken: ByteReadPacket,
     val lastReceivedServerPosition: Long,
     val firstAvailableClientPosition: Long
 ) : Frame(FrameType.Resume) {

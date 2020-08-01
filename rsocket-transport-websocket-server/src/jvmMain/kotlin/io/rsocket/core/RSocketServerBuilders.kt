@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.rsocket.server
+package io.rsocket.core
 
 import io.ktor.application.*
 import io.ktor.http.*
@@ -34,9 +34,6 @@ fun Route.rSocket(path: String, protocol: String? = null, acceptor: RSocketAccep
 fun Route.rSocket(protocol: String? = null, acceptor: RSocketAcceptor) {
     val feature = application.feature(RSocketServerSupport)
     webSocket(protocol) {
-        val connection = KtorWebSocketConnection(this)
-        val connectionProvider = ConnectionProvider(connection)
-        val server = RSocketServer(connectionProvider, feature.configuration)
-        server.start(acceptor).join()
+        connection.startServer(feature.configuration, acceptor).join()
     }
 }

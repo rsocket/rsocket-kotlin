@@ -16,9 +16,21 @@
 
 package io.rsocket.connection
 
+import io.ktor.utils.io.core.*
 import io.rsocket.*
+import io.rsocket.core.*
+import kotlinx.coroutines.*
 
 interface Connection : Cancelable {
-    suspend fun send(bytes: ByteArray)
-    suspend fun receive(): ByteArray
+    suspend fun send(packet: ByteReadPacket)
+    suspend fun receive(): ByteReadPacket
 }
+
+suspend fun Connection.connectClient(
+    configuration: RSocketConnectorConfiguration = RSocketConnectorConfiguration()
+): RSocket = RSocketConnector(ConnectionProvider(this), configuration).connect()
+
+suspend fun Connection.startServer(
+    configuration: RSocketServerConfiguration = RSocketServerConfiguration(),
+    acceptor: RSocketAcceptor
+): Job = RSocketServer(ConnectionProvider(this), configuration).start(acceptor)

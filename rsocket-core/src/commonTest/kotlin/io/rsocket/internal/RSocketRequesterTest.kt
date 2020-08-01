@@ -155,9 +155,9 @@ class RSocketRequesterTest {
         val delay = Job()
         val request = flow {
             delay.join()
-            emit(Payload(null, "INIT".encodeToByteArray()))
+            emit(Payload("INIT".encodeToByteArray()))
             repeat(1000) {
-                emit(Payload(null, it.toString().encodeToByteArray()))
+                emit(Payload(it.toString().encodeToByteArray()))
             }
         }
 
@@ -172,7 +172,7 @@ class RSocketRequesterTest {
         assertTrue(requestFrame is RequestFrame)
         assertEquals(FrameType.RequestChannel, requestFrame.type)
         assertEquals(Int.MAX_VALUE, requestFrame.initialRequest)
-        assertEquals("INIT", requestFrame.payload.data.decodeToString())
+        assertEquals("INIT", requestFrame.payload.data.readText())
     }
 
     private fun streamIsTerminatedOnConnectionClose(request: suspend () -> Unit) = test {

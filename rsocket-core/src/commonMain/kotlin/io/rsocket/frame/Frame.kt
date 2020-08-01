@@ -28,40 +28,38 @@ abstract class Frame(open val type: FrameType) {
 
     protected abstract fun Output.writeSelf()
 
-    fun toByteArray(): ByteArray {
+    fun toPacket(): ByteReadPacket {
         check(type.canHaveMetadata || !(flags check Flags.Metadata)) { "bad value for metadata flag" }
         return buildPacket {
             writeInt(streamId)
             writeShort((type.encodedType shl FrameTypeShift or flags).toShort())
             writeSelf()
-        }.readBytes()
+        }
     }
 }
 
-fun ByteArray.toFrame(): Frame = ByteReadPacket(this).run {
+fun ByteReadPacket.toFrame(): Frame {
     val streamId = readInt()
     val typeAndFlags = readShort().toInt() and 0xFFFF
     val flags = typeAndFlags and FlagsMask
-    when (val type = FrameType(typeAndFlags shr FrameTypeShift)) {
+    return when (val type = FrameType(typeAndFlags shr FrameTypeShift)) {
         //stream id = 0
-        FrameType.Setup        -> readSetup(flags)
-        FrameType.Resume       -> readResume()
-        FrameType.ResumeOk     -> readResumeOk()
-        FrameType.MetadataPush -> readMetadataPush()
-        FrameType.Lease        -> readLease(flags)
-        FrameType.KeepAlive    -> readKeepAlive(flags)
+        FrameType.Setup           -> readSetup(flags)
+        FrameType.Resume          -> readResume()
+        FrameType.ResumeOk        -> readResumeOk()
+        FrameType.MetadataPush    -> readMetadataPush()
+        FrameType.Lease           -> readLease(flags)
+        FrameType.KeepAlive       -> readKeepAlive(flags)
         //stream id != 0
-        FrameType.Cancel       -> CancelFrame(streamId)
-        FrameType.Error        -> readError(streamId)
-        FrameType.RequestN     -> readRequestN(streamId)
-        FrameType.Extension    -> readExtension(streamId, flags)
+        FrameType.Cancel          -> CancelFrame(streamId)
+        FrameType.Error           -> readError(streamId)
+        FrameType.RequestN        -> readRequestN(streamId)
+        FrameType.Extension       -> readExtension(streamId, flags)
         FrameType.Payload,
         FrameType.RequestFnF,
-        FrameType.RequestResponse
-                               -> readRequest(type, streamId, flags, withInitial = false)
+        FrameType.RequestResponse -> readRequest(type, streamId, flags, withInitial = false)
         FrameType.RequestStream,
-        FrameType.RequestChannel
-                               -> readRequest(type, streamId, flags, withInitial = true)
-        FrameType.Reserved     -> error("Reserved")
+        FrameType.RequestChannel  -> readRequest(type, streamId, flags, withInitial = true)
+        FrameType.Reserved        -> error("Reserved")
     }
 }

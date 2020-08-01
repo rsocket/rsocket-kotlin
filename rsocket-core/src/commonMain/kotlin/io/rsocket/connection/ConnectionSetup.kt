@@ -20,7 +20,7 @@ import io.rsocket.frame.*
 import io.rsocket.keepalive.*
 import io.rsocket.payload.*
 
-data class ConnectionSetup(
+class ConnectionSetup(
     val honorLease: Boolean,
     val keepAlive: KeepAlive,
     val payloadMimeType: PayloadMimeType,

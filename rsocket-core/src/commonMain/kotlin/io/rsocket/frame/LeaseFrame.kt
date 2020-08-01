@@ -19,10 +19,10 @@ package io.rsocket.frame
 import io.ktor.utils.io.core.*
 import io.rsocket.frame.io.*
 
-data class LeaseFrame(
+class LeaseFrame(
     val ttl: Int,
     val numberOfRequests: Int,
-    val metadata: ByteArray?
+    val metadata: ByteReadPacket?
 ) : Frame(FrameType.Lease) {
     override val streamId: Int get() = 0
     override val flags: Int get() = if (metadata != null) Flags.Metadata else 0

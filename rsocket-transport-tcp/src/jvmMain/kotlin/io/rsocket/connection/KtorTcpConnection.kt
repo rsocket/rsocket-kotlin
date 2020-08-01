@@ -23,25 +23,26 @@ import io.ktor.utils.io.core.*
 import io.rsocket.frame.io.*
 import kotlinx.coroutines.*
 
+val Socket.connection: Connection get() = KtorTcpConnection(this)
+
 //TODO need to check and extract length support!!
 @OptIn(KtorExperimentalAPI::class)
-class KtorTcpConnection(private val socket: Socket) : Connection {
+private class KtorTcpConnection(private val socket: Socket) : Connection {
     override val job: Job get() = socket.socketContext
 
     private val readChannel = socket.openReadChannel()
     private val writeChannel = socket.openWriteChannel(true)
 
-    override suspend fun send(bytes: ByteArray) {
-        val length = bytes.size
-        writeChannel.writePacket {
-            writeLength(length)
-            writeFully(bytes)
-        }
+    override suspend fun send(packet: ByteReadPacket): Unit = writeChannel.run {
+        val length = packet.remaining.toInt()
+//        println("WRITE: $length")
+        writePacket { writeLength(length) }
+        writePacket(packet)
     }
 
-    override suspend fun receive(): ByteArray = readChannel.run {
+    override suspend fun receive(): ByteReadPacket = readChannel.run {
         val length = readPacket(3).readLength()
-        val bytes = readPacket(length).readBytes()
-        bytes
+//        println("READ:  $length")
+        readPacket(length)
     }
 }

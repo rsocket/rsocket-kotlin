@@ -21,4 +21,4 @@ import kotlin.time.*
 
 expect fun test(timeout: Duration? = 10.seconds, block: suspend CoroutineScope.() -> Unit)
 
-fun readLargePayload(name: String): String = "big"
+fun readLargePayload(name: String): String = name.repeat(1000)

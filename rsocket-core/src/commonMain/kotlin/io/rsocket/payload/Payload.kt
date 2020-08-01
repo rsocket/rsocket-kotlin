@@ -16,15 +16,33 @@
 
 package io.rsocket.payload
 
-//TODO remove data
-data class Payload(
-    val metadata: ByteArray?,
-    val data: ByteArray
+import io.ktor.utils.io.core.*
+
+class Payload(
+    val data: ByteReadPacket,
+    val metadata: ByteReadPacket? = null
 ) {
     companion object {
-        val Empty = Payload(null, byteArrayOf())
+        val Empty = Payload(ByteReadPacket.Empty)
     }
 }
 
+fun Payload.copy(): Payload = Payload(data.copy(), metadata?.copy())
+
+fun Payload.release() {
+    data.release()
+    metadata?.release()
+}
+
+@Suppress("FunctionName")
 @OptIn(ExperimentalStdlibApi::class)
-fun Payload(metadata: String?, data: String): Payload = Payload(metadata?.encodeToByteArray(), data.encodeToByteArray())
+fun Payload(data: String, metadata: String? = null): Payload = Payload(
+    data = buildPacket { writeText(data) },
+    metadata = metadata?.let { buildPacket { writeText(it) } }
+)
+
+@Suppress("FunctionName")
+fun Payload(data: ByteArray, metadata: ByteArray? = null): Payload = Payload(
+    data = ByteReadPacket(data),
+    metadata = metadata?.let { ByteReadPacket(it) }
+)

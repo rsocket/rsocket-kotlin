@@ -19,10 +19,10 @@ package io.rsocket.frame
 import io.ktor.utils.io.core.*
 import io.rsocket.error.*
 
-data class ErrorFrame(
+class ErrorFrame(
     override val streamId: Int,
     val throwable: Throwable,
-    val data: ByteArray? = null
+    val data: ByteReadPacket? = null
 ) : Frame(FrameType.Error) {
     override val flags: Int get() = 0
     val errorCode get() = (throwable as? RSocketError)?.errorCode ?: ErrorCode.ApplicationError
@@ -31,7 +31,7 @@ data class ErrorFrame(
         writeInt(errorCode)
         when (data) {
             null -> writeText(throwable.message ?: "")
-            else -> writeFully(data)
+            else -> writePacket(data)
         }
     }
 }

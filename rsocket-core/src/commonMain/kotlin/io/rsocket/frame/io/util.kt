@@ -21,15 +21,16 @@ import io.rsocket.keepalive.*
 import io.rsocket.payload.*
 import kotlin.time.*
 
-fun Input.readResumeToken(): ByteArray {
+fun Input.readResumeToken(): ByteReadPacket {
     val length = readShort().toInt() and 0xFFFF
-    return readBytes(length)
+    return readPacket(length)
 }
 
-fun Output.writeResumeToken(resumeToken: ByteArray?) {
+fun Output.writeResumeToken(resumeToken: ByteReadPacket?) {
     resumeToken?.let {
-        writeShort(it.size.toShort())
-        writeFully(it)
+        val length = it.remaining
+        writeShort(length.toShort())
+        writePacket(it)
     }
 }
 

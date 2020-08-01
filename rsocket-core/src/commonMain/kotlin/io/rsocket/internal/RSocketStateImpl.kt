@@ -168,7 +168,7 @@ internal class RSocketStateImpl(
             prioritizer.close(error)
         }
         scope.launch {
-            while (connection.isActive) connection.send(prioritizer.receive().toByteArray())
+            while (connection.isActive) connection.send(prioritizer.receive().toPacket())
         }
         scope.launch {
             while (connection.isActive) handleFrame(responder, connection.receive().toFrame())

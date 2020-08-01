@@ -17,27 +17,51 @@
 package io.rsocket.frame.io
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
 import io.rsocket.payload.*
 
-fun Input.readMetadata(): ByteArray {
+fun Input.readMetadata(): ByteReadPacket {
     val length = readLength()
-    return readBytes(length)
+    return readPacket(length)
 }
 
-fun Output.writeMetadata(metadata: ByteArray?) {
+fun Output.writeMetadata(metadata: ByteReadPacket?) {
     metadata?.let {
-        writeLength(it.size)
-        writeFully(it)
+        writeLength(it.remaining.toInt())
+        writePacket(it)
     }
 }
 
 fun Input.readPayload(flags: Int): Payload {
     val metadata = if (flags check Flags.Metadata) readMetadata() else null
-    val data = readBytes()
-    return Payload(metadata, data)
+    val data = readPacket()
+    return Payload(data, metadata)
 }
 
 fun Output.writePayload(payload: Payload) {
     writeMetadata(payload.metadata)
-    writeFully(payload.data)
+    writePacket(payload.data)
+}
+
+@OptIn(DangerousInternalIoApi::class)
+fun Input.readPacket(): ByteReadPacket {
+    if (endOfInput) return ByteReadPacket.Empty
+    return buildPacket {
+        writeWhileSize {
+            readAvailable(it)
+        }
+    }
+}
+
+@OptIn(DangerousInternalIoApi::class)
+fun Input.readPacket(length: Int): ByteReadPacket {
+    if (length == 0) return ByteReadPacket.Empty
+    return buildPacket {
+        var remaining = length
+        writeWhileSize {
+            val count = minOf(remaining, it.writeRemaining)
+            remaining -= readAvailable(it, count)
+            remaining
+        }
+    }
 }

@@ -16,19 +16,32 @@
 
 package io.rsocket
 
+import io.ktor.utils.io.core.*
 import io.rsocket.flow.*
 import io.rsocket.payload.*
 import kotlinx.coroutines.flow.*
 
 interface RSocket : Cancelable {
 
-    fun metadataPush(metadata: ByteArray): Unit = notImplemented("Metadata Push")
+    fun metadataPush(metadata: ByteReadPacket) {
+        metadata.release()
+        notImplemented("Metadata Push")
+    }
 
-    fun fireAndForget(payload: Payload): Unit = notImplemented("Fire and Forget")
+    fun fireAndForget(payload: Payload) {
+        payload.release()
+        notImplemented("Fire and Forget")
+    }
 
-    suspend fun requestResponse(payload: Payload): Payload = notImplemented("Request Response")
+    suspend fun requestResponse(payload: Payload): Payload {
+        payload.release()
+        notImplemented("Request Response")
+    }
 
-    fun requestStream(payload: Payload): RequestingFlow<Payload> = notImplemented("Request Stream")
+    fun requestStream(payload: Payload): RequestingFlow<Payload> {
+        payload.release()
+        notImplemented("Request Stream")
+    }
 
     fun requestChannel(payloads: RequestingFlow<Payload>): RequestingFlow<Payload> = notImplemented("Request Channel")
 }

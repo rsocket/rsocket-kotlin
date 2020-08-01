@@ -18,7 +18,7 @@ package io.rsocket.frame
 
 import io.ktor.utils.io.core.*
 
-data class ResumeOkFrame(
+class ResumeOkFrame(
     val lastReceivedClientPosition: Long
 ) : Frame(FrameType.ResumeOk) {
     override val streamId: Int get() = 0

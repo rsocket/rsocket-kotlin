@@ -16,6 +16,7 @@
 
 package io.rsocket
 
+import io.ktor.utils.io.core.*
 import io.rsocket.flow.*
 import io.rsocket.payload.*
 import kotlinx.coroutines.*
@@ -45,7 +46,7 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
             1    -> ""
             else -> MOCK_METADATA
         }
-        return Payload(metadata, MOCK_DATA)
+        return Payload(MOCK_DATA, metadata)
     }
 
     @Test
@@ -64,14 +65,14 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
     @Test
     fun metadataPush10() = test(timeout) {
         val client = client()
-        (1..10).map { async { client.metadataPush(MOCK_DATA.encodeToByteArray()) } }.awaitAll()
+        (1..10).map { async { client.metadataPush(ByteReadPacket(MOCK_DATA.encodeToByteArray())) } }.awaitAll()
     }
 
     @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun largePayloadMetadataPush10() = test(timeout) {
         val client = client()
-        (1..10).map { async { client.metadataPush(LARGE_DATA.encodeToByteArray()) } }.awaitAll()
+        (1..10).map { async { client.metadataPush(ByteReadPacket(LARGE_DATA.encodeToByteArray())) } }.awaitAll()
     }
 
     @Test
@@ -84,7 +85,7 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
     @Test
     fun requestChannel1() = test(10.seconds) {
         val client = client()
-        val list = client.requestChannel(flowOf(Payload(0))).toList()
+        val list = client.requestChannel(flowOf(Payload(0))).onEach { it.release() }.toList()
         assertEquals(1, list.size)
     }
 
@@ -94,7 +95,7 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
         val request = RequestingFlow {
             repeat(3) { emit(Payload(it)) }
         }
-        val list = client.requestChannel(request).requesting(RequestStrategy(3)).toList()
+        val list = client.requestChannel(request).requesting(RequestStrategy(3)).onEach { it.release() }.toList()
         assertEquals(3, list.size)
     }
 
@@ -104,7 +105,7 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
         val request = RequestingFlow {
             repeat(200) { emit(LARGE_PAYLOAD) }
         }
-        val list = client.requestChannel(request).requesting(RequestStrategy(Int.MAX_VALUE)).toList()
+        val list = client.requestChannel(request).requesting(RequestStrategy(Int.MAX_VALUE)).onEach { it.release() }.toList()
         assertEquals(200, list.size)
     }
 
@@ -116,8 +117,8 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
             repeat(20_000) { emit(Payload(7)) }
         }
         val list = client.requestChannel(request).requesting(RequestStrategy(Int.MAX_VALUE)).onEach {
-            assertEquals(MOCK_DATA, it.data.decodeToString())
-            assertEquals(MOCK_METADATA, it.metadata?.decodeToString())
+            assertEquals(MOCK_DATA, it.data.readText())
+            assertEquals(MOCK_METADATA, it.metadata?.readText())
         }.toList()
         assertEquals(20_000, list.size)
     }
@@ -128,32 +129,32 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
         val request = RequestingFlow {
             repeat(200_000) { emit(Payload(it)) }
         }
-        val list = client.requestChannel(request).requesting(RequestStrategy(Int.MAX_VALUE)).toList()
+        val list = client.requestChannel(request).requesting(RequestStrategy(Int.MAX_VALUE)).onEach { it.release() }.toList()
         assertEquals(200_000, list.size)
     }
 
-    //    @Test
+    @Test
     fun requestChannel2000000() = test(3.minutes) {
         val client = client()
         val request = RequestingFlow {
             repeat(2_000_000) { emit(Payload(it)) }
         }
-        val list = client.requestChannel(request).requesting(RequestStrategy(Int.MAX_VALUE)).toList()
+        val list = client.requestChannel(request).requesting(RequestStrategy(Int.MAX_VALUE)).onEach { it.release() }.toList()
         assertEquals(2_000_000, list.size)
     }
 
     @Test
-    fun requestChannel512x1024() = test(null) {
+    fun requestChannel256x512() = test(null) {
         val client = client()
         val request = RequestingFlow {
             repeat(512) {
                 emit(Payload(it))
             }
         }
-        (0..1024).map {
-            async {
+        (0..256).map {
+            async(Dispatchers.Default) {
                 withTimeout(3.minutes) {
-                    val list = client.requestChannel(request).toList()
+                    val list = client.requestChannel(request).onEach { it.release() }.toList()
                     assertEquals(512, list.size)
                 }
             }
@@ -181,7 +182,7 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
     @Test
     fun largePayloadRequestResponse100() = test(timeout) {
         val client = client()
-        (1..100).map { async { client.requestResponse(LARGE_PAYLOAD) } }.awaitAll()
+        (1..100).map { async { client.requestResponse(LARGE_PAYLOAD) } }.awaitAll().onEach { it.release() }
     }
 
     @Test
@@ -206,8 +207,8 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
 
     @OptIn(ExperimentalStdlibApi::class)
     fun checkPayload(payload: Payload) {
-        assertEquals(TestRSocket.data, payload.data.decodeToString())
-        assertEquals(TestRSocket.metadata, payload.metadata?.decodeToString())
+        assertEquals(TestRSocket.data, payload.data.readText())
+        assertEquals(TestRSocket.metadata, payload.metadata?.readText())
     }
 
     companion object {
@@ -221,20 +222,21 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
 class TestRSocket : RSocket {
     override val job: Job = Job()
 
-    override fun metadataPush(metadata: ByteArray): Unit = Unit
+    override fun metadataPush(metadata: ByteReadPacket): Unit = metadata.release()
 
-    override fun fireAndForget(payload: Payload): Unit = Unit
+    override fun fireAndForget(payload: Payload): Unit = payload.release()
 
-    override suspend fun requestResponse(payload: Payload): Payload = Payload(metadata, data)
+    override suspend fun requestResponse(payload: Payload): Payload {
+        payload.release()
+        return Payload(data, metadata)
+    }
 
     override fun requestStream(payload: Payload): RequestingFlow<Payload> = RequestingFlow {
         repeat(10000) { emit(requestResponse(payload)) }
     }
 
-    override fun requestChannel(payloads: RequestingFlow<Payload>): RequestingFlow<Payload> {
-        return RequestingFlow {
-            payloads.collect { emit(it) }
-        }
+    override fun requestChannel(payloads: RequestingFlow<Payload>): RequestingFlow<Payload> = RequestingFlow {
+        payloads.collect { emit(it) }
     }
 
     companion object {

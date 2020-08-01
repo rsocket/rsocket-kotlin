@@ -16,23 +16,27 @@
 
 package io.rsocket.connection
 
+import io.ktor.utils.io.core.*
 import io.rsocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 
 class LocalConnection(
     private val name: String,
-    private val sender: Channel<ByteArray>,
-    private val receiver: Channel<ByteArray>,
+    private val sender: Channel<ByteReadPacket>,
+    private val receiver: Channel<ByteReadPacket>,
     parentJob: Job? = null
 ) : Connection, Cancelable {
     override val job: Job = Job(parentJob)
 
-    override suspend fun send(bytes: ByteArray) {
-        sender.send(bytes)
+    override suspend fun send(packet: ByteReadPacket) {
+//        println("SEND: ${packet.copy().readBytes().contentToString()}")
+        sender.send(packet)
     }
 
-    override suspend fun receive(): ByteArray {
-        return receiver.receive()
+    override suspend fun receive(): ByteReadPacket {
+        return receiver.receive().also {
+//            println("RECEIVE: ${it.copy().readBytes().contentToString()}")
+        }
     }
 }

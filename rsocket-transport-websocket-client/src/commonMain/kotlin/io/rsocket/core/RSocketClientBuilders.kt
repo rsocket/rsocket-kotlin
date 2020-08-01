@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.rsocket.client
+package io.rsocket.core
 
 import io.ktor.client.*
 import io.ktor.client.request.*

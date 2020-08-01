@@ -22,8 +22,7 @@ import io.ktor.client.features.websocket.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.util.*
-import io.rsocket.client.*
-import io.rsocket.server.*
+import io.rsocket.core.*
 import io.ktor.client.engine.cio.CIO as ClientCIO
 import io.ktor.server.cio.CIO as ServerCIO
 

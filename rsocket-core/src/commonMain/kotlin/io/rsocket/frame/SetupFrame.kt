@@ -24,11 +24,11 @@ import io.rsocket.payload.*
 private const val HonorLeaseFlag = 64
 private const val ResumeEnabledFlag = 128
 
-data class SetupFrame constructor(
+class SetupFrame(
     val version: Version, //TODO check
     val honorLease: Boolean,
     val keepAlive: KeepAlive,
-    val resumeToken: ByteArray?,
+    val resumeToken: ByteReadPacket?,
     val payloadMimeType: PayloadMimeType,
     val payload: Payload
 ) : Frame(FrameType.Setup) {

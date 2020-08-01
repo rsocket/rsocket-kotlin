@@ -16,12 +16,13 @@
 
 package io.rsocket
 
+import io.ktor.utils.io.core.*
 import io.rsocket.flow.*
 import io.rsocket.payload.*
 import kotlinx.coroutines.*
 
 class RSocketRequestHandlerBuilder internal constructor(private val job: Job) {
-    var metadataPush: (RSocket.(metadata: ByteArray) -> Unit)? = null
+    var metadataPush: (RSocket.(metadata: ByteReadPacket) -> Unit)? = null
     var fireAndForget: (RSocket.(payload: Payload) -> Unit)? = null
     var requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null
     var requestStream: (RSocket.(payload: Payload) -> RequestingFlow<Payload>)? = null
@@ -39,13 +40,13 @@ fun RSocketRequestHandler(parentJon: Job? = null, configure: RSocketRequestHandl
 
 private class RSocketRequestHandler(
     override val job: Job,
-    private val metadataPush: (RSocket.(metadata: ByteArray) -> Unit)? = null,
+    private val metadataPush: (RSocket.(metadata: ByteReadPacket) -> Unit)? = null,
     private val fireAndForget: (RSocket.(payload: Payload) -> Unit)? = null,
     private val requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null,
     private val requestStream: (RSocket.(payload: Payload) -> RequestingFlow<Payload>)? = null,
     private val requestChannel: (RSocket.(payloads: RequestingFlow<Payload>) -> RequestingFlow<Payload>)? = null
 ) : RSocket {
-    override fun metadataPush(metadata: ByteArray): Unit =
+    override fun metadataPush(metadata: ByteReadPacket): Unit =
         metadataPush?.invoke(this, metadata) ?: super.metadataPush(metadata)
 
     override fun fireAndForget(payload: Payload): Unit =

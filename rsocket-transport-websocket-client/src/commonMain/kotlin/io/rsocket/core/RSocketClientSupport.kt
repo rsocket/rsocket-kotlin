@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.rsocket.client
+package io.rsocket.core
 
 import io.ktor.client.*
 import io.ktor.client.features.*
@@ -29,7 +29,7 @@ import io.rsocket.payload.*
 import io.rsocket.plugin.*
 
 class RSocketClientSupport(
-    private val configuration: RSocketClientConfiguration
+    private val configuration: RSocketConnectorConfiguration
 ) {
 
     class Config internal constructor() {
@@ -43,7 +43,7 @@ class RSocketClientSupport(
         var acceptor: RSocketAcceptor = { RSocketRequestHandler { } }
 
         internal fun build(): RSocketClientSupport = RSocketClientSupport(
-            RSocketClientConfiguration(
+            RSocketConnectorConfiguration(
                 plugin = plugin,
                 fragmentation = fragmentation,
                 keepAlive = keepAlive,
@@ -64,10 +64,7 @@ class RSocketClientSupport(
             scope.responsePipeline.intercept(HttpResponsePipeline.After) { (info, session) ->
                 if (session !is WebSocketSession) return@intercept
                 if (info.type != RSocket::class) return@intercept
-                val connection = KtorWebSocketConnection(session)
-                val transport = ConnectionProvider(connection)
-                val client = RSocketClient(transport, feature.configuration)
-                val rSocket = client.connect()
+                val rSocket = session.connection.connectClient(feature.configuration)
                 val response = HttpResponseContainer(info, rSocket)
                 proceedWith(response)
             }

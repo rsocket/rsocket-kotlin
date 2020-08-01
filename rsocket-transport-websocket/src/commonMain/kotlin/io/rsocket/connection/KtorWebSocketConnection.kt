@@ -17,19 +17,21 @@
 package io.rsocket.connection
 
 import io.ktor.http.cio.websocket.*
+import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
 
-class KtorWebSocketConnection(private val session: WebSocketSession) : Connection {
+val WebSocketSession.connection: Connection get() = KtorWebSocketConnection(this)
+
+private class KtorWebSocketConnection(private val session: WebSocketSession) : Connection {
+
     override val job: Job get() = session.coroutineContext[Job]!!
 
-    override suspend fun send(bytes: ByteArray) {
-//        println("SEND: $frame")
-        session.send(bytes)
+    override suspend fun send(packet: ByteReadPacket) {
+        session.send(Frame.Binary(true, packet))
     }
 
-    override suspend fun receive(): ByteArray {
-        val frame = session.incoming.receive().data
-//        println("RECEIVE: $frame")
-        return frame
+    override suspend fun receive(): ByteReadPacket {
+        return ByteReadPacket(session.incoming.receive().data)
     }
+
 }

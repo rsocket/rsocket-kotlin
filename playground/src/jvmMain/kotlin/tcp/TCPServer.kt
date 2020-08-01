@@ -19,7 +19,7 @@ package tcp
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.util.*
-import io.rsocket.*
+import io.rsocket.core.*
 import kotlinx.coroutines.*
 import rSocketAcceptor
 import java.util.concurrent.*

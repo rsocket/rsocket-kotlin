@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.rsocket.server
+package io.rsocket.core
 
 import io.rsocket.*
 import io.rsocket.connection.*
@@ -58,7 +58,7 @@ class RSocketServer(
     }
 
     private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
-        send(ErrorFrame(0, error).toByteArray())
+        send(ErrorFrame(0, error).toPacket())
         cancel("Setup failed", error)
         throw error
     }

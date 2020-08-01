@@ -20,7 +20,7 @@ import io.ktor.utils.io.core.*
 import io.rsocket.frame.io.*
 import io.rsocket.payload.*
 
-data class ExtensionFrame(
+class ExtensionFrame(
     override val streamId: Int,
     val extendedType: Int,
     val payload: Payload

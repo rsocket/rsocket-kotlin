@@ -16,6 +16,7 @@
 
 package io.rsocket.internal
 
+import io.ktor.utils.io.core.*
 import io.rsocket.*
 import io.rsocket.connection.*
 import io.rsocket.error.*
@@ -34,21 +35,21 @@ class RSocketTest {
     lateinit var requester: RSocket
 
     private fun start(handler: RSocket? = null) {
-        val clientChannel = Channel<ByteArray>(Channel.UNLIMITED)
-        val serverChannel = Channel<ByteArray>(Channel.UNLIMITED)
+        val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
+        val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
         val serverConnection = LocalConnection("server", clientChannel, serverChannel)
         val clientConnection = LocalConnection("client", serverChannel, clientChannel)
         val requestHandler = handler ?: RSocketRequestHandler {
             requestResponse = { it }
             requestStream = {
                 RequestingFlow {
-                    repeat(10) { emit(Payload(null, "server got -> [$it]")) }
+                    repeat(10) { emit(Payload("server got -> [$it]")) }
                 }
             }
             requestChannel = {
                 it.launchIn(CoroutineScope(job))
                 RequestingFlow {
-                    repeat(10) { emit(Payload(null, "server got -> [$it]")) }
+                    repeat(10) { emit(Payload("server got -> [$it]")) }
                 }
             }
         }
@@ -65,7 +66,7 @@ class RSocketTest {
     @Test
     fun testRequestResponseNoError() = test {
         start()
-        requester.requestResponse(Payload(null, "HELLO"))
+        requester.requestResponse(Payload("HELLO"))
     }
 
     @Test
@@ -73,7 +74,7 @@ class RSocketTest {
         start(RSocketRequestHandler {
             requestResponse = { error("stub") }
         })
-        assertFailsWith(RSocketError.ApplicationError::class) { requester.requestResponse(Payload(null, "HELLO")) }
+        assertFailsWith(RSocketError.ApplicationError::class) { requester.requestResponse(Payload("HELLO")) }
     }
 
     @Test
@@ -81,7 +82,7 @@ class RSocketTest {
         start(RSocketRequestHandler {
             requestResponse = { throw RSocketError.Custom(0x00000501, "stub") }
         })
-        val error = assertFailsWith(RSocketError.Custom::class) { requester.requestResponse(Payload(null, "HELLO")) }
+        val error = assertFailsWith(RSocketError.Custom::class) { requester.requestResponse(Payload("HELLO")) }
         assertEquals(0x00000501, error.errorCode)
     }
 
@@ -95,7 +96,7 @@ class RSocketTest {
     @Test
     fun testChannel() = test {
         start()
-        val request = (1..10).asFlow().map { Payload(null, it.toString()) }
+        val request = (1..10).asFlow().map { Payload(it.toString()) }
         val response = requester.requestChannel(request).toList()
         assertEquals(10, response.size)
     }
@@ -118,25 +119,25 @@ class RSocketTest {
         start(RSocketRequestHandler {
             requestChannel = { it.requesting(RequestStrategy(3)).take(3).onRequest() }
         })
-        val request = (1..3).asFlow().map { Payload(null, it.toString()) }
+        val request = (1..3).asFlow().map { Payload(it.toString()) }
         val response = requester.requestChannel(request).requesting(RequestStrategy(3)).toList()
         assertEquals(3, response.size)
     }
 
     private val requesterPayloads = listOf(
-        Payload("m1", "d1"),
-        Payload(null, "d2"),
-        Payload("m3", "d3"),
-        Payload(null, "d4"),
-        Payload("m5", "d5")
+        Payload("d1", "m1"),
+        Payload("d2"),
+        Payload("d3", "m3"),
+        Payload("d4"),
+        Payload("d5", "m5")
     )
 
     private val responderPayloads = listOf(
-        Payload("rm1", "rd1"),
-        Payload(null, "rd2"),
-        Payload("rm3", "rd3"),
-        Payload(null, "rd4"),
-        Payload("rm5", "rd5")
+        Payload("rd1", "rm1"),
+        Payload("rd2"),
+        Payload("rd3", "rm3"),
+        Payload("rd4"),
+        Payload("rd5", "rm5")
     )
 
     @Test
@@ -227,11 +228,11 @@ class RSocketTest {
         val requesterReceiveChannel =
             requester.requestChannel(requesterSendChannel.consumeAsFlow()).produceIn(CoroutineScope(requester.job))
 
-        requesterSendChannel.send(Payload("initMetadata", "initData"))
+        requesterSendChannel.send(Payload("initData", "initMetadata"))
 
         val responderReceiveChannel = responderDeferred.await()
 
-        responderReceiveChannel.checkReceived(Payload("initMetadata", "initData"))
+        responderReceiveChannel.checkReceived(Payload("initData", "initMetadata"))
         return requesterReceiveChannel to responderReceiveChannel
     }
 
@@ -257,15 +258,15 @@ class RSocketTest {
         delay(100)
         assertFalse(requesterChannel.isClosedForSend)
         assertFalse(responderChannel.isClosedForReceive)
-        payloads.forEach { requesterChannel.send(it) }
+        payloads.forEach { requesterChannel.send(it.copy()) } //TODO?
         payloads.forEach { responderChannel.checkReceived(it) }
     }
 
     @OptIn(ExperimentalStdlibApi::class)
     private suspend fun ReceiveChannel<Payload>.checkReceived(otherPayload: Payload) {
         val payload = receive()
-        assertEquals(payload.metadata?.decodeToString(), otherPayload.metadata?.decodeToString())
-        assertEquals(payload.data.decodeToString(), otherPayload.data.decodeToString())
+        assertEquals(payload.metadata?.readText(), otherPayload.metadata?.readText())
+        assertEquals(payload.data.readText(), otherPayload.data.readText())
     }
 
 }

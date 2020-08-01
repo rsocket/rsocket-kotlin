@@ -20,7 +20,7 @@ import doSomething
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.features.websocket.*
-import io.rsocket.client.*
+import io.rsocket.core.*
 
 expect val engine: HttpClientEngineFactory<*>
 

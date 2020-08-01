@@ -16,6 +16,7 @@
 
 package io.rsocket.keepalive
 
+import io.ktor.utils.io.core.*
 import io.rsocket.error.*
 import io.rsocket.frame.*
 import kotlinx.atomicfu.*
@@ -45,7 +46,7 @@ internal class KeepAliveHandler(
                 if (lastMark.value!!.elapsedNow() >= keepAlive.maxLifetime) {
                     throw RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetime}")
                 }
-                offerFrame(KeepAliveFrame(true, 0, byteArrayOf()))
+                offerFrame(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
             }
         }
     }
