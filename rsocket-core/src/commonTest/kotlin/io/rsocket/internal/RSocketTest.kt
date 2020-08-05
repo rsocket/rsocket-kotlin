@@ -29,8 +29,6 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
-@FlowPreview
-@OptIn(ExperimentalCoroutinesApi::class)
 class RSocketTest {
     lateinit var requester: RSocket
 
@@ -262,7 +260,6 @@ class RSocketTest {
         payloads.forEach { responderChannel.checkReceived(it) }
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     private suspend fun ReceiveChannel<Payload>.checkReceived(otherPayload: Payload) {
         val payload = receive()
         assertEquals(payload.metadata?.readText(), otherPayload.metadata?.readText())

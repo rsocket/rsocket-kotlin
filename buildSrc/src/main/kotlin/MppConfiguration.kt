@@ -15,6 +15,8 @@
  */
 
 import dev.whyoleg.kamp.feature.kotlin.*
+import dev.whyoleg.kamp.feature.kotlinx.*
+import dev.whyoleg.kamp.feature.ktor.*
 import org.gradle.api.*
 import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.*
@@ -45,9 +47,17 @@ inline fun Project.configureMultiplatform(crossinline block: KotlinMultiplatform
                 }
             }
         }
-        languageSettings {
+        languageSettings { sourceSet ->
             default()
             useExperimentalAnnotation(KotlinOptIn.experimentalTime)
+            if (sourceSet.name.contains("test", ignoreCase = true)) {
+                useExperimentalAnnotation(KotlinOptIn.experimentalStdlibApi)
+                useExperimentalAnnotation(KotlinxOptIn.experimentalCoroutinesApi)
+                useExperimentalAnnotation(KotlinxOptIn.internalCoroutinesApi)
+                useExperimentalAnnotation(KotlinxOptIn.obsoleteCoroutinesApi)
+                useExperimentalAnnotation(KotlinxOptIn.flowPreview)
+                useExperimentalAnnotation(KtorOptIn.ktorExperimentalAPI)
+            }
         }
 //        sourceSets.all {
 //            if (name.contains("main", true)) {

@@ -38,11 +38,11 @@ abstract class Frame(open val type: FrameType) {
     }
 }
 
-fun ByteReadPacket.toFrame(): Frame {
+fun ByteReadPacket.toFrame(): Frame = use {
     val streamId = readInt()
     val typeAndFlags = readShort().toInt() and 0xFFFF
     val flags = typeAndFlags and FlagsMask
-    return when (val type = FrameType(typeAndFlags shr FrameTypeShift)) {
+    when (val type = FrameType(typeAndFlags shr FrameTypeShift)) {
         //stream id = 0
         FrameType.Setup           -> readSetup(flags)
         FrameType.Resume          -> readResume()

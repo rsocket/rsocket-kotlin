@@ -45,7 +45,6 @@ class RSocketRequesterTest {
         assertTrue(frame is RequestNFrame)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun testStreamInitialN() = test {
         val flow = requester.requestStream(Payload.Empty).requesting(RequestStrategy(5))
@@ -59,7 +58,6 @@ class RSocketRequesterTest {
         assertEquals(5, frame.initialRequest)
     }
 
-    @OptIn(InternalCoroutinesApi::class)
     @Test
     fun testHandleSetupException() = test {
         val errorMessage = "error"
@@ -127,7 +125,6 @@ class RSocketRequesterTest {
         assertEquals(sent, connection.sentFrames.size)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun testChannelRequestServerSideCancellation() = test {
         var ch: SendChannel<Payload>? = null
@@ -149,15 +146,14 @@ class RSocketRequesterTest {
         assertTrue(ch!!.isClosedForSend)
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun testCorrectFrameOrder() = test {
         val delay = Job()
         val request = flow {
             delay.join()
-            emit(Payload("INIT".encodeToByteArray()))
+            emit(Payload("INIT"))
             repeat(1000) {
-                emit(Payload(it.toString().encodeToByteArray()))
+                emit(Payload(it.toString()))
             }
         }
 

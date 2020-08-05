@@ -14,24 +14,32 @@
  * limitations under the License.
  */
 
-plugins {
-    ids(Plugins.mppWithAtomic)
-}
+package io.rsocket.frame
 
-configureMultiplatform {
-    dependenciesMain {
-        api(Dependencies.ktor.io)
-        compileOnly(Dependencies.atomicfuMetadata)
-    }
-    //fix ktor issue
-    js().sourceSetMain.dependencies {
-        api(npm("text-encoding"))
+import io.ktor.util.*
+import io.ktor.utils.io.core.*
+import kotlin.test.*
+
+class RequestNFrameTest {
+
+    private val dump = "00000a00000001200000000005"
+
+    @Test
+    fun testEncoding() {
+        val frame = RequestNFrame(1, 5)
+        val bytes = frame.toPacketWithLength().readBytes()
+
+        assertEquals(dump, hex(bytes))
     }
 
-    dependenciesTest {
-        implementation(Dependencies.ktor.utils)
+    @Test
+    fun testDecoding() {
+        val packet = ByteReadPacket(hex(dump))
+        val frame = packet.toFrameWithLength()
+
+        assertTrue(frame is RequestNFrame)
+        assertEquals(1, frame.streamId)
+        assertEquals(5, frame.requestN)
     }
-    kampCommonTest.dependencies {
-        implementation(KampModules.transportLocal)
-    }
+
 }

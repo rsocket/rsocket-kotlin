@@ -21,8 +21,8 @@ plugins {
 configureMultiplatform {
     dependenciesMain {
         api(Dependencies.kotlin.test)
-        implementation(Dependencies.kotlin.annotations.common)
-        implementation(Dependencies.kotlin.annotations.junit)
+        api(Dependencies.kotlin.annotations.common)
+        api(Dependencies.kotlin.annotations.junit)
     }
     kampCommonMain.dependencies {
         api(KampModules.core)

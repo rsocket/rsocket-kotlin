@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-plugins {
-    ids(Plugins.mppWithAtomic)
-}
+package io.rsocket.frame
 
-configureMultiplatform {
-    dependenciesMain {
-        api(Dependencies.ktor.io)
-        compileOnly(Dependencies.atomicfuMetadata)
-    }
-    //fix ktor issue
-    js().sourceSetMain.dependencies {
-        api(npm("text-encoding"))
+import io.ktor.utils.io.core.*
+import kotlin.test.*
+
+class MetadataPushFrameTest {
+
+    private val metadata = ByteArray(65000) { 6 }
+
+    @Test
+    fun testEncoding() {
+        val frame = MetadataPushFrame(ByteReadPacket(metadata))
+        val decodedFrame = frame.toPacket().toFrame()
+
+        assertTrue(decodedFrame is MetadataPushFrame)
+        assertEquals(0, decodedFrame.streamId)
+        assertBytesEquals(metadata, decodedFrame.metadata.readBytes())
     }
 
-    dependenciesTest {
-        implementation(Dependencies.ktor.utils)
-    }
-    kampCommonTest.dependencies {
-        implementation(KampModules.transportLocal)
-    }
 }

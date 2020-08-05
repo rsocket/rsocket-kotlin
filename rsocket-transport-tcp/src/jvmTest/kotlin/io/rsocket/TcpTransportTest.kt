@@ -18,13 +18,11 @@ package io.rsocket
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
-import io.ktor.util.*
 import io.rsocket.connection.*
 import io.rsocket.core.*
 import kotlinx.coroutines.*
 import java.util.concurrent.*
 
-@OptIn(KtorExperimentalAPI::class)
 class TcpTransportTest : TransportTest() {
     override suspend fun init(): RSocket = builder.connect("127.0.0.1", 2323).connection.connectClient()
 

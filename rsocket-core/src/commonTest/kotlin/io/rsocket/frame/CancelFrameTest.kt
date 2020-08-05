@@ -14,24 +14,21 @@
  * limitations under the License.
  */
 
-plugins {
-    ids(Plugins.mppWithAtomic)
-}
+package io.rsocket.frame
 
-configureMultiplatform {
-    dependenciesMain {
-        api(Dependencies.ktor.io)
-        compileOnly(Dependencies.atomicfuMetadata)
-    }
-    //fix ktor issue
-    js().sourceSetMain.dependencies {
-        api(npm("text-encoding"))
+import kotlin.test.*
+
+class CancelFrameTest {
+
+    private val streamId = 1
+
+    @Test
+    fun testEncoding() {
+        val frame = CancelFrame(streamId)
+        val decodedFrame = frame.toPacket().toFrame()
+
+        assertTrue(decodedFrame is CancelFrame)
+        assertEquals(streamId, decodedFrame.streamId)
     }
 
-    dependenciesTest {
-        implementation(Dependencies.ktor.utils)
-    }
-    kampCommonTest.dependencies {
-        implementation(KampModules.transportLocal)
-    }
 }

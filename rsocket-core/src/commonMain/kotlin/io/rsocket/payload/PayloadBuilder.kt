@@ -21,19 +21,17 @@ import io.ktor.utils.io.core.*
 class PayloadBuilder
 @PublishedApi
 internal constructor() {
-    @PublishedApi
-    internal var data: BytePacketBuilder? = null
+    private var data: BytePacketBuilder? = null
+    private var metadata: BytePacketBuilder? = null
 
     @PublishedApi
-    internal var metadata: BytePacketBuilder? = null
+    internal fun data(): BytePacketBuilder = (data ?: BytePacketBuilder().also { data = it })
 
-    inline fun data(block: BytePacketBuilder.() -> Unit) {
-        (data ?: BytePacketBuilder().also { data = it }).block()
-    }
+    @PublishedApi
+    internal fun metadata(): BytePacketBuilder = (metadata ?: BytePacketBuilder().also { metadata = it })
 
-    inline fun metadata(block: BytePacketBuilder.() -> Unit) {
-        (metadata ?: BytePacketBuilder().also { metadata = it }).block()
-    }
+    inline fun data(block: BytePacketBuilder.() -> Unit): Unit = data().block()
+    inline fun metadata(block: BytePacketBuilder.() -> Unit): Unit = metadata().block()
 
     @PublishedApi
     internal fun build(): Payload = Payload(

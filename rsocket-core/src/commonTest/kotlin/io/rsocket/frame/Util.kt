@@ -14,30 +14,27 @@
  * limitations under the License.
  */
 
-package io.rsocket.frame.io
+package io.rsocket.frame
 
+import io.ktor.util.*
 import io.ktor.utils.io.core.*
-import io.rsocket.payload.*
+import io.rsocket.frame.io.*
+import kotlin.test.*
 
-fun Input.readMetadata(): ByteReadPacket {
+fun Frame.toPacketWithLength(): ByteReadPacket = buildPacket {
+    val packet = toPacket()
+    writeLength(packet.remaining.toInt())
+    writePacket(packet)
+}
+
+fun ByteReadPacket.toFrameWithLength(): Frame {
     val length = readLength()
-    return readPacket(length)
+    assertEquals(length, remaining.toInt())
+    return toFrame()
 }
 
-fun Output.writeMetadata(metadata: ByteReadPacket?) {
-    metadata?.let {
-        writeLength(it.remaining.toInt())
-        writePacket(it)
-    }
-}
+fun packet(text: String): ByteReadPacket = buildPacket { writeText(text) }
 
-fun Input.readPayload(flags: Int): Payload {
-    val metadata = if (flags check Flags.Metadata) readMetadata() else null
-    val data = readPacket()
-    return Payload(data = data, metadata = metadata)
-}
-
-fun Output.writePayload(payload: Payload) {
-    writeMetadata(payload.metadata)
-    writePacket(payload.data)
+fun assertBytesEquals(expected: ByteArray?, actual: ByteArray?) {
+    assertEquals(expected?.let(::hex), actual?.let(::hex))
 }

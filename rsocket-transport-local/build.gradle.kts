@@ -23,6 +23,6 @@ configureMultiplatform {
         api(KampModules.core)
     }
     kampCommonTest.dependencies {
-        api(KampModules.transportTest)
+        implementation(KampModules.transportTest)
     }
 }

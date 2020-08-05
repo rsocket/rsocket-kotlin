@@ -17,6 +17,7 @@
 package io.rsocket.frame.io
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
 import io.rsocket.keepalive.*
 import io.rsocket.payload.*
 import kotlin.time.*
@@ -49,7 +50,7 @@ fun Output.writeMimeType(mimeType: String) {
 fun Input.readPayloadMimeType(): PayloadMimeType {
     val metadata = readMimeType()
     val data = readMimeType()
-    return PayloadMimeType(metadata, data)
+    return PayloadMimeType(data = data, metadata = metadata)
 }
 
 fun Output.writePayloadMimeType(payloadMimeType: PayloadMimeType) {
@@ -66,10 +67,42 @@ fun Output.writeMillis(duration: Duration) {
 fun Input.readKeepAlive(): KeepAlive {
     val interval = readMillis()
     val maxLifetime = readMillis()
-    return KeepAlive(interval, maxLifetime)
+    return KeepAlive(interval = interval, maxLifetime = maxLifetime)
 }
 
 fun Output.writeKeepAlive(keepAlive: KeepAlive) {
     writeMillis(keepAlive.interval)
     writeMillis(keepAlive.maxLifetime)
+}
+
+@OptIn(DangerousInternalIoApi::class)
+fun Input.readPacket(): ByteReadPacket {
+    if (endOfInput) return ByteReadPacket.Empty
+
+    return buildPacket {
+        writeWhileSize {
+            readAvailable(it)
+        }
+    }
+}
+
+//TODO add additional test - tested in ResumeFrameTest + SetupFrameTest with big payload
+@OptIn(DangerousInternalIoApi::class)
+fun Input.readPacket(length: Int): ByteReadPacket {
+    if (length == 0) return ByteReadPacket.Empty
+
+    return buildPacket {
+        var remainingToRead = length
+        takeWhile { readBuffer ->
+            val readCount = minOf(remainingToRead, readBuffer.readRemaining)
+            var remainingToWrite = readCount
+            writeWhile { writeBuffer ->
+                val writeCount = minOf(remainingToWrite, writeBuffer.writeRemaining)
+                remainingToWrite -= readBuffer.readAvailable(writeBuffer, writeCount)
+                remainingToWrite > 0
+            }
+            remainingToRead -= readCount
+            remainingToRead > 0
+        }
+    }
 }

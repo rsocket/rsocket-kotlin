@@ -27,12 +27,12 @@ configureMultiplatform {
     }
 
     dependenciesTest {
-        api(Dependencies.ktor.client.engines.cio)
-        api(Dependencies.ktor.server.engines.cio)
+        implementation(Dependencies.ktor.client.engines.cio)
+        implementation(Dependencies.ktor.server.engines.cio)
     }
     kampCommonTest.dependencies {
-        api(KampModules.transportTest)
-        api(KampModules.transportWebsocketClient)
-        api(KampModules.transportWebsocketServer)
+        implementation(KampModules.transportTest)
+        implementation(KampModules.transportWebsocketClient)
+        implementation(KampModules.transportWebsocketServer)
     }
 }

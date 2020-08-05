@@ -52,6 +52,5 @@ class TestConnection : Connection {
         frames.forEach { receiver.send(it.toPacket()) }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     fun sentAsFlow() = sender.receiveAsFlow().map { it.toFrame() }
 }

@@ -14,24 +14,22 @@
  * limitations under the License.
  */
 
-plugins {
-    ids(Plugins.mppWithAtomic)
-}
+package io.rsocket.frame
 
-configureMultiplatform {
-    dependenciesMain {
-        api(Dependencies.ktor.io)
-        compileOnly(Dependencies.atomicfuMetadata)
-    }
-    //fix ktor issue
-    js().sourceSetMain.dependencies {
-        api(npm("text-encoding"))
+import kotlin.test.*
+
+class ResumeOkFrameTest {
+
+    private val lastReceivedClientPosition = 42L
+
+    @Test
+    fun testEncoding() {
+        val frame = ResumeOkFrame(lastReceivedClientPosition)
+        val decodedFrame = frame.toPacket().toFrame()
+
+        assertTrue(decodedFrame is ResumeOkFrame)
+        assertEquals(0, decodedFrame.streamId)
+        assertEquals(lastReceivedClientPosition, decodedFrame.lastReceivedClientPosition)
     }
 
-    dependenciesTest {
-        implementation(Dependencies.ktor.utils)
-    }
-    kampCommonTest.dependencies {
-        implementation(KampModules.transportLocal)
-    }
 }

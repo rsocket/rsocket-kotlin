@@ -21,12 +21,10 @@ import io.ktor.client.*
 import io.ktor.client.features.websocket.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
-import io.ktor.util.*
 import io.rsocket.core.*
 import io.ktor.client.engine.cio.CIO as ClientCIO
 import io.ktor.server.cio.CIO as ServerCIO
 
-@OptIn(KtorExperimentalAPI::class)
 class WebSocketTransportTest : TransportTest() {
     override suspend fun init(): RSocket = httpClient.rSocket(port = 9000)
 
