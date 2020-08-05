@@ -19,6 +19,8 @@ plugins {
 }
 
 configureMultiplatform {
+    val (jvm) = defaultTargets()
+
     dependenciesMain {
         api(Dependencies.ktor.http.cio)
     }
@@ -30,9 +32,11 @@ configureMultiplatform {
         implementation(Dependencies.ktor.client.engines.cio)
         implementation(Dependencies.ktor.server.engines.cio)
     }
-    kampCommonTest.dependencies {
+    jvm!!.kampSourceSetTest.dependencies {
         implementation(KampModules.transportTest)
         implementation(KampModules.transportWebsocketClient)
         implementation(KampModules.transportWebsocketServer)
     }
 }
+
+configurePublication()

@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-plugins {
-    ids(Plugins.mpp)
+import dev.whyoleg.kamp.publication.*
+import org.gradle.api.*
+
+private val publication = Publication(
+    name = "rsocket-kotlin",
+    description = "Kotlin Multi-platform RSocket implementation",
+    licenses = listOf(License.apache2),
+    developers = listOf(Developer("whyoleg", "Oleg", "whyoleg@gmail.com")),
+    url = "https://github.com/whyoleg/rsocket-kotlin",
+    vcsUrl = "https://github.com/whyoleg/rsocket-kotlin"
+)
+
+private val publisher = BintrayPublisher("whyoleg", "rsocket-kotlin", "rsocket-kotlin-dev")
+
+fun Project.configurePublication() {
+    mppPublication(publication, publisher)
 }
-
-configureMultiplatform {
-    defaultTargets(js = false)
-
-    dependenciesMain {
-        api(Dependencies.ktor.network)
-    }
-    kampCommonMain.dependencies {
-        api(KampModules.core)
-    }
-    kampCommonTest.dependencies {
-        implementation(KampModules.transportTest)
-    }
-}
-
-configurePublication()

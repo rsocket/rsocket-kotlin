@@ -19,20 +19,11 @@ import dev.whyoleg.kamp.feature.kotlinx.*
 import dev.whyoleg.kamp.feature.ktor.*
 import org.gradle.api.*
 import org.jetbrains.kotlin.gradle.dsl.*
-import org.jetbrains.kotlin.gradle.plugin.*
-
-fun LanguageSettingsBuilder.default() {
-    progressiveMode = true
-    languageVersion = "1.3"
-    apiVersion = "1.3"
-
-    enableLanguageFeature("NewInference")
-    enableLanguageFeature("InlineClasses")
-}
+import org.jetbrains.kotlin.gradle.targets.js.*
+import org.jetbrains.kotlin.gradle.targets.jvm.*
 
 inline fun Project.configureMultiplatform(crossinline block: KotlinMultiplatformExtension.() -> Unit = {}) {
     kotlinMPP {
-        defaultTargets()
         kotlinOptions {
             //                    allWarningsAsErrors = true
             freeCompilerArgs += "-Xopt-in=${KotlinOptIn.requiresOptIn}"
@@ -48,8 +39,15 @@ inline fun Project.configureMultiplatform(crossinline block: KotlinMultiplatform
             }
         }
         languageSettings { sourceSet ->
-            default()
+            progressiveMode = true
+            languageVersion = "1.3"
+            apiVersion = "1.3"
+
+            enableLanguageFeature("NewInference")
+            enableLanguageFeature("InlineClasses")
+
             useExperimentalAnnotation(KotlinOptIn.experimentalTime)
+
             if (sourceSet.name.contains("test", ignoreCase = true)) {
                 useExperimentalAnnotation(KotlinOptIn.experimentalStdlibApi)
                 useExperimentalAnnotation(KotlinxOptIn.experimentalCoroutinesApi)
@@ -64,6 +62,26 @@ inline fun Project.configureMultiplatform(crossinline block: KotlinMultiplatform
 //                project.extra.set("kotlin.mpp.freeCompilerArgsForSourceSet.${name}", "-Xexplicit-api=warning")
 //            }
 //        }
+        targets.all {
+            when (this) {
+                is KotlinJsTarget -> {
+                    nodejs {
+                        testTask {
+                            useKarma {
+                                useChromeHeadless()
+                            }
+                        }
+                    }
+                    browser {
+                        testTask {
+                            useKarma {
+                                useChromeHeadless()
+                            }
+                        }
+                    }
+                }
+            }
+        }
         dependenciesMain {
             api(Dependencies.kotlin.stdlib)
             api(Dependencies.kotlinx.coroutines)
@@ -78,23 +96,12 @@ inline fun Project.configureMultiplatform(crossinline block: KotlinMultiplatform
     }
 }
 
-fun KotlinMultiplatformExtension.defaultTargets() {
-    jvm()
-    js {
-        //TODO nodejs needed? is it tested?
-        nodejs {
-            testTask {
-                useKarma {
-                    useChromeHeadless()
-                }
-            }
-        }
-        browser {
-            testTask {
-                useKarma {
-                    useChromeHeadless()
-                }
-            }
-        }
-    }
+fun KotlinMultiplatformExtension.defaultTargets(
+    jvm: Boolean = true,
+    js: Boolean = true
+//    native: Boolean = false,
+): Pair<KotlinJvmTarget?, KotlinJsTarget?> {
+    val jvmTarget = if (jvm) jvm() else null
+    val jsTarget = if (js) js() else null
+    return jvmTarget to jsTarget
 }

@@ -19,6 +19,8 @@ plugins {
 }
 
 configureMultiplatform {
+    defaultTargets(js = false)
+
     dependenciesMain {
         api(Dependencies.ktor.server)
         api(Dependencies.ktor.server.features.websockets)
@@ -27,3 +29,5 @@ configureMultiplatform {
         api(KampModules.transportWebsocket)
     }
 }
+
+configurePublication()

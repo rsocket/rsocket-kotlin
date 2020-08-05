@@ -15,10 +15,12 @@
  */
 
 plugins {
-    ids(Plugins.mpp)
+    ids(Plugins.multiplatform)
 }
 
 configureMultiplatform {
+    val (jvm, js) = defaultTargets()
+
     dependenciesMain {
         api(Dependencies.ktor.client.engines.cio) //jvm engine
         api(Dependencies.ktor.client.engines.js) //js engine
@@ -27,15 +29,17 @@ configureMultiplatform {
     }
     kampCommonMain.dependencies {
         api(KampModules.transportLocal)
-        api(KampModules.transportTcp)
         api(KampModules.transportWebsocketClient)
-        api(KampModules.transportWebsocketServer)
     }
     //fix ktor issue
-    js().sourceSetMain.dependencies {
+    js!!.sourceSetMain.dependencies {
         api(npm("utf-8-validate"))
         api(npm("abort-controller"))
         api(npm("bufferutil"))
         api(npm("fs"))
+    }
+    jvm!!.kampSourceSetMain.dependencies {
+        api(KampModules.transportTcp)
+        api(KampModules.transportWebsocketServer)
     }
 }

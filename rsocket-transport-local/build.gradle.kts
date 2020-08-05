@@ -19,6 +19,8 @@ plugins {
 }
 
 configureMultiplatform {
+    defaultTargets()
+
     kampCommonMain.dependencies {
         api(KampModules.core)
     }
@@ -26,3 +28,5 @@ configureMultiplatform {
         implementation(KampModules.transportTest)
     }
 }
+
+configurePublication()

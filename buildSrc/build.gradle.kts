@@ -19,7 +19,7 @@ buildscript {
         maven("https://dl.bintray.com/whyoleg/kamp")
     }
     dependencies {
-        classpath("dev.whyoleg.kamp:kamp-build:0.3.0.beta.1")
+        classpath("dev.whyoleg.kamp:kamp-build:0.3.0.beta.2")
     }
 }
 

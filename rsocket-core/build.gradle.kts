@@ -15,16 +15,19 @@
  */
 
 plugins {
-    ids(Plugins.mppWithAtomic)
+    ids(Plugins.mpp)
+    ids(Plugins.atomicfu)
 }
 
 configureMultiplatform {
+    val (_, js) = defaultTargets()
+
     dependenciesMain {
         api(Dependencies.ktor.io)
         compileOnly(Dependencies.atomicfuMetadata)
     }
     //fix ktor issue
-    js().sourceSetMain.dependencies {
+    js!!.sourceSetMain.dependencies {
         api(npm("text-encoding"))
     }
 
@@ -35,3 +38,5 @@ configureMultiplatform {
         implementation(KampModules.transportLocal)
     }
 }
+
+configurePublication()

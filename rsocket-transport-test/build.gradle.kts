@@ -15,10 +15,12 @@
  */
 
 plugins {
-    ids(Plugins.mppWithAtomic)
+    ids(Plugins.mpp)
 }
 
 configureMultiplatform {
+    defaultTargets()
+
     dependenciesMain {
         api(Dependencies.kotlin.test)
         api(Dependencies.kotlin.annotations.common)
