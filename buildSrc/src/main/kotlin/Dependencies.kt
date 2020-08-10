@@ -32,4 +32,23 @@ object Dependencies {
 
     val ktor = Ktor.dependencies(KampVersions.ktor)
 
+    val rsocketJava = RSocketJava.dependencies(KampVersions.Rsocket.java)
+}
+
+object RSocketGroup : Group by group("io.rsocket")
+
+object RSocketJava {
+    val defaultVersion = "1.0.1"
+
+    fun dependencies(version: String = defaultVersion): RSocketJavaDependencies = RSocketJavaDependencies(version)
+    val repository = RepositoryProviders.mavenCentral
+}
+
+class RSocketJavaDependencies(version: String = RSocketJava.defaultVersion) {
+    private val jvm = RSocketGroup.platforms(KampPlatform.jvm).version(version)
+    private fun dep(name: String) = jvm.artifact("rsocket-$name")
+
+    val core = dep("core")
+    val netty = dep("transport-netty")
+    val local = dep("transport-local")
 }

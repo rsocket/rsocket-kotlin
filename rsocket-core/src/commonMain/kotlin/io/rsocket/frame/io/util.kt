@@ -79,11 +79,7 @@ fun Output.writeKeepAlive(keepAlive: KeepAlive) {
 fun Input.readPacket(): ByteReadPacket {
     if (endOfInput) return ByteReadPacket.Empty
 
-    return buildPacket {
-        writeWhileSize {
-            readAvailable(it)
-        }
-    }
+    return buildPacket { copyTo(this) }
 }
 
 //TODO add additional test - tested in ResumeFrameTest + SetupFrameTest with big payload

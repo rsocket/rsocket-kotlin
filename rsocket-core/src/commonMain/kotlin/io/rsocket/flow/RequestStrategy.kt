@@ -22,7 +22,7 @@ interface RequestStrategy {
 
     companion object {
         //TODO check for best default strategy
-        val Default: () -> RequestStrategy = { BufferStrategy(256) }
+        val Default: () -> RequestStrategy = { BufferStrategy(64) }
     }
 }
 

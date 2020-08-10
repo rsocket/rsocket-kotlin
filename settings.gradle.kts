@@ -62,7 +62,7 @@ kamp {
     modules {
         val rsocket = "rsocket".prefixedModule
 
-//        module("benchmarks")
+        module("benchmarks")
         module("playground")
 
         rsocket("core")
