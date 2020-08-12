@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
-abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
+abstract class TransportTest(private val timeout: Duration = 10.minutes) {
     private var client: RSocket? = null
 
     abstract suspend fun init(): RSocket
@@ -134,7 +134,7 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
     }
 
     @Test
-    fun requestChannel2000000() = test(3.minutes) {
+    fun requestChannel2000000() = test(timeout) {
         val client = client()
         val request = RequestingFlow {
             repeat(2_000_000) { emit(Payload(it)) }
@@ -153,7 +153,7 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
         }
         (0..256).map {
             async(Dispatchers.Default) {
-                withTimeout(3.minutes) {
+                withTimeout(timeout) {
                     val list = client.requestChannel(request).onEach { it.release() }.toList()
                     assertEquals(512, list.size)
                 }
@@ -189,6 +189,12 @@ abstract class TransportTest(private val timeout: Duration? = 3.minutes) {
     fun requestResponse10000() = test(timeout) {
         val client = client()
         (1..10000).map { async { client.requestResponse(Payload(3)).let(::checkPayload) } }.awaitAll()
+    }
+
+    @Test
+    fun requestResponse1_000_000() = test(timeout) {
+        val client = client()
+        repeat(1_000_000) { client.requestResponse(Payload(3)).let(::checkPayload) }
     }
 
     @Test

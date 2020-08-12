@@ -22,7 +22,7 @@ import org.openjdk.jmh.annotations.*
 import org.openjdk.jmh.infra.*
 import java.util.concurrent.locks.*
 
-private const val INTEGER = 3
+private const val INTEGER = 10
 
 @BenchmarkMode(Mode.Throughput)
 @Fork(value = 2)
