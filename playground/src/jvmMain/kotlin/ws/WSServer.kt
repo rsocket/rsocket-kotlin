@@ -20,7 +20,7 @@ import io.ktor.application.*
 import io.ktor.routing.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
-import io.rsocket.core.*
+import io.rsocket.kotlin.core.*
 import rSocketAcceptor
 
 fun main() {

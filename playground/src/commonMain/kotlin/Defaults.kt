@@ -15,10 +15,10 @@
  */
 
 import io.ktor.utils.io.core.*
-import io.rsocket.*
-import io.rsocket.error.*
-import io.rsocket.flow.*
-import io.rsocket.payload.*
+import io.rsocket.kotlin.*
+import io.rsocket.kotlin.error.*
+import io.rsocket.kotlin.flow.*
+import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlin.random.*
 

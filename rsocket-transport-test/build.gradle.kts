@@ -15,7 +15,7 @@
  */
 
 plugins {
-    ids(Plugins.mpp)
+    ids(Plugins.multiplatform)
 }
 
 configureMultiplatform {

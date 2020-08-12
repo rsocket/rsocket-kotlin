@@ -22,5 +22,5 @@ object Plugins {
     val multiplatform = KotlinPlugins.multiplatform
     val atomicfu = KotlinxPlugins.atomicfu
     val mpp = listOf(KotlinPlugins.multiplatform, GradlePlugins.mavenPublish)
-    val benchmarks = mpp + KotlinxPlugins.benchmark + KotlinPlugins.allOpen
+    val benchmarks = listOf(multiplatform, KotlinxPlugins.benchmark, KotlinPlugins.allOpen)
 }

@@ -20,7 +20,7 @@ import doSomething
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.util.*
-import io.rsocket.connection.*
+import io.rsocket.kotlin.connection.*
 import kotlinx.coroutines.*
 import java.util.concurrent.*
 
