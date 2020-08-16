@@ -1,0 +1,13 @@
+# TODO
+- [ ] Spec test ([TODO] TCK)
+- [ ] Frame with length support
+- [ ] Fragmentation + Reassembly
+- [ ] Lease
+- [ ] Resume
+- [ ] Composite metadata
+- [ ] Tracing
+- [ ] Security
+- [ ] Routing
+- [ ] Routing and Forwarding
+- [ ] Load balancing
+- [ ] ? Micrometer
