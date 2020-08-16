@@ -1,79 +1,13 @@
-# Compiled source #
-###################
-*.com
-*.class
-*.dll
-*.exe
-*.o
-*.so
+syntax: glob
 
-# Packages #
-############
-# it's better to unpack these files and commit the raw source
-# git has its own built in compression methods
-*.7z
-*.dmg
-*.gz
-*.iso
-*.jar
-*.rar
-*.tar
-*.zip
-
-# Logs and databases #
-######################
-*.log
-
-# OS generated files #
-######################
-.DS_Store*
-ehthumbs.db
-Icon?
-Thumbs.db
-
-# Editor Files #
-################
-*~
-*.swp
-
-# Gradle Files #
-################
-.gradle
-.ivy2
-.ivy2.cache
-.m2
-!gradle-wrapper.jar
-
-# Build output directies
-/target
-*/target
-/build
-*/build
-
-# IntelliJ specific files/directories
-out
-.idea
-*.ipr
-*.iws
+/.idea/*
 *.iml
-atlassian-ide-plugin.xml
 
-# Eclipse specific files/directories
-.classpath
-.project
-.settings
-.metadata
+.gradle
+classes
+build/
+*.log
+/local.properties
 
-# NetBeans specific files/directories
-.nbattrs
-/bin
-
-#.gitignore in subdirectory
-#.gitignore
-
-### infer ###
-# infer- http://fbinfer.com/
-infer-out
-*/infer-out
-.inferConfig
-*/.inferConfig
+/buildSrc/src/main/kotlin/KampVersions.kt
+/buildSrc/src/main/kotlin/KampModules.kt
