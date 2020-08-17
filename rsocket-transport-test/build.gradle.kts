@@ -14,19 +14,42 @@
  * limitations under the License.
  */
 
-plugins {
-    ids(Plugins.multiplatform)
-}
-
-configureMultiplatform {
-    defaultTargets()
-
-    dependenciesMain {
-        api(Dependencies.kotlin.test)
-        api(Dependencies.kotlin.annotations.common)
-        api(Dependencies.kotlin.annotations.junit)
+kotlin {
+    jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = "1.6"
+        }
     }
-    kampCommonMain.dependencies {
-        api(KampModules.core)
+    js {
+        browser {
+            testTask {
+                enabled = false
+            }
+        }
+        nodejs {
+            testTask {
+                enabled = false
+            }
+        }
+    }
+
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(project(":rsocket-core"))
+                implementation(kotlin("test-common"))
+                implementation(kotlin("test-annotations-common"))
+            }
+        }
+        val jvmMain by getting {
+            dependencies {
+                implementation(kotlin("test-junit5"))
+            }
+        }
+        val jsMain by getting {
+            dependencies {
+                implementation(kotlin("test-js"))
+            }
+        }
     }
 }

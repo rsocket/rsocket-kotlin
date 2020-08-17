@@ -14,32 +14,37 @@
  * limitations under the License.
  */
 
-plugins {
-    ids(Plugins.multiplatform)
-}
-
-configureMultiplatform {
-    val (jvm, js) = defaultTargets()
-
-    dependenciesMain {
-        api(Dependencies.ktor.client.engines.cio) //jvm engine
-        api(Dependencies.ktor.client.engines.js) //js engine
-
-        api(Dependencies.ktor.server.engines.cio) //jvm engine
+kotlin {
+    jvm()
+    js {
+        browser()
+        nodejs()
     }
-    kampCommonMain.dependencies {
-        api(KampModules.transportLocal)
-        api(KampModules.transportWebsocketClient)
-    }
-    //fix ktor issue
-    js!!.sourceSetMain.dependencies {
-        api(npm("utf-8-validate"))
-        api(npm("abort-controller"))
-        api(npm("bufferutil"))
-        api(npm("fs"))
-    }
-    jvm!!.kampSourceSetMain.dependencies {
-        api(KampModules.transportTcp)
-        api(KampModules.transportWebsocketServer)
+
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(project(":rsocket-core"))
+                implementation(project(":rsocket-transport-local"))
+                implementation(project(":rsocket-transport-websocket-client"))
+            }
+        }
+        val jvmMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-cio:1.3.2-1.4.0-rc")
+                implementation("io.ktor:ktor-server-cio:1.3.2-1.4.0-rc")
+                implementation(project(":rsocket-core"))
+                implementation(project(":rsocket-transport-websocket-server"))
+                implementation(project(":rsocket-transport-tcp"))
+            }
+        }
+        val jsMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-js:1.3.2-1.4.0-rc")
+                api(npm("utf-8-validate", "5.0.2"))
+                api(npm("abort-controller", "3.0.0"))
+                api(npm("bufferutil", "4.0.1"))
+            }
+        }
     }
 }

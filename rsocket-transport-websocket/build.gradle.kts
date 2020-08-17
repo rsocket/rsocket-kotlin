@@ -15,28 +15,57 @@
  */
 
 plugins {
-    ids(Plugins.mpp)
+    id("maven-publish")
+    id("com.jfrog.bintray")
+    id("com.jfrog.artifactory")
 }
 
-configureMultiplatform {
-    val (jvm) = defaultTargets()
+kotlin {
+    jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = "1.6"
+        }
+    }
+    js {
+        browser {
+            testTask {
+                enabled = false
+            }
+        }
+        nodejs {
+            testTask {
+                enabled = false
+            }
+        }
+    }
 
-    dependenciesMain {
-        api(Dependencies.ktor.http.cio)
-    }
-    kampCommonMain.dependencies {
-        api(KampModules.core)
-    }
-
-    dependenciesTest {
-        implementation(Dependencies.ktor.client.engines.cio)
-        implementation(Dependencies.ktor.server.engines.cio)
-    }
-    jvm!!.kampSourceSetTest.dependencies {
-        implementation(KampModules.transportTest)
-        implementation(KampModules.transportWebsocketClient)
-        implementation(KampModules.transportWebsocketServer)
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api("io.ktor:ktor-http-cio:1.3.2-1.4.0-rc")
+                api(project(":rsocket-core"))
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test-common"))
+                implementation(kotlin("test-annotations-common"))
+                implementation(project(":rsocket-transport-test"))
+//                implementation("io.ktor:ktor-client-cio:1.3.2-1.4.0-rc")
+//                implementation("io.ktor:ktor-server-cio:1.3.2-1.4.0-rc")
+            }
+        }
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test-junit5"))
+                implementation(project(":rsocket-transport-websocket-client"))
+                implementation(project(":rsocket-transport-websocket-server"))
+            }
+        }
+        val jsTest by getting {
+            dependencies {
+                implementation(kotlin("test-js"))
+            }
+        }
     }
 }
-
-configurePublication()

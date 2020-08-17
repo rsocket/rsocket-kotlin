@@ -24,7 +24,8 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
-abstract class TransportTest(private val timeout: Duration = 10.minutes) {
+@OptIn(ExperimentalTime::class)
+abstract class TransportTest constructor(private val timeout: Duration = 10.minutes) {
     private var client: RSocket? = null
 
     abstract suspend fun init(): RSocket

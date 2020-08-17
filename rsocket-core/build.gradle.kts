@@ -15,28 +15,57 @@
  */
 
 plugins {
-    ids(Plugins.mpp)
-    ids(Plugins.atomicfu)
+    id("kotlinx-atomicfu")
+
+    id("maven-publish")
+    id("com.jfrog.bintray")
+    id("com.jfrog.artifactory")
 }
 
-configureMultiplatform {
-    val (_, js) = defaultTargets()
+kotlin {
+    jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = "1.6"
+        }
+    }
+    js {
+        browser {
+            testTask {
+                enabled = false
+            }
+        }
+        nodejs {
+            testTask {
+                enabled = false
+            }
+        }
+    }
 
-    dependenciesMain {
-        api(Dependencies.ktor.io)
-        compileOnly(Dependencies.atomicfuMetadata)
-    }
-    //fix ktor issue
-    js!!.sourceSetMain.dependencies {
-        api(npm("text-encoding"))
-    }
-
-    dependenciesTest {
-        implementation(Dependencies.ktor.utils)
-    }
-    kampCommonTest.dependencies {
-        implementation(KampModules.transportLocal)
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api("io.ktor:ktor-client-core:1.3.2-1.4.0-rc")
+                compileOnly("org.jetbrains.kotlinx:atomicfu:0.14.4")
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test-common"))
+                implementation(kotlin("test-annotations-common"))
+                implementation(project(":rsocket-transport-local"))
+            }
+        }
+        val jvmMain by getting
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test-junit5"))
+            }
+        }
+        val jsMain by getting
+        val jsTest by getting {
+            dependencies {
+                implementation(kotlin("test-js"))
+            }
+        }
     }
 }
-
-configurePublication()

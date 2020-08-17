@@ -14,17 +14,26 @@
  * limitations under the License.
  */
 
-import dev.whyoleg.kamp.feature.kotlinx.*
-
 plugins {
     id("com.github.ben-manes.versions")
 }
 
 allprojects {
     repositories {
-        google()
         jcenter()
+        maven("https://dl.bintray.com/kotlin/kotlin-eap")
+        maven("https://dl.bintray.com/kotlin/kotlinx")
         mavenCentral()
-        Kotlinx.repository(this)
+        google()
+    }
+
+    tasks.withType<GenerateModuleMetadata> {
+        enabled = false
     }
 }
+
+subprojects {
+    apply(plugin = "org.jetbrains.kotlin.multiplatform")
+}
+
+apply(from = "${rootDir}/gradle/publications.gradle")

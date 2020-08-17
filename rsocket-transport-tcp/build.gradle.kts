@@ -15,21 +15,37 @@
  */
 
 plugins {
-    ids(Plugins.mpp)
+    id("maven-publish")
+    id("com.jfrog.bintray")
+    id("com.jfrog.artifactory")
 }
 
-configureMultiplatform {
-    defaultTargets(js = false)
+kotlin {
+    jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = "1.6"
+        }
+    }
 
-    dependenciesMain {
-        api(Dependencies.ktor.network)
-    }
-    kampCommonMain.dependencies {
-        api(KampModules.core)
-    }
-    kampCommonTest.dependencies {
-        implementation(KampModules.transportTest)
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api("io.ktor:ktor-network:1.3.2-1.4.0-rc")
+                api(project(":rsocket-core"))
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test-common"))
+                implementation(kotlin("test-annotations-common"))
+                implementation(project(":rsocket-transport-test"))
+            }
+        }
+        val jvmMain by getting
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test-junit5"))
+            }
+        }
     }
 }
-
-configurePublication()

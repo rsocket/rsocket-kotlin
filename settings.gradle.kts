@@ -17,60 +17,50 @@
 pluginManagement {
     repositories {
         maven("https://dl.bintray.com/kotlin/kotlinx")
-        maven("https://dl.bintray.com/whyoleg/kamp")
         mavenCentral()
         jcenter()
         gradlePluginPortal()
     }
 
-    fun v(name: String): String = extra["kamp.version.$name"] as String
-
     plugins {
-        val kotlinVersion = v("kotlin")
+        val kotlinVersion = "1.4.0-rc"
 
         kotlin("multiplatform") version kotlinVersion
 
         kotlin("plugin.allopen") version kotlinVersion
 
-        id("kotlinx.benchmark") version v("kotlinx.benchmark")
-        id("com.github.ben-manes.versions") version v("updates")
+        id("kotlinx.benchmark") version "0.2.0-dev-7"
+        id("com.github.ben-manes.versions") version "0.29.0"
+
+        id("com.jfrog.bintray") version "1.8.5"
+        id("com.jfrog.artifactory") version "4.17.0"
     }
 
 }
 
 buildscript {
     repositories {
-        maven("https://dl.bintray.com/whyoleg/kamp")
         mavenCentral()
         google()
         jcenter()
     }
 
-    fun v(name: String): String = extra["kamp.version.$name"] as String
-
     dependencies {
-        classpath("dev.whyoleg.kamp:kamp-settings:${v("kamp")}")
-
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${v("kotlin")}") //needed by atomicfu
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:${v("kotlinx.atomicfu")}")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.0-rc") //needed by atomicfu
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.14.4")
     }
 
 }
 
-kamp {
-    versions()
-    modules {
-        val rsocket = "rsocket".prefixedModule
+rootProject.name = "rsocket-kotlin"
 
-        module("benchmarks")
-        module("playground")
+include("benchmarks")
+include("playground")
 
-        rsocket("core")
-        rsocket("transport-test")
-        rsocket("transport-local")
-        rsocket("transport-tcp")
-        rsocket("transport-websocket")
-        rsocket("transport-websocket-client")
-        rsocket("transport-websocket-server")
-    }
-}
+include("rsocket-core")
+include("rsocket-transport-test")
+include("rsocket-transport-local")
+include("rsocket-transport-tcp")
+include("rsocket-transport-websocket")
+include("rsocket-transport-websocket-client")
+include("rsocket-transport-websocket-server")

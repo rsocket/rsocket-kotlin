@@ -15,19 +15,27 @@
  */
 
 plugins {
-    ids(Plugins.mpp)
+    id("maven-publish")
+    id("com.jfrog.bintray")
+    id("com.jfrog.artifactory")
 }
 
-configureMultiplatform {
-    defaultTargets(js = false)
-
-    dependenciesMain {
-        api(Dependencies.ktor.server)
-        api(Dependencies.ktor.server.features.websockets)
+kotlin {
+    jvm {
+        compilations.all {
+            kotlinOptions.jvmTarget = "1.6"
+        }
     }
-    kampCommonMain.dependencies {
-        api(KampModules.transportWebsocket)
+
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api(project(":rsocket-transport-websocket"))
+                api(project(":rsocket-core"))
+
+                api("io.ktor:ktor-server:1.3.2-1.4.0-rc")
+                api("io.ktor:ktor-websockets:1.3.2-1.4.0-rc")
+            }
+        }
     }
 }
-
-configurePublication()

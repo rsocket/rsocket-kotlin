@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
+@OptIn(ExperimentalTime::class)
 class RSocketTest {
     lateinit var requester: RSocket
 

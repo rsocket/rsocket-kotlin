@@ -20,6 +20,7 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
+import kotlin.time.ExperimentalTime
 
 private const val HonorLeaseFlag = 64
 private const val ResumeEnabledFlag = 128
@@ -42,6 +43,7 @@ class SetupFrame(
             return flags
         }
 
+    @OptIn(ExperimentalTime::class)
     override fun Output.writeSelf() {
         writeVersion(version)
         writeKeepAlive(keepAlive)

@@ -58,8 +58,10 @@ fun Output.writePayloadMimeType(payloadMimeType: PayloadMimeType) {
     writeMimeType(payloadMimeType.data)
 }
 
+@OptIn(ExperimentalTime::class)
 fun Input.readMillis(): Duration = readInt().milliseconds
 
+@OptIn(ExperimentalTime::class)
 fun Output.writeMillis(duration: Duration) {
     writeInt(duration.toInt(DurationUnit.MILLISECONDS))
 }
