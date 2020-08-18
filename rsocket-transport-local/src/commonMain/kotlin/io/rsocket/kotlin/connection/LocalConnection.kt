@@ -30,13 +30,10 @@ class LocalConnection(
     override val job: Job = Job(parentJob)
 
     override suspend fun send(packet: ByteReadPacket) {
-//        println("SEND: ${packet.copy().readBytes().contentToString()}")
         sender.send(packet)
     }
 
     override suspend fun receive(): ByteReadPacket {
-        return receiver.receive().also {
-//            println("RECEIVE: ${it.copy().readBytes().contentToString()}")
-        }
+        return receiver.receive()
     }
 }

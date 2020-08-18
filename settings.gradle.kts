@@ -18,38 +18,13 @@ pluginManagement {
     repositories {
         maven("https://dl.bintray.com/kotlin/kotlinx")
         mavenCentral()
-        jcenter()
         gradlePluginPortal()
     }
 
     plugins {
-        val kotlinVersion = "1.4.0-rc"
-
-        kotlin("multiplatform") version kotlinVersion
-
-        kotlin("plugin.allopen") version kotlinVersion
-
-        id("kotlinx.benchmark") version "0.2.0-dev-7"
-        id("com.github.ben-manes.versions") version "0.29.0"
-
         id("com.jfrog.bintray") version "1.8.5"
         id("com.jfrog.artifactory") version "4.17.0"
     }
-
-}
-
-buildscript {
-    repositories {
-        mavenCentral()
-        google()
-        jcenter()
-    }
-
-    dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.0-rc") //needed by atomicfu
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.14.4")
-    }
-
 }
 
 rootProject.name = "rsocket-kotlin"

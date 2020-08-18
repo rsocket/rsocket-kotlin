@@ -40,7 +40,6 @@ fun Input.readMimeType(): String {
     return readText(max = length)
 }
 
-@OptIn(ExperimentalStdlibApi::class)
 fun Output.writeMimeType(mimeType: String) {
     val bytes = mimeType.encodeToByteArray() //TODO check
     writeByte(bytes.size.toByte())

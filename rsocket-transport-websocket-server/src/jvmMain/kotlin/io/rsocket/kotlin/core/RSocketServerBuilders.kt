@@ -22,7 +22,6 @@ import io.ktor.routing.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
-import kotlinx.coroutines.*
 
 fun Route.rSocket(path: String, protocol: String? = null, acceptor: RSocketAcceptor) {
     route(path, HttpMethod.Get) {
@@ -30,7 +29,6 @@ fun Route.rSocket(path: String, protocol: String? = null, acceptor: RSocketAccep
     }
 }
 
-@OptIn(InternalCoroutinesApi::class)
 fun Route.rSocket(protocol: String? = null, acceptor: RSocketAcceptor) {
     val feature = application.feature(RSocketServerSupport)
     webSocket(protocol) {

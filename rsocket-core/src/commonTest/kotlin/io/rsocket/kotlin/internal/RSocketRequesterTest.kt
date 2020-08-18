@@ -28,8 +28,6 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
-@OptIn(ExperimentalTime::class)
-@InternalCoroutinesApi
 class RSocketRequesterTest {
     private val connection = TestConnection()
     private val ignoredFrames = Channel<Frame>(Channel.UNLIMITED)

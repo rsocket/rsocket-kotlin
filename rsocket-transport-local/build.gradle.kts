@@ -15,47 +15,26 @@
  */
 
 plugins {
+    kotlin("multiplatform")
+
     id("maven-publish")
     id("com.jfrog.bintray")
     id("com.jfrog.artifactory")
 }
 
 kotlin {
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "1.6"
-        }
-    }
-    js {
-        browser {
-            testTask {
-                enabled = false
-            }
-        }
-        nodejs {
-            testTask {
-                enabled = false
-            }
-        }
-    }
+    jvm()
+    js()
 
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":rsocket-core"))
+                api(project(":rsocket-core"))
+            }
+        }
+        val commonTest by getting {
+            dependencies {
                 implementation(project(":rsocket-transport-test"))
-            }
-        }
-        val jvmMain by getting
-        val jvmTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit5"))
-            }
-        }
-        val jsMain by getting
-        val jsTest by getting {
-            dependencies {
-                implementation(kotlin("test-js"))
             }
         }
     }

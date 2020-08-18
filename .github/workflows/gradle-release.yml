@@ -1,4 +1,4 @@
-name: Release Java CI
+name: Release CI
 
 on:
   # Trigger the workflow on push
@@ -10,12 +10,7 @@ on:
 jobs:
   publish:
 
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
-      fail-fast: false
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2

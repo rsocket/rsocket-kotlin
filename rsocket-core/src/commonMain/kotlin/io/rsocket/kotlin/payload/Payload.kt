@@ -35,7 +35,6 @@ fun Payload.release() {
 }
 
 @Suppress("FunctionName")
-@OptIn(ExperimentalStdlibApi::class)
 fun Payload(data: String, metadata: String? = null): Payload = Payload(
     data = buildPacket { writeText(data) },
     metadata = metadata?.let { buildPacket { writeText(it) } }

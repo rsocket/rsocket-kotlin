@@ -27,7 +27,6 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
-@OptIn(ExperimentalTime::class)
 class KeepAliveTest {
     private val connection = TestConnection()
     private fun requester(keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds)): RSocket = run {
@@ -61,7 +60,6 @@ class KeepAliveTest {
         assertTrue(rSocket.isActive)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun requesterRespondsToKeepAlive() = test {
         requester(KeepAlive(100.seconds, 100.seconds))
@@ -87,7 +85,6 @@ class KeepAliveTest {
         assertEquals(0, connection.sentFrames.size)
     }
 
-    @OptIn(InternalCoroutinesApi::class)
     @Test
     fun rSocketCanceledOnMissingKeepAliveTicks() = test {
         val rSocket = requester()

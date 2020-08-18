@@ -14,24 +14,13 @@
  * limitations under the License.
  */
 
+plugins {
+    kotlin("multiplatform")
+}
+
 kotlin {
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "1.6"
-        }
-    }
-    js {
-        browser {
-            testTask {
-                enabled = false
-            }
-        }
-        nodejs {
-            testTask {
-                enabled = false
-            }
-        }
-    }
+    jvm()
+    js()
 
     sourceSets {
         val commonMain by getting {
@@ -43,7 +32,7 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                implementation(kotlin("test-junit5"))
+                implementation(kotlin("test-junit"))
             }
         }
         val jsMain by getting {

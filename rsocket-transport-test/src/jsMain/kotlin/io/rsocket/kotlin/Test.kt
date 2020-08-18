@@ -19,8 +19,7 @@ package io.rsocket.kotlin
 import kotlinx.coroutines.*
 import kotlin.time.*
 
-@ExperimentalTime
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalTime::class)
 actual fun test(timeout: Duration?, block: suspend CoroutineScope.() -> Unit): dynamic = GlobalScope.promise {
     when (timeout) {
         null -> block()

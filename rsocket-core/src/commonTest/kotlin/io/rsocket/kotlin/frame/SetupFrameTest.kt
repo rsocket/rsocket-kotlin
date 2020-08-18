@@ -23,7 +23,6 @@ import io.rsocket.kotlin.payload.*
 import kotlin.test.*
 import kotlin.time.*
 
-@OptIn(ExperimentalTime::class)
 class SetupFrameTest {
 
     private val version = Version.Current

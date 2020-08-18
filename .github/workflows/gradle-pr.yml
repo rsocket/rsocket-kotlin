@@ -1,15 +1,14 @@
-name: Pull Request Java CI
+name: Pull Request CI
 
 on: [pull_request]
 
 jobs:
   build:
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
         jdk: [ 1.8, 11, 14 ]
       fail-fast: false
 

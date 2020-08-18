@@ -15,37 +15,24 @@
  */
 
 plugins {
+    kotlin("multiplatform")
+
     id("maven-publish")
     id("com.jfrog.bintray")
     id("com.jfrog.artifactory")
 }
 
 kotlin {
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "1.6"
-        }
-    }
-    js {
-        browser {
-            testTask {
-                enabled = false
-            }
-        }
-        nodejs {
-            testTask {
-                enabled = false
-            }
-        }
-    }
+    jvm()
+    js()
 
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api(project(":rsocket-transport-websocket"))
                 api(project(":rsocket-core"))
+                api(project(":rsocket-transport-websocket"))
 
-                api("io.ktor:ktor-client-core:1.3.2-1.4.0-rc")
+                api("io.ktor:ktor-client-core:1.4.0")
             }
         }
     }

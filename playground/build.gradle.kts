@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
+plugins {
+    kotlin("multiplatform")
+}
+
 kotlin {
     jvm()
-    js {
-        browser()
-        nodejs()
-    }
+    js()
 
     sourceSets {
         val commonMain by getting {
@@ -31,19 +32,16 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-cio:1.3.2-1.4.0-rc")
-                implementation("io.ktor:ktor-server-cio:1.3.2-1.4.0-rc")
-                implementation(project(":rsocket-core"))
-                implementation(project(":rsocket-transport-websocket-server"))
                 implementation(project(":rsocket-transport-tcp"))
+                implementation(project(":rsocket-transport-websocket-server"))
+
+                implementation("io.ktor:ktor-client-cio:1.4.0")
+                implementation("io.ktor:ktor-server-cio:1.4.0")
             }
         }
         val jsMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-js:1.3.2-1.4.0-rc")
-                api(npm("utf-8-validate", "5.0.2"))
-                api(npm("abort-controller", "3.0.0"))
-                api(npm("bufferutil", "4.0.1"))
+                implementation("io.ktor:ktor-client-js:1.4.0") //for WS support
             }
         }
     }

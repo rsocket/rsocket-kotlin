@@ -15,6 +15,7 @@
  */
 
 plugins {
+    kotlin("multiplatform")
     id("kotlinx-atomicfu")
 
     id("maven-publish")
@@ -23,49 +24,25 @@ plugins {
 }
 
 kotlin {
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "1.6"
-        }
-    }
-    js {
-        browser {
-            testTask {
-                enabled = false
-            }
-        }
-        nodejs {
-            testTask {
-                enabled = false
-            }
-        }
-    }
+    jvm()
+    js()
 
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api("io.ktor:ktor-client-core:1.3.2-1.4.0-rc")
-                compileOnly("org.jetbrains.kotlinx:atomicfu:0.14.4")
+                api("io.ktor:ktor-io:1.4.0")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
             }
         }
         val commonTest by getting {
             dependencies {
-                implementation(kotlin("test-common"))
-                implementation(kotlin("test-annotations-common"))
+                implementation("io.ktor:ktor-utils:1.4.0")
                 implementation(project(":rsocket-transport-local"))
             }
         }
-        val jvmMain by getting
-        val jvmTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit5"))
-            }
-        }
-        val jsMain by getting
-        val jsTest by getting {
-            dependencies {
-                implementation(kotlin("test-js"))
-            }
-        }
     }
+}
+
+atomicfu {
+    variant = "BOTH"
 }

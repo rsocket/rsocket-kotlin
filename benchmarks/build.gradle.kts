@@ -16,13 +16,21 @@
 
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 
+buildscript {
+    repositories {
+        maven("https://dl.bintray.com/kotlin/kotlin-dev") //used by benchmarks
+    }
+}
+
 plugins {
-    id("kotlinx.benchmark")
-    kotlin("plugin.allopen")
+    kotlin("multiplatform")
+    id("kotlinx.benchmark") version "0.2.0-dev-7"
+    kotlin("plugin.allopen") version "1.4.0"
 }
 
 repositories {
     maven("https://repo.spring.io/libs-snapshot")
+    maven("https://dl.bintray.com/kotlin/kotlin-dev") //used by benchmarks
 }
 
 kotlin {
@@ -33,7 +41,6 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.0-rc")
                 implementation("org.jetbrains.kotlinx:kotlinx.benchmark.runtime:0.2.0-dev-17")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
             }
