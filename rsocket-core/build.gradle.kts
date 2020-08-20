@@ -15,28 +15,34 @@
  */
 
 plugins {
-    ids(Plugins.mpp)
-    ids(Plugins.atomicfu)
+    kotlin("multiplatform")
+    id("kotlinx-atomicfu")
+
+    id("maven-publish")
+    id("com.jfrog.bintray")
+    id("com.jfrog.artifactory")
 }
 
-configureMultiplatform {
-    val (_, js) = defaultTargets()
+kotlin {
+    jvm()
+    js()
 
-    dependenciesMain {
-        api(Dependencies.ktor.io)
-        compileOnly(Dependencies.atomicfuMetadata)
-    }
-    //fix ktor issue
-    js!!.sourceSetMain.dependencies {
-        api(npm("text-encoding"))
-    }
-
-    dependenciesTest {
-        implementation(Dependencies.ktor.utils)
-    }
-    kampCommonTest.dependencies {
-        implementation(KampModules.transportLocal)
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api("io.ktor:ktor-io:1.4.0")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation("io.ktor:ktor-utils:1.4.0")
+                implementation(project(":rsocket-transport-local"))
+            }
+        }
     }
 }
 
-configurePublication()
+atomicfu {
+    variant = "BOTH"
+}

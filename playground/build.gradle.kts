@@ -15,31 +15,34 @@
  */
 
 plugins {
-    ids(Plugins.multiplatform)
+    kotlin("multiplatform")
 }
 
-configureMultiplatform {
-    val (jvm, js) = defaultTargets()
+kotlin {
+    jvm()
+    js()
 
-    dependenciesMain {
-        api(Dependencies.ktor.client.engines.cio) //jvm engine
-        api(Dependencies.ktor.client.engines.js) //js engine
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(project(":rsocket-core"))
+                implementation(project(":rsocket-transport-local"))
+                implementation(project(":rsocket-transport-websocket-client"))
+            }
+        }
+        val jvmMain by getting {
+            dependencies {
+                implementation(project(":rsocket-transport-tcp"))
+                implementation(project(":rsocket-transport-websocket-server"))
 
-        api(Dependencies.ktor.server.engines.cio) //jvm engine
-    }
-    kampCommonMain.dependencies {
-        api(KampModules.transportLocal)
-        api(KampModules.transportWebsocketClient)
-    }
-    //fix ktor issue
-    js!!.sourceSetMain.dependencies {
-        api(npm("utf-8-validate"))
-        api(npm("abort-controller"))
-        api(npm("bufferutil"))
-        api(npm("fs"))
-    }
-    jvm!!.kampSourceSetMain.dependencies {
-        api(KampModules.transportTcp)
-        api(KampModules.transportWebsocketServer)
+                implementation("io.ktor:ktor-client-cio:1.4.0")
+                implementation("io.ktor:ktor-server-cio:1.4.0")
+            }
+        }
+        val jsMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-js:1.4.0") //for WS support
+            }
+        }
     }
 }

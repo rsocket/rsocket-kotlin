@@ -18,7 +18,7 @@ package io.rsocket.kotlin.keepalive
 
 import kotlin.time.*
 
-data class KeepAlive(
+data class KeepAlive @OptIn(ExperimentalTime::class) constructor(
     val interval: Duration = 20.seconds,
     val maxLifetime: Duration = 90.seconds
 )

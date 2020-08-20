@@ -15,18 +15,30 @@
  */
 
 plugins {
-    ids(Plugins.multiplatform)
+    kotlin("multiplatform")
 }
 
-configureMultiplatform {
-    defaultTargets()
+kotlin {
+    jvm()
+    js()
 
-    dependenciesMain {
-        api(Dependencies.kotlin.test)
-        api(Dependencies.kotlin.annotations.common)
-        api(Dependencies.kotlin.annotations.junit)
-    }
-    kampCommonMain.dependencies {
-        api(KampModules.core)
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(project(":rsocket-core"))
+                implementation(kotlin("test-common"))
+                implementation(kotlin("test-annotations-common"))
+            }
+        }
+        val jvmMain by getting {
+            dependencies {
+                implementation(kotlin("test-junit"))
+            }
+        }
+        val jsMain by getting {
+            dependencies {
+                implementation(kotlin("test-js"))
+            }
+        }
     }
 }

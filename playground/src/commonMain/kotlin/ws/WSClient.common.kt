@@ -20,10 +20,12 @@ import doSomething
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.features.websocket.*
+import io.ktor.util.*
 import io.rsocket.kotlin.core.*
 
 expect val engine: HttpClientEngineFactory<*>
 
+@OptIn(KtorExperimentalAPI::class)
 suspend fun run() {
     val client = HttpClient(engine) {
         install(WebSockets)

@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
+@OptIn(ExperimentalTime::class)
 abstract class TransportTest(private val timeout: Duration = 10.minutes) {
     private var client: RSocket? = null
 
@@ -61,14 +62,12 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
         (1..10).map { async { client.fireAndForget(LARGE_PAYLOAD) } }.awaitAll()
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun metadataPush10() = test(timeout) {
         val client = client()
         (1..10).map { async { client.metadataPush(ByteReadPacket(MOCK_DATA.encodeToByteArray())) } }.awaitAll()
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun largePayloadMetadataPush10() = test(timeout) {
         val client = client()
@@ -109,7 +108,6 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
         assertEquals(200, list.size)
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun requestChannel20000() = test(timeout) {
         val client = client()
@@ -131,16 +129,6 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
         }
         val list = client.requestChannel(request).requesting(RequestStrategy(Int.MAX_VALUE)).onEach { it.release() }.toList()
         assertEquals(200_000, list.size)
-    }
-
-    @Test
-    fun requestChannel2000000() = test(timeout) {
-        val client = client()
-        val request = RequestingFlow {
-            repeat(2_000_000) { emit(Payload(it)) }
-        }
-        val list = client.requestChannel(request).requesting(RequestStrategy(Int.MAX_VALUE)).onEach { it.release() }.toList()
-        assertEquals(2_000_000, list.size)
     }
 
     @Test
@@ -192,9 +180,9 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
     }
 
     @Test
-    fun requestResponse1_000_000() = test(timeout) {
+    fun requestResponse100000() = test(timeout) {
         val client = client()
-        repeat(1_000_000) { client.requestResponse(Payload(3)).let(::checkPayload) }
+        repeat(100000) { client.requestResponse(Payload(3)).let(::checkPayload) }
     }
 
     @Test
@@ -211,7 +199,6 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
         assertEquals(10000, list.size)
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     fun checkPayload(payload: Payload) {
         assertEquals(TestRSocket.data, payload.data.readText())
         assertEquals(TestRSocket.metadata, payload.metadata?.readText())

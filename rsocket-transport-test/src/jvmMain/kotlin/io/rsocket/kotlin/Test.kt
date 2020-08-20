@@ -19,7 +19,7 @@ package io.rsocket.kotlin
 import kotlinx.coroutines.*
 import kotlin.time.*
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalTime::class)
 actual fun test(timeout: Duration?, block: suspend CoroutineScope.() -> Unit): Unit = runBlocking {
     when (timeout) {
         null -> block()

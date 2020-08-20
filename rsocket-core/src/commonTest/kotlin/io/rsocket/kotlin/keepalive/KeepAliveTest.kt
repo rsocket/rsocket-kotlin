@@ -60,7 +60,6 @@ class KeepAliveTest {
         assertTrue(rSocket.isActive)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun requesterRespondsToKeepAlive() = test {
         requester(KeepAlive(100.seconds, 100.seconds))
@@ -86,7 +85,6 @@ class KeepAliveTest {
         assertEquals(0, connection.sentFrames.size)
     }
 
-    @OptIn(InternalCoroutinesApi::class)
     @Test
     fun rSocketCanceledOnMissingKeepAliveTicks() = test {
         val rSocket = requester()
