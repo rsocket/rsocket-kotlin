@@ -24,6 +24,7 @@ import kotlinx.coroutines.*
 import kotlin.time.*
 import kotlin.time.TimeSource.*
 
+@OptIn(ExperimentalTime::class)
 internal class KeepAliveHandler(
     private val keepAlive: KeepAlive,
     private val offerFrame: (frame: Frame) -> Unit

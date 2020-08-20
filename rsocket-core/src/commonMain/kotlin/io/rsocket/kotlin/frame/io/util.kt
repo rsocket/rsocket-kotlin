@@ -40,7 +40,6 @@ fun Input.readMimeType(): String {
     return readText(max = length)
 }
 
-@OptIn(ExperimentalStdlibApi::class)
 fun Output.writeMimeType(mimeType: String) {
     val bytes = mimeType.encodeToByteArray() //TODO check
     writeByte(bytes.size.toByte())
@@ -58,8 +57,10 @@ fun Output.writePayloadMimeType(payloadMimeType: PayloadMimeType) {
     writeMimeType(payloadMimeType.data)
 }
 
+@OptIn(ExperimentalTime::class)
 fun Input.readMillis(): Duration = readInt().milliseconds
 
+@OptIn(ExperimentalTime::class)
 fun Output.writeMillis(duration: Duration) {
     writeInt(duration.toInt(DurationUnit.MILLISECONDS))
 }

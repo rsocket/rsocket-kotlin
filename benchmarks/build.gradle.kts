@@ -16,36 +16,54 @@
 
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 
+buildscript {
+    repositories {
+        maven("https://dl.bintray.com/kotlin/kotlin-dev") //used by benchmarks
+    }
+}
+
 plugins {
-    ids(Plugins.benchmarks)
+    kotlin("multiplatform")
+    id("kotlinx.benchmark") version "0.2.0-dev-7"
+    kotlin("plugin.allopen") version "1.4.0"
 }
 
 repositories {
     maven("https://repo.spring.io/libs-snapshot")
+    maven("https://dl.bintray.com/kotlin/kotlin-dev") //used by benchmarks
 }
 
-configureMultiplatform {
-    val jvm = jvm().kampSourceSetMain //common jvm source set
-    val kotlinJvm = jvm("kotlin").kampSourceSetMain //kotlin benchmark
-    val javaJvm = jvm("java").kampSourceSetMain //java benchmark
+kotlin {
+    val jvm = jvm() //common jvm source set
+    val kotlinJvm = jvm("kotlin")  //kotlin benchmark
+    val javaJvm = jvm("java")
 
-    kotlinJvm.sourceSet.dependsOn(jvm.sourceSet)
-    javaJvm.sourceSet.dependsOn(jvm.sourceSet)
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx.benchmark.runtime:0.2.0-dev-17")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
+            }
+        }
 
-    dependenciesMain {
-        implementation(Dependencies.kotlinx.benchmark)
-        implementation(Dependencies.kotlinx.coroutines)
-    }
+        val jvmMain by getting
 
-    kotlinJvm.dependencies {
-        implementation(KampModules.core)
-        implementation(KampModules.transportLocal)
-    }
+        val kotlinMain by getting {
+            dependsOn(jvmMain)
+            dependencies {
+                implementation(project(":rsocket-core"))
+                implementation(project(":rsocket-transport-local"))
+            }
+        }
 
-    javaJvm.dependencies {
-        implementation(Dependencies.kotlinx.coroutines.reactor)
-        implementation(Dependencies.rsocketJava.core)
-        implementation(Dependencies.rsocketJava.local)
+        val javaMain by getting {
+            dependsOn(jvmMain)
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.3.9")
+                implementation("io.rsocket:rsocket-core:1.1.0-M1")
+                implementation("io.rsocket:rsocket-transport-local:1.1.0-M1")
+            }
+        }
     }
 }
 

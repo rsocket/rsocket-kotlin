@@ -68,7 +68,7 @@ enum class FrameType(val encodedType: Int, flags: Int = Flags.Empty) {
         private val encodedTypes: Array<FrameType?>
 
         init {
-            val maximumEncodedType = values().map(FrameType::encodedType).max() ?: 0
+            val maximumEncodedType = values().map(FrameType::encodedType).maxOrNull() ?: 0
             encodedTypes = arrayOfNulls(maximumEncodedType + 1)
             values().forEach { encodedTypes[it.encodedType] = it }
         }

@@ -15,18 +15,27 @@
  */
 
 plugins {
-    ids(Plugins.mpp)
+    kotlin("multiplatform")
+
+    id("maven-publish")
+    id("com.jfrog.bintray")
+    id("com.jfrog.artifactory")
 }
 
-configureMultiplatform {
-    defaultTargets()
+kotlin {
+    jvm()
+    js()
 
-    kampCommonMain.dependencies {
-        api(KampModules.core)
-    }
-    kampCommonTest.dependencies {
-        implementation(KampModules.transportTest)
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api(project(":rsocket-core"))
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(project(":rsocket-transport-test"))
+            }
+        }
     }
 }
-
-configurePublication()

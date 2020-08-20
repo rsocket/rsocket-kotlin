@@ -25,7 +25,9 @@ import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlin.test.*
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 class SetupRejectionTest {
     @Test
     fun responderRejectSetup() = test {
