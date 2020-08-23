@@ -44,5 +44,5 @@ kotlin {
 }
 
 atomicfu {
-    variant = "BOTH"
+    variant = "FU"
 }
