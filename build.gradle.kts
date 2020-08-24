@@ -64,7 +64,7 @@ subprojects {
                     }
                     is KotlinJvmTarget -> {
                         compilations.all {
-                            kotlinOptions { jvmTarget = "1.6" }
+                            kotlinOptions { jvmTarget = "1.8" }
                         }
                     }
                 }
