@@ -26,7 +26,7 @@ private const val INTEGER = 10
 
 @BenchmarkMode(Mode.Throughput)
 @Fork(value = 2)
-@Warmup(iterations = INTEGER)
+@Warmup(iterations = INTEGER, time = INTEGER)
 @Measurement(iterations = INTEGER, time = INTEGER)
 @State(Scope.Benchmark)
 abstract class RSocketBenchmark<Payload : Any> {
@@ -55,28 +55,82 @@ abstract class RSocketBenchmark<Payload : Any> {
 
     abstract suspend fun doRequestChannel(): Flow<Payload>
 
+
     @Benchmark
-    fun requestResponse(bh: Blackhole) = runBlocking {
+    fun requestResponseBlocking(bh: Blackhole) = blocking(bh, ::requestResponse)
+
+    @Benchmark
+    fun requestResponseParallel(bh: Blackhole) = parallel(bh, 500, ::requestResponse)
+
+    @Benchmark
+    fun requestResponseConcurrent(bh: Blackhole) = concurrent(bh, 500, ::requestResponse)
+
+
+    @Benchmark
+    fun requestStreamBlocking(bh: Blackhole) = blocking(bh, ::requestStream)
+
+    @Benchmark
+    fun requestStreamParallel(bh: Blackhole) = parallel(bh, 10, ::requestStream)
+
+    @Benchmark
+    fun requestStreamConcurrent(bh: Blackhole) = concurrent(bh, 10, ::requestStream)
+
+
+    @Benchmark
+    fun requestChannelBlocking(bh: Blackhole) = blocking(bh, ::requestChannel)
+
+    @Benchmark
+    fun requestChannelParallel(bh: Blackhole) = parallel(bh, 3, ::requestChannel)
+
+    @Benchmark
+    fun requestChannelConcurrent(bh: Blackhole) = concurrent(bh, 3, ::requestChannel)
+
+
+    private suspend fun requestResponse(bh: Blackhole) {
         doRequestResponse().also {
             releasePayload(it)
             bh.consume(it)
         }
     }
 
-    @Benchmark
-    fun requestStream(bh: Blackhole) = runBlocking {
+    private suspend fun requestStream(bh: Blackhole) {
         doRequestStream().collect {
             releasePayload(it)
             bh.consume(it)
         }
     }
 
-    @Benchmark
-    fun requestChannel(bh: Blackhole) = runBlocking {
+    private suspend fun requestChannel(bh: Blackhole) {
         doRequestChannel().collect {
             releasePayload(it)
             bh.consume(it)
         }
     }
 
+    //plain blocking
+    private inline fun blocking(bh: Blackhole, crossinline block: suspend (bh: Blackhole) -> Unit): Unit = runBlocking {
+        block(bh)
+    }
+
+    //Run every request in separate coroutine which will be dispatched on Default dispatcher (threads amount = cores amount)
+    private inline fun parallel(bh: Blackhole, p: Int, crossinline block: suspend (bh: Blackhole) -> Unit): Unit = runBlocking {
+        (0..p).map {
+            GlobalScope.async { block(bh) }
+        }.awaitAll()
+    }
+
+    //Run every request in separate coroutine, but on single thread dispatcher:
+    //  - do request 1
+    //  - suspend on awaiting of result 1
+    //  - do request 2
+    //  - suspend on awaiting of result 2
+    //  - receive result on request 1
+    //  - receive result on request 2
+    //  - ....
+    //working with requests is single threaded but concurrent
+    private inline fun concurrent(bh: Blackhole, p: Int, crossinline block: suspend (bh: Blackhole) -> Unit): Unit = runBlocking {
+        (0..p).map {
+            async { block(bh) }
+        }.awaitAll()
+    }
 }
