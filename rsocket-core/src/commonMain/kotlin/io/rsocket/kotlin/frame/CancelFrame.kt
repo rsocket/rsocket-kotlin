@@ -22,5 +22,5 @@ class CancelFrame(
     override val streamId: Int
 ) : Frame(FrameType.Cancel) {
     override val flags: Int get() = 0
-    override fun Output.writeSelf(): Unit = Unit
+    override fun BytePacketBuilder.writeSelf(): Unit = Unit
 }

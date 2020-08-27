@@ -32,8 +32,8 @@ inline class Version(val value: Int) {
     }
 }
 
-fun Input.readVersion(): Version = Version(readInt())
+fun ByteReadPacket.readVersion(): Version = Version(readInt())
 
-fun Output.writeVersion(version: Version) {
+fun BytePacketBuilder.writeVersion(version: Version) {
     writeInt(version.value)
 }

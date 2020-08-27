@@ -25,9 +25,9 @@ class MetadataPushFrame(
     override val streamId: Int get() = 0
     override val flags: Int get() = Flags.Metadata
 
-    override fun Output.writeSelf() {
+    override fun BytePacketBuilder.writeSelf() {
         writePacket(metadata)
     }
 }
 
-fun Input.readMetadataPush(): MetadataPushFrame = MetadataPushFrame(readPacket())
+fun ByteReadPacket.readMetadataPush(): MetadataPushFrame = MetadataPushFrame(readPacket())

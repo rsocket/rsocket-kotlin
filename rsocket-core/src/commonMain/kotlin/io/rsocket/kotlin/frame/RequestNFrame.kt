@@ -23,12 +23,12 @@ class RequestNFrame(
     val requestN: Int
 ) : Frame(FrameType.RequestN) {
     override val flags: Int get() = 0
-    override fun Output.writeSelf() {
+    override fun BytePacketBuilder.writeSelf() {
         writeInt(requestN)
     }
 }
 
-fun Input.readRequestN(streamId: Int): RequestNFrame {
+fun ByteReadPacket.readRequestN(streamId: Int): RequestNFrame {
     val requestN = readInt()
     return RequestNFrame(streamId, requestN)
 }

@@ -29,13 +29,13 @@ class KeepAliveFrame(
     override val streamId: Int get() = 0
     override val flags: Int get() = if (respond) KeepAliveFlag else 0
 
-    override fun Output.writeSelf() {
+    override fun BytePacketBuilder.writeSelf() {
         writeLong(lastPosition.coerceAtLeast(0))
         writePacket(data)
     }
 }
 
-fun Input.readKeepAlive(flags: Int): KeepAliveFrame {
+fun ByteReadPacket.readKeepAlive(flags: Int): KeepAliveFrame {
     val respond = flags check KeepAliveFlag
     val lastPosition = readLong()
     val data = readPacket()

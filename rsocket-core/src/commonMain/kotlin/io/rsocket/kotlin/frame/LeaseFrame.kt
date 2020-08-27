@@ -26,14 +26,14 @@ class LeaseFrame(
 ) : Frame(FrameType.Lease) {
     override val streamId: Int get() = 0
     override val flags: Int get() = if (metadata != null) Flags.Metadata else 0
-    override fun Output.writeSelf() {
+    override fun BytePacketBuilder.writeSelf() {
         writeInt(ttl)
         writeInt(numberOfRequests)
         writeMetadata(metadata)
     }
 }
 
-fun Input.readLease(flags: Int): LeaseFrame {
+fun ByteReadPacket.readLease(flags: Int): LeaseFrame {
     val ttl = readInt()
     val numberOfRequests = readInt()
     val metadata = if (flags check Flags.Metadata) readMetadata() else null

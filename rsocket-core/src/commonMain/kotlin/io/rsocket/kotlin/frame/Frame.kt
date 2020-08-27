@@ -26,7 +26,7 @@ abstract class Frame(open val type: FrameType) {
     abstract val streamId: Int
     abstract val flags: Int
 
-    protected abstract fun Output.writeSelf()
+    protected abstract fun BytePacketBuilder.writeSelf()
 
     fun toPacket(): ByteReadPacket {
         check(type.canHaveMetadata || !(flags check Flags.Metadata)) { "bad value for metadata flag" }

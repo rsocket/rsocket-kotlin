@@ -27,7 +27,7 @@ class ResumeFrame(
 ) : Frame(FrameType.Resume) {
     override val streamId: Int get() = 0
     override val flags: Int get() = 0
-    override fun Output.writeSelf() {
+    override fun BytePacketBuilder.writeSelf() {
         writeVersion(version)
         writeResumeToken(resumeToken)
         writeLong(lastReceivedServerPosition)
@@ -35,7 +35,7 @@ class ResumeFrame(
     }
 }
 
-fun Input.readResume(): ResumeFrame {
+fun ByteReadPacket.readResume(): ResumeFrame {
     val version = readVersion()
     val resumeToken = readResumeToken()
     val lastReceivedServerPosition = readLong()
