@@ -27,7 +27,7 @@ class ErrorFrame(
     override val flags: Int get() = 0
     val errorCode get() = (throwable as? RSocketError)?.errorCode ?: ErrorCode.ApplicationError
 
-    override fun Output.writeSelf() {
+    override fun BytePacketBuilder.writeSelf() {
         writeInt(errorCode)
         when (data) {
             null -> writeText(throwable.message ?: "")
@@ -36,7 +36,7 @@ class ErrorFrame(
     }
 }
 
-fun Input.readError(streamId: Int): ErrorFrame {
+fun ByteReadPacket.readError(streamId: Int): ErrorFrame {
     val errorCode = readInt()
     val message = readText()
     return ErrorFrame(streamId, RSocketError(streamId, errorCode, message))

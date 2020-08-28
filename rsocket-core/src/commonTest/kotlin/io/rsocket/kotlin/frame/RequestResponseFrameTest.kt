@@ -16,6 +16,7 @@
 
 package io.rsocket.kotlin.frame
 
+import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
 import kotlin.test.*
 
@@ -49,6 +50,25 @@ class RequestResponseFrameTest {
         assertFalse(decodedFrame.next)
         assertEquals("d", decodedFrame.payload.data.readText())
         assertEquals("md", decodedFrame.payload.metadata?.readText())
+    }
+
+    @Test
+    fun testBigDataMetadata() {
+        val payload = Payload {
+            metadata(ByteArray(6000) { 3 })
+            data(ByteArray(7000) { 5 })
+        }
+        val frame = RequestResponseFrame(3, payload)
+        val decodedFrame = buildPacket { writeText(frame.toPacket().readText()) }.toFrame()
+
+        assertTrue(decodedFrame is RequestFrame)
+        assertEquals(FrameType.RequestResponse, decodedFrame.type)
+        assertEquals(3, decodedFrame.streamId)
+        assertFalse(decodedFrame.follows)
+        assertFalse(decodedFrame.complete)
+        assertFalse(decodedFrame.next)
+        assertBytesEquals(ByteArray(7000) { 5 }, decodedFrame.payload.data.readBytes())
+        assertBytesEquals(ByteArray(6000) { 3 }, decodedFrame.payload.metadata?.readBytes())
     }
 
 }

@@ -41,6 +41,21 @@ class ResumeFrameTest {
     }
 
     @Test
+    fun testBigChunkedToken() {
+        val token = ByteArray(63000) { 1 }
+        val packet = buildPacket { writeFully(token) }
+        val frame = ResumeFrame(version, packet, lastReceivedServerPosition, firstAvailableClientPosition)
+        val decodedFrame = frame.toPacket().toFrame()
+
+        assertTrue(decodedFrame is ResumeFrame)
+        assertEquals(0, decodedFrame.streamId)
+        assertEquals(version, decodedFrame.version)
+        assertBytesEquals(token, decodedFrame.resumeToken.readBytes())
+        assertEquals(lastReceivedServerPosition, decodedFrame.lastReceivedServerPosition)
+        assertEquals(firstAvailableClientPosition, decodedFrame.firstAvailableClientPosition)
+    }
+
+    @Test
     fun testSmallToken() {
         val token = ByteArray(100) { 1 }
         val frame = ResumeFrame(version, ByteReadPacket(token), lastReceivedServerPosition, firstAvailableClientPosition)

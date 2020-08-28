@@ -26,13 +26,13 @@ class ExtensionFrame(
     val payload: Payload
 ) : Frame(FrameType.Extension) {
     override val flags: Int get() = if (payload.metadata != null) Flags.Metadata else 0
-    override fun Output.writeSelf() {
+    override fun BytePacketBuilder.writeSelf() {
         writeInt(extendedType)
         writePayload(payload)
     }
 }
 
-fun Input.readExtension(streamId: Int, flags: Int): ExtensionFrame {
+fun ByteReadPacket.readExtension(streamId: Int, flags: Int): ExtensionFrame {
     val extendedType = readInt()
     val payload = readPayload(flags)
     return ExtensionFrame(streamId, extendedType, payload)

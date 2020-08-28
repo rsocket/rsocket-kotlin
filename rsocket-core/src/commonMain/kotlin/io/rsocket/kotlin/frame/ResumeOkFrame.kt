@@ -24,9 +24,9 @@ class ResumeOkFrame(
     override val streamId: Int get() = 0
     override val flags: Int get() = 0
 
-    override fun Output.writeSelf() {
+    override fun BytePacketBuilder.writeSelf() {
         writeLong(lastReceivedClientPosition)
     }
 }
 
-fun Input.readResumeOk(): ResumeOkFrame = ResumeOkFrame(readLong())
+fun ByteReadPacket.readResumeOk(): ResumeOkFrame = ResumeOkFrame(readLong())

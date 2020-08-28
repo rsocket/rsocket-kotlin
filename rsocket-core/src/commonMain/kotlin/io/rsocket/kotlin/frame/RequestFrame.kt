@@ -41,13 +41,13 @@ class RequestFrame(
             return flags
         }
 
-    override fun Output.writeSelf() {
+    override fun BytePacketBuilder.writeSelf() {
         if (initialRequest > 0) writeInt(initialRequest)
         writePayload(payload)
     }
 }
 
-fun Input.readRequest(type: FrameType, streamId: Int, flags: Int, withInitial: Boolean): RequestFrame {
+fun ByteReadPacket.readRequest(type: FrameType, streamId: Int, flags: Int, withInitial: Boolean): RequestFrame {
     val fragmentFollows = flags check Flags.Follows
     val complete = flags check Flags.Complete
     val next = flags check Flags.Next

@@ -42,7 +42,7 @@ class SetupFrame(
             return flags
         }
 
-    override fun Output.writeSelf() {
+    override fun BytePacketBuilder.writeSelf() {
         writeVersion(version)
         writeKeepAlive(keepAlive)
         writeResumeToken(resumeToken)
@@ -51,7 +51,7 @@ class SetupFrame(
     }
 }
 
-fun Input.readSetup(flags: Int): SetupFrame {
+fun ByteReadPacket.readSetup(flags: Int): SetupFrame {
     val version = readVersion()
     val keepAlive = readKeepAlive()
     val resumeToken = if (flags check ResumeEnabledFlag) readResumeToken() else null
