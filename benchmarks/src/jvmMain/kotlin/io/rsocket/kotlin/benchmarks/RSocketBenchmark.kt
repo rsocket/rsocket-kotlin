@@ -22,12 +22,10 @@ import org.openjdk.jmh.annotations.*
 import org.openjdk.jmh.infra.*
 import java.util.concurrent.locks.*
 
-private const val INTEGER = 10
-
 @BenchmarkMode(Mode.Throughput)
 @Fork(value = 2)
-@Warmup(iterations = INTEGER, time = INTEGER)
-@Measurement(iterations = INTEGER, time = INTEGER)
+@Warmup(iterations = 10, time = 10)
+@Measurement(iterations = 7, time = 10)
 @State(Scope.Benchmark)
 abstract class RSocketBenchmark<Payload : Any> {
 
