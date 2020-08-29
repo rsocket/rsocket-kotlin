@@ -25,22 +25,22 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 
 internal class RSocketRequester(
-    state: RSocketState,
-    private val streamId: StreamId
-) : RSocket, RSocketState by state {
-    private fun nextStreamId(): Int = streamId.next(streamIds)
+    private val state: RSocketState,
+    private val streamId: StreamId,
+) : RSocket, Cancelable by state {
+    private fun nextStreamId(): Int = streamId.next(state.receivers)
 
     override fun metadataPush(metadata: ByteReadPacket) {
         checkAvailable()
-        sendPrioritized(MetadataPushFrame(metadata))
+        state.sendPrioritized(MetadataPushFrame(metadata))
     }
 
     override fun fireAndForget(payload: Payload) {
         checkAvailable()
-        send(RequestFireAndForgetFrame(nextStreamId(), payload))
+        state.send(RequestFireAndForgetFrame(nextStreamId(), payload))
     }
 
-    override suspend fun requestResponse(payload: Payload): Payload {
+    override suspend fun requestResponse(payload: Payload): Payload = with(state) {
         checkAvailable()
         val streamId = nextStreamId()
         val receiver = receiver(streamId)
@@ -48,31 +48,35 @@ internal class RSocketRequester(
         return receiveOne(streamId, receiver)
     }
 
-    override fun requestStream(payload: Payload): RequestingFlow<Payload> = requestingFlow {
-        checkAvailable()
-        val streamId = nextStreamId()
-        val receiver = receiver(streamId)
-        send(RequestStreamFrame(streamId, initialRequest, payload))
-        emitAll(streamId, receiver)
+    override fun requestStream(payload: Payload): RequestingFlow<Payload> = with(state) {
+        requestingFlow {
+            checkAvailable()
+            val streamId = nextStreamId()
+            val receiver = receiver(streamId)
+            send(RequestStreamFrame(streamId, initialRequest, payload))
+            emitAll(streamId, receiver)
+        }
     }
 
-    override fun requestChannel(payloads: RequestingFlow<Payload>): RequestingFlow<Payload> = requestingFlow {
-        checkAvailable()
-        val streamId = nextStreamId()
-        val request = payloads.sendLimiting(streamId, 1)
-        val firstPayload = request.firstOrNull() ?: return@requestingFlow
-        val receiver = receiver(streamId)
-        send(RequestChannelFrame(streamId, initialRequest, firstPayload))
-        launchCancelable(streamId) {
-            sendStream(streamId, request)
-        }.invokeOnCompletion {
-            if (it != null && it !is CancellationException) receiver.cancelConsumed(it)
-        }
-        try {
-            emitAll(streamId, receiver)
-        } catch (e: Throwable) {
-            request.cancelConsumed(e)
-            throw e
+    override fun requestChannel(payloads: RequestingFlow<Payload>): RequestingFlow<Payload> = with(state) {
+        requestingFlow {
+            checkAvailable()
+            val streamId = nextStreamId()
+            val request = payloads.sendLimiting(streamId, 1)
+            val firstPayload = request.firstOrNull() ?: return@requestingFlow
+            val receiver = receiver(streamId)
+            send(RequestChannelFrame(streamId, initialRequest, firstPayload))
+            launchCancelable(streamId) {
+                sendStream(streamId, request)
+            }.invokeOnCompletion {
+                if (it != null && it !is CancellationException) receiver.cancelConsumed(it)
+            }
+            try {
+                emitAll(streamId, receiver)
+            } catch (e: Throwable) {
+                request.cancelConsumed(e)
+                throw e
+            }
         }
     }
 

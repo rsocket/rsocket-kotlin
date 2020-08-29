@@ -53,7 +53,7 @@ class RSocketTest {
         }
 
         fun state(connection: Connection): RSocketState =
-            RSocketStateImpl(connection, KeepAlive(1000.seconds, 1000.seconds), RequestStrategy.Default, {})
+            RSocketState(connection, KeepAlive(1000.seconds, 1000.seconds), RequestStrategy.Default, {})
 
         val clientState = state(clientConnection)
         requester = RSocketRequester(clientState, StreamId.client())

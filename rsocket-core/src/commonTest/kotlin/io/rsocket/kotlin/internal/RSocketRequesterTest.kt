@@ -32,7 +32,7 @@ class RSocketRequesterTest {
     private val connection = TestConnection()
     private val ignoredFrames = Channel<Frame>(Channel.UNLIMITED)
     private val requester = run {
-        val state = RSocketStateImpl(connection, KeepAlive(1000.seconds, 1000.seconds), RequestStrategy.Default, ignoredFrames::offer)
+        val state = RSocketState(connection, KeepAlive(1000.seconds, 1000.seconds), RequestStrategy.Default, ignoredFrames::offer)
         val requester = RSocketRequester(state, StreamId.client())
         state.start(RSocketRequestHandler { })
         requester

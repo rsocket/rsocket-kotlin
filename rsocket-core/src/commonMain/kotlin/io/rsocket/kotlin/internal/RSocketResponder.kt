@@ -21,23 +21,23 @@ import io.rsocket.kotlin.frame.*
 import kotlinx.coroutines.*
 
 internal class RSocketResponder(
-    state: RSocketState,
-    private val requestHandler: RSocket
-) : RSocketState by state {
+    private val state: RSocketState,
+    private val requestHandler: RSocket,
+) : Cancelable by state {
 
     fun handleMetadataPush(frame: MetadataPushFrame) {
-        launch {
+        state.launch {
             requestHandler.metadataPush(frame.metadata)
         }
     }
 
     fun handleFireAndForget(frame: RequestFrame) {
-        launch {
+        state.launch {
             requestHandler.fireAndForget(frame.payload)
         }
     }
 
-    fun handlerRequestResponse(frame: RequestFrame) {
+    fun handlerRequestResponse(frame: RequestFrame): Unit = with(state) {
         val streamId = frame.streamId
         launchCancelable(streamId) {
             val response = requestOrThrow(streamId) {
@@ -47,7 +47,7 @@ internal class RSocketResponder(
         }
     }
 
-    fun handleRequestStream(initFrame: RequestFrame) {
+    fun handleRequestStream(initFrame: RequestFrame): Unit = with(state) {
         val streamId = initFrame.streamId
         launchCancelable(streamId) {
             val response = requestOrThrow(streamId) {
@@ -57,7 +57,7 @@ internal class RSocketResponder(
         }
     }
 
-    fun handleRequestChannel(initFrame: RequestFrame) {
+    fun handleRequestChannel(initFrame: RequestFrame): Unit = with(state) {
         val streamId = initFrame.streamId
         val receiver = receiver(streamId)
         //TODO prevent consuming more then one time
@@ -80,7 +80,7 @@ internal class RSocketResponder(
         return try {
             block()
         } catch (e: Throwable) {
-            if (isActive) send(ErrorFrame(streamId, e))
+            if (isActive) state.send(ErrorFrame(streamId, e))
             throw e
         }
     }

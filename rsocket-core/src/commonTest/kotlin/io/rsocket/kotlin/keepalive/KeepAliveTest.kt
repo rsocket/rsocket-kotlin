@@ -30,7 +30,7 @@ import kotlin.time.*
 class KeepAliveTest {
     private val connection = TestConnection()
     private fun requester(keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds)): RSocket = run {
-        val state = RSocketStateImpl(connection, keepAlive, RequestStrategy.Default, {})
+        val state = RSocketState(connection, keepAlive, RequestStrategy.Default, {})
         val requester = RSocketRequester(state, StreamId.client())
         state.start(RSocketRequestHandler { })
         requester

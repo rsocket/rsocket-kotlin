@@ -42,7 +42,7 @@ class RSocketConnector(
             )
         }
         val connectionSetup = setupFrame.toConnectionSetup()
-        val state = RSocketStateImpl(
+        val state = RSocketState(
             connection = connection,
             keepAlive = configuration.keepAlive,
             requestStrategy = configuration.requestStrategy,

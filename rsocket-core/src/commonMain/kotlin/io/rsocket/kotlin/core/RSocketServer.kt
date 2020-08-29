@@ -38,7 +38,7 @@ class RSocketServer(
                 }
                 //check lease, resume
                 val connectionSetup = setupFrame.toConnectionSetup()
-                val state = RSocketStateImpl(
+                val state = RSocketState(
                     connection = connection,
                     keepAlive = connectionSetup.keepAlive,
                     requestStrategy = configuration.requestStrategy,
