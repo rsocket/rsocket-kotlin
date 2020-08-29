@@ -30,12 +30,12 @@ internal class RSocketRequester(
 ) : RSocket, Cancelable by state {
     private fun nextStreamId(): Int = streamId.next(state.receivers)
 
-    override fun metadataPush(metadata: ByteReadPacket) {
+    override suspend fun metadataPush(metadata: ByteReadPacket) {
         checkAvailable()
         state.sendPrioritized(MetadataPushFrame(metadata))
     }
 
-    override fun fireAndForget(payload: Payload) {
+    override suspend fun fireAndForget(payload: Payload) {
         checkAvailable()
         state.send(RequestFireAndForgetFrame(nextStreamId(), payload))
     }

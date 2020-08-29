@@ -23,12 +23,12 @@ import kotlinx.coroutines.flow.*
 
 interface RSocket : Cancelable {
 
-    fun metadataPush(metadata: ByteReadPacket) {
+    suspend fun metadataPush(metadata: ByteReadPacket) {
         metadata.release()
         notImplemented("Metadata Push")
     }
 
-    fun fireAndForget(payload: Payload) {
+    suspend fun fireAndForget(payload: Payload) {
         payload.release()
         notImplemented("Fire and Forget")
     }

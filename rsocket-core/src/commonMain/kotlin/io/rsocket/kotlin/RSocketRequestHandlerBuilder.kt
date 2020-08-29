@@ -22,8 +22,8 @@ import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 
 class RSocketRequestHandlerBuilder internal constructor(private val job: Job) {
-    var metadataPush: (RSocket.(metadata: ByteReadPacket) -> Unit)? = null
-    var fireAndForget: (RSocket.(payload: Payload) -> Unit)? = null
+    var metadataPush: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)? = null
+    var fireAndForget: (suspend RSocket.(payload: Payload) -> Unit)? = null
     var requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null
     var requestStream: (RSocket.(payload: Payload) -> RequestingFlow<Payload>)? = null
     var requestChannel: (RSocket.(payloads: RequestingFlow<Payload>) -> RequestingFlow<Payload>)? = null
@@ -40,16 +40,16 @@ fun RSocketRequestHandler(parentJob: Job? = null, configure: RSocketRequestHandl
 
 private class RSocketRequestHandler(
     override val job: Job,
-    private val metadataPush: (RSocket.(metadata: ByteReadPacket) -> Unit)? = null,
-    private val fireAndForget: (RSocket.(payload: Payload) -> Unit)? = null,
+    private val metadataPush: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)? = null,
+    private val fireAndForget: (suspend RSocket.(payload: Payload) -> Unit)? = null,
     private val requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null,
     private val requestStream: (RSocket.(payload: Payload) -> RequestingFlow<Payload>)? = null,
-    private val requestChannel: (RSocket.(payloads: RequestingFlow<Payload>) -> RequestingFlow<Payload>)? = null
+    private val requestChannel: (RSocket.(payloads: RequestingFlow<Payload>) -> RequestingFlow<Payload>)? = null,
 ) : RSocket {
-    override fun metadataPush(metadata: ByteReadPacket): Unit =
+    override suspend fun metadataPush(metadata: ByteReadPacket): Unit =
         metadataPush?.invoke(this, metadata) ?: super.metadataPush(metadata)
 
-    override fun fireAndForget(payload: Payload): Unit =
+    override suspend fun fireAndForget(payload: Payload): Unit =
         fireAndForget?.invoke(this, payload) ?: super.fireAndForget(payload)
 
     override suspend fun requestResponse(payload: Payload): Payload =

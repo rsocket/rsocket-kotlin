@@ -221,9 +221,9 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
 class TestRSocket : RSocket {
     override val job: Job = Job()
 
-    override fun metadataPush(metadata: ByteReadPacket): Unit = metadata.release()
+    override suspend fun metadataPush(metadata: ByteReadPacket): Unit = metadata.release()
 
-    override fun fireAndForget(payload: Payload): Unit = payload.release()
+    override suspend fun fireAndForget(payload: Payload): Unit = payload.release()
 
     override suspend fun requestResponse(payload: Payload): Payload {
         payload.release()
