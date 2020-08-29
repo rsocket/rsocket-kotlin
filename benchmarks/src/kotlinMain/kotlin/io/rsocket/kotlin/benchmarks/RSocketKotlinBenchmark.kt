@@ -20,7 +20,6 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
@@ -33,11 +32,11 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
     lateinit var server: Job
 
     lateinit var payload: Payload
-    lateinit var payloadsFlow: RequestingFlow<Payload>
+    lateinit var payloadsFlow: Flow<Payload>
 
     override fun setup() {
         payload = createPayload(payloadSize)
-        payloadsFlow = flow { repeat(5000) { emit(payload.copy()) } }.onRequest()
+        payloadsFlow = flow { repeat(5000) { emit(payload.copy()) } }
 
         val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
         val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
@@ -56,7 +55,7 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
                             it.release()
                             payloadsFlow
                         }
-                        requestChannel = { it.onRequest() }
+                        requestChannel = { it }
                     }
                 }
             }

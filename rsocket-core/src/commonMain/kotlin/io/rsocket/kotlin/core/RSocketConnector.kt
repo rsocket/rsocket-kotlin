@@ -23,10 +23,9 @@ import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.plugin.*
 
-//connector
 class RSocketConnector(
     private val connectionProvider: ConnectionProvider,
-    private val configuration: RSocketConnectorConfiguration = RSocketConnectorConfiguration()
+    private val configuration: RSocketConnectorConfiguration = RSocketConnectorConfiguration(),
 ) {
 
     suspend fun connect(): RSocket {
@@ -45,7 +44,6 @@ class RSocketConnector(
         val state = RSocketState(
             connection = connection,
             keepAlive = configuration.keepAlive,
-            requestStrategy = configuration.requestStrategy,
             ignoredFrameConsumer = configuration.ignoredFrameConsumer
         )
         val requester = RSocketRequester(state, StreamId.client()).let(configuration.plugin::wrapRequester)

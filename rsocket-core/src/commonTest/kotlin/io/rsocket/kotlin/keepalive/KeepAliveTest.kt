@@ -19,7 +19,6 @@ package io.rsocket.kotlin.keepalive
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.error.*
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import kotlinx.coroutines.*
@@ -30,7 +29,7 @@ import kotlin.time.*
 class KeepAliveTest {
     private val connection = TestConnection()
     private fun requester(keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds)): RSocket = run {
-        val state = RSocketState(connection, keepAlive, RequestStrategy.Default, {})
+        val state = RSocketState(connection, keepAlive) {}
         val requester = RSocketRequester(state, StreamId.client())
         state.start(RSocketRequestHandler { })
         requester

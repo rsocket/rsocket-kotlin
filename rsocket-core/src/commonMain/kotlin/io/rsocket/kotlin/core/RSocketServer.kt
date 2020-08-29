@@ -27,7 +27,7 @@ import kotlinx.coroutines.*
 
 class RSocketServer(
     private val connectionProvider: ConnectionProvider,
-    private val configuration: RSocketServerConfiguration = RSocketServerConfiguration()
+    private val configuration: RSocketServerConfiguration = RSocketServerConfiguration(),
 ) {
     suspend fun start(acceptor: RSocketAcceptor): Job {
         val connection = connectionProvider.connect().let(configuration.plugin::wrapConnection)
@@ -41,7 +41,6 @@ class RSocketServer(
                 val state = RSocketState(
                     connection = connection,
                     keepAlive = connectionSetup.keepAlive,
-                    requestStrategy = configuration.requestStrategy,
                     ignoredFrameConsumer = configuration.ignoredFrameConsumer
                 )
                 val requester = RSocketRequester(state, StreamId.server()).let(configuration.plugin::wrapRequester)

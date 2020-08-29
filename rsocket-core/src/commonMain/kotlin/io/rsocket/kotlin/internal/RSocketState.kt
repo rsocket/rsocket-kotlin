@@ -18,8 +18,8 @@ package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.internal.flow.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
@@ -28,13 +28,11 @@ import kotlinx.coroutines.flow.*
 
 @OptIn(
     InternalCoroutinesApi::class,
-    ExperimentalCoroutinesApi::class,
-    FlowPreview::class
+    ExperimentalCoroutinesApi::class
 )
 internal class RSocketState(
     private val connection: Connection,
     keepAlive: KeepAlive,
-    val requestStrategy: () -> RequestStrategy,
     val ignoredFrameConsumer: (Frame) -> Unit,
 ) : Cancelable by connection {
     private val prioritizer = Prioritizer()
@@ -43,7 +41,7 @@ internal class RSocketState(
 
     val receivers: MutableMap<Int, SendChannel<RequestFrame>> = concurrentMap()
     private val senders: MutableMap<Int, Job> = concurrentMap()
-    private val limits: MutableMap<Int, LimitStrategy> = concurrentMap()
+    private val limits: MutableMap<Int, LimitingFlowCollector> = concurrentMap()
 
     private val keepAliveHandler = KeepAliveHandler(keepAlive, this::sendPrioritized)
 
@@ -55,21 +53,17 @@ internal class RSocketState(
         prioritizer.sendPrioritized(frame)
     }
 
-    fun receiver(streamId: Int): ReceiveChannel<RequestFrame> {
+    fun createReceiverFor(streamId: Int, initFrame: RequestFrame? = null): ReceiveChannel<RequestFrame> {
         val receiver = Channel<RequestFrame>(Channel.UNLIMITED)
+        initFrame?.let(receiver::offer) //used only in RequestChannel on responder side
         receivers[streamId] = receiver
         return receiver
     }
 
-
-    private suspend inline fun consumeCancelable(
-        streamId: Int,
-        receiver: ReceiveChannel<RequestFrame>,
-        block: (frame: RequestFrame) -> Unit,
-    ) {
+    inline fun <R> consumeReceiverFor(streamId: Int, block: () -> R): R {
         var cause: Throwable? = null
         try {
-            for (e in receiver) block(e)
+            return block()
         } catch (e: Throwable) {
             cause = e
             throw e
@@ -81,36 +75,18 @@ internal class RSocketState(
         }
     }
 
-    suspend fun receiveOne(streamId: Int, receiver: ReceiveChannel<RequestFrame>): Payload {
-        consumeCancelable(streamId, receiver) { return it.payload }
-        error("never happens") //TODO contract
-    }
-
-    suspend fun RequestingFlowCollector<Payload>.emitAll(streamId: Int, receiver: ReceiveChannel<RequestFrame>) {
-        consumeCancelable(streamId, receiver) { frame ->
-            if (frame.complete) return //TODO change, check next flag
-            emit(frame.payload) { send(RequestNFrame(streamId, it)) }
-        }
-    }
-
-    fun RequestingFlow<Payload>.sendLimiting(streamId: Int, initialRequest: Int): ReceiveChannel<Payload> {
-        val strategy = LimitStrategy(initialRequest)
-        limits[streamId] = strategy
-        return requesting(strategy)/*.buffer(16)*/
-            .onCompletion { if (isActive) limits -= streamId }
-            .buffer(Channel.UNLIMITED)
-            .produceIn(requestScope)
-    }
-
-    suspend fun CoroutineScope.sendStream(streamId: Int, stream: ReceiveChannel<Payload>) {
+    suspend inline fun Flow<Payload>.collectLimiting(
+        streamId: Int,
+        limitingCollector: LimitingFlowCollector,
+    ) {
+        limits[streamId] = limitingCollector
         try {
-            stream.consumeEach {
-                if (isActive) send(NextPayloadFrame(streamId, it))
-                else return
-            }
-            if (isActive) send(CompletePayloadFrame(streamId))
+            collect(limitingCollector)
+            send(CompletePayloadFrame(streamId))
         } catch (e: Throwable) {
-            if (isActive) send(ErrorFrame(streamId, e))
+            limits.remove(streamId)
+            //if isn't active, then, that stream was cancelled, and so no need for error frame
+            if (currentCoroutineContext().isActive) send(ErrorFrame(streamId, e))
             throw e
         }
     }
@@ -124,9 +100,6 @@ internal class RSocketState(
         return job
     }
 
-    fun requestingFlow(block: suspend RequestingFlowCollector<Payload>.() -> Unit): RequestingFlow<Payload> =
-        RequestingFlow(requestStrategy, block)
-
     private fun handleFrame(responder: RSocketResponder, frame: Frame) {
         when (val streamId = frame.streamId) {
             0 -> when (frame) {
@@ -138,10 +111,10 @@ internal class RSocketState(
                 else                 -> ignoredFrameConsumer(frame)
             }
             else -> when (frame) {
-                is RequestNFrame -> limits[streamId]?.saveRequest(frame.requestN)
+                is RequestNFrame -> limits[streamId]?.updateRequests(frame.requestN)
                 is CancelFrame -> senders.remove(streamId)?.cancel()
                 is ErrorFrame -> receivers.remove(streamId)?.close(frame.throwable)
-                is RequestFrame -> when (frame.type) {
+                is RequestFrame  -> when (frame.type) {
                     FrameType.Payload         -> receivers[streamId]?.offer(frame)
                     FrameType.RequestFnF      -> responder.handleFireAndForget(frame)
                     FrameType.RequestResponse -> responder.handlerRequestResponse(frame)

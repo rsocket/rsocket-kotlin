@@ -20,7 +20,6 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.error.*
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
@@ -40,20 +39,20 @@ class RSocketTest {
         val requestHandler = handler ?: RSocketRequestHandler {
             requestResponse = { it }
             requestStream = {
-                RequestingFlow {
+                flow {
                     repeat(10) { emit(Payload("server got -> [$it]")) }
                 }
             }
             requestChannel = {
                 it.launchIn(CoroutineScope(job))
-                RequestingFlow {
+                flow {
                     repeat(10) { emit(Payload("server got -> [$it]")) }
                 }
             }
         }
 
         fun state(connection: Connection): RSocketState =
-            RSocketState(connection, KeepAlive(1000.seconds, 1000.seconds), RequestStrategy.Default, {})
+            RSocketState(connection, KeepAlive(1000.seconds, 1000.seconds)) {}
 
         val clientState = state(clientConnection)
         requester = RSocketRequester(clientState, StreamId.client())
@@ -103,11 +102,11 @@ class RSocketTest {
     fun testErrorPropagatesCorrectly() = test {
         val error = CompletableDeferred<Throwable>()
         start(RSocketRequestHandler {
-            requestChannel = { it.intercept { catch { error.complete(it) } } }
+            requestChannel = { it.catch { error.complete(it) } }
         })
         val request = flow<Payload> { error("test") }
         val response = requester.requestChannel(request)
-        assertFails { response.collect() }.also(::println)
+        assertFails { response.collect() }
         delay(100)
         assertTrue(error.isActive)
     }
@@ -115,10 +114,10 @@ class RSocketTest {
     @Test
     fun testRequestPropagatesCorrectlyForRequestChannel() = test {
         start(RSocketRequestHandler {
-            requestChannel = { it.requesting(RequestStrategy(3)).take(3).onRequest() }
+            requestChannel = { it.buffer(3).take(3) }
         })
         val request = (1..3).asFlow().map { Payload(it.toString()) }
-        val response = requester.requestChannel(request).requesting(RequestStrategy(3)).toList()
+        val response = requester.requestChannel(request).buffer(3).toList()
         assertEquals(3, response.size)
     }
 
@@ -201,10 +200,6 @@ class RSocketTest {
 
         requesterReceiveChannel.cancel()
         delay(1000)
-        println(requesterSendChannel)
-        println(responderSendChannel)
-        println(requesterReceiveChannel)
-        println(responderReceiveChannel)
 
         assertTrue(requesterSendChannel.isClosedForSend)
         assertTrue(responderSendChannel.isClosedForSend)
@@ -214,13 +209,13 @@ class RSocketTest {
 
     private suspend fun initRequestChannel(
         requesterSendChannel: Channel<Payload>,
-        responderSendChannel: Channel<Payload>
+        responderSendChannel: Channel<Payload>,
     ): Pair<ReceiveChannel<Payload>, ReceiveChannel<Payload>> {
         val responderDeferred = CompletableDeferred<ReceiveChannel<Payload>>()
         start(RSocketRequestHandler {
             requestChannel = {
                 responderDeferred.complete(it.produceIn(CoroutineScope(job)))
-                responderSendChannel.consumeAsFlow().onRequest()
+                responderSendChannel.consumeAsFlow()
             }
         })
         val requesterReceiveChannel =
@@ -237,21 +232,19 @@ class RSocketTest {
     private suspend inline fun complete(sendChannel: SendChannel<Payload>, receiveChannel: ReceiveChannel<Payload>) {
         sendChannel.close()
         delay(100)
-        println(receiveChannel)
         assertTrue(receiveChannel.isClosedForReceive)
     }
 
     private suspend inline fun cancel(requesterChannel: SendChannel<Payload>, responderChannel: ReceiveChannel<Payload>) {
         responderChannel.cancel()
         delay(100)
-        println(requesterChannel)
         assertTrue(requesterChannel.isClosedForSend)
     }
 
     private suspend fun sendAndCheckReceived(
         requesterChannel: SendChannel<Payload>,
         responderChannel: ReceiveChannel<Payload>,
-        payloads: List<Payload>
+        payloads: List<Payload>,
     ) {
         delay(100)
         assertFalse(requesterChannel.isClosedForSend)

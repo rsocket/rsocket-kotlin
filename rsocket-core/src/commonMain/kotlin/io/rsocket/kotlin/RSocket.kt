@@ -17,7 +17,6 @@
 package io.rsocket.kotlin
 
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.flow.*
 
@@ -38,17 +37,14 @@ interface RSocket : Cancelable {
         notImplemented("Request Response")
     }
 
-    fun requestStream(payload: Payload): RequestingFlow<Payload> {
+    fun requestStream(payload: Payload): Flow<Payload> {
         payload.release()
         notImplemented("Request Stream")
     }
 
-    fun requestChannel(payloads: RequestingFlow<Payload>): RequestingFlow<Payload> = notImplemented("Request Channel")
+    fun requestChannel(payloads: Flow<Payload>): Flow<Payload> {
+        notImplemented("Request Channel")
+    }
 }
-
-fun RSocket.requestChannel(
-    payloads: Flow<Payload>,
-    block: suspend (n: Int) -> Unit = {}
-): RequestingFlow<Payload> = requestChannel(payloads.onRequest(block))
 
 private fun notImplemented(operation: String): Nothing = throw NotImplementedError("$operation is not implemented.")

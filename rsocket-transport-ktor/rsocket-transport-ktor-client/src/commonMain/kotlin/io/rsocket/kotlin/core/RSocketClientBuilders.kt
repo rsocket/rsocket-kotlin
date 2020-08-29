@@ -32,7 +32,7 @@ suspend inline fun HttpClient.rSocket(secure: Boolean, request: HttpRequestBuild
 suspend inline fun HttpClient.rSocket(
     host: String = "localhost", port: Int = DEFAULT_PORT, path: String = "/",
     secure: Boolean = false,
-    request: HttpRequestBuilder .() -> Unit = {}
+    request: HttpRequestBuilder .() -> Unit = {},
 ): RSocket = rSocket(secure) {
     url(if (secure) "wss" else "ws", host, port, path)
     request()
@@ -41,7 +41,7 @@ suspend inline fun HttpClient.rSocket(
 suspend inline fun HttpClient.rSocket(
     urlString: String,
     secure: Boolean = false,
-    request: HttpRequestBuilder .() -> Unit = {}
+    request: HttpRequestBuilder .() -> Unit = {},
 ): RSocket = rSocket(secure) {
     url.takeFrom(urlString)
     request()

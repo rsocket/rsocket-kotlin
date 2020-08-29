@@ -18,7 +18,6 @@ package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.error.*
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
@@ -32,7 +31,7 @@ class RSocketRequesterTest {
     private val connection = TestConnection()
     private val ignoredFrames = Channel<Frame>(Channel.UNLIMITED)
     private val requester = run {
-        val state = RSocketState(connection, KeepAlive(1000.seconds, 1000.seconds), RequestStrategy.Default, ignoredFrames::offer)
+        val state = RSocketState(connection, KeepAlive(1000.seconds, 1000.seconds), ignoredFrames::offer)
         val requester = RSocketRequester(state, StreamId.client())
         state.start(RSocketRequestHandler { })
         requester
@@ -47,7 +46,7 @@ class RSocketRequesterTest {
 
     @Test
     fun testStreamInitialN() = test {
-        val flow = requester.requestStream(Payload.Empty).requesting(RequestStrategy(5))
+        val flow = requester.requestStream(Payload.Empty).buffer(5)
         assertEquals(0, connection.sentFrames.size)
         flow.launchIn(CoroutineScope(connection.job))
         delay(100)
@@ -106,7 +105,7 @@ class RSocketRequesterTest {
         val response = requester.requestChannel(request).launchIn(CoroutineScope(connection.job))
         delay(100)
         response.cancelAndJoin()
-        delay(100)
+        delay(200)
         assertTrue(job.isCompleted)
     }
 
@@ -157,7 +156,7 @@ class RSocketRequesterTest {
             }
         }
 
-        requester.requestChannel(request).requesting { RequestStrategy(Int.MAX_VALUE) }.launchIn(CoroutineScope(connection.job))
+        requester.requestChannel(request).buffer(Int.MAX_VALUE).launchIn(CoroutineScope(connection.job))
         delay(100)
         delay.complete()
         delay(100)

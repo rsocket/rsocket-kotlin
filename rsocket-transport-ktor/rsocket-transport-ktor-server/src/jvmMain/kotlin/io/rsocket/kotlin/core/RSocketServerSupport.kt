@@ -18,7 +18,6 @@ package io.rsocket.kotlin.core
 
 import io.ktor.application.*
 import io.ktor.util.*
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.plugin.*
 
 class RSocketServerSupport(
@@ -27,7 +26,6 @@ class RSocketServerSupport(
     class Config internal constructor() {
         var plugin: Plugin = Plugin()
         var fragmentation: Int = 0
-        var requestStrategy: () -> RequestStrategy = RequestStrategy.Default
 
         fun fromConfig(config: RSocketServerConfiguration) {
             plugin = config.plugin
@@ -39,7 +37,6 @@ class RSocketServerSupport(
             RSocketServerConfiguration(
                 plugin = plugin,
                 fragmentation = fragmentation,
-                requestStrategy = requestStrategy
             )
         )
     }

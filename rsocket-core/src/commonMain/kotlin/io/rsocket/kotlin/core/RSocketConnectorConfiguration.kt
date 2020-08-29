@@ -17,7 +17,6 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
@@ -29,7 +28,6 @@ data class RSocketConnectorConfiguration(
     val keepAlive: KeepAlive = KeepAlive(),
     val payloadMimeType: PayloadMimeType = PayloadMimeType(),
     val setupPayload: Payload = Payload.Empty,
-    val requestStrategy: () -> RequestStrategy = RequestStrategy.Default,
     val ignoredFrameConsumer: (Frame) -> Unit = {},
-    val acceptor: RSocketAcceptor = { RSocketRequestHandler { } }
+    val acceptor: RSocketAcceptor = { RSocketRequestHandler { } },
 )

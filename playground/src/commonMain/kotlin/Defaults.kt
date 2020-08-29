@@ -17,9 +17,9 @@
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.error.*
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlin.random.*
 
 val rSocketAcceptor: RSocketAcceptor = {
@@ -29,7 +29,7 @@ val rSocketAcceptor: RSocketAcceptor = {
             throw RSocketError.Invalid(it.toString())
         }
         requestStream = {
-            RequestingFlow {
+            flow {
                 coroutineScope {
                     while (isActive) {
                         emit(it)
@@ -45,7 +45,7 @@ suspend fun RSocket.doSomething() {
 //        launch { rSocket.fireAndForget(Payload(byteArrayOf(1, 1, 1), byteArrayOf(2, 2, 2))) }
 //        launch { rSocket.metadataPush(byteArrayOf(1, 2, 3)) }
     var i = 0
-    requestStream(Payload(byteArrayOf(1, 1, 1), byteArrayOf(2, 2, 2))).collect(BufferStrategy(10000)) {
+    requestStream(Payload(byteArrayOf(1, 1, 1), byteArrayOf(2, 2, 2))).buffer(10000).collect {
         println(it.data.readBytes().contentToString())
         if (++i == 10000) error("")
     }

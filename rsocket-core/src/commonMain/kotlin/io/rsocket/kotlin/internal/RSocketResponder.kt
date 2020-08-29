@@ -18,6 +18,7 @@ package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.internal.flow.*
 import kotlinx.coroutines.*
 
 internal class RSocketResponder(
@@ -53,24 +54,27 @@ internal class RSocketResponder(
             val response = requestOrThrow(streamId) {
                 requestHandler.requestStream(initFrame.payload)
             }
-            sendStream(streamId, response.sendLimiting(streamId, initFrame.initialRequest))
+            response.collectLimiting(
+                streamId,
+                RequestStreamResponderFlowCollector(state, streamId, initFrame.initialRequest)
+            )
         }
     }
 
     fun handleRequestChannel(initFrame: RequestFrame): Unit = with(state) {
         val streamId = initFrame.streamId
-        val receiver = receiver(streamId)
-        //TODO prevent consuming more then one time
-        val request = requestingFlow {
-            emit(initFrame.payload)
-            if (initialRequest > 1) send(RequestNFrame(streamId, initialRequest - 1)) //-1 because first payload received
-            emitAll(streamId, receiver)
-        }
+        val receiver = createReceiverFor(streamId, initFrame)
+
+        val request = RequestChannelResponderFlow(streamId, receiver, state)
+
         launchCancelable(streamId) {
             val response = requestOrThrow(streamId) {
                 requestHandler.requestChannel(request)
             }
-            sendStream(streamId, response.sendLimiting(streamId, initFrame.initialRequest))
+            response.collectLimiting(
+                streamId,
+                RequestStreamResponderFlowCollector(state, streamId, initFrame.initialRequest)
+            )
         }.invokeOnCompletion {
             if (it != null) receiver.cancelConsumed(it) //TODO check it
         }

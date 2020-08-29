@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.flow
+package io.rsocket.kotlin.internal.flow
 
-interface RequestStrategy {
-    val initialRequest: Int
-    suspend fun requestOnEmit(): Int
+import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.payload.*
 
-    companion object {
-        //TODO check for best default strategy
-        val Default: () -> RequestStrategy = { BufferStrategy(64) }
+internal class RequestStreamResponderFlowCollector(
+    private val state: RSocketState,
+    private val streamId: Int,
+    initialRequest: Int,
+) : LimitingFlowCollector(initialRequest) {
+    override suspend fun emitValue(value: Payload) {
+        state.send(NextPayloadFrame(streamId, value))
     }
-}
-
-inline fun RequestStrategy(initialRequest: Int, crossinline requestOnEmit: () -> Int = { 0 }): RequestStrategy = object : RequestStrategy {
-    override val initialRequest: Int = initialRequest
-    override suspend fun requestOnEmit(): Int = requestOnEmit()
 }

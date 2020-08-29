@@ -16,13 +16,11 @@
 
 package io.rsocket.kotlin.core
 
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.plugin.*
 
 data class RSocketServerConfiguration(
     val plugin: Plugin = Plugin(),
     val fragmentation: Int = 0,
-    val requestStrategy: () -> RequestStrategy = RequestStrategy.Default,
-    val ignoredFrameConsumer: (Frame) -> Unit = {}
+    val ignoredFrameConsumer: (Frame) -> Unit = {},
 )

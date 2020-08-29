@@ -17,16 +17,16 @@
 package io.rsocket.kotlin
 
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
 class RSocketRequestHandlerBuilder internal constructor(private val job: Job) {
     var metadataPush: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)? = null
     var fireAndForget: (suspend RSocket.(payload: Payload) -> Unit)? = null
     var requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null
-    var requestStream: (RSocket.(payload: Payload) -> RequestingFlow<Payload>)? = null
-    var requestChannel: (RSocket.(payloads: RequestingFlow<Payload>) -> RequestingFlow<Payload>)? = null
+    var requestStream: (RSocket.(payload: Payload) -> Flow<Payload>)? = null
+    var requestChannel: (RSocket.(payloads: Flow<Payload>) -> Flow<Payload>)? = null
 
     internal fun build(): RSocket = RSocketRequestHandler(job, metadataPush, fireAndForget, requestResponse, requestStream, requestChannel)
 }
@@ -43,8 +43,8 @@ private class RSocketRequestHandler(
     private val metadataPush: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)? = null,
     private val fireAndForget: (suspend RSocket.(payload: Payload) -> Unit)? = null,
     private val requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null,
-    private val requestStream: (RSocket.(payload: Payload) -> RequestingFlow<Payload>)? = null,
-    private val requestChannel: (RSocket.(payloads: RequestingFlow<Payload>) -> RequestingFlow<Payload>)? = null,
+    private val requestStream: (RSocket.(payload: Payload) -> Flow<Payload>)? = null,
+    private val requestChannel: (RSocket.(payloads: Flow<Payload>) -> Flow<Payload>)? = null,
 ) : RSocket {
     override suspend fun metadataPush(metadata: ByteReadPacket): Unit =
         metadataPush?.invoke(this, metadata) ?: super.metadataPush(metadata)
@@ -55,10 +55,10 @@ private class RSocketRequestHandler(
     override suspend fun requestResponse(payload: Payload): Payload =
         requestResponse?.invoke(this, payload) ?: super.requestResponse(payload)
 
-    override fun requestStream(payload: Payload): RequestingFlow<Payload> =
+    override fun requestStream(payload: Payload): Flow<Payload> =
         requestStream?.invoke(this, payload) ?: super.requestStream(payload)
 
-    override fun requestChannel(payloads: RequestingFlow<Payload>): RequestingFlow<Payload> =
+    override fun requestChannel(payloads: Flow<Payload>): Flow<Payload> =
         requestChannel?.invoke(this, payloads) ?: super.requestChannel(payloads)
 
 }
