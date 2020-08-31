@@ -50,6 +50,9 @@ allprojects {
 }
 
 subprojects {
+    tasks.withType<Test> {
+        jvmArgs("-Xmx512m", "-XX:+UseParallelGC")
+    }
 
     plugins.withId("org.jetbrains.kotlin.multiplatform") {
         extensions.configure<KotlinMultiplatformExtension> {
@@ -102,7 +105,7 @@ subprojects {
                 compilations.findByName("test")?.dependencies {
                     when (platformType) {
                         KotlinPlatformType.jvm -> implementation(kotlin("test-junit"))
-                        KotlinPlatformType.js -> implementation(kotlin("test-js"))
+                        KotlinPlatformType.js  -> implementation(kotlin("test-js"))
                         else                   -> Unit
                     }
                 }
