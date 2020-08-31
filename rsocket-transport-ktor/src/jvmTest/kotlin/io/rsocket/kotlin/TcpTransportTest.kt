@@ -37,7 +37,7 @@ class TcpTransportTest : TransportTest() {
             }
         }
         GlobalScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            server.accept().connection.startServer { TestRSocket() }.join()
+            server.accept().connection.startServer(SERVER_CONFIG, ACCEPTOR).join()
         }
     }
 
@@ -49,7 +49,7 @@ class TcpTransportTest : TransportTest() {
     }
 
     override suspend fun init(): RSocket = trySeveralTimes {
-        builder.connect("127.0.0.1", 2323).connection.connectClient()
+        builder.connect("127.0.0.1", 2323).connection.connectClient(CONNECTOR_CONFIG)
     }
 
     private suspend inline fun <R> trySeveralTimes(block: () -> R): R {

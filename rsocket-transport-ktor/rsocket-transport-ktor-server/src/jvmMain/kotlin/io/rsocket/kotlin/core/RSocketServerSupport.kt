@@ -29,6 +29,12 @@ class RSocketServerSupport(
         var fragmentation: Int = 0
         var requestStrategy: () -> RequestStrategy = RequestStrategy.Default
 
+        fun fromConfig(config: RSocketServerConfiguration) {
+            plugin = config.plugin
+            fragmentation = config.fragmentation
+            requestStrategy = config.requestStrategy
+        }
+
         internal fun build(): RSocketServerSupport = RSocketServerSupport(
             RSocketServerConfiguration(
                 plugin = plugin,

@@ -18,34 +18,61 @@ package io.rsocket.kotlin
 
 import io.ktor.application.*
 import io.ktor.client.*
+import io.ktor.client.engine.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.rsocket.kotlin.core.*
-import io.ktor.client.engine.cio.CIO as ClientCIO
+import kotlinx.coroutines.*
+import kotlin.test.*
 import io.ktor.client.features.websocket.WebSockets as ClientWebSockets
-import io.ktor.server.cio.CIO as ServerCIO
 import io.ktor.websocket.WebSockets as ServerWebSockets
 
-class WebSocketTransportTest : TransportTest() {
-    override suspend fun init(): RSocket = httpClient.rSocket(port = 9000)
+abstract class WebSocketTransportTest(
+    clientEngine: HttpClientEngineFactory<*>,
+    serverEngine: ApplicationEngineFactory<*, *>,
+) : TransportTest() {
 
-    companion object {
-
-        private val httpClient = HttpClient(ClientCIO) {
-            install(ClientWebSockets)
-            install(RSocketClientSupport)
+    private val httpClient = HttpClient(clientEngine) {
+        install(ClientWebSockets)
+        install(RSocketClientSupport) {
+            fromConfig(CONNECTOR_CONFIG)
         }
+    }
 
-        init {
-            embeddedServer(ServerCIO, port = 9000) {
-                install(ServerWebSockets)
-                install(RSocketServerSupport)
-                routing {
-                    rSocket {
-                        TestRSocket()
-                    }
-                }
-            }.start()
+    private val server = embeddedServer(serverEngine, port = 9000) {
+        install(ServerWebSockets)
+        install(RSocketServerSupport) {
+            fromConfig(SERVER_CONFIG)
         }
+        routing {
+            rSocket(acceptor = ACCEPTOR)
+        }
+    }
+
+    @BeforeTest
+    fun setup() {
+        server.start()
+    }
+
+    @AfterTest
+    fun cleanup() {
+        server.stop(0, 0)
+    }
+
+    override suspend fun init(): RSocket = trySeveralTimes {
+        httpClient.rSocket(port = 9000)
+    }
+
+    private suspend inline fun <R> trySeveralTimes(block: () -> R): R {
+        lateinit var error: Throwable
+        repeat(5) {
+            try {
+                return block()
+            } catch (e: Throwable) {
+                error = e
+                delay(500) //sometimes address isn't yet available
+            }
+        }
+        throw error
     }
 }

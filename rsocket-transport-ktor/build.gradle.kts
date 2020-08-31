@@ -42,7 +42,12 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-cio:1.4.0")
+                implementation("io.ktor:ktor-client-okhttp:1.4.0")
+
                 implementation("io.ktor:ktor-server-cio:1.4.0")
+                implementation("io.ktor:ktor-server-netty:1.4.0")
+                implementation("io.ktor:ktor-server-jetty:1.4.0")
+                implementation("io.ktor:ktor-server-tomcat:1.4.0")
 
                 implementation(project(":rsocket-transport-ktor-client"))
                 implementation(project(":rsocket-transport-ktor-server"))
