@@ -27,11 +27,14 @@ import kotlin.test.*
 class TcpTransportTest : TransportTest() {
     private val selector = SelectorManager(Dispatchers.IO)
     private val builder = aSocket(selector).tcp()
-    private val server = builder.bind("127.0.0.1", 2323)
+    private lateinit var server: ServerSocket
 
     @BeforeTest
     fun setup() {
         GlobalScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            server = trySeveralTimes {
+                builder.bind("127.0.0.1", 2323)
+            }
             server.accept().connection.startServer { TestRSocket() }.join()
         }
     }
@@ -43,11 +46,15 @@ class TcpTransportTest : TransportTest() {
         runBlocking { server.socketContext.join() }
     }
 
-    override suspend fun init(): RSocket {
+    override suspend fun init(): RSocket = trySeveralTimes {
+        builder.connect("127.0.0.1", 2323).connection.connectClient()
+    }
+
+    private suspend inline fun <R> trySeveralTimes(block: () -> R): R {
         lateinit var error: Throwable
         repeat(5) {
             try {
-                return builder.connect("127.0.0.1", 2323).connection.connectClient()
+                return block()
             } catch (e: Throwable) {
                 error = e
                 delay(500) //sometimes address isn't yet available
