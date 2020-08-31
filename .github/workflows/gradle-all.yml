@@ -32,7 +32,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Build with Gradle
-        run: ./gradlew clean build
+        run: ./gradlew clean build --info
       - name: Publish Packages to Artifactory
         if: ${{ matrix.jdk == '1.8' }}
         run: ./gradlew -PbintrayUser="${bintrayUser}" -PbintrayKey="${bintrayKey}" -PversionSuffix="-${githubRef#refs/heads/}-SNAPSHOT" -PbuildNumber="${buildNumber}" artifactoryPublish --stacktrace
