@@ -31,10 +31,12 @@ class TcpTransportTest : TransportTest() {
 
     @BeforeTest
     fun setup() {
-        GlobalScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            server = trySeveralTimes {
+        server = runBlocking {
+            trySeveralTimes {
                 builder.bind("127.0.0.1", 2323)
             }
+        }
+        GlobalScope.launch(start = CoroutineStart.UNDISPATCHED) {
             server.accept().connection.startServer { TestRSocket() }.join()
         }
     }
