@@ -32,8 +32,8 @@ class RSocketRequestHandlerBuilder internal constructor(private val job: Job) {
 }
 
 @Suppress("FunctionName")
-fun RSocketRequestHandler(parentJon: Job? = null, configure: RSocketRequestHandlerBuilder.() -> Unit): RSocket {
-    val builder = RSocketRequestHandlerBuilder(Job(parentJon))
+fun RSocketRequestHandler(parentJob: Job? = null, configure: RSocketRequestHandlerBuilder.() -> Unit): RSocket {
+    val builder = RSocketRequestHandlerBuilder(Job(parentJob))
     builder.configure()
     return builder.build()
 }
