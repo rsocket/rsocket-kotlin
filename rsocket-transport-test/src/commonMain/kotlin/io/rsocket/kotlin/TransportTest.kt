@@ -17,7 +17,9 @@
 package io.rsocket.kotlin
 
 import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.flow.*
+import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -209,6 +211,10 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
         val MOCK_METADATA: String = "metadata"
         val LARGE_DATA by lazy { readLargePayload("words.shakespeare.txt.gz") }
         val LARGE_PAYLOAD by lazy { Payload(LARGE_DATA, LARGE_DATA) }
+
+        val ACCEPTOR: RSocketAcceptor = { TestRSocket() }
+        val CONNECTOR_CONFIG = RSocketConnectorConfiguration(keepAlive = KeepAlive(10.minutes, 100.minutes))
+        val SERVER_CONFIG = RSocketServerConfiguration()
     }
 }
 

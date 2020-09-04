@@ -29,7 +29,7 @@ import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.plugin.*
 
 class RSocketClientSupport(
-    private val configuration: RSocketConnectorConfiguration
+    private val configuration: RSocketConnectorConfiguration,
 ) {
 
     class Config internal constructor() {
@@ -41,6 +41,16 @@ class RSocketClientSupport(
         var requestStrategy: () -> RequestStrategy = RequestStrategy.Default
 
         var acceptor: RSocketAcceptor = { RSocketRequestHandler { } }
+
+        fun fromConfig(config: RSocketConnectorConfiguration) {
+            plugin = config.plugin
+            fragmentation = config.fragmentation
+            keepAlive = config.keepAlive
+            payloadMimeType = config.payloadMimeType
+            setupPayload = config.setupPayload
+            requestStrategy = config.requestStrategy
+            acceptor = config.acceptor
+        }
 
         internal fun build(): RSocketClientSupport = RSocketClientSupport(
             RSocketConnectorConfiguration(

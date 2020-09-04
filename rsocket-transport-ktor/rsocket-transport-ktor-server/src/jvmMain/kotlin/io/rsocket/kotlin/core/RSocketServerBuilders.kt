@@ -17,21 +17,21 @@
 package io.rsocket.kotlin.core
 
 import io.ktor.application.*
-import io.ktor.http.*
 import io.ktor.routing.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
 
 fun Route.rSocket(path: String, protocol: String? = null, acceptor: RSocketAcceptor) {
-    route(path, HttpMethod.Get) {
-        rSocket(protocol, acceptor)
+    val feature = application.feature(RSocketServerSupport)
+    webSocket(path = path, protocol = protocol) {
+        connection.startServer(feature.configuration, acceptor).join()
     }
 }
 
 fun Route.rSocket(protocol: String? = null, acceptor: RSocketAcceptor) {
     val feature = application.feature(RSocketServerSupport)
-    webSocket(protocol) {
+    webSocket(protocol = protocol) {
         connection.startServer(feature.configuration, acceptor).join()
     }
 }

@@ -29,9 +29,9 @@ class LocalTransportTest : TransportTest() {
         val clientConnection = LocalConnection("client", serverChannel, clientChannel)
         return coroutineScope {
             launch {
-                serverConnection.startServer { TestRSocket() }
+                serverConnection.startServer(SERVER_CONFIG, ACCEPTOR)
             }
-            clientConnection.connectClient()
+            clientConnection.connectClient(CONNECTOR_CONFIG)
         }
     }
 }
