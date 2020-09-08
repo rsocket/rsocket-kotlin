@@ -19,6 +19,7 @@ package io.rsocket.kotlin.internal
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
+import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
@@ -29,46 +30,16 @@ import kotlin.test.*
 import kotlin.time.*
 
 class RSocketTest {
-    lateinit var requester: RSocket
-
-    private fun start(handler: RSocket? = null) {
-        val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
-        val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
-        val serverConnection = LocalConnection("server", clientChannel, serverChannel)
-        val clientConnection = LocalConnection("client", serverChannel, clientChannel)
-        val requestHandler = handler ?: RSocketRequestHandler {
-            requestResponse = { it }
-            requestStream = {
-                flow {
-                    repeat(10) { emit(Payload("server got -> [$it]")) }
-                }
-            }
-            requestChannel = {
-                it.launchIn(CoroutineScope(job))
-                flow {
-                    repeat(10) { emit(Payload("server got -> [$it]")) }
-                }
-            }
-        }
-
-        fun state(connection: Connection): RSocketState =
-            RSocketState(connection, KeepAlive(1000.seconds, 1000.seconds)) {}
-
-        val clientState = state(clientConnection)
-        requester = RSocketRequester(clientState, StreamId.client())
-        clientState.start(RSocketRequestHandler { })
-        state(serverConnection).start(requestHandler)
-    }
 
     @Test
     fun testRequestResponseNoError() = test {
-        start()
+        val requester = start()
         requester.requestResponse(Payload("HELLO"))
     }
 
     @Test
     fun testRequestResponseError() = test {
-        start(RSocketRequestHandler {
+        val requester = start(RSocketRequestHandler {
             requestResponse = { error("stub") }
         })
         assertFailsWith(RSocketError.ApplicationError::class) { requester.requestResponse(Payload("HELLO")) }
@@ -76,7 +47,7 @@ class RSocketTest {
 
     @Test
     fun testRequestResponseCustomError() = test {
-        start(RSocketRequestHandler {
+        val requester = start(RSocketRequestHandler {
             requestResponse = { throw RSocketError.Custom(0x00000501, "stub") }
         })
         val error = assertFailsWith(RSocketError.Custom::class) { requester.requestResponse(Payload("HELLO")) }
@@ -85,14 +56,14 @@ class RSocketTest {
 
     @Test
     fun testStream() = test {
-        start()
+        val requester = start()
         val response = requester.requestStream(Payload.Empty).toList()
         assertEquals(10, response.size)
     }
 
     @Test
     fun testChannel() = test {
-        start()
+        val requester = start()
         val request = (1..10).asFlow().map { Payload(it.toString()) }
         val response = requester.requestChannel(request).toList()
         assertEquals(10, response.size)
@@ -101,7 +72,7 @@ class RSocketTest {
     @Test
     fun testErrorPropagatesCorrectly() = test {
         val error = CompletableDeferred<Throwable>()
-        start(RSocketRequestHandler {
+        val requester = start(RSocketRequestHandler {
             requestChannel = { it.catch { error.complete(it) } }
         })
         val request = flow<Payload> { error("test") }
@@ -113,7 +84,7 @@ class RSocketTest {
 
     @Test
     fun testRequestPropagatesCorrectlyForRequestChannel() = test {
-        start(RSocketRequestHandler {
+        val requester = start(RSocketRequestHandler {
             requestChannel = { it.buffer(3).take(3) }
         })
         val request = (1..3).asFlow().map { Payload(it.toString()) }
@@ -212,7 +183,7 @@ class RSocketTest {
         responderSendChannel: Channel<Payload>,
     ): Pair<ReceiveChannel<Payload>, ReceiveChannel<Payload>> {
         val responderDeferred = CompletableDeferred<ReceiveChannel<Payload>>()
-        start(RSocketRequestHandler {
+        val requester = start(RSocketRequestHandler {
             requestChannel = {
                 responderDeferred.complete(it.produceIn(CoroutineScope(job)))
                 responderSendChannel.consumeAsFlow()
@@ -257,6 +228,31 @@ class RSocketTest {
         val payload = receive()
         assertEquals(payload.metadata?.readText(), otherPayload.metadata?.readText())
         assertEquals(payload.data.readText(), otherPayload.data.readText())
+    }
+
+    private suspend fun start(handler: RSocket? = null): RSocket {
+        val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
+        val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
+        val serverConnection = LocalConnection("server", clientChannel, serverChannel)
+        val clientConnection = LocalConnection("client", serverChannel, clientChannel)
+
+        return coroutineScope {
+            launch {
+                serverConnection.startServer {
+                    handler ?: RSocketRequestHandler {
+                        requestResponse = { it }
+                        requestStream = {
+                            flow { repeat(10) { emit(Payload("server got -> [$it]")) } }
+                        }
+                        requestChannel = {
+                            it.launchIn(CoroutineScope(job))
+                            flow { repeat(10) { emit(Payload("server got -> [$it]")) } }
+                        }
+                    }
+                }
+            }
+            clientConnection.connectClient(RSocketConnectorConfiguration(keepAlive = KeepAlive(1000.seconds, 1000.seconds)))
+        }
     }
 
 }

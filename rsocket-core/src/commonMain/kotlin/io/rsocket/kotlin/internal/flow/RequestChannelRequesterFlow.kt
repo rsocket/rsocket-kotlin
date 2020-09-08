@@ -44,12 +44,13 @@ internal class RequestChannelRequesterFlow(
                 streamId,
                 RequestChannelRequesterFlowCollector(state, streamId, receiverDeferred, requestSize)
             )
-            if (!receiverDeferred.isCompleted) receiverDeferred.complete(null)
         }
         request.invokeOnCompletion {
-            if (it != null && it !is CancellationException) {
-                if (receiverDeferred.isCompleted) receiverDeferred.getCompleted()?.cancelConsumed(it)
-                else receiverDeferred.completeExceptionally(it)
+            if (receiverDeferred.isCompleted) {
+                if (it != null && it !is CancellationException) receiverDeferred.getCompleted()?.cancelConsumed(it)
+            } else {
+                if (it == null) receiverDeferred.complete(null)
+                else receiverDeferred.completeExceptionally(it.cause ?: it)
             }
         }
         try {

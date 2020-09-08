@@ -89,6 +89,7 @@ subprojects {
                         useExperimentalAnnotation("kotlinx.coroutines.ObsoleteCoroutinesApi")
                         useExperimentalAnnotation("kotlinx.coroutines.FlowPreview")
                         useExperimentalAnnotation("io.ktor.util.KtorExperimentalAPI")
+                        useExperimentalAnnotation("io.ktor.util.InternalAPI")
                     }
                 }
             }

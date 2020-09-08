@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.connection
 
-import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 
@@ -26,5 +25,3 @@ class ConnectionSetup(
     val payloadMimeType: PayloadMimeType,
     val payload: Payload
 )
-
-internal fun SetupFrame.toConnectionSetup(): ConnectionSetup = ConnectionSetup(honorLease, keepAlive, payloadMimeType, payload)
