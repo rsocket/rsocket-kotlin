@@ -18,7 +18,6 @@ package io.rsocket.kotlin
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*

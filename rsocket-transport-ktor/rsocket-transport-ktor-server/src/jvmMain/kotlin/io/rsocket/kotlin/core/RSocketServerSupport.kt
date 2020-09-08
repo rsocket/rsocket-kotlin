@@ -30,7 +30,6 @@ class RSocketServerSupport(
         fun fromConfig(config: RSocketServerConfiguration) {
             plugin = config.plugin
             fragmentation = config.fragmentation
-            requestStrategy = config.requestStrategy
         }
 
         internal fun build(): RSocketServerSupport = RSocketServerSupport(

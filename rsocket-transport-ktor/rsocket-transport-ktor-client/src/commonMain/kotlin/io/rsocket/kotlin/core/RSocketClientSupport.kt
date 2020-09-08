@@ -46,7 +46,6 @@ class RSocketClientSupport(
             keepAlive = config.keepAlive
             payloadMimeType = config.payloadMimeType
             setupPayload = config.setupPayload
-            requestStrategy = config.requestStrategy
             acceptor = config.acceptor
         }
 
