@@ -66,10 +66,18 @@ fun PayloadBuilder.data(bytes: ByteArray): Unit = data {
     writeFully(bytes)
 }
 
+fun PayloadBuilder.data(packet: ByteReadPacket): Unit = data {
+    writePacket(packet)
+}
+
 fun PayloadBuilder.metadata(text: String): Unit = metadata {
     writeText(text)
 }
 
 fun PayloadBuilder.metadata(bytes: ByteArray): Unit = metadata {
     writeFully(bytes)
+}
+
+fun PayloadBuilder.metadata(packet: ByteReadPacket): Unit = metadata {
+    writePacket(packet)
 }

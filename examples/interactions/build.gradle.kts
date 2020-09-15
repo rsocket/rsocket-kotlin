@@ -20,31 +20,12 @@ plugins {
 
 kotlin {
     jvm()
-    js(IR) {
-        browser {
-            binaries.executable()
-        }
-    }
 
     sourceSets {
         val commonMain by getting {
             dependencies {
                 implementation(project(":rsocket-core"))
                 implementation(project(":rsocket-transport-local"))
-                implementation(project(":rsocket-transport-ktor-client"))
-            }
-        }
-        val jvmMain by getting {
-            dependencies {
-                implementation(project(":rsocket-transport-ktor-server"))
-
-                implementation("io.ktor:ktor-client-cio:1.4.0")
-                implementation("io.ktor:ktor-server-cio:1.4.0")
-            }
-        }
-        val jsMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-js:1.4.0") //for WS support
             }
         }
     }
