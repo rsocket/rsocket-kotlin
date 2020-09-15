@@ -14,16 +14,27 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.frame
+package io.rsocket.kotlin.connection
 
 import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.frame.*
+import kotlinx.coroutines.*
 
-class CancelFrame(
-    override val streamId: Int,
-) : Frame(FrameType.Cancel) {
-    override val flags: Int get() = 0
-    override fun BytePacketBuilder.writeSelf(): Unit = Unit
+class LoggingConnection(private val delegate: Connection) : Connection {
+    override val job: Job get() = delegate.job
 
-    override fun StringBuilder.appendFlags(): Unit = Unit
-    override fun StringBuilder.appendSelf(): Unit = Unit
+    private fun log(tag: String, packet: ByteReadPacket) {
+        println("\n$tag: ${packet.dumpFrameToString()}")
+    }
+
+    override suspend fun send(packet: ByteReadPacket) {
+        log("Send", packet)
+        delegate.send(packet)
+    }
+
+    override suspend fun receive(): ByteReadPacket {
+        val packet = delegate.receive()
+        log("Receive", packet)
+        return packet
+    }
 }

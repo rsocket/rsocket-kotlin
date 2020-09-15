@@ -19,24 +19,33 @@ package io.rsocket.kotlin.frame
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 
-private const val KeepAliveFlag = 128
+private const val RespondFlag = 128
 
 class KeepAliveFrame(
     val respond: Boolean,
     val lastPosition: Long,
-    val data: ByteReadPacket
+    val data: ByteReadPacket,
 ) : Frame(FrameType.KeepAlive) {
     override val streamId: Int get() = 0
-    override val flags: Int get() = if (respond) KeepAliveFlag else 0
+    override val flags: Int get() = if (respond) RespondFlag else 0
 
     override fun BytePacketBuilder.writeSelf() {
         writeLong(lastPosition.coerceAtLeast(0))
         writePacket(data)
     }
+
+    override fun StringBuilder.appendFlags() {
+        appendFlag('R', respond)
+    }
+
+    override fun StringBuilder.appendSelf() {
+        append("\nLast position: ").append(lastPosition)
+        appendPacket("Data", data)
+    }
 }
 
 fun ByteReadPacket.readKeepAlive(flags: Int): KeepAliveFrame {
-    val respond = flags check KeepAliveFlag
+    val respond = flags check RespondFlag
     val lastPosition = readLong()
     val data = readPacket()
     return KeepAliveFrame(respond, lastPosition, data)

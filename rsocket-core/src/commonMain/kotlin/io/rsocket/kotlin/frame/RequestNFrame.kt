@@ -20,11 +20,17 @@ import io.ktor.utils.io.core.*
 
 class RequestNFrame(
     override val streamId: Int,
-    val requestN: Int
+    val requestN: Int,
 ) : Frame(FrameType.RequestN) {
     override val flags: Int get() = 0
     override fun BytePacketBuilder.writeSelf() {
         writeInt(requestN)
+    }
+
+    override fun StringBuilder.appendFlags(): Unit = Unit
+
+    override fun StringBuilder.appendSelf() {
+        append("\nRequestN: ").append(requestN)
     }
 }
 

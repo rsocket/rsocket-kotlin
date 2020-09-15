@@ -209,7 +209,8 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
         val MOCK_DATA: String = "test-data"
         val MOCK_METADATA: String = "metadata"
         val LARGE_DATA by lazy { readLargePayload("words.shakespeare.txt.gz") }
-        val LARGE_PAYLOAD by lazy { Payload(LARGE_DATA, LARGE_DATA) }
+        private val payload by lazy { Payload(LARGE_DATA, LARGE_DATA) }
+        val LARGE_PAYLOAD get() = payload.copy()
 
         val ACCEPTOR: RSocketAcceptor = { TestRSocket() }
         val CONNECTOR_CONFIG = RSocketConnectorConfiguration(keepAlive = KeepAlive(10.minutes, 100.minutes))
