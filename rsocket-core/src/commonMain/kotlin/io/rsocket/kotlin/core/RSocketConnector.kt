@@ -23,36 +23,27 @@ import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.plugin.*
 
-//connector
 class RSocketConnector(
     private val connectionProvider: ConnectionProvider,
-    private val configuration: RSocketConnectorConfiguration = RSocketConnectorConfiguration()
+    private val configuration: RSocketConnectorConfiguration = RSocketConnectorConfiguration(),
 ) {
 
     suspend fun connect(): RSocket {
         val connection = connectionProvider.connect().let(configuration.plugin::wrapConnection)
-        val setupFrame = configuration.run {
-            SetupFrame(
-                version = Version.Current,
-                honorLease = false,
-                keepAlive = keepAlive,
-                resumeToken = null,
-                payloadMimeType = payloadMimeType,
-                payload = setupPayload
-            )
-        }
-        val connectionSetup = setupFrame.toConnectionSetup()
-        val state = RSocketStateImpl(
-            connection = connection,
+        val setupFrame = SetupFrame(
+            version = Version.Current,
+            honorLease = false,
             keepAlive = configuration.keepAlive,
-            requestStrategy = configuration.requestStrategy,
-            ignoredFrameConsumer = configuration.ignoredFrameConsumer
+            resumeToken = null,
+            payloadMimeType = configuration.payloadMimeType,
+            payload = configuration.setupPayload
         )
-        val requester = RSocketRequester(state, StreamId.client()).let(configuration.plugin::wrapRequester)
-        val acceptor = configuration.acceptor.let(configuration.plugin::wrapAcceptor)
-        val requestHandler = acceptor(connectionSetup, requester).let(configuration.plugin::wrapResponder)
-        connection.send(setupFrame.toPacket())
-        state.start(requestHandler)
-        return requester
+        return connectClient(
+            connection = connection,
+            plugin = configuration.plugin,
+            setupFrame = setupFrame,
+            ignoredFrameConsumer = configuration.ignoredFrameConsumer,
+            acceptor = configuration.acceptor
+        )
     }
 }

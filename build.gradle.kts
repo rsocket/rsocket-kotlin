@@ -28,7 +28,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.0")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.10")
         classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.14.4")
     }
 }
@@ -89,6 +89,7 @@ subprojects {
                         useExperimentalAnnotation("kotlinx.coroutines.ObsoleteCoroutinesApi")
                         useExperimentalAnnotation("kotlinx.coroutines.FlowPreview")
                         useExperimentalAnnotation("io.ktor.util.KtorExperimentalAPI")
+                        useExperimentalAnnotation("io.ktor.util.InternalAPI")
                     }
                 }
             }

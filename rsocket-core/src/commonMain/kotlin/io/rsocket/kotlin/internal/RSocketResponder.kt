@@ -18,26 +18,27 @@ package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.internal.flow.*
 import kotlinx.coroutines.*
 
 internal class RSocketResponder(
-    state: RSocketState,
-    private val requestHandler: RSocket
-) : RSocketState by state {
+    private val state: RSocketState,
+    private val requestHandler: RSocket,
+) : Cancelable by state {
 
     fun handleMetadataPush(frame: MetadataPushFrame) {
-        launch {
+        state.launch {
             requestHandler.metadataPush(frame.metadata)
         }
     }
 
     fun handleFireAndForget(frame: RequestFrame) {
-        launch {
+        state.launch {
             requestHandler.fireAndForget(frame.payload)
         }
     }
 
-    fun handlerRequestResponse(frame: RequestFrame) {
+    fun handlerRequestResponse(frame: RequestFrame): Unit = with(state) {
         val streamId = frame.streamId
         launchCancelable(streamId) {
             val response = requestOrThrow(streamId) {
@@ -47,30 +48,33 @@ internal class RSocketResponder(
         }
     }
 
-    fun handleRequestStream(initFrame: RequestFrame) {
+    fun handleRequestStream(initFrame: RequestFrame): Unit = with(state) {
         val streamId = initFrame.streamId
         launchCancelable(streamId) {
             val response = requestOrThrow(streamId) {
                 requestHandler.requestStream(initFrame.payload)
             }
-            sendStream(streamId, response.sendLimiting(streamId, initFrame.initialRequest))
+            response.collectLimiting(
+                streamId,
+                RequestStreamResponderFlowCollector(state, streamId, initFrame.initialRequest)
+            )
         }
     }
 
-    fun handleRequestChannel(initFrame: RequestFrame) {
+    fun handleRequestChannel(initFrame: RequestFrame): Unit = with(state) {
         val streamId = initFrame.streamId
-        val receiver = receiver(streamId)
-        //TODO prevent consuming more then one time
-        val request = requestingFlow {
-            emit(initFrame.payload)
-            if (initialRequest > 1) send(RequestNFrame(streamId, initialRequest - 1)) //-1 because first payload received
-            emitAll(streamId, receiver)
-        }
+        val receiver = createReceiverFor(streamId, initFrame)
+
+        val request = RequestChannelResponderFlow(streamId, receiver, state)
+
         launchCancelable(streamId) {
             val response = requestOrThrow(streamId) {
                 requestHandler.requestChannel(request)
             }
-            sendStream(streamId, response.sendLimiting(streamId, initFrame.initialRequest))
+            response.collectLimiting(
+                streamId,
+                RequestStreamResponderFlowCollector(state, streamId, initFrame.initialRequest)
+            )
         }.invokeOnCompletion {
             if (it != null) receiver.cancelConsumed(it) //TODO check it
         }
@@ -80,7 +84,7 @@ internal class RSocketResponder(
         return try {
             block()
         } catch (e: Throwable) {
-            if (isActive) send(ErrorFrame(streamId, e))
+            if (isActive) state.send(ErrorFrame(streamId, e))
             throw e
         }
     }

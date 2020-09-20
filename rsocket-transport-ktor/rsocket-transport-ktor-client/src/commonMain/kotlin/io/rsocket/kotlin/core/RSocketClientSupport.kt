@@ -23,7 +23,6 @@ import io.ktor.http.cio.websocket.*
 import io.ktor.util.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
-import io.rsocket.kotlin.flow.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.plugin.*
@@ -38,7 +37,6 @@ class RSocketClientSupport(
         var keepAlive: KeepAlive = KeepAlive()
         var payloadMimeType: PayloadMimeType = PayloadMimeType()
         var setupPayload: Payload = Payload.Empty
-        var requestStrategy: () -> RequestStrategy = RequestStrategy.Default
 
         var acceptor: RSocketAcceptor = { RSocketRequestHandler { } }
 
@@ -48,7 +46,6 @@ class RSocketClientSupport(
             keepAlive = config.keepAlive
             payloadMimeType = config.payloadMimeType
             setupPayload = config.setupPayload
-            requestStrategy = config.requestStrategy
             acceptor = config.acceptor
         }
 
@@ -59,7 +56,6 @@ class RSocketClientSupport(
                 keepAlive = keepAlive,
                 payloadMimeType = payloadMimeType,
                 setupPayload = setupPayload,
-                requestStrategy = requestStrategy,
                 acceptor = acceptor
             )
         )

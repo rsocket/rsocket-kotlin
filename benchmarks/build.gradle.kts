@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.*
 plugins {
     kotlin("multiplatform")
     id("kotlinx.benchmark") version "0.2.0-dev-20"
-    kotlin("plugin.allopen") version "1.4.0"
+    kotlin("plugin.allopen") version "1.4.10"
 }
 
 repositories {

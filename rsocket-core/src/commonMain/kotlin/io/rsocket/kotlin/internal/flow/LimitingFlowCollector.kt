@@ -14,18 +14,28 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.flow
+package io.rsocket.kotlin.internal.flow
 
+import io.rsocket.kotlin.payload.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
-internal class LimitStrategy(override val initialRequest: Int) : RequestStrategy {
-    private val requests = atomic(initialRequest)
+internal abstract class LimitingFlowCollector(initial: Int) : FlowCollector<Payload> {
+    private val requests = atomic(initial)
     private val awaiter = atomic<CancellableContinuation<Unit>?>(null)
 
-    override suspend fun requestOnEmit(): Int {
+    abstract suspend fun emitValue(value: Payload)
+
+    fun updateRequests(n: Int) {
+        if (n <= 0) return
+        requests.getAndAdd(n)
+        awaiter.getAndSet(null)?.resumeSafely()
+    }
+
+    final override suspend fun emit(value: Payload) {
         useRequest()
-        return 0
+        emitValue(value)
     }
 
     private suspend fun useRequest() {
@@ -38,14 +48,10 @@ internal class LimitStrategy(override val initialRequest: Int) : RequestStrategy
         requests.decrementAndGet()
     }
 
-    fun saveRequest(n: Int) {
-        requests.getAndAdd(n)
-        awaiter.getAndSet(null)?.resumeSafely()
-    }
-
     @OptIn(InternalCoroutinesApi::class)
     private fun CancellableContinuation<Unit>.resumeSafely() {
         val token = tryResume(Unit)
         if (token != null) completeResume(token)
     }
+
 }

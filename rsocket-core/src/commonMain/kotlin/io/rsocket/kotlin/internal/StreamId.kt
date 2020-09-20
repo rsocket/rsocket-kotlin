@@ -35,5 +35,7 @@ internal class StreamId(streamId: Int) {
         private const val MASK = 0x7FFFFFFF
         fun client(): StreamId = StreamId(-1)
         fun server(): StreamId = StreamId(0)
+
+        operator fun invoke(isServer: Boolean): StreamId = if (isServer) server() else client()
     }
 }
