@@ -22,7 +22,7 @@ fun interface LoggerFactory {
     fun logger(tag: String): Logger
 }
 
-internal expect val DefaultLoggerFactory: LoggerFactory
+expect val DefaultLoggerFactory: LoggerFactory
 
 interface Logger {
     val tag: String

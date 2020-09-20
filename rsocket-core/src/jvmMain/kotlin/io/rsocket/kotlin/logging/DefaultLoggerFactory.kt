@@ -20,7 +20,7 @@ import java.util.logging.*
 import java.util.logging.Level as JLevel
 import java.util.logging.Logger as JLogger
 
-internal actual val DefaultLoggerFactory: LoggerFactory get() = JavaLogger
+actual val DefaultLoggerFactory: LoggerFactory get() = JavaLogger
 
 class JavaLogger(override val tag: String) : Logger {
     private val jLogger = JLogger.getLogger(tag)

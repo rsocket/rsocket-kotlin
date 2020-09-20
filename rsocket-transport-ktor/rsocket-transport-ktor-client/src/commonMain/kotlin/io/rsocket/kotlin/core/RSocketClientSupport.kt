@@ -24,6 +24,7 @@ import io.ktor.util.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.keepalive.*
+import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.plugin.*
 
@@ -33,7 +34,7 @@ class RSocketClientSupport(
 
     class Config internal constructor() {
         var plugin: Plugin = Plugin()
-        var fragmentation: Int = 0
+        var loggerFactory: LoggerFactory = DefaultLoggerFactory
         var keepAlive: KeepAlive = KeepAlive()
         var payloadMimeType: PayloadMimeType = PayloadMimeType()
         var setupPayload: Payload = Payload.Empty
@@ -42,7 +43,7 @@ class RSocketClientSupport(
 
         fun fromConfig(config: RSocketConnectorConfiguration) {
             plugin = config.plugin
-            fragmentation = config.fragmentation
+            loggerFactory = config.loggerFactory
             keepAlive = config.keepAlive
             payloadMimeType = config.payloadMimeType
             setupPayload = config.setupPayload
@@ -52,7 +53,7 @@ class RSocketClientSupport(
         internal fun build(): RSocketClientSupport = RSocketClientSupport(
             RSocketConnectorConfiguration(
                 plugin = plugin,
-                fragmentation = fragmentation,
+                loggerFactory = loggerFactory,
                 keepAlive = keepAlive,
                 payloadMimeType = payloadMimeType,
                 setupPayload = setupPayload,

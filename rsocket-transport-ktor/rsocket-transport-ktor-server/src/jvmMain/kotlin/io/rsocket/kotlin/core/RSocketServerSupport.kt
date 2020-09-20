@@ -18,6 +18,7 @@ package io.rsocket.kotlin.core
 
 import io.ktor.application.*
 import io.ktor.util.*
+import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.plugin.*
 
 class RSocketServerSupport(
@@ -25,17 +26,17 @@ class RSocketServerSupport(
 ) {
     class Config internal constructor() {
         var plugin: Plugin = Plugin()
-        var fragmentation: Int = 0
+        var loggerFactory: LoggerFactory = DefaultLoggerFactory
 
         fun fromConfig(config: RSocketServerConfiguration) {
             plugin = config.plugin
-            fragmentation = config.fragmentation
+            loggerFactory = config.loggerFactory
         }
 
         internal fun build(): RSocketServerSupport = RSocketServerSupport(
             RSocketServerConfiguration(
                 plugin = plugin,
-                fragmentation = fragmentation,
+                loggerFactory = loggerFactory,
             )
         )
     }

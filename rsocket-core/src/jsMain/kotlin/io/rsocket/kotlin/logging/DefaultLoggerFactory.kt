@@ -16,7 +16,7 @@
 
 package io.rsocket.kotlin.logging
 
-internal actual val DefaultLoggerFactory: LoggerFactory get() = ConsoleLogger
+actual val DefaultLoggerFactory: LoggerFactory get() = ConsoleLogger
 
 class ConsoleLogger(
     override val tag: String,
