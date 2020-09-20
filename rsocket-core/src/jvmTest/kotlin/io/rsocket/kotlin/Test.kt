@@ -17,9 +17,15 @@
 package io.rsocket.kotlin
 
 import kotlinx.coroutines.*
+import java.io.*
+import java.util.logging.*
 import kotlin.time.*
 
 actual fun test(timeout: Duration?, block: suspend CoroutineScope.() -> Unit): Unit = runBlocking {
+    //init logger
+    LogManager
+        .getLogManager()
+        .readConfiguration(File("src/jvmTest/resources/logging.properties").inputStream())
     when (timeout) {
         null -> block()
         else -> withTimeout(timeout) { block() }

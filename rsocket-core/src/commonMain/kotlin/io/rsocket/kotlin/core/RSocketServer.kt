@@ -30,7 +30,11 @@ class RSocketServer(
     private val configuration: RSocketServerConfiguration = RSocketServerConfiguration(),
 ) {
     suspend fun start(acceptor: RSocketAcceptor): Job {
-        val connection = connectionProvider.connect().let(configuration.plugin::wrapConnection)
+        val connection =
+            connectionProvider.connect()
+                .let(configuration.plugin::wrapConnection)
+                .logging(configuration.loggerFactory.logger("io.rsocket.kotlin.frame.Frame"))
+
         val setupFrame = connection.receive().toFrame()
         if (setupFrame !is SetupFrame)
             connection.failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))

@@ -19,12 +19,13 @@ package io.rsocket.kotlin.core
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.keepalive.*
+import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.plugin.*
 
 data class RSocketConnectorConfiguration(
     val plugin: Plugin = Plugin(),
-    val fragmentation: Int = 0,
+    val loggerFactory: LoggerFactory = DefaultLoggerFactory,
     val keepAlive: KeepAlive = KeepAlive(),
     val payloadMimeType: PayloadMimeType = PayloadMimeType(),
     val setupPayload: Payload = Payload.Empty,

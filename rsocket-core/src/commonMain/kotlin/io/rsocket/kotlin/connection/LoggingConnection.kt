@@ -18,23 +18,26 @@ package io.rsocket.kotlin.connection
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.logging.*
 import kotlinx.coroutines.*
 
-class LoggingConnection(private val delegate: Connection) : Connection {
+internal fun Connection.logging(logger: Logger): Connection =
+    if (logger.isLoggable(LoggingLevel.DEBUG)) LoggingConnection(this, logger) else this
+
+private class LoggingConnection(
+    private val delegate: Connection,
+    private val logger: Logger,
+) : Connection {
     override val job: Job get() = delegate.job
 
-    private fun log(tag: String, packet: ByteReadPacket) {
-        println("\n$tag: ${packet.dumpFrameToString()}")
-    }
-
     override suspend fun send(packet: ByteReadPacket) {
-        log("Send", packet)
+        logger.debug { "Send: ${packet.dumpFrameToString()}" }
         delegate.send(packet)
     }
 
     override suspend fun receive(): ByteReadPacket {
         val packet = delegate.receive()
-        log("Receive", packet)
+        logger.debug { "Receive: ${packet.dumpFrameToString()}" }
         return packet
     }
 }
