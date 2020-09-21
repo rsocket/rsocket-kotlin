@@ -35,8 +35,7 @@ internal class RequestChannelRequesterFlow(
     override fun create(context: CoroutineContext, capacity: Int): RequestChannelRequesterFlow =
         RequestChannelRequesterFlow(payloads, requester, state, context, capacity)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun collectTo(scope: ProducerScope<Payload>): Unit = with(state) {
+    override suspend fun collectImpl(collector: FlowCollector<Payload>): Unit = with(state) {
         val streamId = requester.createStream()
         val receiverDeferred = CompletableDeferred<ReceiveChannel<RequestFrame>?>()
         val request = launchCancelable(streamId) {
@@ -47,6 +46,7 @@ internal class RequestChannelRequesterFlow(
         }
         request.invokeOnCompletion {
             if (receiverDeferred.isCompleted) {
+                @OptIn(ExperimentalCoroutinesApi::class)
                 if (it != null && it !is CancellationException) receiverDeferred.getCompleted()?.cancelConsumed(it)
             } else {
                 if (it == null) receiverDeferred.complete(null)
@@ -55,7 +55,7 @@ internal class RequestChannelRequesterFlow(
         }
         try {
             val receiver = receiverDeferred.await() ?: return
-            collectStream(streamId, receiver, scope)
+            collectStream(streamId, receiver, collector)
         } catch (e: Throwable) {
             if (e is CancellationException) request.cancel(e)
             else request.cancel("Receiver failed", e)

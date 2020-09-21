@@ -24,6 +24,7 @@ import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
+import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.*
 
@@ -55,6 +56,47 @@ class RSocketRequesterTest {
         assertTrue(frame is RequestFrame)
         assertEquals(FrameType.RequestStream, frame.type)
         assertEquals(5, frame.initialRequest)
+    }
+
+    @Test
+    fun testStreamBuffer() = test {
+        val flow = requester.requestStream(Payload.Empty).buffer(2).take(2)
+        assertEquals(0, connection.sentFrames.size)
+        flow.launchIn(CoroutineScope(connection.job))
+        delay(100)
+        assertEquals(1, connection.sentFrames.size)
+        connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty), NextPayloadFrame(1, Payload.Empty))
+        delay(100)
+        assertEquals(2, connection.sentFrames.size)
+        val frame = connection.receiveFromSender()
+        assertTrue(frame is RequestFrame)
+        assertEquals(FrameType.RequestStream, frame.type)
+        assertEquals(2, frame.initialRequest)
+
+        val cancelFrame = connection.receiveFromSender()
+        assertTrue(cancelFrame is CancelFrame)
+    }
+
+    class SomeContext(val context: Int) : AbstractCoroutineContextElement(SomeContext) {
+        companion object Key : CoroutineContext.Key<SomeContext>
+    }
+
+    @Test
+    fun testStreamBufferWithAdditionalContext() = test {
+        val flow = requester.requestStream(Payload.Empty).buffer(2).flowOn(SomeContext(2)).take(2)
+        assertEquals(0, connection.sentFrames.size)
+        flow.launchIn(CoroutineScope(connection.job))
+        delay(100)
+        connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty), NextPayloadFrame(1, Payload.Empty))
+        delay(100)
+        assertEquals(2, connection.sentFrames.size)
+        val frame = connection.receiveFromSender()
+        assertTrue(frame is RequestFrame)
+        assertEquals(FrameType.RequestStream, frame.type)
+        assertEquals(2, frame.initialRequest)
+
+        val cancelFrame = connection.receiveFromSender()
+        assertTrue(cancelFrame is CancelFrame)
     }
 
     @Test
