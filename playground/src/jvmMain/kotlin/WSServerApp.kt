@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package ws
-
-import doSomething
-import io.ktor.client.*
-import io.ktor.client.engine.*
-import io.ktor.client.features.websocket.*
+import io.ktor.application.*
+import io.ktor.routing.*
+import io.ktor.server.cio.*
+import io.ktor.server.engine.*
 import io.ktor.util.*
 import io.rsocket.kotlin.core.*
 
-expect val engine: HttpClientEngineFactory<*>
-
 @OptIn(KtorExperimentalAPI::class)
-suspend fun run() {
-    val client = HttpClient(engine) {
-        install(WebSockets)
-        install(RSocketClientSupport)
-    }
-
-    val rSocket = client.rSocket()
-    rSocket.doSomething()
+fun main() {
+    embeddedServer(CIO) {
+        install(RSocketServerSupport)
+        routing {
+            rSocket(acceptor = rSocketAcceptor)
+        }
+    }.start(true)
 }

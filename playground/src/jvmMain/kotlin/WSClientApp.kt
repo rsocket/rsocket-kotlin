@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-package ws
+import io.ktor.client.engine.cio.*
 
-import io.ktor.client.engine.*
-import io.ktor.client.engine.js.*
-
-actual val engine: HttpClientEngineFactory<*> = Js
-
-suspend fun main() = run()
+suspend fun main(): Unit = runWSClient(CIO)

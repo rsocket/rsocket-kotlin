@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-package ws
+import kotlinx.coroutines.*
 
-import io.ktor.application.*
-import io.ktor.routing.*
-import io.ktor.server.cio.*
-import io.ktor.server.engine.*
-import io.ktor.util.*
-import io.rsocket.kotlin.core.*
-import rSocketAcceptor
-
-@OptIn(KtorExperimentalAPI::class)
-fun main() {
-    embeddedServer(CIO) {
-        install(RSocketServerSupport)
-        routing {
-            rSocket(acceptor = rSocketAcceptor)
-        }
-    }.start(true)
-}
+suspend fun main(): Unit = runTcpClient(Dispatchers.IO)

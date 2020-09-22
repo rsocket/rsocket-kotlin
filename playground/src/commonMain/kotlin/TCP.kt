@@ -14,40 +14,42 @@
  * limitations under the License.
  */
 
-package tcp
-
-import doSomething
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.util.*
 import io.rsocket.kotlin.connection.*
+import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
-import kotlinx.coroutines.*
-import java.util.concurrent.*
+import kotlin.coroutines.*
 
-@OptIn(KtorExperimentalAPI::class)
-fun main(): Unit = runBlocking {
-    val dispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
-    val socket = aSocket(ActorSelectorManager(dispatcher)).tcp().connect("127.0.0.1", 2323)
-
-    val client = socket.connection.connectClient()
-    try {
-        client.doSomething()
-    } catch (e: Throwable) {
-        dispatcher.close()
-        throw e
-    }
+@OptIn(KtorExperimentalAPI::class, InternalAPI::class)
+suspend fun runTcpClient(dispatcher: CoroutineContext): Unit {
+    aSocket(SelectorManager(dispatcher))
+        .tcp()
+        .connect("127.0.0.1", 2323)
+        .connection
+        .connectClient()
+        .doSomething()
 }
 
+@OptIn(KtorExperimentalAPI::class, InternalAPI::class)
+suspend fun runTcpServer(dispatcher: CoroutineContext): Unit {
+    aSocket(SelectorManager(dispatcher))
+        .tcp()
+        .bind("127.0.0.1", 2323)
+        .rSocket(acceptor = rSocketAcceptor)
+}
 
 //to test nodejs tcp server
-@OptIn(KtorExperimentalAPI::class)
-fun main2(): Unit = runBlocking {
-    val socket = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp().connect("127.0.0.1", 9000)
-
-    val client = socket.connection.connectClient()
+@OptIn(KtorExperimentalAPI::class, InternalAPI::class)
+suspend fun testNodeJsServer(dispatcher: CoroutineContext) {
+    val client =
+        aSocket(SelectorManager(dispatcher))
+            .tcp()
+            .connect("127.0.0.1", 9000)
+            .connection
+            .connectClient()
 
     val response = client.requestResponse(Payload("Hello from JVM"))
-
     println(response.data.readText())
 }
