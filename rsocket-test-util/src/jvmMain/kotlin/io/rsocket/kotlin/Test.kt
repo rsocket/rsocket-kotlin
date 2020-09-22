@@ -23,9 +23,9 @@ import kotlin.time.*
 
 actual fun test(timeout: Duration?, block: suspend CoroutineScope.() -> Unit): Unit = runBlocking {
     //init logger
-    LogManager
-        .getLogManager()
-        .readConfiguration(File("src/jvmTest/resources/logging.properties").inputStream())
+    val file = File("src/jvmTest/resources/logging.properties")
+    if (file.exists()) LogManager.getLogManager().readConfiguration(file.inputStream())
+
     when (timeout) {
         null -> block()
         else -> withTimeout(timeout) { block() }

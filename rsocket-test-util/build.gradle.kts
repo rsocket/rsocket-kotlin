@@ -14,12 +14,31 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
+plugins {
+    kotlin("multiplatform")
+}
 
-import kotlinx.coroutines.*
-import kotlin.time.*
+kotlin {
+    jvm()
+    js()
 
-@OptIn(ExperimentalTime::class)
-expect fun test(timeout: Duration? = 10.seconds, block: suspend CoroutineScope.() -> Unit)
-
-fun readLargePayload(name: String): String = name.repeat(1000)
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                api(project(":rsocket-core"))
+                api(kotlin("test-common"))
+                api(kotlin("test-annotations-common"))
+            }
+        }
+        val jvmMain by getting {
+            dependencies {
+                api(kotlin("test-junit"))
+            }
+        }
+        val jsMain by getting {
+            dependencies {
+                api(kotlin("test-js"))
+            }
+        }
+    }
+}

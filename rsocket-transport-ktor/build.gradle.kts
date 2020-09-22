@@ -37,6 +37,7 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(project(":rsocket-transport-test"))
+                implementation(project(":rsocket-transport-ktor-client"))
             }
         }
         val jvmTest by getting {
@@ -49,7 +50,6 @@ kotlin {
                 implementation("io.ktor:ktor-server-jetty:1.4.0")
                 implementation("io.ktor:ktor-server-tomcat:1.4.0")
 
-                implementation(project(":rsocket-transport-ktor-client"))
                 implementation(project(":rsocket-transport-ktor-server"))
             }
         }

@@ -18,7 +18,6 @@ import com.jfrog.bintray.gradle.*
 import com.jfrog.bintray.gradle.tasks.*
 import org.gradle.api.publish.maven.internal.artifact.*
 import org.jetbrains.kotlin.gradle.dsl.*
-import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.targets.js.*
 import org.jetbrains.kotlin.gradle.targets.jvm.*
 import org.jfrog.gradle.plugin.artifactory.dsl.*
@@ -62,8 +61,23 @@ subprojects {
                     is KotlinJsTarget -> {
                         useCommonJs()
                         //configure running tests for JS
-                        nodejs { testTask { useKarma { useChromeHeadless() } } }
-                        browser { testTask { useKarma { useChromeHeadless() } } }
+                        nodejs {
+                            //TODO remove it later after fixing tests
+                            testTask {
+                                useKarma {
+                                    useConfigDirectory(rootDir.resolve("js").resolve("karma.config.d"))
+                                    useChromeHeadless()
+                                }
+                            }
+                        }
+                        browser {
+                            testTask {
+                                useKarma {
+                                    useConfigDirectory(rootDir.resolve("js").resolve("karma.config.d"))
+                                    useChromeHeadless()
+                                }
+                            }
+                        }
                     }
                     is KotlinJvmTarget -> {
                         compilations.all {
@@ -81,7 +95,7 @@ subprojects {
 
                     useExperimentalAnnotation("kotlin.RequiresOptIn")
 
-                    if (name.contains("test", ignoreCase = true)) {
+                    if (name.contains("test", ignoreCase = true) || project.name == "rsocket-test-util") {
                         useExperimentalAnnotation("kotlin.time.ExperimentalTime")
                         useExperimentalAnnotation("kotlin.ExperimentalStdlibApi")
                         useExperimentalAnnotation("kotlinx.coroutines.ExperimentalCoroutinesApi")
@@ -100,15 +114,7 @@ subprojects {
                 dependencies {
                     implementation(kotlin("test-common"))
                     implementation(kotlin("test-annotations-common"))
-                }
-            }
-            targets.all {
-                compilations.findByName("test")?.dependencies {
-                    when (platformType) {
-                        KotlinPlatformType.jvm -> implementation(kotlin("test-junit"))
-                        KotlinPlatformType.js -> implementation(kotlin("test-js"))
-                        else                   -> Unit
-                    }
+                    if (project.name != "rsocket-test-util") implementation(project(":rsocket-test-util"))
                 }
             }
 
