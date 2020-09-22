@@ -26,17 +26,17 @@ class ConsoleLogger(
     override fun rawLog(level: LoggingLevel, throwable: Throwable?, message: Any?) {
         val meta = "[$level] ($tag)"
         when (level) {
-            LoggingLevel.ERROR -> console.error(meta, message, throwable)
-            LoggingLevel.WARN -> console.warn(meta, message, throwable)
-            LoggingLevel.INFO -> console.info(meta, message, throwable)
-            LoggingLevel.DEBUG -> console.log(meta, message, throwable)
-            LoggingLevel.TRACE -> console.log(meta, message, throwable)
+            LoggingLevel.ERROR -> throwable?.let { console.error(meta, message, "Error:", it) } ?: console.error(meta, message)
+            LoggingLevel.WARN -> throwable?.let { console.warn(meta, message, "Error:", it) } ?: console.warn(meta, message)
+            LoggingLevel.INFO -> throwable?.let { console.info(meta, message, "Error:", it) } ?: console.info(meta, message)
+            LoggingLevel.DEBUG -> throwable?.let { console.log(meta, message, "Error:", it) } ?: console.log(meta, message)
+            LoggingLevel.TRACE -> throwable?.let { console.log(meta, message, "Error:", it) } ?: console.log(meta, message)
         }
     }
 
     companion object : LoggerFactory {
         override fun logger(tag: String): Logger = ConsoleLogger(tag)
 
-        fun witLevel(minLevel: LoggingLevel): LoggerFactory = LoggerFactory { ConsoleLogger(it, minLevel) }
+        fun withLevel(minLevel: LoggingLevel): LoggerFactory = LoggerFactory { ConsoleLogger(it, minLevel) }
     }
 }

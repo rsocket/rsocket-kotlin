@@ -20,7 +20,7 @@ import io.ktor.utils.io.core.*
 
 class Payload(
     val data: ByteReadPacket,
-    val metadata: ByteReadPacket? = null
+    val metadata: ByteReadPacket? = null,
 ) {
     companion object {
         val Empty = Payload(ByteReadPacket.Empty)
@@ -42,6 +42,6 @@ fun Payload(data: String, metadata: String? = null): Payload = Payload(
 
 @Suppress("FunctionName")
 fun Payload(data: ByteArray, metadata: ByteArray? = null): Payload = Payload(
-    data = ByteReadPacket(data),
-    metadata = metadata?.let { ByteReadPacket(it) }
+    data = buildPacket { writeFully(data) },
+    metadata = metadata?.let { buildPacket { writeFully(it) } }
 )
