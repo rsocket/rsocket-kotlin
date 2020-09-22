@@ -41,35 +41,22 @@ internal abstract class StreamFlow(
             else               -> capacity.also { check(it >= 1) }
         }
 
-    protected abstract suspend fun collectImpl(collector: FlowCollector<Payload>)
+    protected abstract suspend fun collectImpl(collectContext: CoroutineContext, collector: FlowCollector<Payload>)
 
     final override suspend fun collect(collector: FlowCollector<Payload>) {
-        val collectContext = coroutineContext
-        val newContext = collectContext + context
-        // fast path #1 -- same context, just collect
-        if (newContext == collectContext) return collectImpl(collector)
-
-        // fast path #2 -- when dispatcher doesn't changed, no channel needed
-        // can be optimized using flowOn (internal API)
-        val newDispatcher = context[ContinuationInterceptor]
-        if (newDispatcher == null || newDispatcher == collectContext[ContinuationInterceptor]) {
-            return object : Flow<Payload> {
-                override suspend fun collect(collector: FlowCollector<Payload>) = collectImpl(collector)
-            }.flowOn(context).collect(collector)
+        val collectContext = context + coroutineContext
+        withContext(coroutineContext + context) {
+            collectImpl(collectContext, collector)
         }
-
-        // slow path -- create channel
-        // TODO in that case RequestN frame can be sent even if it not needed because of asynchronously channel consumption
-        //  f.e. if to do `flow.buffer(3).flowOn(Dispatchers.IO).take(3).collect()
-        //  here because of changing dispatcher, new channel will be created
-        super.collect(collector)
     }
 
-    final override suspend fun collectTo(scope: ProducerScope<Payload>): Unit = collectImpl(SendingCollector(scope.channel))
+    final override suspend fun collectTo(scope: ProducerScope<Payload>): Unit =
+        collectImpl(scope.coroutineContext, SendingCollector(scope.channel))
 
     protected suspend fun collectStream(
         streamId: Int,
         receiver: ReceiveChannel<RequestFrame>,
+        collectContext: CoroutineContext,
         collector: FlowCollector<Payload>,
     ): Unit = with(state) {
         consumeReceiverFor(streamId) {
@@ -77,7 +64,10 @@ internal abstract class StreamFlow(
             //TODO fragmentation
             for (frame in receiver) {
                 if (frame.complete) return //TODO check next flag
-                collector.emit(frame.payload)
+                //emit in collectContext to prevent `Flow invariant is violated`
+                withContext(collectContext) {
+                    collector.emit(frame.payload)
+                }
                 if (++consumed == requestSize) {
                     consumed = 0
                     send(RequestNFrame(streamId, requestSize))

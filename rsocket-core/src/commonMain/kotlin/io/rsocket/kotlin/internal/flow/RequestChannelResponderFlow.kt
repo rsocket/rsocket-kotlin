@@ -35,8 +35,8 @@ internal class RequestChannelResponderFlow(
     override fun create(context: CoroutineContext, capacity: Int): RequestChannelResponderFlow =
         RequestChannelResponderFlow(streamId, receiver, state, context, capacity)
 
-    override suspend fun collectImpl(collector: FlowCollector<Payload>): Unit = with(state) {
+    override suspend fun collectImpl(collectContext: CoroutineContext, collector: FlowCollector<Payload>): Unit = with(state) {
         send(RequestNFrame(streamId, requestSize - 1)) //-1 because first payload received
-        collectStream(streamId, receiver, collector)
+        collectStream(streamId, receiver, collectContext, collector)
     }
 }

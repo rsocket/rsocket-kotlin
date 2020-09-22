@@ -33,10 +33,10 @@ internal class RequestStreamRequesterFlow(
     override fun create(context: CoroutineContext, capacity: Int): RequestStreamRequesterFlow =
         RequestStreamRequesterFlow(payload, requester, state, context, capacity)
 
-    override suspend fun collectImpl(collector: FlowCollector<Payload>): Unit = with(state) {
+    override suspend fun collectImpl(collectContext: CoroutineContext, collector: FlowCollector<Payload>): Unit = with(state) {
         val streamId = requester.createStream()
         val receiver = createReceiverFor(streamId)
         send(RequestStreamFrame(streamId, requestSize, payload))
-        collectStream(streamId, receiver, collector)
+        collectStream(streamId, receiver, collectContext, collector)
     }
 }

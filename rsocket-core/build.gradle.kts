@@ -36,6 +36,7 @@ kotlin {
         }
         val commonTest by getting {
             dependencies {
+                implementation("app.cash.turbine:turbine:0.2.1")
                 implementation("io.ktor:ktor-utils:1.4.0")
                 implementation(project(":rsocket-transport-local"))
             }
