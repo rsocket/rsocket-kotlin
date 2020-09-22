@@ -16,11 +16,14 @@
 
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization") version "1.4.10"
+    id("kotlinx-atomicfu")
 }
 
 kotlin {
-    jvm()
-    js(IR) {
+    jvm("serverJvm")
+    jvm("clientJvm")
+    js("clientJs", LEGACY) {
         browser {
             binaries.executable()
         }
@@ -30,21 +33,36 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":rsocket-core"))
-                implementation(project(":rsocket-transport-local"))
+
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.0.0-RC")
+            }
+        }
+
+        val clientMain by creating {
+            dependsOn(commonMain)
+            dependencies {
                 implementation(project(":rsocket-transport-ktor-client"))
             }
         }
-        val jvmMain by getting {
+
+        val serverJvmMain by getting {
             dependencies {
                 implementation(project(":rsocket-transport-ktor-server"))
-
-                implementation("io.ktor:ktor-client-cio:1.4.0")
                 implementation("io.ktor:ktor-server-cio:1.4.0")
             }
         }
-        val jsMain by getting {
+
+        val clientJvmMain by getting {
+            dependsOn(clientMain)
             dependencies {
-                implementation("io.ktor:ktor-client-js:1.4.0") //for WS support
+                implementation("io.ktor:ktor-client-cio:1.4.0")
+            }
+        }
+
+        val clientJsMain by getting {
+            dependsOn(clientMain)
+            dependencies {
+                implementation("io.ktor:ktor-client-js:1.4.0")
             }
         }
     }

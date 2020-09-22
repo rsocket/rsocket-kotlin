@@ -25,7 +25,7 @@ class LocalConnection(
     private val name: String,
     private val sender: Channel<ByteReadPacket>,
     private val receiver: Channel<ByteReadPacket>,
-    parentJob: Job? = null
+    parentJob: Job? = null,
 ) : Connection, Cancelable {
     override val job: Job = Job(parentJob)
 
@@ -36,4 +36,16 @@ class LocalConnection(
     override suspend fun receive(): ByteReadPacket {
         return receiver.receive()
     }
+}
+
+/**
+ * Returns pair of client and server local connections
+ */
+@Suppress("FunctionName")
+fun SimpleLocalConnection(): Pair<LocalConnection, LocalConnection> {
+    val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
+    val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
+    val serverConnection = LocalConnection("server", clientChannel, serverChannel)
+    val clientConnection = LocalConnection("client", serverChannel, clientChannel)
+    return clientConnection to serverConnection
 }

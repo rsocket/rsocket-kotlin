@@ -21,6 +21,7 @@ import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.util.*
 import io.rsocket.kotlin.connection.*
+import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import java.util.concurrent.*
 
@@ -36,4 +37,17 @@ fun main(): Unit = runBlocking {
         dispatcher.close()
         throw e
     }
+}
+
+
+//to test nodejs tcp server
+@OptIn(KtorExperimentalAPI::class)
+fun main2(): Unit = runBlocking {
+    val socket = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp().connect("127.0.0.1", 9000)
+
+    val client = socket.connection.connectClient()
+
+    val response = client.requestResponse(Payload("Hello from JVM"))
+
+    println(response.data.readText())
 }

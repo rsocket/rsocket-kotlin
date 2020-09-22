@@ -106,8 +106,17 @@ subprojects {
                 compilations.findByName("test")?.dependencies {
                     when (platformType) {
                         KotlinPlatformType.jvm -> implementation(kotlin("test-junit"))
-                        KotlinPlatformType.js  -> implementation(kotlin("test-js"))
+                        KotlinPlatformType.js -> implementation(kotlin("test-js"))
                         else                   -> Unit
+                    }
+                }
+            }
+
+            //fix atomicfu for examples and playground
+            if ("examples" in project.path || project.name == "playground") {
+                val commonMain by sourceSets.getting {
+                    dependencies {
+                        implementation("org.jetbrains.kotlinx:atomicfu:0.14.4")
                     }
                 }
             }
