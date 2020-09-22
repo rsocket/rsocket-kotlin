@@ -23,12 +23,21 @@ import io.rsocket.kotlin.payload.*
 class ExtensionFrame(
     override val streamId: Int,
     val extendedType: Int,
-    val payload: Payload
+    val payload: Payload,
 ) : Frame(FrameType.Extension) {
     override val flags: Int get() = if (payload.metadata != null) Flags.Metadata else 0
     override fun BytePacketBuilder.writeSelf() {
         writeInt(extendedType)
         writePayload(payload)
+    }
+
+    override fun StringBuilder.appendFlags() {
+        appendFlag('M', payload.metadata != null)
+    }
+
+    override fun StringBuilder.appendSelf() {
+        append("\nExtended type: ").append(extendedType)
+        appendPayload(payload)
     }
 }
 

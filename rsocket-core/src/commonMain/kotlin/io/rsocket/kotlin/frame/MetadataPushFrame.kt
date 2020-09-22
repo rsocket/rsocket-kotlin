@@ -20,13 +20,21 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 
 class MetadataPushFrame(
-    val metadata: ByteReadPacket
+    val metadata: ByteReadPacket,
 ) : Frame(FrameType.MetadataPush) {
     override val streamId: Int get() = 0
     override val flags: Int get() = Flags.Metadata
 
     override fun BytePacketBuilder.writeSelf() {
         writePacket(metadata)
+    }
+
+    override fun StringBuilder.appendFlags() {
+        appendFlag('M', true)
+    }
+
+    override fun StringBuilder.appendSelf() {
+        appendPacket("Metadata", metadata)
     }
 }
 

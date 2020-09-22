@@ -19,13 +19,19 @@ package io.rsocket.kotlin.frame
 import io.ktor.utils.io.core.*
 
 class ResumeOkFrame(
-    val lastReceivedClientPosition: Long
+    val lastReceivedClientPosition: Long,
 ) : Frame(FrameType.ResumeOk) {
     override val streamId: Int get() = 0
     override val flags: Int get() = 0
 
     override fun BytePacketBuilder.writeSelf() {
         writeLong(lastReceivedClientPosition)
+    }
+
+    override fun StringBuilder.appendFlags(): Unit = Unit
+
+    override fun StringBuilder.appendSelf() {
+        append("\nLast received client position: ").append(lastReceivedClientPosition)
     }
 }
 

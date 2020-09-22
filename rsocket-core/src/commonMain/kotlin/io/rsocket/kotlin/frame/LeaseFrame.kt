@@ -22,7 +22,7 @@ import io.rsocket.kotlin.frame.io.*
 class LeaseFrame(
     val ttl: Int,
     val numberOfRequests: Int,
-    val metadata: ByteReadPacket?
+    val metadata: ByteReadPacket?,
 ) : Frame(FrameType.Lease) {
     override val streamId: Int get() = 0
     override val flags: Int get() = if (metadata != null) Flags.Metadata else 0
@@ -30,6 +30,15 @@ class LeaseFrame(
         writeInt(ttl)
         writeInt(numberOfRequests)
         writeMetadata(metadata)
+    }
+
+    override fun StringBuilder.appendFlags() {
+        appendFlag('M', metadata != null)
+    }
+
+    override fun StringBuilder.appendSelf() {
+        append("\nNumber of requests: ").append(numberOfRequests)
+        if (metadata != null) appendPacket("Metadata", metadata)
     }
 }
 

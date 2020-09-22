@@ -30,7 +30,7 @@ class SetupFrame(
     val keepAlive: KeepAlive,
     val resumeToken: ByteReadPacket?,
     val payloadMimeType: PayloadMimeType,
-    val payload: Payload
+    val payload: Payload,
 ) : Frame(FrameType.Setup) {
     override val streamId: Int get() = 0
     override val flags: Int
@@ -48,6 +48,20 @@ class SetupFrame(
         writeResumeToken(resumeToken)
         writePayloadMimeType(payloadMimeType)
         writePayload(payload)
+    }
+
+    override fun StringBuilder.appendFlags() {
+        appendFlag('M', payload.metadata != null)
+        appendFlag('R', resumeToken != null)
+        appendFlag('L', honorLease)
+    }
+
+    override fun StringBuilder.appendSelf() {
+        append("\nVersion: ").append(version.toString()).append(" Honor lease: ").append(honorLease).append("\n")
+        append("Keep alive: interval=").append(keepAlive.interval).append(", max lifetime=").append(keepAlive.maxLifetime).append("\n")
+        append("Data mime type: ").append(payloadMimeType.data).append("\n")
+        append("Metadata mime type: ").append(payloadMimeType.metadata)
+        appendPayload(payload)
     }
 }
 

@@ -29,7 +29,11 @@ class RSocketConnector(
 ) {
 
     suspend fun connect(): RSocket {
-        val connection = connectionProvider.connect().let(configuration.plugin::wrapConnection)
+        val connection =
+            connectionProvider.connect()
+                .let(configuration.plugin::wrapConnection)
+                .logging(configuration.loggerFactory.logger("io.rsocket.kotlin.frame.Frame"))
+
         val setupFrame = SetupFrame(
             version = Version.Current,
             honorLease = false,

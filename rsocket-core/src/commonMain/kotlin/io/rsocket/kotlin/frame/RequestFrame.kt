@@ -29,7 +29,7 @@ class RequestFrame(
     val complete: Boolean,
     val next: Boolean,
     val initialRequest: Int,
-    val payload: Payload
+    val payload: Payload,
 ) : Frame(type) {
     override val flags: Int
         get() {
@@ -44,6 +44,18 @@ class RequestFrame(
     override fun BytePacketBuilder.writeSelf() {
         if (initialRequest > 0) writeInt(initialRequest)
         writePayload(payload)
+    }
+
+    override fun StringBuilder.appendFlags() {
+        appendFlag('M', payload.metadata != null)
+        appendFlag('F', follows)
+        appendFlag('C', complete)
+        appendFlag('N', next)
+    }
+
+    override fun StringBuilder.appendSelf() {
+        if (initialRequest > 0) append("\nInitial request: ").append(initialRequest)
+        appendPayload(payload)
     }
 }
 

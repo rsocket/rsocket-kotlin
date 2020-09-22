@@ -23,7 +23,7 @@ class ResumeFrame(
     val version: Version,
     val resumeToken: ByteReadPacket,
     val lastReceivedServerPosition: Long,
-    val firstAvailableClientPosition: Long
+    val firstAvailableClientPosition: Long,
 ) : Frame(FrameType.Resume) {
     override val streamId: Int get() = 0
     override val flags: Int get() = 0
@@ -32,6 +32,15 @@ class ResumeFrame(
         writeResumeToken(resumeToken)
         writeLong(lastReceivedServerPosition)
         writeLong(firstAvailableClientPosition)
+    }
+
+    override fun StringBuilder.appendFlags(): Unit = Unit
+
+    override fun StringBuilder.appendSelf() {
+        append("\nVersion: ").append(version.toString()).append("\n")
+        append("Last received server position: ").append(lastReceivedServerPosition).append("\n")
+        append("First available client position: ").append(firstAvailableClientPosition)
+        appendPacket("Resume token", resumeToken)
     }
 }
 
