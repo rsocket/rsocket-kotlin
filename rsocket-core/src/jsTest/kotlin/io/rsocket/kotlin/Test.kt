@@ -25,3 +25,6 @@ actual fun test(timeout: Duration?, block: suspend CoroutineScope.() -> Unit): d
         else -> withTimeout(timeout) { block() }
     }
 }
+
+//JS is single threaded, so it have only one dispatcher backed by one threed
+actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.Default

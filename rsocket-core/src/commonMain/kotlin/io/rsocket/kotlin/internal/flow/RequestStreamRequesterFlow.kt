@@ -19,8 +19,8 @@ package io.rsocket.kotlin.internal.flow
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
-import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
 internal class RequestStreamRequesterFlow(
@@ -33,11 +33,10 @@ internal class RequestStreamRequesterFlow(
     override fun create(context: CoroutineContext, capacity: Int): RequestStreamRequesterFlow =
         RequestStreamRequesterFlow(payload, requester, state, context, capacity)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun collectTo(scope: ProducerScope<Payload>): Unit = with(state) {
+    override suspend fun collectImpl(collectContext: CoroutineContext, collector: FlowCollector<Payload>): Unit = with(state) {
         val streamId = requester.createStream()
         val receiver = createReceiverFor(streamId)
         send(RequestStreamFrame(streamId, requestSize, payload))
-        collectStream(streamId, receiver, scope)
+        collectStream(streamId, receiver, collectContext, collector)
     }
 }

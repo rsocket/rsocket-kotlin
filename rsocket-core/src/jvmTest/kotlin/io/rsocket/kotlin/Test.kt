@@ -31,3 +31,5 @@ actual fun test(timeout: Duration?, block: suspend CoroutineScope.() -> Unit): U
         else -> withTimeout(timeout) { block() }
     }
 }
+
+actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.IO

@@ -21,6 +21,7 @@ import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.internal.*
 import kotlin.coroutines.*
 
@@ -40,18 +41,33 @@ internal abstract class StreamFlow(
             else               -> capacity.also { check(it >= 1) }
         }
 
+    protected abstract suspend fun collectImpl(collectContext: CoroutineContext, collector: FlowCollector<Payload>)
+
+    final override suspend fun collect(collector: FlowCollector<Payload>) {
+        val collectContext = context + coroutineContext
+        withContext(coroutineContext + context) {
+            collectImpl(collectContext, collector)
+        }
+    }
+
+    final override suspend fun collectTo(scope: ProducerScope<Payload>): Unit =
+        collectImpl(scope.coroutineContext, SendingCollector(scope.channel))
+
     protected suspend fun collectStream(
         streamId: Int,
         receiver: ReceiveChannel<RequestFrame>,
-        scope: ProducerScope<Payload>,
+        collectContext: CoroutineContext,
+        collector: FlowCollector<Payload>,
     ): Unit = with(state) {
-        val collector = SendingCollector(scope.channel)
         consumeReceiverFor(streamId) {
             var consumed = 0
             //TODO fragmentation
             for (frame in receiver) {
                 if (frame.complete) return //TODO check next flag
-                collector.emit(frame.payload)
+                //emit in collectContext to prevent `Flow invariant is violated`
+                withContext(collectContext) {
+                    collector.emit(frame.payload)
+                }
                 if (++consumed == requestSize) {
                     consumed = 0
                     send(RequestNFrame(streamId, requestSize))

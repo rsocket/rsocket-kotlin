@@ -16,6 +16,7 @@
 
 package io.rsocket.kotlin.internal
 
+import app.cash.turbine.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.frame.*
@@ -24,6 +25,7 @@ import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
+import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.*
 
@@ -55,6 +57,110 @@ class RSocketRequesterTest {
         assertTrue(frame is RequestFrame)
         assertEquals(FrameType.RequestStream, frame.type)
         assertEquals(5, frame.initialRequest)
+    }
+
+    @Test
+    fun testStreamBuffer() = test {
+        val flow =
+            requester.requestStream(Payload.Empty)
+                .buffer(2)
+                .take(2)
+
+        assertEquals(0, connection.sentFrames.size)
+
+        flow.launchIn(CoroutineScope(connection.job))
+
+        connection.sentAsFlow().test {
+            expectItem().let { frame ->
+                assertTrue(frame is RequestFrame)
+                assertEquals(FrameType.RequestStream, frame.type)
+                assertEquals(2, frame.initialRequest)
+            }
+            delay(200)
+            expectNoEvents()
+            connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
+            delay(200)
+            expectNoEvents()
+            connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
+            delay(200)
+            expectItem().let { frame ->
+                assertTrue(frame is CancelFrame)
+            }
+            delay(200)
+            expectNoEvents()
+        }
+    }
+
+    class SomeContext(val context: Int) : AbstractCoroutineContextElement(SomeContext) {
+        companion object Key : CoroutineContext.Key<SomeContext>
+    }
+
+    @Test
+    fun testStreamBufferWithAdditionalContext() = test {
+        val flow =
+            requester.requestStream(Payload.Empty)
+                .buffer(2)
+                .flowOn(SomeContext(2))
+                .take(2)
+
+        assertEquals(0, connection.sentFrames.size)
+
+        flow.launchIn(CoroutineScope(connection.job))
+
+        connection.sentAsFlow().test {
+            expectItem().let { frame ->
+                assertTrue(frame is RequestFrame)
+                assertEquals(FrameType.RequestStream, frame.type)
+                assertEquals(2, frame.initialRequest)
+            }
+            delay(200)
+            expectNoEvents()
+            connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
+            delay(200)
+            expectNoEvents()
+            connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
+            delay(200)
+            expectItem().let { frame ->
+                assertTrue(frame is CancelFrame)
+            }
+            delay(200)
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun testStreamBufferWithAnotherDispatcher() = test {
+        val flow =
+            requester.requestStream(Payload.Empty)
+                .buffer(2)
+                .flowOn(anotherDispatcher) //change dispatcher before take
+                .take(2)
+                .transform { emit(it) } //force using SafeCollector to check that `Flow invariant is violated` not happens
+
+        assertEquals(0, connection.sentFrames.size)
+
+        flow.launchIn(CoroutineScope(connection.job))
+
+        connection.sentAsFlow().test {
+            expectItem().let { frame ->
+                assertTrue(frame is RequestFrame)
+                assertEquals(FrameType.RequestStream, frame.type)
+                assertEquals(2, frame.initialRequest)
+            }
+            delay(200)
+            expectNoEvents()
+            connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
+            delay(200)
+            expectNoEvents() //will fail here if `Flow invariant is violated`
+            connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
+            delay(200)
+            expectItem().let { frame ->
+                println(frame)
+                assertTrue(frame is CancelFrame)
+            }
+            delay(200)
+            expectNoEvents()
+        }
     }
 
     @Test

@@ -19,8 +19,8 @@ package io.rsocket.kotlin.internal.flow
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
-import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
 //TODO prevent consuming more then one time - add atomic ?
@@ -35,9 +35,8 @@ internal class RequestChannelResponderFlow(
     override fun create(context: CoroutineContext, capacity: Int): RequestChannelResponderFlow =
         RequestChannelResponderFlow(streamId, receiver, state, context, capacity)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun collectTo(scope: ProducerScope<Payload>): Unit = with(state) {
+    override suspend fun collectImpl(collectContext: CoroutineContext, collector: FlowCollector<Payload>): Unit = with(state) {
         send(RequestNFrame(streamId, requestSize - 1)) //-1 because first payload received
-        collectStream(streamId, receiver, scope)
+        collectStream(streamId, receiver, collectContext, collector)
     }
 }
