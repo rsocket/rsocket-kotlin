@@ -26,72 +26,49 @@ import kotlin.test.*
 import kotlin.time.*
 
 @OptIn(ExperimentalTime::class)
-abstract class TransportTest(private val timeout: Duration = 10.minutes) {
-    private var client: RSocket? = null
+abstract class TransportTest : SuspendTest {
+    override val testTimeout: Duration = 10.minutes
 
-    abstract suspend fun init(): RSocket
+    lateinit var client: RSocket //should be assigned in `before`
 
-    private suspend fun client(): RSocket = when (val c = client) {
-        null -> init().also { client = it }
-        else -> c
-    }
-
-    @AfterTest
-    fun clean() = test {
-        client().job.cancelAndJoin()
-    }
-
-    @Suppress("FunctionName")
-    private fun Payload(metadataPresent: Int): Payload {
-        val metadata = when (metadataPresent % 5) {
-            0    -> null
-            1    -> ""
-            else -> MOCK_METADATA
-        }
-        return Payload(MOCK_DATA, metadata)
+    override suspend fun after() {
+        client.cancel()
     }
 
     @Test
-    fun fireAndForget10() = test(timeout) {
-        val client = client()
+    fun fireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(Payload(it)) } }.awaitAll()
     }
 
     @Test
-    fun largePayloadFireAndForget10() = test(timeout) {
-        val client = client()
+    fun largePayloadFireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(LARGE_PAYLOAD) } }.awaitAll()
     }
 
     @Test
-    fun metadataPush10() = test(timeout) {
-        val client = client()
+    fun metadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(MOCK_DATA)) } }.awaitAll()
     }
 
     @Test
-    fun largePayloadMetadataPush10() = test(timeout) {
-        val client = client()
+    fun largePayloadMetadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(LARGE_DATA)) } }.awaitAll()
     }
 
     @Test
     fun requestChannel0() = test(10.seconds) {
-        val client = client()
         val list = client.requestChannel(emptyFlow()).toList()
         assertTrue(list.isEmpty())
     }
 
     @Test
     fun requestChannel1() = test(10.seconds) {
-        val client = client()
         val list = client.requestChannel(flowOf(Payload(0))).onEach { it.release() }.toList()
         assertEquals(1, list.size)
     }
 
     @Test
-    fun requestChannel3() = test(timeout) {
-        val client = client()
+    fun requestChannel3() = test {
         val request = flow {
             repeat(3) { emit(Payload(it)) }
         }
@@ -100,8 +77,7 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
     }
 
     @Test
-    fun largePayloadRequestChannel200() = test(timeout) {
-        val client = client()
+    fun largePayloadRequestChannel200() = test {
         val request = flow {
             repeat(200) { emit(LARGE_PAYLOAD) }
         }
@@ -110,8 +86,7 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
     }
 
     @Test
-    fun requestChannel20000() = test(timeout) {
-        val client = client()
+    fun requestChannel20000() = test {
         val request = flow {
             repeat(20_000) { emit(Payload(7)) }
         }
@@ -123,8 +98,7 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
     }
 
     @Test
-    fun requestChannel200000() = test(timeout) {
-        val client = client()
+    fun requestChannel200000() = test {
         val request = flow {
             repeat(200_000) { emit(Payload(it)) }
         }
@@ -133,8 +107,7 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
     }
 
     @Test
-    fun requestChannel256x512() = test(null) {
-        val client = client()
+    fun requestChannel256x512() = test {
         val request = flow {
             repeat(512) {
                 emit(Payload(it))
@@ -142,108 +115,83 @@ abstract class TransportTest(private val timeout: Duration = 10.minutes) {
         }
         (0..256).map {
             async(Dispatchers.Default) {
-                withTimeout(timeout) {
-                    val list = client.requestChannel(request).onEach { it.release() }.toList()
-                    assertEquals(512, list.size)
-                }
+                val list = client.requestChannel(request).onEach { it.release() }.toList()
+                assertEquals(512, list.size)
             }
         }.awaitAll()
     }
 
     @Test
-    fun requestResponse1() = test(timeout) {
-        val client = client()
+    fun requestResponse1() = test {
         client.requestResponse(Payload(1)).let(::checkPayload)
     }
 
     @Test
-    fun requestResponse10() = test(timeout) {
-        val client = client()
+    fun requestResponse10() = test {
         (1..10).map { async { client.requestResponse(Payload(it)).let(::checkPayload) } }.awaitAll()
     }
 
     @Test
-    fun requestResponse100() = test(timeout) {
-        val client = client()
+    fun requestResponse100() = test {
         (1..100).map { async { client.requestResponse(Payload(it)).let(::checkPayload) } }.awaitAll()
     }
 
     @Test
-    fun largePayloadRequestResponse100() = test(timeout) {
-        val client = client()
+    fun largePayloadRequestResponse100() = test {
         (1..100).map { async { client.requestResponse(LARGE_PAYLOAD) } }.awaitAll().onEach { it.release() }
     }
 
     @Test
-    fun requestResponse10000() = test(timeout) {
-        val client = client()
+    fun requestResponse10000() = test {
         (1..10000).map { async { client.requestResponse(Payload(3)).let(::checkPayload) } }.awaitAll()
     }
 
     @Test
-    fun requestResponse100000() = test(timeout) {
-        val client = client()
+    fun requestResponse100000() = test {
         repeat(100000) { client.requestResponse(Payload(3)).let(::checkPayload) }
     }
 
     @Test
-    fun requestStream5() = test(timeout) {
-        val client = client()
-        val list = client.requestStream(Payload(3)).onEach { checkPayload(it) }.take(5).toList()
+    fun requestStream5() = test {
+        val list = client.requestStream(Payload(3)).onEach { checkPayload(it) }.buffer(5).take(5).toList()
         assertEquals(5, list.size)
     }
 
     @Test
-    fun requestStream10000() = test(timeout) {
-        val client = client()
+    fun requestStream10000() = test {
         val list = client.requestStream(Payload(3)).onEach { checkPayload(it) }.toList()
         assertEquals(10000, list.size)
     }
 
-    fun checkPayload(payload: Payload) {
-        assertEquals(TestRSocket.data, payload.data.readText())
-        assertEquals(TestRSocket.metadata, payload.metadata?.readText())
-    }
-
     companion object {
+
+        val ACCEPTOR: RSocketAcceptor = { TestRSocket() }
+        val CONNECTOR_CONFIG = RSocketConnectorConfiguration(keepAlive = KeepAlive(10.minutes, 100.minutes))
+        val SERVER_CONFIG = RSocketServerConfiguration()
+
         val MOCK_DATA: String = "test-data"
         val MOCK_METADATA: String = "metadata"
         val LARGE_DATA by lazy { readLargePayload("words.shakespeare.txt.gz") }
         private val payload by lazy { Payload(LARGE_DATA, LARGE_DATA) }
         val LARGE_PAYLOAD get() = payload.copy()
 
-        val ACCEPTOR: RSocketAcceptor = { TestRSocket() }
-        val CONNECTOR_CONFIG = RSocketConnectorConfiguration(keepAlive = KeepAlive(10.minutes, 100.minutes))
-        val SERVER_CONFIG = RSocketServerConfiguration()
+        private fun packet(text: String): ByteReadPacket = buildPacket { writeText(text) }
+
+        private fun readLargePayload(name: String): String = name.repeat(1000)
+
+        @Suppress("FunctionName")
+        private fun Payload(metadataPresent: Int): Payload {
+            val metadata = when (metadataPresent % 5) {
+                0 -> null
+                1 -> ""
+                else -> MOCK_METADATA
+            }
+            return Payload(MOCK_DATA, metadata)
+        }
+
+        fun checkPayload(payload: Payload) {
+            assertEquals(TestRSocket.data, payload.data.readText())
+            assertEquals(TestRSocket.metadata, payload.metadata?.readText())
+        }
     }
 }
-
-class TestRSocket : RSocket {
-    override val job: Job = Job()
-
-    override suspend fun metadataPush(metadata: ByteReadPacket): Unit = metadata.release()
-
-    override suspend fun fireAndForget(payload: Payload): Unit = payload.release()
-
-    override suspend fun requestResponse(payload: Payload): Payload {
-        payload.release()
-        return Payload(data, metadata)
-    }
-
-    override fun requestStream(payload: Payload): Flow<Payload> = flow {
-        repeat(10000) { emit(requestResponse(payload)) }
-    }
-
-    override fun requestChannel(payloads: Flow<Payload>): Flow<Payload> = flow {
-        payloads.collect { emit(it) }
-    }
-
-    companion object {
-        const val data = "hello world"
-        const val metadata = "metadata"
-    }
-}
-
-private fun packet(text: String): ByteReadPacket = buildPacket { writeText(text) }
-
-fun readLargePayload(name: String): String = name.repeat(1000)

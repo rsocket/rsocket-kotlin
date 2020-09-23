@@ -26,7 +26,7 @@ import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlin.test.*
 
-class SetupRejectionTest {
+class SetupRejectionTest : SuspendTest {
     @Test
     fun responderRejectSetup() = test {
         val errorMessage = "error"

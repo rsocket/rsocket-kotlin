@@ -26,8 +26,8 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
-class KeepAliveTest {
-    private val connection = TestConnection()
+class KeepAliveTest : TestWithConnection() {
+
     private fun requester(keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds)): RSocket = run {
         val state = RSocketState(connection, keepAlive) {}
         val requester = RSocketRequester(state, StreamId.client())

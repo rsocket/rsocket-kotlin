@@ -23,7 +23,6 @@ import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.rsocket.kotlin.core.*
 import kotlinx.coroutines.*
-import kotlin.test.*
 import io.ktor.client.features.websocket.WebSockets as ClientWebSockets
 import io.ktor.websocket.WebSockets as ServerWebSockets
 
@@ -49,18 +48,17 @@ abstract class WebSocketTransportTest(
         }
     }
 
-    @BeforeTest
-    fun setup() {
-        server.start()
+    override suspend fun before() {
+        super.before()
+
+        trySeveralTimes { server.start() }
+        client = trySeveralTimes { httpClient.rSocket(port = 9000) }
     }
 
-    @AfterTest
-    fun cleanup() {
+    override suspend fun after() {
+        super.after()
+
         server.stop(0, 0)
-    }
-
-    override suspend fun init(): RSocket = trySeveralTimes {
-        httpClient.rSocket(port = 9000)
     }
 
     private suspend inline fun <R> trySeveralTimes(block: () -> R): R {

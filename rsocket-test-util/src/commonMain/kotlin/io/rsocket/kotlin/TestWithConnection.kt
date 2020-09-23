@@ -16,8 +16,10 @@
 
 package io.rsocket.kotlin
 
-import kotlinx.coroutines.*
+abstract class TestWithConnection : SuspendTest {
+    val connection: TestConnection = TestConnection()
 
-internal expect fun runTest(block: suspend CoroutineScope.() -> Unit)
-
-expect val anotherDispatcher: CoroutineDispatcher
+    override suspend fun after() {
+        connection.cancel()
+    }
+}

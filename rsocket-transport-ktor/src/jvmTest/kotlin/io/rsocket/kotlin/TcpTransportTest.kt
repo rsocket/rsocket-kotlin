@@ -21,7 +21,6 @@ import io.ktor.network.sockets.*
 import io.ktor.util.*
 import io.rsocket.kotlin.connection.*
 import kotlinx.coroutines.*
-import kotlin.test.*
 
 class TcpTransportTest : TransportTest() {
     @OptIn(InternalAPI::class)
@@ -29,20 +28,22 @@ class TcpTransportTest : TransportTest() {
     private val builder = aSocket(selector).tcp()
     private val server = builder.bind()
 
-    @BeforeTest
-    fun setup() {
+    override suspend fun before() {
+        super.before()
+
         GlobalScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            server.accept().connection.startServer(SERVER_CONFIG, ACCEPTOR).join()
+            server.accept().connection.startServer(SERVER_CONFIG, ACCEPTOR)
         }
+
+        client = builder.connect(server.localAddress).connection.connectClient(CONNECTOR_CONFIG)
     }
 
-    @AfterTest
-    fun cleanup() {
+    override suspend fun after() {
+        super.after()
+
         server.close()
         selector.close()
-        runBlocking { server.socketContext.join() }
+        server.socketContext.join()
     }
 
-    override suspend fun init(): RSocket =
-        builder.connect(server.localAddress).connection.connectClient(CONNECTOR_CONFIG)
 }

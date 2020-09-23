@@ -62,11 +62,9 @@ subprojects {
                         useCommonJs()
                         //configure running tests for JS
                         nodejs {
-                            //TODO remove it later after fixing tests
                             testTask {
-                                useKarma {
-                                    useConfigDirectory(rootDir.resolve("js").resolve("karma.config.d"))
-                                    useChromeHeadless()
+                                useMocha {
+                                    timeout = "600s"
                                 }
                             }
                         }

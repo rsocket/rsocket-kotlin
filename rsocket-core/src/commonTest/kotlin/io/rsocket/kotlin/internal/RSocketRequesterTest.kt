@@ -29,14 +29,17 @@ import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.*
 
-class RSocketRequesterTest {
-    private val connection = TestConnection()
-    private val ignoredFrames = Channel<Frame>(Channel.UNLIMITED)
-    private val requester = run {
+class RSocketRequesterTest : TestWithConnection() {
+    lateinit var ignoredFrames: Channel<Frame>
+    private lateinit var requester: RSocketRequester
+
+    override suspend fun before() {
+        super.before()
+
+        ignoredFrames = Channel(Channel.UNLIMITED)
         val state = RSocketState(connection, KeepAlive(1000.seconds, 1000.seconds), ignoredFrames::offer)
-        val requester = RSocketRequester(state, StreamId.client())
+        requester = RSocketRequester(state, StreamId.client())
         state.start(RSocketRequestHandler { })
-        requester
     }
 
     @Test

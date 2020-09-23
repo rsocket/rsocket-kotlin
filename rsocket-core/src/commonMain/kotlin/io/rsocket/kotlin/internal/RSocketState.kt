@@ -78,7 +78,7 @@ internal class RSocketState(
     suspend inline fun Flow<Payload>.collectLimiting(
         streamId: Int,
         limitingCollector: LimitingFlowCollector,
-    ) {
+    ): Unit = coroutineScope {
         limits[streamId] = limitingCollector
         try {
             collect(limitingCollector)
@@ -86,8 +86,8 @@ internal class RSocketState(
         } catch (e: Throwable) {
             limits.remove(streamId)
             //if isn't active, then, that stream was cancelled, and so no need for error frame
-            if (currentCoroutineContext().isActive) send(ErrorFrame(streamId, e))
-            throw e
+            if (isActive) send(ErrorFrame(streamId, e))
+            cancel("Collect failed", e) //KLUDGE: can be related to IR, because using `throw` fails on JS IR and Native
         }
     }
 
@@ -114,7 +114,7 @@ internal class RSocketState(
                 is RequestNFrame -> limits[streamId]?.updateRequests(frame.requestN)
                 is CancelFrame -> senders.remove(streamId)?.cancel()
                 is ErrorFrame -> receivers.remove(streamId)?.close(frame.throwable)
-                is RequestFrame  -> when (frame.type) {
+                is RequestFrame -> when (frame.type) {
                     FrameType.Payload         -> receivers[streamId]?.offer(frame)
                     FrameType.RequestFnF      -> responder.handleFireAndForget(frame)
                     FrameType.RequestResponse -> responder.handlerRequestResponse(frame)

@@ -22,16 +22,28 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 
 class LocalTransportTest : TransportTest() {
-    override suspend fun init(): RSocket {
+
+    private val testJob: Job = Job()
+
+    override suspend fun before() {
+        super.before()
+
         val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
         val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
-        val serverConnection = LocalConnection("server", clientChannel, serverChannel)
-        val clientConnection = LocalConnection("client", serverChannel, clientChannel)
-        return coroutineScope {
+
+        val clientConnection = LocalConnection("client", serverChannel, clientChannel, testJob)
+        val serverConnection = LocalConnection("server", clientChannel, serverChannel, testJob)
+        client = coroutineScope {
             launch {
                 serverConnection.startServer(SERVER_CONFIG, ACCEPTOR)
             }
             clientConnection.connectClient(CONNECTOR_CONFIG)
         }
+    }
+
+    override suspend fun after() {
+
+        super.after()
+        testJob.cancel()
     }
 }

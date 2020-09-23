@@ -17,14 +17,8 @@
 package io.rsocket.kotlin
 
 import kotlinx.coroutines.*
-import kotlin.time.*
 
-actual fun test(timeout: Duration?, block: suspend CoroutineScope.() -> Unit): dynamic = GlobalScope.promise {
-    when (timeout) {
-        null -> block()
-        else -> withTimeout(timeout) { block() }
-    }
-}
+internal actual fun runTest(block: suspend CoroutineScope.() -> Unit): dynamic = GlobalScope.promise(block = block)
 
 //JS is single threaded, so it have only one dispatcher backed by one threed
 actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.Default
