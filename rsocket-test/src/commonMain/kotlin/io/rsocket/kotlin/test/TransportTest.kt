@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
+package io.rsocket.kotlin.test
 
 import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
@@ -32,7 +31,7 @@ abstract class TransportTest : SuspendTest {
     lateinit var client: RSocket //should be assigned in `before`
 
     override suspend fun after() {
-        client.cancel()
+        client.job.cancelAndJoin()
     }
 
     @Test
@@ -123,17 +122,17 @@ abstract class TransportTest : SuspendTest {
 
     @Test
     fun requestResponse1() = test {
-        client.requestResponse(Payload(1)).let(::checkPayload)
+        client.requestResponse(Payload(1)).let(Companion::checkPayload)
     }
 
     @Test
     fun requestResponse10() = test {
-        (1..10).map { async { client.requestResponse(Payload(it)).let(::checkPayload) } }.awaitAll()
+        (1..10).map { async { client.requestResponse(Payload(it)).let(Companion::checkPayload) } }.awaitAll()
     }
 
     @Test
     fun requestResponse100() = test {
-        (1..100).map { async { client.requestResponse(Payload(it)).let(::checkPayload) } }.awaitAll()
+        (1..100).map { async { client.requestResponse(Payload(it)).let(Companion::checkPayload) } }.awaitAll()
     }
 
     @Test
@@ -143,12 +142,12 @@ abstract class TransportTest : SuspendTest {
 
     @Test
     fun requestResponse10000() = test {
-        (1..10000).map { async { client.requestResponse(Payload(3)).let(::checkPayload) } }.awaitAll()
+        (1..10000).map { async { client.requestResponse(Payload(3)).let(Companion::checkPayload) } }.awaitAll()
     }
 
     @Test
     fun requestResponse100000() = test {
-        repeat(100000) { client.requestResponse(Payload(3)).let(::checkPayload) }
+        repeat(100000) { client.requestResponse(Payload(3)).let(Companion::checkPayload) }
     }
 
     @Test

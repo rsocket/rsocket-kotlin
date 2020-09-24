@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
+package io.rsocket.kotlin.test
 
 import kotlinx.coroutines.*
+import java.io.*
+import java.util.logging.*
 
-internal actual fun runTest(block: suspend CoroutineScope.() -> Unit): dynamic = GlobalScope.promise(block = block)
+internal actual fun runTest(block: suspend CoroutineScope.() -> Unit) {
+    //init logger
+    val file = File("src/jvmTest/resources/logging.properties")
+    if (file.exists()) LogManager.getLogManager().readConfiguration(file.inputStream())
 
-//JS is single threaded, so it have only one dispatcher backed by one threed
-actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.Default
+    runBlocking(block = block)
+}
+
+actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.IO

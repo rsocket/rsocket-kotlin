@@ -36,7 +36,7 @@ kotlin {
         }
         val commonTest by getting {
             dependencies {
-                implementation(project(":rsocket-transport-test"))
+                implementation(project(":rsocket-test"))
                 implementation(project(":rsocket-transport-ktor-client"))
             }
         }

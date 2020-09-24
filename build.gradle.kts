@@ -93,7 +93,7 @@ subprojects {
 
                     useExperimentalAnnotation("kotlin.RequiresOptIn")
 
-                    if (name.contains("test", ignoreCase = true) || project.name == "rsocket-test-util") {
+                    if (name.contains("test", ignoreCase = true) || project.name == "rsocket-test") {
                         useExperimentalAnnotation("kotlin.time.ExperimentalTime")
                         useExperimentalAnnotation("kotlin.ExperimentalStdlibApi")
                         useExperimentalAnnotation("kotlinx.coroutines.ExperimentalCoroutinesApi")
@@ -112,7 +112,7 @@ subprojects {
                 dependencies {
                     implementation(kotlin("test-common"))
                     implementation(kotlin("test-annotations-common"))
-                    if (project.name != "rsocket-test-util") implementation(project(":rsocket-test-util"))
+                    if (project.name != "rsocket-test") implementation(project(":rsocket-test"))
                 }
             }
 

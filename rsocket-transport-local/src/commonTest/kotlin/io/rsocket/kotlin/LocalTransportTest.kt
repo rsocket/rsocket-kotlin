@@ -18,8 +18,7 @@ package io.rsocket.kotlin
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.connection.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
+import io.rsocket.kotlin.test.*
 
 class LocalTransportTest : TransportTest() {
 
@@ -44,6 +43,6 @@ class LocalTransportTest : TransportTest() {
     override suspend fun after() {
 
         super.after()
-        testJob.cancel()
+        testJob.cancelAndJoin()
     }
 }

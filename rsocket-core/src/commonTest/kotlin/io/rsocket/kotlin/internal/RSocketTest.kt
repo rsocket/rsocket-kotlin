@@ -20,12 +20,9 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
-import kotlinx.coroutines.flow.*
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 import kotlin.time.*
 
@@ -48,8 +45,8 @@ class RSocketTest : SuspendTest {
     override suspend fun after() {
         super.after()
 
-        serverConnection.cancel()
-        clientConnection.cancel()
+        serverConnection.job.cancelAndJoin()
+        clientConnection.job.cancelAndJoin()
     }
 
     private suspend fun start(handler: RSocket? = null): RSocket = coroutineScope {

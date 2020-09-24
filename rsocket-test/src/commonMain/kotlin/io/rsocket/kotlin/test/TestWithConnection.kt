@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
+package io.rsocket.kotlin.test
 
-import kotlinx.coroutines.*
-import java.io.*
-import java.util.logging.*
+abstract class TestWithConnection : SuspendTest {
+    val connection: TestConnection = TestConnection()
 
-internal actual fun runTest(block: suspend CoroutineScope.() -> Unit) {
-    //init logger
-    val file = File("src/jvmTest/resources/logging.properties")
-    if (file.exists()) LogManager.getLogManager().readConfiguration(file.inputStream())
-
-    runBlocking(block = block)
+    override suspend fun after() {
+        connection.job.cancelAndJoin()
+    }
 }
-
-actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.IO

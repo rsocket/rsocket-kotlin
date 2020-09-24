@@ -22,6 +22,7 @@ import io.ktor.client.engine.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import io.ktor.client.features.websocket.WebSockets as ClientWebSockets
 import io.ktor.websocket.WebSockets as ServerWebSockets

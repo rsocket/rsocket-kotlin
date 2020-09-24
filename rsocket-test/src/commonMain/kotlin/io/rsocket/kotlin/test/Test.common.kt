@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
-
-import kotlinx.coroutines.*
+package io.rsocket.kotlin.test
 
 internal expect fun runTest(block: suspend CoroutineScope.() -> Unit)
 

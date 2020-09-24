@@ -33,8 +33,8 @@ include("benchmarks")
 include("playground")
 
 include("rsocket-core")
-include("rsocket-test-util")
-include("rsocket-transport-test")
+include("rsocket-test")
+
 include("rsocket-transport-local")
 
 include("rsocket-transport-ktor")

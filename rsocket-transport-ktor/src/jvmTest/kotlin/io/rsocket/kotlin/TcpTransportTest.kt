@@ -20,6 +20,7 @@ import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.util.*
 import io.rsocket.kotlin.connection.*
+import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 
 class TcpTransportTest : TransportTest() {

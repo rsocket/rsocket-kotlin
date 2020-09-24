@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
+package io.rsocket.kotlin.test
 
-import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.time.*
 

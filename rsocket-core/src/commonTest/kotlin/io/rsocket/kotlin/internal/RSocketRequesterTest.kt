@@ -16,15 +16,12 @@
 
 package io.rsocket.kotlin.internal
 
-import app.cash.turbine.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
-import kotlinx.coroutines.flow.*
+import io.rsocket.kotlin.test.*
 import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.*
@@ -158,7 +155,6 @@ class RSocketRequesterTest : TestWithConnection() {
             connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
             delay(200)
             expectItem().let { frame ->
-                println(frame)
                 assertTrue(frame is CancelFrame)
             }
             delay(200)
@@ -242,7 +238,7 @@ class RSocketRequesterTest : TestWithConnection() {
             awaitClose()
         }
         val response = requester.requestChannel(request).launchIn(CoroutineScope(connection.job))
-        delay(100)
+        delay(200)
         val requestFrame = connection.sentFrames.first()
         assertTrue(requestFrame is RequestFrame)
         assertEquals(FrameType.RequestChannel, requestFrame.type)
