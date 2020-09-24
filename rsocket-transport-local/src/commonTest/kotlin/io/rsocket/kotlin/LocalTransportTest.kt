@@ -19,6 +19,8 @@ package io.rsocket.kotlin
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.test.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 
 class LocalTransportTest : TransportTest() {
 

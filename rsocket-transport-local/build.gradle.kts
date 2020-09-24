@@ -32,10 +32,5 @@ kotlin {
                 api(project(":rsocket-core"))
             }
         }
-        val commonTest by getting {
-            dependencies {
-                implementation(project(":rsocket-test"))
-            }
-        }
     }
 }

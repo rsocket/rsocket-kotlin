@@ -19,6 +19,8 @@ package io.rsocket.kotlin.test
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
 class TestRSocket : RSocket {
     override val job: Job = Job()

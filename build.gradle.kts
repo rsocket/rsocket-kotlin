@@ -106,13 +106,11 @@ subprojects {
                 }
             }
 
-
-            //should be not needed after ~1.4.20 when kotlin-test will be added automatically
-            val commonTest by sourceSets.getting {
-                dependencies {
-                    implementation(kotlin("test-common"))
-                    implementation(kotlin("test-annotations-common"))
-                    if (project.name != "rsocket-test") implementation(project(":rsocket-test"))
+            if (project.name != "rsocket-test") {
+                val commonTest by sourceSets.getting {
+                    dependencies {
+                        implementation(project(":rsocket-test"))
+                    }
                 }
             }
 

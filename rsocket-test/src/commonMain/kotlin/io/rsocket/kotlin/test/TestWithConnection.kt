@@ -16,6 +16,8 @@
 
 package io.rsocket.kotlin.test
 
+import kotlinx.coroutines.*
+
 abstract class TestWithConnection : SuspendTest {
     val connection: TestConnection = TestConnection()
 

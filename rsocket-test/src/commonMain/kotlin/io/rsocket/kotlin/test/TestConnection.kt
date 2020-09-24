@@ -19,6 +19,9 @@ package io.rsocket.kotlin.test
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 
 class TestConnection : Connection {
     override val job: Job = Job()

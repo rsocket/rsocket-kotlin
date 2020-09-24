@@ -16,6 +16,8 @@
 
 package io.rsocket.kotlin.test
 
+import kotlinx.coroutines.*
+
 internal expect fun runTest(block: suspend CoroutineScope.() -> Unit)
 
 expect val anotherDispatcher: CoroutineDispatcher

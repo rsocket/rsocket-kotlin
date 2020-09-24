@@ -16,6 +16,7 @@
 
 package io.rsocket.kotlin.test
 
+import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.time.*
 

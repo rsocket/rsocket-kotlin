@@ -22,6 +22,8 @@ import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.test.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
