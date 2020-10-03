@@ -63,15 +63,15 @@ dependencies {
 
 //  one of ktor engines to work with websockets
 //  client engines
-//    implementation 'io.ktor:ktor-client-js:1.4.0' //js
-//    implementation 'io.ktor:ktor-client-cio:1.4.0' //jvm
-//    implementation 'io.ktor:ktor-client-okhttp:1.4.0' //jvm
+//    implementation 'io.ktor:ktor-client-js:1.4.1' //js
+//    implementation 'io.ktor:ktor-client-cio:1.4.1' //jvm
+//    implementation 'io.ktor:ktor-client-okhttp:1.4.1' //jvm
 
 //  server engines (jvm only)
-//    implementation 'io.ktor:ktor-server-cio:1.4.0'
-//    implementation 'io.ktor:ktor-server-netty:1.4.0'
-//    implementation 'io.ktor:ktor-server-jetty:1.4.0'
-//    implementation 'io.ktor:ktor-server-tomcat:1.4.0'
+//    implementation 'io.ktor:ktor-server-cio:1.4.1'
+//    implementation 'io.ktor:ktor-server-netty:1.4.1'
+//    implementation 'io.ktor:ktor-server-jetty:1.4.1'
+//    implementation 'io.ktor:ktor-server-tomcat:1.4.1'
 }
 ```
 
@@ -93,15 +93,15 @@ dependencies {
 
 //  one of ktor engines to work with websockets
 //  client engines
-//    implementation("io.ktor:ktor-client-js:1.4.0") //js
-//    implementation("io.ktor:ktor-client-cio:1.4.0") //jvm
-//    implementation("io.ktor:ktor-client-okhttp:1.4.0") //jvm
+//    implementation("io.ktor:ktor-client-js:1.4.1") //js
+//    implementation("io.ktor:ktor-client-cio:1.4.1") //jvm
+//    implementation("io.ktor:ktor-client-okhttp:1.4.1") //jvm
 
 //  server engines (jvm only)
-//    implementation("io.ktor:ktor-server-cio:1.4.0")
-//    implementation("io.ktor:ktor-server-netty:1.4.0")
-//    implementation("io.ktor:ktor-server-jetty:1.4.0")
-//    implementation("io.ktor:ktor-server-tomcat:1.4.0")
+//    implementation("io.ktor:ktor-server-cio:1.4.1")
+//    implementation("io.ktor:ktor-server-netty:1.4.1")
+//    implementation("io.ktor:ktor-server-jetty:1.4.1")
+//    implementation("io.ktor:ktor-server-tomcat:1.4.1")
 }
 ```
 

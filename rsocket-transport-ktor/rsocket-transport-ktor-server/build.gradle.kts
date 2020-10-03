@@ -22,6 +22,8 @@ plugins {
     id("com.jfrog.artifactory")
 }
 
+val ktorVersion: String by rootProject
+
 kotlin {
     jvm()
 
@@ -31,8 +33,8 @@ kotlin {
                 api(project(":rsocket-core"))
                 api(project(":rsocket-transport-ktor"))
 
-                api("io.ktor:ktor-server:1.4.0")
-                api("io.ktor:ktor-websockets:1.4.0")
+                api("io.ktor:ktor-server:$ktorVersion")
+                api("io.ktor:ktor-websockets:$ktorVersion")
             }
         }
     }

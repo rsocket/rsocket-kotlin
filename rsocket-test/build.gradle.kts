@@ -18,6 +18,10 @@ plugins {
     kotlin("multiplatform")
 }
 
+val ktorVersion: String by rootProject
+val kotlinxCoroutinesVersion: String by rootProject
+val turbineVersion: String by rootProject
+
 kotlin {
     jvm()
     js()
@@ -28,6 +32,10 @@ kotlin {
                 api(project(":rsocket-core"))
                 api(kotlin("test-common"))
                 api(kotlin("test-annotations-common"))
+
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
+                api("io.ktor:ktor-utils:$ktorVersion")
+                api("app.cash.turbine:turbine:$turbineVersion")
             }
         }
         val jvmMain by getting {

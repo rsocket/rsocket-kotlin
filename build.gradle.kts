@@ -26,14 +26,20 @@ buildscript {
     repositories {
         mavenCentral()
     }
+    val kotlinVersion: String by rootProject
+    val kotlinxAtomicfuVersion: String by rootProject
+
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.10")
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.14.4")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:$kotlinxAtomicfuVersion")
     }
 }
 
+val kotlinxAtomicfuVersion: String by rootProject
+
 plugins {
-    id("com.github.ben-manes.versions") version "0.29.0"
+    id("com.github.ben-manes.versions")
 
     //needed to add classpath to script
     id("com.jfrog.bintray") apply false
@@ -118,7 +124,7 @@ subprojects {
             if ("examples" in project.path || project.name == "playground") {
                 val commonMain by sourceSets.getting {
                     dependencies {
-                        implementation("org.jetbrains.kotlinx:atomicfu:0.14.4")
+                        implementation("org.jetbrains.kotlinx:atomicfu:$kotlinxAtomicfuVersion")
                     }
                 }
             }

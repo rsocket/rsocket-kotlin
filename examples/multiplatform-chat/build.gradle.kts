@@ -48,21 +48,21 @@ kotlin {
         val serverJvmMain by getting {
             dependencies {
                 implementation(project(":rsocket-transport-ktor-server"))
-                implementation("io.ktor:ktor-server-cio:1.4.0")
+                implementation("io.ktor:ktor-server-cio:1.4.1")
             }
         }
 
         val clientJvmMain by getting {
             dependsOn(clientMain)
             dependencies {
-                implementation("io.ktor:ktor-client-cio:1.4.0")
+                implementation("io.ktor:ktor-client-cio:1.4.1")
             }
         }
 
         val clientJsMain by getting {
             dependsOn(clientMain)
             dependencies {
-                implementation("io.ktor:ktor-client-js:1.4.0")
+                implementation("io.ktor:ktor-client-js:1.4.1")
             }
         }
     }
