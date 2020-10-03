@@ -23,7 +23,8 @@ pluginManagement {
 
     plugins {
         id("com.jfrog.bintray") version "1.8.5"
-        id("com.jfrog.artifactory") version "4.17.0"
+        id("com.jfrog.artifactory") version "4.17.2"
+        id("com.github.ben-manes.versions") version "0.33.0"
     }
 }
 

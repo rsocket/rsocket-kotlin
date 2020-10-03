@@ -18,6 +18,8 @@ plugins {
     kotlin("multiplatform")
 }
 
+val ktorVersion: String by rootProject
+
 kotlin {
     jvm()
     js(IR) {
@@ -38,13 +40,13 @@ kotlin {
             dependencies {
                 implementation(project(":rsocket-transport-ktor-server"))
 
-                implementation("io.ktor:ktor-client-cio:1.4.0")
-                implementation("io.ktor:ktor-server-cio:1.4.0")
+                implementation("io.ktor:ktor-client-cio:$ktorVersion")
+                implementation("io.ktor:ktor-server-cio:$ktorVersion")
             }
         }
         val jsMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-js:1.4.0") //for WS support
+                implementation("io.ktor:ktor-client-js:$ktorVersion") //for WS support
             }
         }
     }

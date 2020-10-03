@@ -23,6 +23,9 @@ plugins {
     id("com.jfrog.artifactory")
 }
 
+val ktorVersion: String by rootProject
+val kotlinxCoroutinesVersion: String by rootProject
+
 kotlin {
     jvm()
     js()
@@ -30,14 +33,12 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api("io.ktor:ktor-io:1.4.0")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
+                api("io.ktor:ktor-io:$ktorVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
             }
         }
         val commonTest by getting {
             dependencies {
-                implementation("app.cash.turbine:turbine:0.2.1")
-                implementation("io.ktor:ktor-utils:1.4.0")
                 implementation(project(":rsocket-transport-local"))
             }
         }

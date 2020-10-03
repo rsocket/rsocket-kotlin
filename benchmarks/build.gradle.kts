@@ -26,6 +26,9 @@ repositories {
     maven("https://repo.spring.io/libs-snapshot")
 }
 
+val rsocketJavaVersion: String by rootProject
+val kotlinxCoroutinesVersion: String by rootProject
+
 kotlin {
     val jvm = jvm() //common jvm source set
     val kotlinJvm = jvm("kotlin")  //kotlin benchmark
@@ -35,7 +38,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx.benchmark.runtime:0.2.0-dev-20")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
             }
         }
 
@@ -52,9 +55,9 @@ kotlin {
         val javaMain by getting {
             dependsOn(jvmMain)
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.3.9")
-                implementation("io.rsocket:rsocket-core:1.1.0-M1")
-                implementation("io.rsocket:rsocket-transport-local:1.1.0-M1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$kotlinxCoroutinesVersion")
+                implementation("io.rsocket:rsocket-core:$rsocketJavaVersion")
+                implementation("io.rsocket:rsocket-transport-local:$rsocketJavaVersion")
             }
         }
     }

@@ -22,6 +22,8 @@ plugins {
     id("com.jfrog.artifactory")
 }
 
+val ktorVersion: String by rootProject
+
 kotlin {
     jvm()
     js()
@@ -29,8 +31,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api("io.ktor:ktor-network:1.4.0")
-                api("io.ktor:ktor-http-cio:1.4.0")
+                api("io.ktor:ktor-network:$ktorVersion")
+                api("io.ktor:ktor-http-cio:$ktorVersion")
                 api(project(":rsocket-core"))
             }
         }
@@ -41,13 +43,13 @@ kotlin {
         }
         val jvmTest by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-cio:1.4.0")
-                implementation("io.ktor:ktor-client-okhttp:1.4.0")
+                implementation("io.ktor:ktor-client-cio:$ktorVersion")
+                implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
 
-                implementation("io.ktor:ktor-server-cio:1.4.0")
-                implementation("io.ktor:ktor-server-netty:1.4.0")
-                implementation("io.ktor:ktor-server-jetty:1.4.0")
-                implementation("io.ktor:ktor-server-tomcat:1.4.0")
+                implementation("io.ktor:ktor-server-cio:$ktorVersion")
+                implementation("io.ktor:ktor-server-netty:$ktorVersion")
+                implementation("io.ktor:ktor-server-jetty:$ktorVersion")
+                implementation("io.ktor:ktor-server-tomcat:$ktorVersion")
 
                 implementation(project(":rsocket-transport-ktor-server"))
             }
