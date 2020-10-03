@@ -14,23 +14,18 @@
  * limitations under the License.
  */
 
-plugins {
-    kotlin("multiplatform")
+package io.rsocket.kotlin.test
 
-    id("maven-publish")
-    id("com.jfrog.bintray")
-    id("com.jfrog.artifactory")
+import kotlinx.coroutines.*
+import java.io.*
+import java.util.logging.*
+
+internal actual fun runTest(block: suspend CoroutineScope.() -> Unit) {
+    //init logger
+    val file = File("src/jvmTest/resources/logging.properties")
+    if (file.exists()) LogManager.getLogManager().readConfiguration(file.inputStream())
+
+    runBlocking(block = block)
 }
 
-kotlin {
-    jvm()
-    js()
-
-    sourceSets {
-        val commonMain by getting {
-            dependencies {
-                api(project(":rsocket-core"))
-            }
-        }
-    }
-}
+actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.IO

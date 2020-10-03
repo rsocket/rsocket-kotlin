@@ -14,23 +14,11 @@
  * limitations under the License.
  */
 
-plugins {
-    kotlin("multiplatform")
+package io.rsocket.kotlin.test
 
-    id("maven-publish")
-    id("com.jfrog.bintray")
-    id("com.jfrog.artifactory")
-}
+import kotlinx.coroutines.*
 
-kotlin {
-    jvm()
-    js()
+internal actual fun runTest(block: suspend CoroutineScope.() -> Unit): dynamic = GlobalScope.promise(block = block)
 
-    sourceSets {
-        val commonMain by getting {
-            dependencies {
-                api(project(":rsocket-core"))
-            }
-        }
-    }
-}
+//JS is single threaded, so it have only one dispatcher backed by one threed
+actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.Default

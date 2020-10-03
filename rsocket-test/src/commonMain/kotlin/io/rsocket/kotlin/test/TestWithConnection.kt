@@ -14,23 +14,14 @@
  * limitations under the License.
  */
 
-plugins {
-    kotlin("multiplatform")
+package io.rsocket.kotlin.test
 
-    id("maven-publish")
-    id("com.jfrog.bintray")
-    id("com.jfrog.artifactory")
-}
+import kotlinx.coroutines.*
 
-kotlin {
-    jvm()
-    js()
+abstract class TestWithConnection : SuspendTest {
+    val connection: TestConnection = TestConnection()
 
-    sourceSets {
-        val commonMain by getting {
-            dependencies {
-                api(project(":rsocket-core"))
-            }
-        }
+    override suspend fun after() {
+        connection.job.cancelAndJoin()
     }
 }

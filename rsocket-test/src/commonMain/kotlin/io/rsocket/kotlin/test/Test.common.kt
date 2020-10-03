@@ -14,23 +14,10 @@
  * limitations under the License.
  */
 
-plugins {
-    kotlin("multiplatform")
+package io.rsocket.kotlin.test
 
-    id("maven-publish")
-    id("com.jfrog.bintray")
-    id("com.jfrog.artifactory")
-}
+import kotlinx.coroutines.*
 
-kotlin {
-    jvm()
-    js()
+internal expect fun runTest(block: suspend CoroutineScope.() -> Unit)
 
-    sourceSets {
-        val commonMain by getting {
-            dependencies {
-                api(project(":rsocket-core"))
-            }
-        }
-    }
-}
+expect val anotherDispatcher: CoroutineDispatcher

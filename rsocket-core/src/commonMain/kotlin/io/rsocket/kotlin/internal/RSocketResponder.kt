@@ -41,9 +41,9 @@ internal class RSocketResponder(
     fun handlerRequestResponse(frame: RequestFrame): Unit = with(state) {
         val streamId = frame.streamId
         launchCancelable(streamId) {
-            val response = requestOrThrow(streamId) {
+            val response = requestOrCancel(streamId) {
                 requestHandler.requestResponse(frame.payload)
-            }
+            } ?: return@launchCancelable
             if (isActive) send(NextCompletePayloadFrame(streamId, response))
         }
     }
@@ -51,9 +51,9 @@ internal class RSocketResponder(
     fun handleRequestStream(initFrame: RequestFrame): Unit = with(state) {
         val streamId = initFrame.streamId
         launchCancelable(streamId) {
-            val response = requestOrThrow(streamId) {
+            val response = requestOrCancel(streamId) {
                 requestHandler.requestStream(initFrame.payload)
-            }
+            } ?: return@launchCancelable
             response.collectLimiting(
                 streamId,
                 RequestStreamResponderFlowCollector(state, streamId, initFrame.initialRequest)
@@ -68,9 +68,9 @@ internal class RSocketResponder(
         val request = RequestChannelResponderFlow(streamId, receiver, state)
 
         launchCancelable(streamId) {
-            val response = requestOrThrow(streamId) {
+            val response = requestOrCancel(streamId) {
                 requestHandler.requestChannel(request)
-            }
+            } ?: return@launchCancelable
             response.collectLimiting(
                 streamId,
                 RequestStreamResponderFlowCollector(state, streamId, initFrame.initialRequest)
@@ -80,13 +80,15 @@ internal class RSocketResponder(
         }
     }
 
-    private inline fun <T> CoroutineScope.requestOrThrow(streamId: Int, block: () -> T): T {
-        return try {
+    private inline fun <T : Any> CoroutineScope.requestOrCancel(streamId: Int, block: () -> T): T? =
+        try {
             block()
         } catch (e: Throwable) {
-            if (isActive) state.send(ErrorFrame(streamId, e))
-            throw e
+            if (isActive) {
+                state.send(ErrorFrame(streamId, e))
+                cancel("Request handling failed", e) //KLUDGE: can be related to IR, because using `throw` fails on JS IR and Native
+            }
+            null
         }
-    }
 
 }

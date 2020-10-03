@@ -16,4 +16,4 @@
 
 package io.rsocket.kotlin.internal
 
-actual fun <V> concurrentMap(): MutableMap<Int, V> = mutableMapOf()
+internal actual fun <V> concurrentMap(): MutableMap<Int, V> = mutableMapOf()

@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-plugins {
-    kotlin("multiplatform")
+import io.ktor.client.*
+import io.ktor.client.engine.*
+import io.ktor.client.features.websocket.*
+import io.ktor.util.*
+import io.rsocket.kotlin.core.*
 
-    id("maven-publish")
-    id("com.jfrog.bintray")
-    id("com.jfrog.artifactory")
-}
-
-kotlin {
-    jvm()
-    js()
-
-    sourceSets {
-        val commonMain by getting {
-            dependencies {
-                api(project(":rsocket-core"))
-            }
-        }
+@OptIn(KtorExperimentalAPI::class)
+suspend fun runWSClient(engine: HttpClientEngineFactory<*>) {
+    val client = HttpClient(engine) {
+        install(WebSockets)
+        install(RSocketClientSupport)
     }
+
+    val rSocket = client.rSocket()
+    rSocket.doSomething()
 }

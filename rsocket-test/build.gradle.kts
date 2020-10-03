@@ -16,10 +16,6 @@
 
 plugins {
     kotlin("multiplatform")
-
-    id("maven-publish")
-    id("com.jfrog.bintray")
-    id("com.jfrog.artifactory")
 }
 
 kotlin {
@@ -29,27 +25,19 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api("io.ktor:ktor-network:1.4.0")
-                api("io.ktor:ktor-http-cio:1.4.0")
                 api(project(":rsocket-core"))
+                api(kotlin("test-common"))
+                api(kotlin("test-annotations-common"))
             }
         }
-        val commonTest by getting {
+        val jvmMain by getting {
             dependencies {
-                implementation(project(":rsocket-transport-ktor-client"))
+                api(kotlin("test-junit"))
             }
         }
-        val jvmTest by getting {
+        val jsMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-cio:1.4.0")
-                implementation("io.ktor:ktor-client-okhttp:1.4.0")
-
-                implementation("io.ktor:ktor-server-cio:1.4.0")
-                implementation("io.ktor:ktor-server-netty:1.4.0")
-                implementation("io.ktor:ktor-server-jetty:1.4.0")
-                implementation("io.ktor:ktor-server-tomcat:1.4.0")
-
-                implementation(project(":rsocket-transport-ktor-server"))
+                api(kotlin("test-js"))
             }
         }
     }

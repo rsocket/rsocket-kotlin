@@ -16,35 +16,35 @@
 
 package io.rsocket.kotlin
 
-import io.ktor.network.selector.*
-import io.ktor.network.sockets.*
-import io.ktor.util.*
+import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 
-class TcpTransportTest : TransportTest() {
-    @OptIn(InternalAPI::class)
-    private val selector = SelectorManager(Dispatchers.IO)
-    private val builder = aSocket(selector).tcp()
-    private val server = builder.bind()
+class LocalTransportTest : TransportTest() {
+
+    private val testJob: Job = Job()
 
     override suspend fun before() {
         super.before()
 
-        GlobalScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            server.accept().connection.startServer(SERVER_CONFIG, ACCEPTOR)
-        }
+        val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
+        val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
 
-        client = builder.connect(server.localAddress).connection.connectClient(CONNECTOR_CONFIG)
+        val clientConnection = LocalConnection("client", serverChannel, clientChannel, testJob)
+        val serverConnection = LocalConnection("server", clientChannel, serverChannel, testJob)
+        client = coroutineScope {
+            launch {
+                serverConnection.startServer(SERVER_CONFIG, ACCEPTOR)
+            }
+            clientConnection.connectClient(CONNECTOR_CONFIG)
+        }
     }
 
     override suspend fun after() {
+
         super.after()
-
-        server.close()
-        selector.close()
-        server.socketContext.join()
+        testJob.cancelAndJoin()
     }
-
 }

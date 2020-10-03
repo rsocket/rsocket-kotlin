@@ -21,13 +21,14 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
-class KeepAliveTest {
-    private val connection = TestConnection()
+class KeepAliveTest : TestWithConnection() {
+
     private fun requester(keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds)): RSocket = run {
         val state = RSocketState(connection, keepAlive) {}
         val requester = RSocketRequester(state, StreamId.client())

@@ -42,10 +42,12 @@ class LocalConnection(
  * Returns pair of client and server local connections
  */
 @Suppress("FunctionName")
-fun SimpleLocalConnection(): Pair<LocalConnection, LocalConnection> {
+fun SimpleLocalConnection(parentJob: Job? = null): Pair<LocalConnection, LocalConnection> {
     val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
     val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
-    val serverConnection = LocalConnection("server", clientChannel, serverChannel)
-    val clientConnection = LocalConnection("client", serverChannel, clientChannel)
+
+    val clientConnection = LocalConnection("client", serverChannel, clientChannel, parentJob)
+    val serverConnection = LocalConnection("server", clientChannel, serverChannel, parentJob)
+
     return clientConnection to serverConnection
 }

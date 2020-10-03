@@ -22,6 +22,7 @@ import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
@@ -29,14 +30,17 @@ import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.*
 
-class RSocketRequesterTest {
-    private val connection = TestConnection()
-    private val ignoredFrames = Channel<Frame>(Channel.UNLIMITED)
-    private val requester = run {
+class RSocketRequesterTest : TestWithConnection() {
+    lateinit var ignoredFrames: Channel<Frame>
+    private lateinit var requester: RSocketRequester
+
+    override suspend fun before() {
+        super.before()
+
+        ignoredFrames = Channel(Channel.UNLIMITED)
         val state = RSocketState(connection, KeepAlive(1000.seconds, 1000.seconds), ignoredFrames::offer)
-        val requester = RSocketRequester(state, StreamId.client())
+        requester = RSocketRequester(state, StreamId.client())
         state.start(RSocketRequestHandler { })
-        requester
     }
 
     @Test
@@ -155,7 +159,6 @@ class RSocketRequesterTest {
             connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
             delay(200)
             expectItem().let { frame ->
-                println(frame)
                 assertTrue(frame is CancelFrame)
             }
             delay(200)
@@ -239,7 +242,7 @@ class RSocketRequesterTest {
             awaitClose()
         }
         val response = requester.requestChannel(request).launchIn(CoroutineScope(connection.job))
-        delay(100)
+        delay(200)
         val requestFrame = connection.sentFrames.first()
         assertTrue(requestFrame is RequestFrame)
         assertEquals(FrameType.RequestChannel, requestFrame.type)

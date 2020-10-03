@@ -23,13 +23,53 @@ import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
-class RSocketTest {
+class RSocketTest : SuspendTest {
+
+    lateinit var serverConnection: LocalConnection
+    lateinit var clientConnection: LocalConnection
+
+    override suspend fun before() {
+        super.before()
+
+        val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
+        val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
+
+        serverConnection = LocalConnection("server", clientChannel, serverChannel)
+        clientConnection = LocalConnection("client", serverChannel, clientChannel)
+
+    }
+
+    override suspend fun after() {
+        super.after()
+
+        serverConnection.job.cancelAndJoin()
+        clientConnection.job.cancelAndJoin()
+    }
+
+    private suspend fun start(handler: RSocket? = null): RSocket = coroutineScope {
+        launch {
+            serverConnection.startServer {
+                handler ?: RSocketRequestHandler {
+                    requestResponse = { it }
+                    requestStream = {
+                        flow { repeat(10) { emit(Payload("server got -> [$it]")) } }
+                    }
+                    requestChannel = {
+                        it.launchIn(CoroutineScope(job))
+                        flow { repeat(10) { emit(Payload("server got -> [$it]")) } }
+                    }
+                }
+            }
+        }
+        clientConnection.connectClient(RSocketConnectorConfiguration(keepAlive = KeepAlive(1000.seconds, 1000.seconds)))
+    }
 
     @Test
     fun testRequestResponseNoError() = test {
@@ -228,31 +268,6 @@ class RSocketTest {
         val payload = receive()
         assertEquals(payload.metadata?.readText(), otherPayload.metadata?.readText())
         assertEquals(payload.data.readText(), otherPayload.data.readText())
-    }
-
-    private suspend fun start(handler: RSocket? = null): RSocket {
-        val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
-        val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
-        val serverConnection = LocalConnection("server", clientChannel, serverChannel)
-        val clientConnection = LocalConnection("client", serverChannel, clientChannel)
-
-        return coroutineScope {
-            launch {
-                serverConnection.startServer {
-                    handler ?: RSocketRequestHandler {
-                        requestResponse = { it }
-                        requestStream = {
-                            flow { repeat(10) { emit(Payload("server got -> [$it]")) } }
-                        }
-                        requestChannel = {
-                            it.launchIn(CoroutineScope(job))
-                            flow { repeat(10) { emit(Payload("server got -> [$it]")) } }
-                        }
-                    }
-                }
-            }
-            clientConnection.connectClient(RSocketConnectorConfiguration(keepAlive = KeepAlive(1000.seconds, 1000.seconds)))
-        }
     }
 
 }

@@ -23,12 +23,11 @@ import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlin.test.*
-import kotlin.time.*
 
-@ExperimentalTime
-class SetupRejectionTest {
+class SetupRejectionTest : SuspendTest {
     @Test
     fun responderRejectSetup() = test {
         val errorMessage = "error"

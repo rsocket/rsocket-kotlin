@@ -70,9 +70,9 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
         }
     }
 
-    override fun createPayload(size: Int): Payload = if (size == 0) Payload.Empty else Payload(
-        ByteArray(size / 2).also { Random.nextBytes(it) },
-        ByteArray(size / 2).also { Random.nextBytes(it) }
+    override fun createPayload(size: Int): Payload = if (size == 0) Payload.Empty else Payload.wrap(
+        data = ByteArray(size / 2).also { Random.nextBytes(it) },
+        metadata = ByteArray(size / 2).also { Random.nextBytes(it) }
     )
 
     override fun releasePayload(payload: Payload) {
