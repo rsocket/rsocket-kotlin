@@ -28,6 +28,10 @@ pluginManagement {
     }
 }
 
+plugins {
+    id("com.gradle.enterprise") version "3.4.1"
+}
+
 rootProject.name = "rsocket-kotlin"
 
 include("benchmarks")
@@ -51,3 +55,10 @@ fun includeExample(name: String) {
 includeExample("nodejs-tcp-transport")
 includeExample("interactions")
 includeExample("multiplatform-chat")
+
+gradleEnterprise {
+    buildScan {
+        termsOfServiceUrl = "https://gradle.com/terms-of-service"
+        termsOfServiceAgree = "yes"
+    }
+}

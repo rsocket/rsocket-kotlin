@@ -19,6 +19,7 @@ package io.rsocket.kotlin.internal.flow
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 
@@ -28,10 +29,10 @@ internal class RequestChannelRequesterFlowCollector(
     private val receiver: CompletableDeferred<ReceiveChannel<RequestFrame>?>,
     private val requestSize: Int,
 ) : LimitingFlowCollector(1) {
-    private var firstRequest = true
+    private val firstRequest = atomic(true) //needed for K/N
     override suspend fun emitValue(value: Payload): Unit = with(state) {
-        if (firstRequest) {
-            firstRequest = false
+        if (firstRequest.value) {
+            firstRequest.value = false
             receiver.complete(createReceiverFor(streamId))
             send(RequestChannelFrame(streamId, requestSize, value))
         } else {

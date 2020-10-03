@@ -17,7 +17,7 @@
 import kotlinx.coroutines.flow.*
 
 suspend fun main() {
-    val api = connectToApi("Yuri")
+    val api = connectToApiUsingWS("Yuri")
 
     api.users.all().forEach {
         println(it)

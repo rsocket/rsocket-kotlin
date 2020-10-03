@@ -18,8 +18,8 @@ import com.jfrog.bintray.gradle.*
 import com.jfrog.bintray.gradle.tasks.*
 import org.gradle.api.publish.maven.internal.artifact.*
 import org.jetbrains.kotlin.gradle.dsl.*
-import org.jetbrains.kotlin.gradle.targets.js.*
-import org.jetbrains.kotlin.gradle.targets.jvm.*
+import org.jetbrains.kotlin.gradle.plugin.mpp.*
+import org.jetbrains.kotlin.konan.target.*
 import org.jfrog.gradle.plugin.artifactory.dsl.*
 
 buildscript {
@@ -54,43 +54,149 @@ allprojects {
     }
 }
 
-subprojects {
-    tasks.withType<Test> {
-        jvmArgs("-Xmx1g", "-XX:+UseParallelGC")
+//true when on CI, and false when local dev. Needed for native build configuration
+val ciRun = System.getenv("CI") == "true"
+
+//configure main host, for which jvm and js tests are enabled, true if locally, or linux on CI
+val isMainHost: Boolean = !ciRun || HostManager.hostIsLinux
+
+// can be: macos, ios, watchos, tvos. If provided, compile and test only those targets
+val macTargetsCompilation: String? by project
+
+println("Configuration: CI=${System.getenv("CI")}, ciRun=$ciRun, isMainHost=$isMainHost, macTargetsCompilation=$macTargetsCompilation")
+
+val Project.publicationNames: Array<String>
+    get() {
+        val publishing: PublishingExtension by extensions
+        val all = publishing.publications.names
+        //publish js, jvm, metadata, linuxX64 and kotlinMultiplatform only once
+        return when {
+            isMainHost -> all
+            else       -> all - "js" - "jvm" - "metadata" - "kotlinMultiplatform" - "linuxX64"
+        }.toTypedArray()
     }
 
+subprojects {
     plugins.withId("org.jetbrains.kotlin.multiplatform") {
+        //targets configuration
         extensions.configure<KotlinMultiplatformExtension> {
-//        explicitApiWarning() //TODO change to strict before release
-            targets.all {
-                when (this) {
-                    is KotlinJsTarget -> {
-                        useCommonJs()
-                        //configure running tests for JS
-                        nodejs {
-                            testTask {
-                                useMocha {
-                                    timeout = "600s"
-                                }
-                            }
-                        }
-                        browser {
-                            testTask {
-                                useKarma {
-                                    useConfigDirectory(rootDir.resolve("js").resolve("karma.config.d"))
-                                    useChromeHeadless()
-                                }
-                            }
+            val isAutoConfigurable = project.name.startsWith("rsocket") //manual config of others
+            val jvmOnly = project.name == "rsocket-transport-ktor-server" //server is jvm only
+
+            //windows target isn't supported by ktor-network
+            val supportMingw = project.name != "rsocket-transport-ktor" && project.name != "rsocket-transport-ktor-client"
+
+
+            if (!isAutoConfigurable) return@configure
+
+            jvm {
+                compilations.all {
+                    kotlinOptions.jvmTarget = "1.6"
+                }
+                testRuns.all {
+                    executionTask.configure {
+                        enabled = isMainHost
+                        jvmArgs("-Xmx4g", "-XX:+UseParallelGC")
+                    }
+                }
+            }
+
+            if (jvmOnly) return@configure
+
+            js {
+                useCommonJs()
+                //configure running tests for JS
+                nodejs {
+                    testTask {
+                        enabled = isMainHost
+                        useMocha {
+                            timeout = "600s"
                         }
                     }
-                    is KotlinJvmTarget -> {
-                        compilations.all {
-                            kotlinOptions { jvmTarget = "1.6" }
+                }
+                browser {
+                    testTask {
+                        enabled = isMainHost
+                        useKarma {
+                            useConfigDirectory(rootDir.resolve("js").resolve("karma.config.d"))
+                            useChromeHeadless()
                         }
                     }
                 }
             }
 
+            //native targets configuration
+            if (ciRun) {
+                fun KotlinNativeTarget.disableCompilation() {
+                    compilations.all { compileKotlinTask.enabled = false }
+                    binaries.all { linkTask.enabled = false }
+                }
+
+                val hostTargets = listOfNotNull(linuxX64(), macosX64(), if (supportMingw) mingwX64() else null)
+
+                val iosTargets = listOf(iosArm32(), iosArm64(), iosX64())
+                val tvosTargets = listOf(tvosArm64(), tvosX64())
+                val watchosTargets = listOf(watchosArm32(), watchosArm64(), watchosX86())
+                val nativeTargets = hostTargets + iosTargets + tvosTargets + watchosTargets
+
+                val nativeMain by sourceSets.creating {
+                    dependsOn(sourceSets["commonMain"])
+                }
+                val nativeTest by sourceSets.creating {
+                    dependsOn(sourceSets["commonTest"])
+                }
+
+                nativeTargets.forEach {
+                    sourceSets["${it.name}Main"].dependsOn(nativeMain)
+                    sourceSets["${it.name}Test"].dependsOn(nativeTest)
+                }
+
+                //disable cross compilation of linux target on non linux hosts
+                if (!HostManager.hostIsLinux) linuxX64().disableCompilation()
+
+                //disable compilation of part of mac targets
+                if (HostManager.hostIsMac) when (macTargetsCompilation) {
+                    "macos" -> iosTargets + tvosTargets + watchosTargets
+                    "ios", "watchos", "tvos" -> {
+                        //disable test compilation for macos, but leave main to compile examples and playground
+                        macosX64 {
+                            compilations.all { if (name == "test") compileKotlinTask.enabled = false }
+                            binaries.all { linkTask.enabled = false }
+                        }
+                        when (macTargetsCompilation) {
+                            "ios"     -> tvosTargets + watchosTargets
+                            "watchos" -> iosTargets + tvosTargets
+                            "tvos"    -> iosTargets + watchosTargets
+                            else      -> emptyList()
+                        }
+                    }
+                    else                     -> emptyList()
+                }.forEach(KotlinNativeTarget::disableCompilation)
+            } else {
+                //if not on CI, use only one native target same as host, DON'T PUBLISH IN THAT MODE LOCALLY!!!
+                when {
+                    HostManager.hostIsLinux                 -> linuxX64("native")
+                    HostManager.hostIsMingw && supportMingw -> mingwX64("native")
+                    HostManager.hostIsMac                   -> macosX64("native")
+                }
+            }
+
+            //run tests on release + mimalloc to reduce tests execution time
+            //compilation is slower in that mode
+            targets.all {
+                if (this is KotlinNativeTargetWithTests<*>) {
+                    binaries.test(listOf(RELEASE))
+                    testRuns.all { setExecutionSourceFrom(binaries.getTest(RELEASE)) }
+                    compilations.all {
+                        kotlinOptions.freeCompilerArgs += "-Xallocator=mimalloc"
+                    }
+                }
+            }
+        }
+
+        //common configuration
+        extensions.configure<KotlinMultiplatformExtension> {
+//        explicitApiWarning() //TODO change to strict before release
             sourceSets.all {
                 languageSettings.apply {
                     progressiveMode = true
@@ -113,19 +219,15 @@ subprojects {
             }
 
             if (project.name != "rsocket-test") {
-                val commonTest by sourceSets.getting {
-                    dependencies {
-                        implementation(project(":rsocket-test"))
-                    }
+                sourceSets["commonTest"].dependencies {
+                    implementation(project(":rsocket-test"))
                 }
             }
 
             //fix atomicfu for examples and playground
             if ("examples" in project.path || project.name == "playground") {
-                val commonMain by sourceSets.getting {
-                    dependencies {
-                        implementation("org.jetbrains.kotlinx:atomicfu:$kotlinxAtomicfuVersion")
-                    }
+                sourceSets["commonMain"].dependencies {
+                    implementation("org.jetbrains.kotlinx:atomicfu:$kotlinxAtomicfuVersion")
                 }
             }
         }
@@ -198,8 +300,9 @@ if (bintrayUser != null && bintrayKey != null) {
                         setProperty("password", bintrayKey)
                         setProperty("maven", true)
                     })
+                    println("Artifactory: ${publicationNames.contentToString()}")
                     defaults(delegateClosureOf<groovy.lang.GroovyObject> {
-                        invokeMethod("publications", arrayOf("kotlinMultiplatform", "metadata", "jvm", "js"))
+                        invokeMethod("publications", publicationNames)
                     })
                 })
 
@@ -221,7 +324,8 @@ if (bintrayUser != null && bintrayKey != null) {
                 extensions.configure<BintrayExtension> {
                     user = bintrayUser
                     key = bintrayKey
-                    setPublications("kotlinMultiplatform", "metadata", "jvm", "js")
+                    println("Bintray: ${publicationNames.contentToString()}")
+                    setPublications(*publicationNames)
 
                     publish = true
                     override = true
@@ -256,10 +360,13 @@ if (bintrayUser != null && bintrayKey != null) {
 
                 //workaround for https://github.com/bintray/gradle-bintray-plugin/issues/229
                 tasks.withType<BintrayUploadTask> {
+                    dependsOn("publishToMavenLocal")
                     doFirst {
                         val publishing: PublishingExtension by extensions
+                        val names = publicationNames
                         publishing.publications
                             .filterIsInstance<MavenPublication>()
+                            .filter { it.name in names }
                             .forEach { publication ->
                                 val moduleFile = buildDir.resolve("publications/${publication.name}/module.json")
                                 if (moduleFile.exists()) {
@@ -267,7 +374,6 @@ if (bintrayUser != null && bintrayKey != null) {
                                         override fun getDefaultExtension() = "module"
                                     })
                                 }
-
                             }
                     }
                 }

@@ -21,7 +21,7 @@ import kotlinx.atomicfu.*
 internal class StreamId(streamId: Int) {
     private val streamId = atomic(streamId)
 
-    fun next(streamIds: Map<Int, *>): Int {
+    fun next(streamIds: IntMap<*>): Int {
         var streamId: Int
         do {
             streamId = this.streamId.addAndGet(2) and MASK

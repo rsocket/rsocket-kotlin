@@ -18,29 +18,49 @@ package io.rsocket.kotlin.connection
 
 import io.ktor.network.sockets.*
 import io.ktor.util.*
+import io.ktor.util.cio.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
+import kotlin.coroutines.*
 
 val Socket.connection: Connection get() = KtorTcpConnection(this)
 
-//TODO need to check and extract length support!!
-@OptIn(KtorExperimentalAPI::class)
-private class KtorTcpConnection(private val socket: Socket) : Connection {
-    override val job: Job get() = socket.socketContext
+@OptIn(KtorExperimentalAPI::class, ExperimentalCoroutinesApi::class)
+private class KtorTcpConnection(private val socket: Socket) : Connection, CoroutineScope {
+    override val job: Job = Job(socket.socketContext)
+    override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined
 
-    private val readChannel = socket.openReadChannel()
-    private val writeChannel = socket.openWriteChannel(true)
+    private val sendChannel = Channel<ByteReadPacket>(8)
+    private val receiveChannel = Channel<ByteReadPacket>(8)
 
-    override suspend fun send(packet: ByteReadPacket): Unit = writeChannel.run {
-        val length = packet.remaining.toInt()
-        writePacket { writeLength(length) }
-        writePacket(packet)
+    init {
+        launch {
+            socket.openWriteChannel(autoFlush = true).use {
+                while (isActive) {
+                    val packet = sendChannel.receive()
+                    val length = packet.remaining.toInt()
+                    writePacket {
+                        writeLength(length)
+                        writePacket(packet)
+                    }
+                }
+            }
+        }
+        launch {
+            socket.openReadChannel().apply {
+                while (isActive) {
+                    val length = readPacket(3).readLength()
+                    val packet = readPacket(length)
+                    receiveChannel.send(packet)
+                }
+            }
+        }
     }
 
-    override suspend fun receive(): ByteReadPacket = readChannel.run {
-        val length = readPacket(3).readLength()
-        readPacket(length)
-    }
+    override suspend fun send(packet: ByteReadPacket): Unit = sendChannel.send(packet)
+
+    override suspend fun receive(): ByteReadPacket = receiveChannel.receive()
 }

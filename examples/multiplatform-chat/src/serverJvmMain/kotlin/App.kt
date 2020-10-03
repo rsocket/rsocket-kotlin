@@ -15,9 +15,12 @@
  */
 
 import io.ktor.application.*
+import io.ktor.network.selector.*
+import io.ktor.network.sockets.*
 import io.ktor.routing.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
+import io.ktor.util.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
@@ -25,20 +28,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.*
 
-//TODO add TCP server
+@OptIn(KtorExperimentalAPI::class, ExperimentalSerializationApi::class)
 fun main() {
-    embeddedServer(CIO, port = 9000) {
-        install(WebSockets)
-        install(RSocketServerSupport)
-
-        routing {
-            rSocketChat()
-        }
-    }.start(true)
-}
-
-@OptIn(ExperimentalSerializationApi::class)
-fun Routing.rSocketChat() {
     val proto = ConfiguredProtoBuf
     val users = Users()
     val chats = Chats()
@@ -48,7 +39,8 @@ fun Routing.rSocketChat() {
     val chatsApi = ChatApi(chats, messages)
     val messagesApi = MessageApi(messages, chats)
 
-    rSocket {
+    //create acceptor
+    val acceptor: RSocketAcceptor = {
         val userName = payload.data.readText()
         val user = users.getOrCreate(userName)
         val session = Session(user.id)
@@ -102,4 +94,19 @@ fun Routing.rSocketChat() {
             }
         }
     }
+
+    //start TCP server
+    GlobalScope.launch {
+        aSocket(ActorSelectorManager(Dispatchers.IO)).tcp().bind(port = 8000).rSocket(acceptor = acceptor)
+    }
+
+    //start WS server
+    embeddedServer(CIO, port = 9000) {
+        install(WebSockets)
+        install(RSocketServerSupport)
+
+        routing {
+            rSocket(acceptor = acceptor)
+        }
+    }.start(true)
 }

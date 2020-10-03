@@ -27,14 +27,13 @@ val ktorVersion: String by rootProject
 val kotlinxCoroutinesVersion: String by rootProject
 
 kotlin {
-    jvm()
-    js()
-
     sourceSets {
         val commonMain by getting {
             dependencies {
                 api("io.ktor:ktor-io:$ktorVersion")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion") {
+                    version { strictly(kotlinxCoroutinesVersion) }
+                }
             }
         }
         val commonTest by getting {

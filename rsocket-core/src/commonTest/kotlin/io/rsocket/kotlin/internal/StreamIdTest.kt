@@ -19,7 +19,7 @@ package io.rsocket.kotlin.internal
 import kotlin.test.*
 
 class StreamIdTest {
-    private val map = mutableMapOf<Int, String>()
+    private val map = IntMap<String>()
 
     @Test
     fun testClientSequence() {

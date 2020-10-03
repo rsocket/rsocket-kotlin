@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-import kotlinx.coroutines.flow.*
+package io.rsocket.kotlin.test
 
-suspend fun main() {
-    val api = connectToApi("Oleg")
+import io.ktor.utils.io.core.*
+import kotlinx.atomicfu.*
 
-    api.users.all().forEach {
-        println(it)
-    }
+actual class TestPacketStore {
+    private val sentIndex = atomic(0)
+    private val _stored = atomicArrayOfNulls<ByteReadPacket>(100) //max 100 in cache
 
-    val chat = api.chats.all().firstOrNull() ?: api.chats.new("rsocket-kotlin chat")
+    actual val stored: List<ByteReadPacket>
+        get() = buildList {
+            repeat(sentIndex.value) {
+                add(_stored[it].value!!)
+            }
+        }
 
-    val sentMessage = api.messages.send(chat.id, "RSocket is awesome! (from JVM)")
-    println(sentMessage)
-
-    api.messages.messages(chat.id, -1).collect {
-        println("Received: $it")
+    actual fun store(packet: ByteReadPacket) {
+        _stored[sentIndex.getAndIncrement()].value = packet
     }
 }

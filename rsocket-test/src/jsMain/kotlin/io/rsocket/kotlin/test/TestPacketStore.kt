@@ -14,8 +14,16 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.internal
+package io.rsocket.kotlin.test
 
-import java.util.concurrent.*
+import io.ktor.utils.io.core.*
 
-internal actual fun <V> concurrentMap(): MutableMap<Int, V> = ConcurrentHashMap()
+actual class TestPacketStore actual constructor() {
+    private val _stored = mutableListOf<ByteReadPacket>()
+
+    actual val stored: List<ByteReadPacket> get() = _stored
+
+    actual fun store(packet: ByteReadPacket) {
+        _stored += packet
+    }
+}

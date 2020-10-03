@@ -27,7 +27,7 @@ import kotlin.time.TimeSource.*
 @OptIn(ExperimentalTime::class)
 internal class KeepAliveHandler(
     private val keepAlive: KeepAlive,
-    private val offerFrame: (frame: Frame) -> Unit
+    private val offerFrame: (frame: Frame) -> Unit,
 ) {
 
     private val lastMark = atomic<TimeMark?>(null)
@@ -45,7 +45,9 @@ internal class KeepAliveHandler(
             while (isActive) {
                 delay(keepAlive.interval)
                 if (lastMark.value!!.elapsedNow() >= keepAlive.maxLifetime) {
-                    throw RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetime}")
+                    //for K/N
+                    scope.cancel("Keep alive failed", RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetime}"))
+                    break
                 }
                 offerFrame(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
             }

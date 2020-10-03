@@ -14,6 +14,15 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.internal
+import io.ktor.util.*
+import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
-internal actual fun <V> concurrentMap(): MutableMap<Int, V> = mutableMapOf()
+@OptIn(InternalAPI::class)
+fun main() {
+    runBlocking {
+        runTcpClient(EmptyCoroutineContext)
+//        runTcpServer(EmptyCoroutineContext)
+    }
+}
+

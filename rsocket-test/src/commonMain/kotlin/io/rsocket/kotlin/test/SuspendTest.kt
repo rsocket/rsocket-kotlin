@@ -31,7 +31,11 @@ interface SuspendTest {
     suspend fun before(): Unit = Unit
     suspend fun after(): Unit = Unit
 
-    fun test(timeout: Duration = testTimeout, block: suspend CoroutineScope.() -> Unit) = runTest {
+    fun test(
+        timeout: Duration = testTimeout,
+        ignoreNative: Boolean = false,
+        block: suspend CoroutineScope.() -> Unit,
+    ) = runTest(ignoreNative = ignoreNative) {
 
         runCatching {
             if (debug) println("[TEST] BEFORE started")

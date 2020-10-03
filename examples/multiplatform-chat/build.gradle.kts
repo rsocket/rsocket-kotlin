@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.konan.target.*
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization") version "1.4.10"
@@ -26,6 +28,19 @@ kotlin {
     js("clientJs", LEGACY) {
         browser {
             binaries.executable()
+        }
+        nodejs {
+            binaries.executable()
+        }
+    }
+    when {
+        HostManager.hostIsLinux -> linuxX64("clientNative")
+        HostManager.hostIsMingw -> null //no native support for TCP mingwX64("clientNative")
+        HostManager.hostIsMac   -> macosX64("clientNative")
+        else                    -> null
+    }?.binaries {
+        executable {
+            entryPoint = "main"
         }
     }
 
@@ -63,6 +78,12 @@ kotlin {
             dependsOn(clientMain)
             dependencies {
                 implementation("io.ktor:ktor-client-js:1.4.1")
+            }
+        }
+
+        if (!HostManager.hostIsMingw) {
+            val clientNativeMain by getting {
+                dependsOn(clientMain)
             }
         }
     }

@@ -132,8 +132,8 @@ class RSocketRequesterTest : TestWithConnection() {
         }
     }
 
-    @Test
-    fun testStreamBufferWithAnotherDispatcher() = test {
+    @Test //ignored on native because of dispatcher switching
+    fun testStreamBufferWithAnotherDispatcher() = test(ignoreNative = true) {
         val flow =
             requester.requestStream(Payload.Empty)
                 .buffer(2)
@@ -233,8 +233,8 @@ class RSocketRequesterTest : TestWithConnection() {
         assertEquals(sent, connection.sentFrames.size)
     }
 
-    @Test
-    fun testChannelRequestServerSideCancellation() = test {
+    @Test //ignored on native because of coroutines bug with channels
+    fun testChannelRequestServerSideCancellation() = test(ignoreNative = true) {
         var ch: SendChannel<Payload>? = null
         val request = channelFlow<Payload> {
             ch = this

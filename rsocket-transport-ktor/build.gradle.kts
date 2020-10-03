@@ -23,26 +23,29 @@ plugins {
 }
 
 val ktorVersion: String by rootProject
+val kotlinxAtomicfuVersion: String by rootProject
 
 kotlin {
-    jvm()
-    js()
-
     sourceSets {
         val commonMain by getting {
             dependencies {
+                api(project(":rsocket-core"))
+
                 api("io.ktor:ktor-network:$ktorVersion")
                 api("io.ktor:ktor-http-cio:$ktorVersion")
-                api(project(":rsocket-core"))
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(project(":rsocket-transport-ktor-client"))
+
+                implementation("org.jetbrains.kotlinx:atomicfu:$kotlinxAtomicfuVersion")
             }
         }
         val jvmTest by getting {
             dependencies {
+                implementation(project(":rsocket-transport-ktor-server"))
+
                 implementation("io.ktor:ktor-client-cio:$ktorVersion")
                 implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
 
@@ -50,8 +53,6 @@ kotlin {
                 implementation("io.ktor:ktor-server-netty:$ktorVersion")
                 implementation("io.ktor:ktor-server-jetty:$ktorVersion")
                 implementation("io.ktor:ktor-server-tomcat:$ktorVersion")
-
-                implementation(project(":rsocket-transport-ktor-server"))
             }
         }
     }
