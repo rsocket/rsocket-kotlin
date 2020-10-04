@@ -68,7 +68,12 @@ class RSocketTest : SuspendTest {
                 }
             }
         }
-        clientConnection.connectClient(RSocketConnectorConfiguration(keepAlive = KeepAlive(1000.seconds, 1000.seconds)))
+        clientConnection.connectClient(
+            RSocketConnectorConfiguration(
+                keepAlive = KeepAlive(1000.seconds, 1000.seconds),
+                loggerFactory = TestLoggerFactory
+            )
+        )
     }
 
     @Test

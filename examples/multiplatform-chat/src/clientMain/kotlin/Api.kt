@@ -16,7 +16,11 @@
 
 import io.ktor.client.*
 import io.ktor.client.features.websocket.*
+import io.ktor.network.selector.*
+import io.ktor.network.sockets.*
+import io.ktor.util.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
 
@@ -27,7 +31,7 @@ class Api(rSocket: RSocket) {
     val messages = MessageApi(rSocket, proto)
 }
 
-suspend fun connectToApi(name: String): Api {
+suspend fun connectToApiUsingWS(name: String): Api {
     val client = HttpClient {
         install(WebSockets)
         install(RSocketClientSupport) {
@@ -36,4 +40,11 @@ suspend fun connectToApi(name: String): Api {
     }
 
     return Api(client.rSocket(port = 9000))
+}
+
+@OptIn(InternalAPI::class)
+suspend fun connectToApiUsingTCP(name: String): Api {
+    val socket = aSocket(SelectorManager()).tcp().connect("0.0.0.0", 8000)
+
+    return Api(socket.connection.connectClient(RSocketConnectorConfiguration(setupPayload = Payload(name))))
 }

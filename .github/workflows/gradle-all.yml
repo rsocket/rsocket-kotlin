@@ -9,35 +9,60 @@ on:
 
 jobs:
   build:
-
-    runs-on: ubuntu-20.04
-
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        jdk: [ 1.8, 11, 14 ]
+        os: [ macos-latest ]
+        macTargetsCompilation: [ macos, ios, watchos, tvos ]
+        include:
+          - os: ubuntu-20.04
+          - os: windows-latest
       fail-fast: false
 
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK ${{ matrix.jdk }}
+      - name: Set up JDK
         uses: actions/setup-java@v1
         with:
-          java-version: ${{ matrix.jdk }}
+          java-version: 11
       - name: Cache Gradle packages
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.konan
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.*') }} #hash based on *.gradle.kts and *.gradle.properties
           restore-keys: ${{ runner.os }}-gradle
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Build with Gradle
-        run: ./gradlew clean build --info
-      - name: Publish Packages to Artifactory
-        if: ${{ matrix.jdk == '1.8' }}
-        run: ./gradlew -PbintrayUser="${bintrayUser}" -PbintrayKey="${bintrayKey}" -PversionSuffix="-${githubRef#refs/heads/}-SNAPSHOT" -PbuildNumber="${buildNumber}" artifactoryPublish --stacktrace
-        env:
-          bintrayUser: ${{ secrets.bintrayUser }}
-          bintrayKey: ${{ secrets.bintrayKey }}
-          githubRef: ${{ github.ref }}
-          buildNumber: ${{ github.run_number }}
+      - uses: eskatos/gradle-command-action@v1
+        with:
+          arguments: build -PmacTargetsCompilation=${{ matrix.macTargetsCompilation }} --scan --no-daemon
+
+  publish:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04, macos-latest, windows-latest ]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Cache Gradle packages
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.konan
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.*') }} #hash based on *.gradle.kts and *.gradle.properties
+          restore-keys: ${{ runner.os }}-gradle
+      - if: ${{ matrix.os == 'windows-latest' }}
+        run: echo ("::set-env name=BRANCH_NAME::" + $env:GITHUB_REF.replace('refs/heads/', ''))
+      - if: ${{ matrix.os != 'windows-latest' }}
+        run: echo "##[set-env name=BRANCH_NAME;]$(echo ${GITHUB_REF#refs/heads/})"
+      - uses: eskatos/gradle-command-action@v1
+        with:
+          arguments: artifactoryPublish -PbintrayUser=${{ secrets.bintrayUser }} -PbintrayKey=${{ secrets.bintrayKey }} -PversionSuffix=-${{ env.BRANCH_NAME }}-SNAPSHOT -PbuildNumber=${{ github.run_number }} --stacktrace --no-daemon

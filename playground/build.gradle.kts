@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.konan.target.*
+
 plugins {
     kotlin("multiplatform")
 }
@@ -25,6 +27,16 @@ kotlin {
     js(IR) {
         browser {
             binaries.executable()
+        }
+    }
+    when {
+        HostManager.hostIsLinux -> linuxX64("native")
+//        HostManager.hostIsMingw -> mingwX64("native") //no native support for TCP
+        HostManager.hostIsMac   -> macosX64("native")
+        else                    -> null
+    }?.binaries {
+        executable {
+            entryPoint = "main"
         }
     }
 

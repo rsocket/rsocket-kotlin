@@ -25,8 +25,6 @@ plugins {
 val ktorVersion: String by rootProject
 
 kotlin {
-    jvm()
-
     sourceSets {
         val commonMain by getting {
             dependencies {

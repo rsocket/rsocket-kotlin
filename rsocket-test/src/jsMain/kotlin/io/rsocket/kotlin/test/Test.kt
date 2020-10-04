@@ -16,9 +16,19 @@
 
 package io.rsocket.kotlin.test
 
+import io.rsocket.kotlin.logging.*
 import kotlinx.coroutines.*
+import kotlin.time.*
 
-internal actual fun runTest(block: suspend CoroutineScope.() -> Unit): dynamic = GlobalScope.promise(block = block)
+internal actual fun runTest(
+    ignoreNative: Boolean,
+    block: suspend CoroutineScope.() -> Unit,
+): dynamic = GlobalScope.promise(block = block)
 
 //JS is single threaded, so it have only one dispatcher backed by one threed
 actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.Default
+
+actual val TestLoggerFactory: LoggerFactory = ConsoleLogger
+
+actual val TransportTestLongDuration: Duration = 10.minutes
+actual val TransportTestDefaultDuration: Duration = 5.minutes

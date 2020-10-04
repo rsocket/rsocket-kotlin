@@ -27,8 +27,9 @@ class TestConnection : Connection {
     override val job: Job = Job()
     private val sender = Channel<ByteReadPacket>(Channel.UNLIMITED)
     private val receiver = Channel<ByteReadPacket>(Channel.UNLIMITED)
-    private val _sentFrames = mutableListOf<ByteReadPacket>()
-    val sentFrames: List<Frame> get() = _sentFrames.map { it.copy().toFrame() }
+
+    private val store = TestPacketStore()
+    val sentFrames: List<Frame> get() = store.stored.map { it.copy().toFrame() }
 
     init {
         job.invokeOnCompletion {
@@ -39,7 +40,7 @@ class TestConnection : Connection {
 
     override suspend fun send(packet: ByteReadPacket) {
         sender.send(packet)
-        _sentFrames += packet.copy()
+        store.store(packet.copy())
     }
 
     override suspend fun receive(): ByteReadPacket {

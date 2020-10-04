@@ -20,6 +20,7 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.keepalive.*
+import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -28,7 +29,7 @@ import kotlin.time.*
 
 @OptIn(ExperimentalTime::class)
 abstract class TransportTest : SuspendTest {
-    override val testTimeout: Duration = 10.minutes
+    override val testTimeout: Duration = TransportTestDefaultDuration
 
     lateinit var client: RSocket //should be assigned in `before`
 
@@ -78,7 +79,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    fun largePayloadRequestChannel200() = test {
+    fun largePayloadRequestChannel200() = test(TransportTestLongDuration) {
         val request = flow {
             repeat(200) { emit(LARGE_PAYLOAD) }
         }
@@ -87,7 +88,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    fun requestChannel20000() = test {
+    fun requestChannel20000() = test(TransportTestLongDuration) {
         val request = flow {
             repeat(20_000) { emit(Payload(7)) }
         }
@@ -99,7 +100,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    fun requestChannel200000() = test {
+    fun requestChannel200000() = test(TransportTestLongDuration) {
         val request = flow {
             repeat(200_000) { emit(Payload(it)) }
         }
@@ -108,7 +109,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    fun requestChannel256x512() = test {
+    fun requestChannel256x512() = test(TransportTestLongDuration) {
         val request = flow {
             repeat(512) {
                 emit(Payload(it))
@@ -148,7 +149,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    fun requestResponse100000() = test {
+    fun requestResponse100000() = test(TransportTestLongDuration) {
         repeat(100000) { client.requestResponse(Payload(3)).let(Companion::checkPayload) }
     }
 
@@ -167,8 +168,8 @@ abstract class TransportTest : SuspendTest {
     companion object {
 
         val ACCEPTOR: RSocketAcceptor = { TestRSocket() }
-        val CONNECTOR_CONFIG = RSocketConnectorConfiguration(keepAlive = KeepAlive(10.minutes, 100.minutes))
-        val SERVER_CONFIG = RSocketServerConfiguration()
+        val CONNECTOR_CONFIG = RSocketConnectorConfiguration(keepAlive = KeepAlive(10.minutes, 100.minutes), loggerFactory = NoopLogger)
+        val SERVER_CONFIG = RSocketServerConfiguration(loggerFactory = NoopLogger)
 
         val MOCK_DATA: String = "test-data"
         val MOCK_METADATA: String = "metadata"

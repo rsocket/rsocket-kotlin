@@ -23,7 +23,9 @@ import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.test.*
+import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
+import kotlin.random.*
 import io.ktor.client.features.websocket.WebSockets as ClientWebSockets
 import io.ktor.websocket.WebSockets as ServerWebSockets
 
@@ -39,7 +41,9 @@ abstract class WebSocketTransportTest(
         }
     }
 
-    private val server = embeddedServer(serverEngine, port = 9000) {
+    private val currentPort = port.incrementAndGet()
+
+    private val server = embeddedServer(serverEngine, currentPort) {
         install(ServerWebSockets)
         install(RSocketServerSupport) {
             fromConfig(SERVER_CONFIG)
@@ -52,8 +56,8 @@ abstract class WebSocketTransportTest(
     override suspend fun before() {
         super.before()
 
-        trySeveralTimes { server.start() }
-        client = trySeveralTimes { httpClient.rSocket(port = 9000) }
+        server.start()
+        client = trySeveralTimes { httpClient.rSocket(port = currentPort) }
     }
 
     override suspend fun after() {
@@ -64,14 +68,18 @@ abstract class WebSocketTransportTest(
 
     private suspend inline fun <R> trySeveralTimes(block: () -> R): R {
         lateinit var error: Throwable
-        repeat(5) {
+        repeat(10) {
             try {
                 return block()
             } catch (e: Throwable) {
                 error = e
-                delay(500) //sometimes address isn't yet available
+                delay(500) //sometimes address isn't yet available (server isn't started)
             }
         }
         throw error
+    }
+
+    companion object {
+        private val port = atomic(Random.nextInt(20, 90) * 100)
     }
 }

@@ -39,9 +39,9 @@ internal class RSocketState(
     private val requestScope = CoroutineScope(SupervisorJob(job))
     private val scope = CoroutineScope(job)
 
-    val receivers: MutableMap<Int, SendChannel<RequestFrame>> = concurrentMap()
-    private val senders: MutableMap<Int, Job> = concurrentMap()
-    private val limits: MutableMap<Int, LimitingFlowCollector> = concurrentMap()
+    val receivers: IntMap<SendChannel<RequestFrame>> = IntMap()
+    private val senders: IntMap<Job> = IntMap()
+    private val limits: IntMap<LimitingFlowCollector> = IntMap()
 
     private val keepAliveHandler = KeepAliveHandler(keepAlive, this::sendPrioritized)
 
@@ -95,7 +95,7 @@ internal class RSocketState(
 
     fun launchCancelable(streamId: Int, block: suspend CoroutineScope.() -> Unit): Job {
         val job = launch(block)
-        job.invokeOnCompletion { if (isActive) senders -= streamId }
+        job.invokeOnCompletion { if (isActive) senders.remove(streamId) }
         senders[streamId] = job
         return job
     }
@@ -133,7 +133,7 @@ internal class RSocketState(
         requestHandler.job.invokeOnCompletion { cancel("Request handled stopped", it) }
         job.invokeOnCompletion { error ->
             requestHandler.cancel("Connection closed", error)
-            receivers.values.forEach { it.close((error as? CancellationException)?.cause ?: error) }
+            receivers.values().forEach { it.close((error as? CancellationException)?.cause ?: error) }
             receivers.clear()
             limits.clear()
             senders.clear()
