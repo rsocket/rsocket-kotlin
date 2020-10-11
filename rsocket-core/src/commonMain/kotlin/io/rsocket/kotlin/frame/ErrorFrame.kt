@@ -20,13 +20,17 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.frame.io.*
 
-class ErrorFrame(
+internal class ErrorFrame(
     override val streamId: Int,
     val throwable: Throwable,
     val data: ByteReadPacket? = null,
 ) : Frame(FrameType.Error) {
     override val flags: Int get() = 0
     val errorCode get() = (throwable as? RSocketError)?.errorCode ?: ErrorCode.ApplicationError
+
+    override fun release() {
+        data?.release()
+    }
 
     override fun BytePacketBuilder.writeSelf() {
         writeInt(errorCode)
@@ -44,7 +48,7 @@ class ErrorFrame(
     }
 }
 
-fun ByteReadPacket.readError(streamId: Int): ErrorFrame {
+internal fun ByteReadPacket.readError(streamId: Int): ErrorFrame {
     val errorCode = readInt()
     val data = copy()
     val message = readText()

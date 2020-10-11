@@ -19,14 +19,15 @@ package io.rsocket.kotlin.frame
 import io.ktor.util.*
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class RequestStreamFrameTest {
+class RequestStreamFrameTest : TestWithLeakCheck {
 
     @Test
     fun testEncoding() {
         val dump = "000010000000011900000000010000026d6464"
-        val frame = RequestStreamFrame(1, 1, Payload("d", "md"))
+        val frame = RequestStreamFrame(1, 1, payload("d", "md"))
         val bytes = frame.toPacketWithLength().readBytes()
 
         assertEquals(dump, hex(bytes))
@@ -35,7 +36,7 @@ class RequestStreamFrameTest {
     @Test
     fun testDecoding() {
         val dump = "000010000000011900000000010000026d6464"
-        val frame = ByteReadPacket(hex(dump)).toFrameWithLength()
+        val frame = packet(hex(dump)).toFrameWithLength()
 
         assertTrue(frame is RequestFrame)
         assertEquals(FrameType.RequestStream, frame.type)
@@ -60,7 +61,7 @@ class RequestStreamFrameTest {
     @Test
     fun testDecodingWithEmptyMetadata() {
         val dump = "00000e0000000119000000000100000064"
-        val frame = ByteReadPacket(hex(dump)).toFrameWithLength()
+        val frame = packet(hex(dump)).toFrameWithLength()
 
         assertTrue(frame is RequestFrame)
         assertEquals(FrameType.RequestStream, frame.type)
@@ -76,7 +77,7 @@ class RequestStreamFrameTest {
     @Test
     fun testEncodingWithNullMetadata() {
         val dump = "00000b0000000118000000000164"
-        val frame = RequestStreamFrame(1, 1, Payload("d"))
+        val frame = RequestStreamFrame(1, 1, payload("d"))
         val bytes = frame.toPacketWithLength().readBytes()
 
         assertEquals(dump, hex(bytes))
@@ -85,7 +86,7 @@ class RequestStreamFrameTest {
     @Test
     fun testDecodingWithNullMetadata() {
         val dump = "00000b0000000118000000000164"
-        val frame = ByteReadPacket(hex(dump)).toFrameWithLength()
+        val frame = packet(hex(dump)).toFrameWithLength()
 
         assertTrue(frame is RequestFrame)
         assertEquals(FrameType.RequestStream, frame.type)
@@ -101,7 +102,7 @@ class RequestStreamFrameTest {
     @Test
     fun testEmptyData() {
         val frame = RequestStreamFrame(3, 10, Payload(ByteReadPacket.Empty, packet("md")))
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.RequestStream, frame.type)
@@ -117,7 +118,7 @@ class RequestStreamFrameTest {
     @Test
     fun testEmptyPayload() {
         val frame = RequestStreamFrame(3, 10, Payload(ByteReadPacket.Empty, ByteReadPacket.Empty))
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.RequestStream, frame.type)
@@ -132,8 +133,8 @@ class RequestStreamFrameTest {
 
     @Test
     fun testMaxRequestN() {
-        val frame = RequestStreamFrame(3, Int.MAX_VALUE, Payload("d", "md"))
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = RequestStreamFrame(3, Int.MAX_VALUE, payload("d", "md"))
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.RequestStream, frame.type)

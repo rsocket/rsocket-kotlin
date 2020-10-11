@@ -19,11 +19,15 @@ package io.rsocket.kotlin.frame
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 
-class MetadataPushFrame(
+internal class MetadataPushFrame(
     val metadata: ByteReadPacket,
 ) : Frame(FrameType.MetadataPush) {
     override val streamId: Int get() = 0
     override val flags: Int get() = Flags.Metadata
+
+    override fun release() {
+        metadata.release()
+    }
 
     override fun BytePacketBuilder.writeSelf() {
         writePacket(metadata)
@@ -38,4 +42,4 @@ class MetadataPushFrame(
     }
 }
 
-fun ByteReadPacket.readMetadataPush(): MetadataPushFrame = MetadataPushFrame(readPacket())
+internal fun ByteReadPacket.readMetadataPush(pool: BufferPool): MetadataPushFrame = MetadataPushFrame(readPacket(pool))

@@ -17,15 +17,15 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class RequestResponseFrameTest {
+class RequestResponseFrameTest : TestWithLeakCheck {
 
     @Test
     fun testData() {
-        val frame = RequestResponseFrame(3, Payload("d"))
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = RequestResponseFrame(3, payload("d"))
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.RequestResponse, decodedFrame.type)
@@ -39,8 +39,8 @@ class RequestResponseFrameTest {
 
     @Test
     fun testDataMetadata() {
-        val frame = RequestResponseFrame(3, Payload("d", "md"))
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = RequestResponseFrame(3, payload("d", "md"))
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.RequestResponse, decodedFrame.type)
@@ -54,12 +54,11 @@ class RequestResponseFrameTest {
 
     @Test
     fun testBigDataMetadata() {
-        val payload = Payload {
-            metadata(ByteArray(6000) { 3 })
-            data(ByteArray(7000) { 5 })
-        }
+        val data = ByteArray(7000) { 5 }
+        val metadata = ByteArray(6000) { 3 }
+        val payload = payload(data, metadata)
         val frame = RequestResponseFrame(3, payload)
-        val decodedFrame = buildPacket { writeText(frame.toPacket().readText()) }.toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.RequestResponse, decodedFrame.type)
@@ -67,8 +66,8 @@ class RequestResponseFrameTest {
         assertFalse(decodedFrame.follows)
         assertFalse(decodedFrame.complete)
         assertFalse(decodedFrame.next)
-        assertBytesEquals(ByteArray(7000) { 5 }, decodedFrame.payload.data.readBytes())
-        assertBytesEquals(ByteArray(6000) { 3 }, decodedFrame.payload.metadata?.readBytes())
+        assertBytesEquals(data, decodedFrame.payload.data.readBytes())
+        assertBytesEquals(metadata, decodedFrame.payload.metadata?.readBytes())
     }
 
 }

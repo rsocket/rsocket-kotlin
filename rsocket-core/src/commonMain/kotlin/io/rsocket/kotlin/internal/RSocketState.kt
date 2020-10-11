@@ -16,6 +16,7 @@
 
 package io.rsocket.kotlin.internal
 
+import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.*
@@ -33,13 +34,12 @@ import kotlinx.coroutines.flow.*
 internal class RSocketState(
     private val connection: Connection,
     keepAlive: KeepAlive,
-    val ignoredFrameConsumer: (Frame) -> Unit,
 ) : Cancelable by connection {
     private val prioritizer = Prioritizer()
     private val requestScope = CoroutineScope(SupervisorJob(job))
     private val scope = CoroutineScope(job)
 
-    val receivers: IntMap<SendChannel<RequestFrame>> = IntMap()
+    val receivers: IntMap<Channel<RequestFrame>> = IntMap()
     private val senders: IntMap<Job> = IntMap()
     private val limits: IntMap<LimitingFlowCollector> = IntMap()
 
@@ -70,7 +70,10 @@ internal class RSocketState(
         } finally {
             if (isActive && streamId in receivers) {
                 if (cause != null) send(CancelFrame(streamId))
-                receivers.remove(streamId)?.close(cause)
+                receivers.remove(streamId)?.apply {
+                    closeReceivedElements()
+                    close(cause)
+                }
             }
         }
     }
@@ -82,7 +85,6 @@ internal class RSocketState(
         limits[streamId] = limitingCollector
         try {
             collect(limitingCollector)
-            send(CompletePayloadFrame(streamId))
         } catch (e: Throwable) {
             limits.remove(streamId)
             //if isn't active, then, that stream was cancelled, and so no need for error frame
@@ -103,17 +105,32 @@ internal class RSocketState(
     private fun handleFrame(responder: RSocketResponder, frame: Frame) {
         when (val streamId = frame.streamId) {
             0 -> when (frame) {
-                is ErrorFrame        -> cancel("Zero stream error", frame.throwable)
+                is ErrorFrame        -> {
+                    cancel("Zero stream error", frame.throwable)
+                    frame.release() //TODO
+                }
                 is KeepAliveFrame    -> keepAliveHandler.receive(frame)
-                is LeaseFrame        -> error("lease isn't implemented")
+                is LeaseFrame        -> {
+                    frame.release()
+                    error("lease isn't implemented")
+                }
 
                 is MetadataPushFrame -> responder.handleMetadataPush(frame)
-                else                 -> ignoredFrameConsumer(frame)
+                else                 -> {
+                    //TODO log
+                    frame.release()
+                }
             }
             else -> when (frame) {
                 is RequestNFrame -> limits[streamId]?.updateRequests(frame.requestN)
                 is CancelFrame -> senders.remove(streamId)?.cancel()
-                is ErrorFrame -> receivers.remove(streamId)?.close(frame.throwable)
+                is ErrorFrame -> {
+                    receivers.remove(streamId)?.apply {
+                        closeReceivedElements()
+                        close(frame.throwable)
+                    }
+                    frame.release()
+                }
                 is RequestFrame -> when (frame.type) {
                     FrameType.Payload         -> receivers[streamId]?.offer(frame)
                     FrameType.RequestFnF      -> responder.handleFireAndForget(frame)
@@ -122,7 +139,10 @@ internal class RSocketState(
                     FrameType.RequestChannel  -> responder.handleRequestChannel(frame)
                     else                      -> error("never happens")
                 }
-                else             -> ignoredFrameConsumer(frame)
+                else             -> {
+                    //TODO log
+                    frame.release()
+                }
             }
         }
     }
@@ -133,17 +153,23 @@ internal class RSocketState(
         requestHandler.job.invokeOnCompletion { cancel("Request handled stopped", it) }
         job.invokeOnCompletion { error ->
             requestHandler.cancel("Connection closed", error)
-            receivers.values().forEach { it.close((error as? CancellationException)?.cause ?: error) }
+            receivers.values().forEach {
+                it.closeReceivedElements()
+                it.close((error as? CancellationException)?.cause ?: error)
+            }
             receivers.clear()
             limits.clear()
             senders.clear()
             prioritizer.close(error)
         }
         scope.launch {
-            while (connection.isActive) connection.send(prioritizer.receive().toPacket())
+            while (connection.isActive) connection.sendFrame(prioritizer.receive())
         }
         scope.launch {
-            while (connection.isActive) handleFrame(responder, connection.receive().toFrame())
+            while (connection.isActive) {
+                val frame = connection.receiveFrame()
+                frame.closeOnError { handleFrame(responder, frame) }
+            }
         }
         return job
     }
@@ -151,4 +177,11 @@ internal class RSocketState(
 
 internal fun ReceiveChannel<*>.cancelConsumed(cause: Throwable?) {
     cancel(cause?.let { it as? CancellationException ?: CancellationException("Channel was consumed, consumer had failed", it) })
+}
+
+internal fun ReceiveChannel<Closeable>.closeReceivedElements() {
+    try {
+        while (true) poll()?.close() ?: break
+    } catch (e: Throwable) {
+    }
 }

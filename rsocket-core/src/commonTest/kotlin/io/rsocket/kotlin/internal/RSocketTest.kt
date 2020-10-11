@@ -16,12 +16,14 @@
 
 package io.rsocket.kotlin.internal
 
+import app.cash.turbine.*
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.keepalive.*
+import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
@@ -30,7 +32,7 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
-class RSocketTest : SuspendTest {
+class RSocketTest : SuspendTest, TestWithLeakCheck {
 
     lateinit var serverConnection: LocalConnection
     lateinit var clientConnection: LocalConnection
@@ -55,15 +57,18 @@ class RSocketTest : SuspendTest {
 
     private suspend fun start(handler: RSocket? = null): RSocket = coroutineScope {
         launch {
-            serverConnection.startServer {
+            serverConnection.startServer(
+                RSocketServerConfiguration(loggerFactory = NoopLogger)
+            ) {
                 handler ?: RSocketRequestHandler {
                     requestResponse = { it }
                     requestStream = {
-                        flow { repeat(10) { emit(Payload("server got -> [$it]")) } }
+                        it.release()
+                        flow { repeat(10) { emit(payload("server got -> [$it]")) } }
                     }
                     requestChannel = {
-                        it.launchIn(CoroutineScope(job))
-                        flow { repeat(10) { emit(Payload("server got -> [$it]")) } }
+                        it.onEach { it.release() }.launchIn(CoroutineScope(job))
+                        flow { repeat(10) { emit(payload("server got -> [$it]")) } }
                     }
                 }
             }
@@ -71,7 +76,7 @@ class RSocketTest : SuspendTest {
         clientConnection.connectClient(
             RSocketConnectorConfiguration(
                 keepAlive = KeepAlive(1000.seconds, 1000.seconds),
-                loggerFactory = TestLoggerFactory
+                loggerFactory = NoopLogger
             )
         )
     }
@@ -79,7 +84,7 @@ class RSocketTest : SuspendTest {
     @Test
     fun testRequestResponseNoError() = test {
         val requester = start()
-        requester.requestResponse(Payload("HELLO"))
+        requester.requestResponse(payload("HELLO")).release()
     }
 
     @Test
@@ -87,7 +92,7 @@ class RSocketTest : SuspendTest {
         val requester = start(RSocketRequestHandler {
             requestResponse = { error("stub") }
         })
-        assertFailsWith(RSocketError.ApplicationError::class) { requester.requestResponse(Payload("HELLO")) }
+        assertFailsWith(RSocketError.ApplicationError::class) { requester.requestResponse(payload("HELLO")) }
     }
 
     @Test
@@ -95,23 +100,34 @@ class RSocketTest : SuspendTest {
         val requester = start(RSocketRequestHandler {
             requestResponse = { throw RSocketError.Custom(0x00000501, "stub") }
         })
-        val error = assertFailsWith(RSocketError.Custom::class) { requester.requestResponse(Payload("HELLO")) }
+        val error = assertFailsWith(RSocketError.Custom::class) { requester.requestResponse(payload("HELLO")) }
         assertEquals(0x00000501, error.errorCode)
     }
 
     @Test
     fun testStream() = test {
         val requester = start()
-        val response = requester.requestStream(Payload.Empty).toList()
-        assertEquals(10, response.size)
+        requester.requestStream(Payload.Empty).test {
+            repeat(10) {
+                expectItem().release()
+            }
+            expectComplete()
+        }
     }
 
     @Test
     fun testChannel() = test {
+        val awaiter = Job()
         val requester = start()
-        val request = (1..10).asFlow().map { Payload(it.toString()) }
-        val response = requester.requestChannel(request).toList()
-        assertEquals(10, response.size)
+        val request = (1..10).asFlow().map { payload(it.toString()) }.onCompletion { awaiter.complete() }
+        requester.requestChannel(request).test {
+            repeat(10) {
+                expectItem().release()
+            }
+            expectComplete()
+        }
+        awaiter.join()
+        delay(500)
     }
 
     @Test
@@ -132,26 +148,32 @@ class RSocketTest : SuspendTest {
         val requester = start(RSocketRequestHandler {
             requestChannel = { it.buffer(3).take(3) }
         })
-        val request = (1..3).asFlow().map { Payload(it.toString()) }
-        val response = requester.requestChannel(request).buffer(3).toList()
-        assertEquals(3, response.size)
+        val request = (1..3).asFlow().map { payload(it.toString()) }
+        requester.requestChannel(request).buffer(3).test {
+            repeat(3) {
+                expectItem().release()
+            }
+            expectComplete()
+        }
     }
 
-    private val requesterPayloads = listOf(
-        Payload("d1", "m1"),
-        Payload("d2"),
-        Payload("d3", "m3"),
-        Payload("d4"),
-        Payload("d5", "m5")
-    )
+    private val requesterPayloads
+        get() = listOf(
+            payload("d1", "m1"),
+            payload("d2"),
+            payload("d3", "m3"),
+            payload("d4"),
+            payload("d5", "m5")
+        )
 
-    private val responderPayloads = listOf(
-        Payload("rd1", "rm1"),
-        Payload("rd2"),
-        Payload("rd3", "rm3"),
-        Payload("rd4"),
-        Payload("rd5", "rm5")
-    )
+    private val responderPayloads
+        get() = listOf(
+            payload("rd1", "rm1"),
+            payload("rd2"),
+            payload("rd3", "rm3"),
+            payload("rd4"),
+            payload("rd5", "rm5")
+        )
 
     @Test
     fun requestChannelCase_StreamIsTerminatedAfterBothSidesSentCompletion1() = test {
@@ -231,17 +253,18 @@ class RSocketTest : SuspendTest {
         val requester = start(RSocketRequestHandler {
             requestChannel = {
                 responderDeferred.complete(it.produceIn(CoroutineScope(job)))
+
                 responderSendChannel.consumeAsFlow()
             }
         })
         val requesterReceiveChannel =
             requester.requestChannel(requesterSendChannel.consumeAsFlow()).produceIn(CoroutineScope(requester.job))
 
-        requesterSendChannel.send(Payload("initData", "initMetadata"))
+        requesterSendChannel.send(payload("initData", "initMetadata"))
 
         val responderReceiveChannel = responderDeferred.await()
 
-        responderReceiveChannel.checkReceived(Payload("initData", "initMetadata"))
+        responderReceiveChannel.checkReceived(payload("initData", "initMetadata"))
         return requesterReceiveChannel to responderReceiveChannel
     }
 

@@ -19,7 +19,7 @@ package io.rsocket.kotlin.frame
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 
-class ResumeFrame(
+internal class ResumeFrame(
     val version: Version,
     val resumeToken: ByteReadPacket,
     val lastReceivedServerPosition: Long,
@@ -27,6 +27,9 @@ class ResumeFrame(
 ) : Frame(FrameType.Resume) {
     override val streamId: Int get() = 0
     override val flags: Int get() = 0
+
+    override fun release(): Unit = Unit
+
     override fun BytePacketBuilder.writeSelf() {
         writeVersion(version)
         writeResumeToken(resumeToken)
@@ -44,9 +47,9 @@ class ResumeFrame(
     }
 }
 
-fun ByteReadPacket.readResume(): ResumeFrame {
+internal fun ByteReadPacket.readResume(pool: BufferPool): ResumeFrame {
     val version = readVersion()
-    val resumeToken = readResumeToken()
+    val resumeToken = readResumeToken(pool)
     val lastReceivedServerPosition = readLong()
     val firstAvailableClientPosition = readLong()
     return ResumeFrame(

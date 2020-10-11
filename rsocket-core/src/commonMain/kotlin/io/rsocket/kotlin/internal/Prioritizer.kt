@@ -20,7 +20,7 @@ import io.rsocket.kotlin.frame.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.selects.*
 
-class Prioritizer {
+internal class Prioritizer {
     private val priorityChannel = Channel<Frame>(Channel.UNLIMITED)
     private val commonChannel = Channel<Frame>(Channel.UNLIMITED)
 
@@ -42,6 +42,8 @@ class Prioritizer {
     }
 
     fun close(throwable: Throwable?) {
+        priorityChannel.closeReceivedElements()
+        commonChannel.closeReceivedElements()
         priorityChannel.close(throwable)
         commonChannel.close(throwable)
     }

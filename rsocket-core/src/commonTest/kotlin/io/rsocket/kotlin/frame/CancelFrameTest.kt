@@ -16,16 +16,17 @@
 
 package io.rsocket.kotlin.frame
 
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class CancelFrameTest {
+class CancelFrameTest : TestWithLeakCheck {
 
     private val streamId = 1
 
     @Test
     fun testEncoding() {
         val frame = CancelFrame(streamId)
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is CancelFrame)
         assertEquals(streamId, decodedFrame.streamId)

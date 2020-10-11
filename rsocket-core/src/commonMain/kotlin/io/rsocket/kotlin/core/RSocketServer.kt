@@ -35,7 +35,7 @@ class RSocketServer(
                 .let(configuration.plugin::wrapConnection)
                 .logging(configuration.loggerFactory.logger("io.rsocket.kotlin.frame.Frame"))
 
-        val setupFrame = connection.receive().toFrame()
+        val setupFrame = connection.receiveFrame()
         if (setupFrame !is SetupFrame)
             connection.failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
         if (setupFrame.version != Version.Current)
@@ -46,7 +46,6 @@ class RSocketServer(
                 connection = connection,
                 plugin = configuration.plugin,
                 setupFrame = setupFrame,
-                ignoredFrameConsumer = configuration.ignoredFrameConsumer,
                 acceptor = acceptor
             )
         } catch (e: Throwable) {
@@ -55,7 +54,7 @@ class RSocketServer(
     }
 
     private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
-        send(ErrorFrame(0, error).toPacket())
+        sendFrame(ErrorFrame(0, error))
         cancel("Setup failed", error)
         throw error
     }

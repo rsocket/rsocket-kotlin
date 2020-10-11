@@ -29,12 +29,16 @@ internal class RSocketResponder(
     fun handleMetadataPush(frame: MetadataPushFrame) {
         state.launch {
             requestHandler.metadataPush(frame.metadata)
+        }.invokeOnCompletion {
+            frame.release()
         }
     }
 
     fun handleFireAndForget(frame: RequestFrame) {
         state.launch {
             requestHandler.fireAndForget(frame.payload)
+        }.invokeOnCompletion {
+            frame.release()
         }
     }
 
@@ -45,6 +49,8 @@ internal class RSocketResponder(
                 requestHandler.requestResponse(frame.payload)
             } ?: return@launchCancelable
             if (isActive) send(NextCompletePayloadFrame(streamId, response))
+        }.invokeOnCompletion {
+            frame.release()
         }
     }
 
@@ -58,6 +64,9 @@ internal class RSocketResponder(
                 streamId,
                 RequestStreamResponderFlowCollector(state, streamId, initFrame.initialRequest)
             )
+            send(CompletePayloadFrame(streamId))
+        }.invokeOnCompletion {
+            initFrame.release()
         }
     }
 
@@ -75,7 +84,10 @@ internal class RSocketResponder(
                 streamId,
                 RequestStreamResponderFlowCollector(state, streamId, initFrame.initialRequest)
             )
+            send(CompletePayloadFrame(streamId))
         }.invokeOnCompletion {
+            initFrame.release()
+            receiver.closeReceivedElements()
             if (it != null) receiver.cancelConsumed(it) //TODO check it
         }
     }

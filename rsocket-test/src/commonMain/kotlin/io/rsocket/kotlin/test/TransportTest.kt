@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.test
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.keepalive.*
@@ -39,7 +38,7 @@ abstract class TransportTest : SuspendTest {
 
     @Test
     fun fireAndForget10() = test {
-        (1..10).map { async { client.fireAndForget(Payload(it)) } }.awaitAll()
+        (1..10).map { async { client.fireAndForget(payload(it)) } }.awaitAll()
     }
 
     @Test
@@ -65,14 +64,14 @@ abstract class TransportTest : SuspendTest {
 
     @Test
     fun requestChannel1() = test(10.seconds) {
-        val list = client.requestChannel(flowOf(Payload(0))).onEach { it.release() }.toList()
+        val list = client.requestChannel(flowOf(payload(0))).onEach { it.release() }.toList()
         assertEquals(1, list.size)
     }
 
     @Test
     fun requestChannel3() = test {
         val request = flow {
-            repeat(3) { emit(Payload(it)) }
+            repeat(3) { emit(payload(it)) }
         }
         val list = client.requestChannel(request).buffer(3).onEach { it.release() }.toList()
         assertEquals(3, list.size)
@@ -90,7 +89,7 @@ abstract class TransportTest : SuspendTest {
     @Test
     fun requestChannel20000() = test(TransportTestLongDuration) {
         val request = flow {
-            repeat(20_000) { emit(Payload(7)) }
+            repeat(20_000) { emit(payload(7)) }
         }
         val list = client.requestChannel(request).buffer(Int.MAX_VALUE).onEach {
             assertEquals(MOCK_DATA, it.data.readText())
@@ -102,7 +101,7 @@ abstract class TransportTest : SuspendTest {
     @Test
     fun requestChannel200000() = test(TransportTestLongDuration) {
         val request = flow {
-            repeat(200_000) { emit(Payload(it)) }
+            repeat(200_000) { emit(payload(it)) }
         }
         val list = client.requestChannel(request).buffer(Int.MAX_VALUE).onEach { it.release() }.toList()
         assertEquals(200_000, list.size)
@@ -112,7 +111,7 @@ abstract class TransportTest : SuspendTest {
     fun requestChannel256x512() = test(TransportTestLongDuration) {
         val request = flow {
             repeat(512) {
-                emit(Payload(it))
+                emit(payload(it))
             }
         }
         (0..256).map {
@@ -125,17 +124,17 @@ abstract class TransportTest : SuspendTest {
 
     @Test
     fun requestResponse1() = test {
-        client.requestResponse(Payload(1)).let(Companion::checkPayload)
+        client.requestResponse(payload(1)).let(Companion::checkPayload)
     }
 
     @Test
     fun requestResponse10() = test {
-        (1..10).map { async { client.requestResponse(Payload(it)).let(Companion::checkPayload) } }.awaitAll()
+        (1..10).map { async { client.requestResponse(payload(it)).let(Companion::checkPayload) } }.awaitAll()
     }
 
     @Test
     fun requestResponse100() = test {
-        (1..100).map { async { client.requestResponse(Payload(it)).let(Companion::checkPayload) } }.awaitAll()
+        (1..100).map { async { client.requestResponse(payload(it)).let(Companion::checkPayload) } }.awaitAll()
     }
 
     @Test
@@ -145,23 +144,23 @@ abstract class TransportTest : SuspendTest {
 
     @Test
     fun requestResponse10000() = test {
-        (1..10000).map { async { client.requestResponse(Payload(3)).let(Companion::checkPayload) } }.awaitAll()
+        (1..10000).map { async { client.requestResponse(payload(3)).let(Companion::checkPayload) } }.awaitAll()
     }
 
     @Test
     fun requestResponse100000() = test(TransportTestLongDuration) {
-        repeat(100000) { client.requestResponse(Payload(3)).let(Companion::checkPayload) }
+        repeat(100000) { client.requestResponse(payload(3)).let(Companion::checkPayload) }
     }
 
     @Test
     fun requestStream5() = test {
-        val list = client.requestStream(Payload(3)).onEach { checkPayload(it) }.buffer(5).take(5).toList()
+        val list = client.requestStream(payload(3)).buffer(5).take(5).onEach { checkPayload(it) }.toList()
         assertEquals(5, list.size)
     }
 
     @Test
     fun requestStream10000() = test {
-        val list = client.requestStream(Payload(3)).onEach { checkPayload(it) }.toList()
+        val list = client.requestStream(payload(3)).onEach { checkPayload(it) }.toList()
         assertEquals(10000, list.size)
     }
 
@@ -174,21 +173,18 @@ abstract class TransportTest : SuspendTest {
         val MOCK_DATA: String = "test-data"
         val MOCK_METADATA: String = "metadata"
         val LARGE_DATA by lazy { readLargePayload("words.shakespeare.txt.gz") }
-        private val payload by lazy { Payload(LARGE_DATA, LARGE_DATA) }
+        private val payload by lazy { payload(LARGE_DATA, LARGE_DATA) }
         val LARGE_PAYLOAD get() = payload.copy()
-
-        private fun packet(text: String): ByteReadPacket = buildPacket { writeText(text) }
 
         private fun readLargePayload(name: String): String = name.repeat(1000)
 
-        @Suppress("FunctionName")
-        private fun Payload(metadataPresent: Int): Payload {
+        private fun payload(metadataPresent: Int): Payload {
             val metadata = when (metadataPresent % 5) {
                 0 -> null
                 1 -> ""
                 else -> MOCK_METADATA
             }
-            return Payload(MOCK_DATA, metadata)
+            return payload(MOCK_DATA, metadata)
         }
 
         fun checkPayload(payload: Payload) {

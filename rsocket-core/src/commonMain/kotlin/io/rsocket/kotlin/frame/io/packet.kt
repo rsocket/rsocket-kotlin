@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.test
+package io.rsocket.kotlin.frame.io
 
 import io.ktor.utils.io.core.*
-import kotlinx.atomicfu.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 
-actual class TestPacketStore {
-    private val sentIndex = atomic(0)
-    private val _stored = atomicArrayOfNulls<ByteReadPacket>(100) //max 100 in cache
+@OptIn(DangerousInternalIoApi::class)
+internal typealias BufferPool = ObjectPool<ChunkBuffer>
 
-    actual val stored: List<ByteReadPacket>
-        get() = buildList {
-            repeat(sentIndex.value) {
-                add(_stored[it].value!!)
-            }
-        }
-
-    actual fun store(packet: ByteReadPacket) {
-        _stored[sentIndex.getAndIncrement()].value = packet
+//TODO
+internal inline fun buildPacket(pool: BufferPool, block: BytePacketBuilder.() -> Unit): ByteReadPacket {
+    val builder = BytePacketBuilder(0, pool)
+    try {
+        block(builder)
+        return builder.build()
+    } catch (t: Throwable) {
+        builder.release()
+        throw t
     }
 }

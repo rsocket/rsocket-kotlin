@@ -27,7 +27,7 @@ import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlin.test.*
 
-class SetupRejectionTest : SuspendTest {
+class SetupRejectionTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun responderRejectSetup() = test {
         val errorMessage = "error"
@@ -44,13 +44,16 @@ class SetupRejectionTest : SuspendTest {
 
         assertFailsWith(RSocketError.Setup.Rejected::class, errorMessage) { server.start(acceptor) }
 
-        val frame = connection.receiveFromSender()
-        assertTrue(frame is ErrorFrame)
-        assertTrue(frame.throwable is RSocketError.Setup.Rejected)
-        assertEquals(errorMessage, frame.throwable.message)
-
-        val sender = sendingRSocket.await()
-        assertFalse(sender.isActive)
+        connection.test {
+            expectFrame { frame ->
+                assertTrue(frame is ErrorFrame)
+                assertTrue(frame.throwable is RSocketError.Setup.Rejected)
+                assertEquals(errorMessage, frame.throwable.message)
+                assertEquals(errorMessage, frame.data?.readText())
+            }
+            val sender = sendingRSocket.await()
+            assertFalse(sender.isActive)
+        }
     }
 
 //    @Test

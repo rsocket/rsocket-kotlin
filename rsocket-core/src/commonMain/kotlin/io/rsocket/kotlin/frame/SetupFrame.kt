@@ -24,7 +24,7 @@ import io.rsocket.kotlin.payload.*
 private const val HonorLeaseFlag = 64
 private const val ResumeEnabledFlag = 128
 
-class SetupFrame(
+internal class SetupFrame(
     val version: Version, //TODO check
     val honorLease: Boolean,
     val keepAlive: KeepAlive,
@@ -41,6 +41,11 @@ class SetupFrame(
             if (payload.metadata != null) flags = flags or Flags.Metadata
             return flags
         }
+
+    override fun release() {
+        resumeToken?.release()
+        payload.release()
+    }
 
     override fun BytePacketBuilder.writeSelf() {
         writeVersion(version)
@@ -65,12 +70,12 @@ class SetupFrame(
     }
 }
 
-fun ByteReadPacket.readSetup(flags: Int): SetupFrame {
+internal fun ByteReadPacket.readSetup(pool: BufferPool, flags: Int): SetupFrame {
     val version = readVersion()
     val keepAlive = readKeepAlive()
-    val resumeToken = if (flags check ResumeEnabledFlag) readResumeToken() else null
+    val resumeToken = if (flags check ResumeEnabledFlag) readResumeToken(pool) else null
     val payloadMimeType = readPayloadMimeType()
-    val payload = readPayload(flags)
+    val payload = readPayload(pool, flags)
     return SetupFrame(
         version = version,
         honorLease = flags check HonorLeaseFlag,

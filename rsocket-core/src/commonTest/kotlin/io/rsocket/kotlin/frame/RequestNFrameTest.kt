@@ -18,9 +18,10 @@ package io.rsocket.kotlin.frame
 
 import io.ktor.util.*
 import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class RequestNFrameTest {
+class RequestNFrameTest : TestWithLeakCheck {
 
     private val dump = "00000a00000001200000000005"
 
@@ -34,7 +35,7 @@ class RequestNFrameTest {
 
     @Test
     fun testDecoding() {
-        val packet = ByteReadPacket(hex(dump))
+        val packet = packet(hex(dump))
         val frame = packet.toFrameWithLength()
 
         assertTrue(frame is RequestNFrame)

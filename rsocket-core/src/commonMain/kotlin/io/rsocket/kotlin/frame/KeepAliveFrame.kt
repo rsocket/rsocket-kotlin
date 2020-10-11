@@ -21,13 +21,17 @@ import io.rsocket.kotlin.frame.io.*
 
 private const val RespondFlag = 128
 
-class KeepAliveFrame(
+internal class KeepAliveFrame(
     val respond: Boolean,
     val lastPosition: Long,
     val data: ByteReadPacket,
 ) : Frame(FrameType.KeepAlive) {
     override val streamId: Int get() = 0
     override val flags: Int get() = if (respond) RespondFlag else 0
+
+    override fun release() {
+        data.release()
+    }
 
     override fun BytePacketBuilder.writeSelf() {
         writeLong(lastPosition.coerceAtLeast(0))
@@ -44,9 +48,9 @@ class KeepAliveFrame(
     }
 }
 
-fun ByteReadPacket.readKeepAlive(flags: Int): KeepAliveFrame {
+internal fun ByteReadPacket.readKeepAlive(pool: BufferPool, flags: Int): KeepAliveFrame {
     val respond = flags check RespondFlag
     val lastPosition = readLong()
-    val data = readPacket()
+    val data = readPacket(pool)
     return KeepAliveFrame(respond, lastPosition, data)
 }

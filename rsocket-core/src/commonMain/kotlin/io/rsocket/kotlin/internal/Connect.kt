@@ -27,7 +27,6 @@ private suspend inline fun connect(
     connection: Connection,
     plugin: Plugin,
     setupFrame: SetupFrame,
-    noinline ignoredFrameConsumer: (Frame) -> Unit,
     noinline acceptor: RSocketAcceptor,
     crossinline beforeStart: suspend () -> Unit,
 ): Pair<RSocket, Job> {
@@ -37,7 +36,7 @@ private suspend inline fun connect(
         payloadMimeType = setupFrame.payloadMimeType,
         payload = setupFrame.payload
     )
-    val state = RSocketState(connection, connectionSetup.keepAlive, ignoredFrameConsumer)
+    val state = RSocketState(connection, connectionSetup.keepAlive)
     val requester = RSocketRequester(state, StreamId(isServer)).let(plugin::wrapRequester)
     val wrappedAcceptor = acceptor.let(plugin::wrapAcceptor)
     val requestHandler = wrappedAcceptor(connectionSetup, requester).let(plugin::wrapResponder)
@@ -49,17 +48,15 @@ internal suspend fun connectClient(
     connection: Connection,
     plugin: Plugin,
     setupFrame: SetupFrame,
-    ignoredFrameConsumer: (Frame) -> Unit,
     acceptor: RSocketAcceptor,
-): RSocket = connect(isServer = false, connection, plugin, setupFrame, ignoredFrameConsumer, acceptor) {
-    connection.send(setupFrame.toPacket())
+): RSocket = connect(isServer = false, connection, plugin, setupFrame, acceptor) {
+    connection.sendFrame(setupFrame)
 }.first
 
 internal suspend fun connectServer(
     connection: Connection,
     plugin: Plugin,
     setupFrame: SetupFrame,
-    ignoredFrameConsumer: (Frame) -> Unit,
     acceptor: RSocketAcceptor,
-): Job = connect(isServer = true, connection, plugin, setupFrame, ignoredFrameConsumer, acceptor) {
+): Job = connect(isServer = true, connection, plugin, setupFrame, acceptor) {
 }.second

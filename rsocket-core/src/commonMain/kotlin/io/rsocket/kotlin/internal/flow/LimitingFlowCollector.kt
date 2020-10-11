@@ -16,6 +16,7 @@
 
 package io.rsocket.kotlin.internal.flow
 
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
@@ -33,7 +34,7 @@ internal abstract class LimitingFlowCollector(initial: Int) : FlowCollector<Payl
         awaiter.getAndSet(null)?.resumeSafely()
     }
 
-    final override suspend fun emit(value: Payload) {
+    final override suspend fun emit(value: Payload): Unit = value.closeOnError {
         useRequest()
         emitValue(value)
     }

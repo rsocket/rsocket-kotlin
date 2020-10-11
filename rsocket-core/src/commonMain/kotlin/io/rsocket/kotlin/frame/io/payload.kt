@@ -19,25 +19,25 @@ package io.rsocket.kotlin.frame.io
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
 
-fun ByteReadPacket.readMetadata(): ByteReadPacket {
+internal fun ByteReadPacket.readMetadata(pool: BufferPool): ByteReadPacket {
     val length = readLength()
-    return readPacket(length)
+    return readPacket(pool, length)
 }
 
-fun BytePacketBuilder.writeMetadata(metadata: ByteReadPacket?) {
+internal fun BytePacketBuilder.writeMetadata(metadata: ByteReadPacket?) {
     metadata?.let {
         writeLength(it.remaining.toInt())
         writePacket(it)
     }
 }
 
-fun ByteReadPacket.readPayload(flags: Int): Payload {
-    val metadata = if (flags check Flags.Metadata) readMetadata() else null
-    val data = readPacket()
+internal fun ByteReadPacket.readPayload(pool: BufferPool, flags: Int): Payload {
+    val metadata = if (flags check Flags.Metadata) readMetadata(pool) else null
+    val data = readPacket(pool)
     return Payload(data = data, metadata = metadata)
 }
 
-fun BytePacketBuilder.writePayload(payload: Payload) {
+internal fun BytePacketBuilder.writePayload(payload: Payload) {
     writeMetadata(payload.metadata)
     writePacket(payload.data)
 }

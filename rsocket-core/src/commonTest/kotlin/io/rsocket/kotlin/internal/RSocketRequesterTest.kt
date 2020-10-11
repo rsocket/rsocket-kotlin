@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.internal
 
-import app.cash.turbine.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.frame.*
@@ -30,68 +29,60 @@ import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.*
 
-class RSocketRequesterTest : TestWithConnection() {
-    lateinit var ignoredFrames: Channel<Frame>
+class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     private lateinit var requester: RSocketRequester
 
     override suspend fun before() {
         super.before()
 
-        ignoredFrames = Channel(Channel.UNLIMITED)
-        val state = RSocketState(connection, KeepAlive(1000.seconds, 1000.seconds), ignoredFrames::offer)
+        val state = RSocketState(connection, KeepAlive(1000.seconds, 1000.seconds))
         requester = RSocketRequester(state, StreamId.client())
         state.start(RSocketRequestHandler { })
     }
 
     @Test
-    fun testInvalidFrameOnStream0() = test {
-        connection.sendToReceiver(RequestNFrame(0, 5))
-        val frame = ignoredFrames.receive()
-        assertTrue(frame is RequestNFrame)
-    }
-
-    @Test
     fun testStreamInitialN() = test {
-        val flow = requester.requestStream(Payload.Empty).buffer(5)
-        assertEquals(0, connection.sentFrames.size)
-        flow.launchIn(CoroutineScope(connection.job))
-        delay(100)
-        assertEquals(1, connection.sentFrames.size)
-        val frame = connection.receiveFromSender()
-        assertTrue(frame is RequestFrame)
-        assertEquals(FrameType.RequestStream, frame.type)
-        assertEquals(5, frame.initialRequest)
+        connection.test {
+            val flow = requester.requestStream(Payload.Empty).buffer(5)
+
+            expectNoEventsIn(200)
+            flow.launchIn(connection)
+
+            expectFrame { frame ->
+                assertTrue(frame is RequestFrame)
+                assertEquals(FrameType.RequestStream, frame.type)
+                assertEquals(5, frame.initialRequest)
+            }
+
+            expectNoEventsIn(200)
+        }
     }
 
     @Test
     fun testStreamBuffer() = test {
-        val flow =
-            requester.requestStream(Payload.Empty)
-                .buffer(2)
-                .take(2)
+        connection.test {
+            val flow = requester.requestStream(Payload.Empty).buffer(2).take(2)
 
-        assertEquals(0, connection.sentFrames.size)
+            expectNoEventsIn(200)
+            flow.launchIn(connection)
 
-        flow.launchIn(CoroutineScope(connection.job))
-
-        connection.sentAsFlow().test {
-            expectItem().let { frame ->
+            expectFrame { frame ->
                 assertTrue(frame is RequestFrame)
                 assertEquals(FrameType.RequestStream, frame.type)
                 assertEquals(2, frame.initialRequest)
             }
-            delay(200)
-            expectNoEvents()
+
+            expectNoEventsIn(200)
             connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
-            delay(200)
-            expectNoEvents()
+
+            expectNoEventsIn(200)
             connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
-            delay(200)
-            expectItem().let { frame ->
+
+            expectFrame { frame ->
                 assertTrue(frame is CancelFrame)
             }
-            delay(200)
-            expectNoEvents()
+
+            expectNoEventsIn(200)
         }
     }
 
@@ -101,68 +92,61 @@ class RSocketRequesterTest : TestWithConnection() {
 
     @Test
     fun testStreamBufferWithAdditionalContext() = test {
-        val flow =
-            requester.requestStream(Payload.Empty)
-                .buffer(2)
-                .flowOn(SomeContext(2))
-                .take(2)
+        connection.test {
+            val flow = requester.requestStream(Payload.Empty).buffer(2).flowOn(SomeContext(2)).take(2)
 
-        assertEquals(0, connection.sentFrames.size)
+            expectNoEventsIn(200)
+            flow.launchIn(connection)
 
-        flow.launchIn(CoroutineScope(connection.job))
-
-        connection.sentAsFlow().test {
-            expectItem().let { frame ->
+            expectFrame { frame ->
                 assertTrue(frame is RequestFrame)
                 assertEquals(FrameType.RequestStream, frame.type)
                 assertEquals(2, frame.initialRequest)
             }
-            delay(200)
-            expectNoEvents()
+
+            expectNoEventsIn(200)
             connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
-            delay(200)
-            expectNoEvents()
+
+            expectNoEventsIn(200)
             connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
-            delay(200)
-            expectItem().let { frame ->
+
+            expectFrame { frame ->
                 assertTrue(frame is CancelFrame)
             }
-            delay(200)
-            expectNoEvents()
+            expectNoEventsIn(200)
         }
     }
 
     @Test //ignored on native because of dispatcher switching
     fun testStreamBufferWithAnotherDispatcher() = test(ignoreNative = true) {
-        val flow =
-            requester.requestStream(Payload.Empty)
-                .buffer(2)
-                .flowOn(anotherDispatcher) //change dispatcher before take
-                .take(2)
-                .transform { emit(it) } //force using SafeCollector to check that `Flow invariant is violated` not happens
+        connection.test {
+            val flow =
+                requester.requestStream(Payload.Empty)
+                    .buffer(2)
+                    .flowOn(anotherDispatcher) //change dispatcher before take
+                    .take(2)
+                    .transform { emit(it) } //force using SafeCollector to check that `Flow invariant is violated` not happens
 
-        assertEquals(0, connection.sentFrames.size)
+            expectNoEventsIn(200)
+            flow.launchIn(connection)
 
-        flow.launchIn(CoroutineScope(connection.job))
-
-        connection.sentAsFlow().test {
-            expectItem().let { frame ->
+            expectFrame { frame ->
                 assertTrue(frame is RequestFrame)
                 assertEquals(FrameType.RequestStream, frame.type)
                 assertEquals(2, frame.initialRequest)
             }
-            delay(200)
-            expectNoEvents()
+
+            expectNoEventsIn(200)
             connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
-            delay(200)
-            expectNoEvents() //will fail here if `Flow invariant is violated`
+
+            expectNoEventsIn(200) //will fail here if `Flow invariant is violated`
             connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
-            delay(200)
-            expectItem().let { frame ->
+
+            expectFrame { frame ->
                 assertTrue(frame is CancelFrame)
             }
-            delay(200)
-            expectNoEvents()
+
+            expectNoEventsIn(200)
         }
     }
 
@@ -181,56 +165,75 @@ class RSocketRequesterTest : TestWithConnection() {
     fun testHandleApplicationException() = test {
         val errorMessage = "error"
         val deferred = GlobalScope.async { requester.requestResponse(Payload.Empty) }
-        delay(300)
-        assertEquals(1, connection.sentFrames.size)
-        val streamId = connection.sentFrames.first().streamId
-        connection.sendToReceiver(ErrorFrame(streamId, RSocketError.ApplicationError(errorMessage)))
-        assertFailsWith(RSocketError.ApplicationError::class, errorMessage) { deferred.await() }
+
+        connection.test {
+            expectFrame { frame ->
+                val streamId = frame.streamId
+                connection.sendToReceiver(ErrorFrame(streamId, RSocketError.ApplicationError(errorMessage)))
+            }
+            assertFailsWith(RSocketError.ApplicationError::class, errorMessage) { deferred.await() }
+        }
     }
 
     @Test
     fun testHandleValidFrame() = test {
-        val deferred = GlobalScope.async { requester.requestResponse(Payload.Empty) }
-        delay(100)
-        assertEquals(1, connection.sentFrames.size)
-        val streamId = connection.sentFrames.first().streamId
-        connection.sendToReceiver(NextPayloadFrame(streamId, Payload.Empty))
-        deferred.await()
+        connection.test {
+            val deferred = async { requester.requestResponse(Payload.Empty) }
+            expectFrame { frame ->
+                val streamId = frame.streamId
+                connection.sendToReceiver(NextPayloadFrame(streamId, Payload.Empty))
+            }
+            deferred.await()
+            expectNoEventsIn(200)
+        }
     }
 
     @Test
     fun testRequestReplyWithCancel() = test {
-        withTimeoutOrNull(100.milliseconds) { requester.requestResponse(Payload.Empty) }
-        delay(100)
-        assertEquals(2, connection.sentFrames.size)
-        assertTrue(connection.sentFrames[0] is RequestFrame)
-        assertTrue(connection.sentFrames[1] is CancelFrame)
+        connection.test {
+            withTimeoutOrNull(100) { requester.requestResponse(Payload.Empty) }
+
+            expectFrame { assertTrue(it is RequestFrame) }
+            expectFrame { assertTrue(it is CancelFrame) }
+
+            expectNoEventsIn(200)
+        }
     }
 
     @Test
     fun testChannelRequestCancellation() = test {
         val job = Job()
         val request = flow<Payload> { Job().join() }.onCompletion { job.complete() }
-        val response = requester.requestChannel(request).launchIn(CoroutineScope(connection.job))
+        val response = requester.requestChannel(request).launchIn(connection)
         delay(100)
         response.cancelAndJoin()
         delay(200)
         assertTrue(job.isCompleted)
     }
 
-    @Test
+    //    @Test
     fun testChannelRequestCancellationWithPayload() = test {
         val job = Job()
         val request = flow { repeat(100) { emit(Payload.Empty) } }.onCompletion { job.complete() }
-        val response = requester.requestChannel(request).launchIn(CoroutineScope(connection.job))
+        val response = requester.requestChannel(request).launchIn(connection)
         delay(1000)
         response.cancelAndJoin()
         delay(100)
         assertTrue(job.isCompleted)
-        val sent = connection.sentFrames.size
-        assertTrue(sent > 0)
-        delay(100)
-        assertEquals(sent, connection.sentFrames.size)
+        connection.test {
+            while (true) {
+                try {
+                    expectItem()
+                } catch (e: TimeoutCancellationException) {
+
+                }
+            }
+//            expectComplete()
+        }
+//        val sent = connection.sentFrames.size
+//        assertTrue(sent > 0)
+//        delay(100)
+//        assertEquals(sent, connection.sentFrames.size)
     }
 
     @Test //ignored on native because of coroutines bug with channels
@@ -238,20 +241,23 @@ class RSocketRequesterTest : TestWithConnection() {
         var ch: SendChannel<Payload>? = null
         val request = channelFlow<Payload> {
             ch = this
-            offer(Payload(byteArrayOf(1), byteArrayOf(2)))
+            offer(payload(byteArrayOf(1), byteArrayOf(2)))
             awaitClose()
         }
-        val response = requester.requestChannel(request).launchIn(CoroutineScope(connection.job))
-        delay(200)
-        val requestFrame = connection.sentFrames.first()
-        assertTrue(requestFrame is RequestFrame)
-        assertEquals(FrameType.RequestChannel, requestFrame.type)
-        connection.sendToReceiver(CancelFrame(requestFrame.streamId), CompletePayloadFrame(requestFrame.streamId))
-        response.join()
-        delay(100)
-        assertTrue(response.isCompleted)
-        assertEquals(1, connection.sentFrames.size)
-        assertTrue(ch!!.isClosedForSend)
+        val response = requester.requestChannel(request).launchIn(connection)
+        connection.test {
+            expectFrame { frame ->
+                val streamId = frame.streamId
+                assertTrue(frame is RequestFrame)
+                assertEquals(FrameType.RequestChannel, frame.type)
+                frame.release()
+                connection.sendToReceiver(CancelFrame(streamId), CompletePayloadFrame(streamId))
+            }
+            response.join()
+            expectNoEventsIn(200)
+            assertTrue(response.isCompleted)
+            assertTrue(ch!!.isClosedForSend)
+        }
     }
 
     @Test
@@ -259,30 +265,33 @@ class RSocketRequesterTest : TestWithConnection() {
         val delay = Job()
         val request = flow {
             delay.join()
-            emit(Payload("INIT"))
+            emit(payload("INIT"))
             repeat(1000) {
-                emit(Payload(it.toString()))
+                emit(payload(it.toString()))
             }
         }
 
-        requester.requestChannel(request).buffer(Int.MAX_VALUE).launchIn(CoroutineScope(connection.job))
-        delay(100)
-        delay.complete()
-        delay(100)
-        assertEquals(1, connection.sentFrames.size)
-        delay(100)
-        assertEquals(1, connection.sentFrames.size)
-        val requestFrame = connection.sentFrames.first()
-        assertTrue(requestFrame is RequestFrame)
-        assertEquals(FrameType.RequestChannel, requestFrame.type)
-        assertEquals(Int.MAX_VALUE, requestFrame.initialRequest)
-        assertEquals("INIT", requestFrame.payload.data.readText())
+        requester.requestChannel(request).buffer(Int.MAX_VALUE).launchIn(connection)
+        connection.test {
+            expectNoEventsIn(200)
+            delay.complete()
+            expectFrame { frame ->
+                assertTrue(frame is RequestFrame)
+                assertEquals(FrameType.RequestChannel, frame.type)
+                assertEquals(Int.MAX_VALUE, frame.initialRequest)
+                assertEquals("INIT", frame.payload.data.readText())
+            }
+            expectNoEventsIn(200)
+        }
     }
 
     private fun streamIsTerminatedOnConnectionClose(request: suspend () -> Unit) = test {
-        launch(connection.job) {
-            delay(1.seconds)
-            connection.cancel()
+        connection.launch {
+            connection.test {
+                expectFrame { assertTrue(it is RequestFrame) }
+                connection.job.cancel()
+                expectNoEventsIn(200)
+            }
         }
         assertFailsWith(CancellationException::class) { request() }
 

@@ -16,42 +16,62 @@
 
 package io.rsocket.kotlin.test
 
+import app.cash.turbine.*
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
+import kotlin.coroutines.*
+import kotlin.time.*
 
-class TestConnection : Connection {
+class TestConnection : Connection, CoroutineScope {
+    override val pool: ObjectPool<ChunkBuffer> = InUseTrackingPool
     override val job: Job = Job()
-    private val sender = Channel<ByteReadPacket>(Channel.UNLIMITED)
-    private val receiver = Channel<ByteReadPacket>(Channel.UNLIMITED)
+    override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined
 
-    private val store = TestPacketStore()
-    val sentFrames: List<Frame> get() = store.stored.map { it.copy().toFrame() }
+    private val sendChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
+    private val receiveChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
 
     init {
         job.invokeOnCompletion {
-            sender.close(it)
-            receiver.cancel(it?.let { it as? CancellationException ?: CancellationException("Connection completed") })
+            sendChannel.close(it)
+            receiveChannel.cancel(it?.let { it as? CancellationException ?: CancellationException("Connection completed") })
         }
     }
 
     override suspend fun send(packet: ByteReadPacket) {
-        sender.send(packet)
-        store.store(packet.copy())
+        sendChannel.send(packet)
     }
 
     override suspend fun receive(): ByteReadPacket {
-        return receiver.receive()
+        return receiveChannel.receive()
     }
-
-    suspend fun receiveFromSender() = sender.receive().toFrame()
 
     suspend fun sendToReceiver(vararg frames: Frame) {
-        frames.forEach { receiver.send(it.toPacket()) }
+        frames.forEach { receiveChannel.send(it.toPacket(InUseTrackingPool)) }
     }
 
-    fun sentAsFlow() = sender.receiveAsFlow().map { it.toFrame() }
+    private fun sentAsFlow(): Flow<Frame> = sendChannel.receiveAsFlow().map { it.readFrame(InUseTrackingPool) }
+
+    suspend fun test(validate: suspend FlowTurbine<Frame>.() -> Unit) {
+        sentAsFlow().test(validate = validate)
+    }
+}
+
+suspend fun FlowTurbine<*>.expectNoEventsIn(duration: Duration) {
+    delay(duration)
+    expectNoEvents()
+}
+
+suspend fun FlowTurbine<*>.expectNoEventsIn(timeMillis: Long) {
+    delay(timeMillis)
+    expectNoEvents()
+}
+
+suspend inline fun FlowTurbine<Frame>.expectFrame(block: (frame: Frame) -> Unit) {
+    block(expectItem())
 }
