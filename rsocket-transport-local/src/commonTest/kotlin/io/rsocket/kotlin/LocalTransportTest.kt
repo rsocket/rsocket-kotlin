@@ -43,7 +43,6 @@ class LocalTransportTest : TransportTest(), TestWithLeakCheck {
     }
 
     override suspend fun after() {
-
         super.after()
         testJob.cancelAndJoin()
     }

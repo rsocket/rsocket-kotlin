@@ -172,8 +172,8 @@ abstract class TransportTest : SuspendTest {
 
         val MOCK_DATA: String = "test-data"
         val MOCK_METADATA: String = "metadata"
-        val LARGE_DATA by lazy { readLargePayload("words.shakespeare.txt.gz") }
-        private val payload by lazy { payload(LARGE_DATA, LARGE_DATA) }
+        val LARGE_DATA = readLargePayload("words.shakespeare.txt.gz")
+        private val payload = payload(LARGE_DATA, LARGE_DATA)
         val LARGE_PAYLOAD get() = payload.copy()
 
         private fun readLargePayload(name: String): String = name.repeat(1000)
