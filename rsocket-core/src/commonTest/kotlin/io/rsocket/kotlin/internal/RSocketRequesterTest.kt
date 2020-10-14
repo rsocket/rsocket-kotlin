@@ -41,6 +41,13 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     }
 
     @Test
+    fun testInvalidFrameOnStream0() = test {
+        connection.sendToReceiver(NextPayloadFrame(0, payload("data", "metadata"))) //should be just released
+        delay(100)
+        assertTrue(requester.isActive)
+    }
+
+    @Test
     fun testStreamInitialN() = test {
         connection.test {
             val flow = requester.requestStream(Payload.Empty).buffer(5)
@@ -205,35 +212,27 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
         val job = Job()
         val request = flow<Payload> { Job().join() }.onCompletion { job.complete() }
         val response = requester.requestChannel(request).launchIn(connection)
-        delay(100)
-        response.cancelAndJoin()
-        delay(200)
-        assertTrue(job.isCompleted)
+        connection.test {
+            expectNoEventsIn(200)
+            response.cancelAndJoin()
+            expectNoEventsIn(200)
+            assertTrue(job.isCompleted)
+        }
     }
 
-    //    @Test
+    @Test
     fun testChannelRequestCancellationWithPayload() = test {
         val job = Job()
         val request = flow { repeat(100) { emit(Payload.Empty) } }.onCompletion { job.complete() }
         val response = requester.requestChannel(request).launchIn(connection)
-        delay(1000)
-        response.cancelAndJoin()
-        delay(100)
-        assertTrue(job.isCompleted)
         connection.test {
-            while (true) {
-                try {
-                    expectItem()
-                } catch (e: TimeoutCancellationException) {
-
-                }
-            }
-//            expectComplete()
+            expectFrame { assertTrue(it is RequestFrame) }
+            expectNoEventsIn(200)
+            response.cancelAndJoin()
+            expectFrame { assertTrue(it is CancelFrame) }
+            expectNoEventsIn(200)
+            assertTrue(job.isCompleted)
         }
-//        val sent = connection.sentFrames.size
-//        assertTrue(sent > 0)
-//        delay(100)
-//        assertEquals(sent, connection.sentFrames.size)
     }
 
     @Test //ignored on native because of coroutines bug with channels
