@@ -50,17 +50,17 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun rSocketNotCanceledOnPresentKeepAliveTicks() = test {
-        val rSocket = requester(KeepAlive(200.milliseconds, 1.seconds))
+        val rSocket = requester(KeepAlive(100.seconds, 100.seconds))
         connection.launch {
-            repeat(20) {
-                delay(200.milliseconds)
+            repeat(50) {
+                delay(100.milliseconds)
                 connection.sendToReceiver(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
             }
         }
         delay(1.5.seconds)
         assertTrue(rSocket.isActive)
         connection.test {
-            repeat(20) {
+            repeat(50) {
                 expectItem()
             }
         }
