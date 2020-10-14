@@ -31,9 +31,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api("io.ktor:ktor-io:$ktorVersion")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion") {
-                    version { strictly(kotlinxCoroutinesVersion) }
-                }
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
             }
         }
         val commonTest by getting {
