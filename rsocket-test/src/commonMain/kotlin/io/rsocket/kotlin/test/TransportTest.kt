@@ -170,13 +170,10 @@ abstract class TransportTest : SuspendTest {
         val CONNECTOR_CONFIG = RSocketConnectorConfiguration(keepAlive = KeepAlive(10.minutes, 100.minutes), loggerFactory = NoopLogger)
         val SERVER_CONFIG = RSocketServerConfiguration(loggerFactory = NoopLogger)
 
-        val MOCK_DATA: String = "test-data"
-        val MOCK_METADATA: String = "metadata"
-        val LARGE_DATA = readLargePayload("words.shakespeare.txt.gz")
-        private val payload = payload(LARGE_DATA, LARGE_DATA)
-        val LARGE_PAYLOAD get() = payload.copy()
-
-        private fun readLargePayload(name: String): String = name.repeat(1000)
+        const val MOCK_DATA: String = "test-data"
+        const val MOCK_METADATA: String = "metadata"
+        val LARGE_DATA = "large.text.12345".repeat(2000)
+        val LARGE_PAYLOAD get() = payload(LARGE_DATA, LARGE_DATA)
 
         private fun payload(metadataPresent: Int): Payload {
             val metadata = when (metadataPresent % 5) {

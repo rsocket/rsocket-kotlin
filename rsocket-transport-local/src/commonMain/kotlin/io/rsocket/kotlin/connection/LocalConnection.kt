@@ -42,6 +42,15 @@ internal constructor(
 ) : Connection, Cancelable {
     override val job: Job = Job(parentJob)
 
+    init {
+        job.invokeOnCompletion {
+            sender.closeReceivedElements()
+            receiver.closeReceivedElements()
+            sender.close(it)
+            receiver.close(it)
+        }
+    }
+
     override suspend fun send(packet: ByteReadPacket) {
         sender.send(packet)
     }
@@ -69,4 +78,11 @@ internal fun SimpleLocalConnection(pool: ObjectPool<ChunkBuffer>, parentJob: Job
     val serverConnection = LocalConnection("server", clientChannel, serverChannel, pool, parentJob)
 
     return clientConnection to serverConnection
+}
+
+private fun ReceiveChannel<Closeable>.closeReceivedElements() {
+    try {
+        while (true) poll()?.close() ?: break
+    } catch (e: Throwable) {
+    }
 }
