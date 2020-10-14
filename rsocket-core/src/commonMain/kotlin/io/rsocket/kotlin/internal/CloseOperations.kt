@@ -14,10 +14,28 @@
  * limitations under the License.
  */
 
-import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.payload.*
+package io.rsocket.kotlin.internal
 
-fun Payload(route: String, packet: ByteReadPacket): Payload = Payload {
-    data(packet)
-    metadata(route)
+import io.ktor.utils.io.core.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
+
+internal inline fun <T> Closeable.closeOnError(block: () -> T): T {
+    try {
+        return block()
+    } catch (e: Throwable) {
+        close()
+        throw e
+    }
+}
+
+internal fun ReceiveChannel<*>.cancelConsumed(cause: Throwable?) {
+    cancel(cause?.let { it as? CancellationException ?: CancellationException("Channel was consumed, consumer had failed", it) })
+}
+
+internal fun ReceiveChannel<Closeable>.closeReceivedElements() {
+    try {
+        while (true) poll()?.close() ?: break
+    } catch (e: Throwable) {
+    }
 }

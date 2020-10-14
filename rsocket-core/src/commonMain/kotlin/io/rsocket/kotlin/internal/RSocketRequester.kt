@@ -69,12 +69,3 @@ internal class RSocketRequester(
     }
 
 }
-
-internal inline fun <T> Closeable.closeOnError(block: () -> T): T {
-    try {
-        return block()
-    } catch (e: Throwable) {
-        close()
-        throw e
-    }
-}

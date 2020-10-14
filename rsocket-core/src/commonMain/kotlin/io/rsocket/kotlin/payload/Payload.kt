@@ -44,7 +44,6 @@ fun Payload(data: String, metadata: String? = null): Payload = Payload(
     metadata = metadata?.let { buildPacket { writeText(it) } }
 )
 
-@Suppress("FunctionName")
 fun Payload(data: ByteArray, metadata: ByteArray? = null): Payload = Payload(
     data = buildPacket { writeFully(data) },
     metadata = metadata?.let { buildPacket { writeFully(it) } }

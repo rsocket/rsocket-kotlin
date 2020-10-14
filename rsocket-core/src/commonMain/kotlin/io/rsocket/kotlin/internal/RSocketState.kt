@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.internal
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.*
@@ -172,16 +171,5 @@ internal class RSocketState(
             }
         }
         return job
-    }
-}
-
-internal fun ReceiveChannel<*>.cancelConsumed(cause: Throwable?) {
-    cancel(cause?.let { it as? CancellationException ?: CancellationException("Channel was consumed, consumer had failed", it) })
-}
-
-internal fun ReceiveChannel<Closeable>.closeReceivedElements() {
-    try {
-        while (true) poll()?.close() ?: break
-    } catch (e: Throwable) {
     }
 }

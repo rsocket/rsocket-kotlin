@@ -46,7 +46,6 @@ internal constructor() {
     }
 }
 
-@Suppress("FunctionName")
 inline fun Payload(config: PayloadBuilder.() -> Unit): Payload {
     val builder = PayloadBuilder()
     try {

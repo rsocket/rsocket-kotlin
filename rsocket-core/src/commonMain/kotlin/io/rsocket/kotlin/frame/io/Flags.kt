@@ -16,7 +16,7 @@
 
 package io.rsocket.kotlin.frame.io
 
-object Flags {
+internal object Flags {
     const val Ignore = 512
     const val Metadata = 256
     const val Follows = 128
@@ -24,4 +24,4 @@ object Flags {
     const val Next = 32
 }
 
-infix fun Int.check(flag: Int): Boolean = this and flag == flag
+internal infix fun Int.check(flag: Int): Boolean = this and flag == flag
