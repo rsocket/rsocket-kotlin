@@ -31,7 +31,6 @@ buildscript {
 
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
         classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:$kotlinxAtomicfuVersion")
     }
 }
@@ -48,9 +47,9 @@ plugins {
 
 allprojects {
     repositories {
+        mavenCentral()
         jcenter()
         maven("https://dl.bintray.com/kotlin/kotlinx")
-        mavenCentral()
     }
 }
 

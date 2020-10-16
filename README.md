@@ -17,7 +17,7 @@ Transports are implemented based on [ktor](https://github.com/ktorio/ktor) to en
 So it depends on `ktor` engines for available transports and platforms (JVM, JS, Native):
 * JVM - TCP and WebSocket for both client and server
 * JS - WebSocket client only
-* [SOON] Native - TCP for both client and server
+* Native - TCP for both client and server (linux x64, macos, ios, watchos, tvos)
 
 ## Interactions
 
