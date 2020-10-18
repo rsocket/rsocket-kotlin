@@ -21,26 +21,29 @@ import io.ktor.utils.io.core.*
 class Payload(
     val data: ByteReadPacket,
     val metadata: ByteReadPacket? = null,
-) {
+) : Closeable {
+
+    fun copy(): Payload = Payload(data.copy(), metadata?.copy())
+
+    fun release() {
+        data.release()
+        metadata?.release()
+    }
+
+    override fun close() {
+        release()
+    }
+
     companion object {
         val Empty = Payload(ByteReadPacket.Empty)
     }
 }
 
-fun Payload.copy(): Payload = Payload(data.copy(), metadata?.copy())
-
-fun Payload.release() {
-    data.release()
-    metadata?.release()
-}
-
-@Suppress("FunctionName")
 fun Payload(data: String, metadata: String? = null): Payload = Payload(
     data = buildPacket { writeText(data) },
     metadata = metadata?.let { buildPacket { writeText(it) } }
 )
 
-@Suppress("FunctionName")
 fun Payload(data: ByteArray, metadata: ByteArray? = null): Payload = Payload(
     data = buildPacket { writeFully(data) },
     metadata = metadata?.let { buildPacket { writeFully(it) } }

@@ -20,10 +20,11 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 import kotlin.time.*
 
-class SetupFrameTest {
+class SetupFrameTest : TestWithLeakCheck {
 
     private val version = Version.Current
     private val keepAlive = KeepAlive(10.seconds, 500.seconds)
@@ -32,7 +33,7 @@ class SetupFrameTest {
     @Test
     fun testNoResumeEmptyPayload() {
         val frame = SetupFrame(version, true, keepAlive, null, payloadMimeType, Payload.Empty)
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is SetupFrame)
         assertEquals(0, decodedFrame.streamId)
@@ -47,9 +48,9 @@ class SetupFrameTest {
 
     @Test
     fun testNoResumeBigPayload() {
-        val payload = Payload(ByteArray(30000) { 1 }, ByteArray(20000) { 5 })
+        val payload = payload(ByteArray(30000) { 1 }, ByteArray(20000) { 5 })
         val frame = SetupFrame(version, true, keepAlive, null, payloadMimeType, payload)
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is SetupFrame)
         assertEquals(0, decodedFrame.streamId)
@@ -64,9 +65,9 @@ class SetupFrameTest {
 
     @Test
     fun testResumeBigTokenEmptyPayload() {
-        val resumeToken = ByteReadPacket(ByteArray(65000) { 5 })
+        val resumeToken = packet(ByteArray(65000) { 5 })
         val frame = SetupFrame(version, true, keepAlive, resumeToken, payloadMimeType, Payload.Empty)
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is SetupFrame)
         assertEquals(0, decodedFrame.streamId)
@@ -81,10 +82,10 @@ class SetupFrameTest {
 
     @Test
     fun testResumeBigTokenBigPayload() {
-        val resumeToken = ByteReadPacket(ByteArray(65000) { 5 })
-        val payload = Payload(ByteArray(30000) { 1 }, ByteArray(20000) { 5 })
+        val resumeToken = packet(ByteArray(65000) { 5 })
+        val payload = payload(ByteArray(30000) { 1 }, ByteArray(20000) { 5 })
         val frame = SetupFrame(version, true, keepAlive, resumeToken, payloadMimeType, payload)
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is SetupFrame)
         assertEquals(0, decodedFrame.streamId)

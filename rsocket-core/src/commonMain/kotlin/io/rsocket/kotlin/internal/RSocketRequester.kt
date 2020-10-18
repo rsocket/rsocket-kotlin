@@ -29,22 +29,24 @@ internal class RSocketRequester(
     private val streamId: StreamId,
 ) : RSocket, Cancelable by state {
 
-    override suspend fun metadataPush(metadata: ByteReadPacket) {
+    override suspend fun metadataPush(metadata: ByteReadPacket): Unit = metadata.closeOnError {
         checkAvailable()
         state.sendPrioritized(MetadataPushFrame(metadata))
     }
 
-    override suspend fun fireAndForget(payload: Payload) {
+    override suspend fun fireAndForget(payload: Payload): Unit = payload.closeOnError {
         val streamId = createStream()
         state.send(RequestFireAndForgetFrame(streamId, payload))
     }
 
     override suspend fun requestResponse(payload: Payload): Payload = with(state) {
-        val streamId = createStream()
-        val receiver = createReceiverFor(streamId)
-        send(RequestResponseFrame(streamId, payload))
-        return consumeReceiverFor(streamId) {
-            receiver.receive().payload //TODO fragmentation
+        payload.closeOnError {
+            val streamId = createStream()
+            val receiver = createReceiverFor(streamId)
+            send(RequestResponseFrame(streamId, payload))
+            consumeReceiverFor(streamId) {
+                receiver.receive().payload //TODO fragmentation
+            }
         }
     }
 

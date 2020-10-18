@@ -16,9 +16,10 @@
 
 package io.rsocket.kotlin.frame
 
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class LeaseFrameTest {
+class LeaseFrameTest : TestWithLeakCheck {
 
     private val ttl = 1
     private val numberOfRequests = 42
@@ -27,7 +28,7 @@ class LeaseFrameTest {
     @Test
     fun testMetadata() {
         val frame = LeaseFrame(ttl, numberOfRequests, packet(metadata))
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is LeaseFrame)
         assertEquals(0, decodedFrame.streamId)
@@ -39,7 +40,7 @@ class LeaseFrameTest {
     @Test
     fun testNoMetadata() {
         val frame = LeaseFrame(ttl, numberOfRequests, null)
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is LeaseFrame)
         assertEquals(0, decodedFrame.streamId)

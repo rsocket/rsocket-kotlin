@@ -18,14 +18,15 @@ package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class PayloadFrameTest {
+class PayloadFrameTest : TestWithLeakCheck {
 
     @Test
     fun testNextCompleteDataMetadata() {
-        val frame = NextCompletePayloadFrame(3, Payload("d", "md"))
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = NextCompletePayloadFrame(3, payload("d", "md"))
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.Payload, frame.type)
@@ -39,8 +40,8 @@ class PayloadFrameTest {
 
     @Test
     fun testNextCompleteData() {
-        val frame = NextCompletePayloadFrame(3, Payload("d"))
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = NextCompletePayloadFrame(3, payload("d"))
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.Payload, frame.type)
@@ -55,7 +56,7 @@ class PayloadFrameTest {
     @Test
     fun testNextCompleteMetadata() {
         val frame = NextCompletePayloadFrame(3, Payload(ByteReadPacket.Empty, packet("md")))
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.Payload, frame.type)
@@ -69,8 +70,8 @@ class PayloadFrameTest {
 
     @Test
     fun testNextDataMetadata() {
-        val frame = NextPayloadFrame(3, Payload("d", "md"))
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = NextPayloadFrame(3, payload("d", "md"))
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.Payload, frame.type)
@@ -84,8 +85,8 @@ class PayloadFrameTest {
 
     @Test
     fun testNextData() {
-        val frame = NextPayloadFrame(3, Payload("d"))
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = NextPayloadFrame(3, payload("d"))
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.Payload, frame.type)
@@ -100,7 +101,7 @@ class PayloadFrameTest {
     @Test
     fun testNextDataEmptyMetadata() {
         val frame = NextPayloadFrame(3, Payload(packet("d"), ByteReadPacket.Empty))
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.Payload, frame.type)

@@ -195,7 +195,6 @@ subprojects {
 
         //common configuration
         extensions.configure<KotlinMultiplatformExtension> {
-//        explicitApiWarning() //TODO change to strict before release
             sourceSets.all {
                 languageSettings.apply {
                     progressiveMode = true
@@ -213,11 +212,13 @@ subprojects {
                         useExperimentalAnnotation("kotlinx.coroutines.FlowPreview")
                         useExperimentalAnnotation("io.ktor.util.KtorExperimentalAPI")
                         useExperimentalAnnotation("io.ktor.util.InternalAPI")
+                        useExperimentalAnnotation("io.ktor.utils.io.core.internal.DangerousInternalIoApi")
                     }
                 }
             }
 
             if (project.name != "rsocket-test") {
+                explicitApiWarning() //TODO change to strict before release
                 sourceSets["commonTest"].dependencies {
                     implementation(project(":rsocket-test"))
                 }

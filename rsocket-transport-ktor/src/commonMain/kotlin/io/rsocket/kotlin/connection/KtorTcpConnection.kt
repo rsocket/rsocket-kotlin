@@ -28,7 +28,7 @@ import kotlin.coroutines.*
 
 val Socket.connection: Connection get() = KtorTcpConnection(this)
 
-@OptIn(KtorExperimentalAPI::class, ExperimentalCoroutinesApi::class)
+@OptIn(KtorExperimentalAPI::class)
 private class KtorTcpConnection(private val socket: Socket) : Connection, CoroutineScope {
     override val job: Job = Job(socket.socketContext)
     override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined

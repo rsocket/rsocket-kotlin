@@ -19,9 +19,10 @@ package io.rsocket.kotlin.frame
 import io.ktor.util.*
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.error.*
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class ErrorFrameTest {
+class ErrorFrameTest : TestWithLeakCheck {
 
     private val dump = "00000b000000012c000000020164"
 
@@ -35,7 +36,7 @@ class ErrorFrameTest {
 
     @Test
     fun testDecoding() {
-        val packet = ByteReadPacket(hex(dump))
+        val packet = packet(hex(dump))
         val frame = packet.toFrameWithLength()
 
         assertTrue(frame is ErrorFrame)
@@ -43,6 +44,7 @@ class ErrorFrameTest {
         assertEquals(ErrorCode.ApplicationError, frame.errorCode)
         assertTrue(frame.throwable is RSocketError.ApplicationError)
         assertEquals("d", frame.throwable.message)
+        assertEquals("d", frame.data?.readText())
     }
 
 }

@@ -23,14 +23,13 @@ import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
-class KeepAliveTest : TestWithConnection() {
+class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     private fun requester(keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds)): RSocket = run {
-        val state = RSocketState(connection, keepAlive) {}
+        val state = RSocketState(connection, keepAlive)
         val requester = RSocketRequester(state, StreamId.client())
         state.start(RSocketRequestHandler { })
         requester
@@ -39,57 +38,68 @@ class KeepAliveTest : TestWithConnection() {
     @Test
     fun requesterSendKeepAlive() = test {
         requester()
-        val list = connection.sentAsFlow().take(3).toList()
-        assertEquals(3, list.size)
-        list.forEach {
-            assertTrue(it is KeepAliveFrame)
-            assertTrue(it.respond)
+        connection.test {
+            repeat(5) {
+                expectFrame { frame ->
+                    assertTrue(frame is KeepAliveFrame)
+                    assertTrue(frame.respond)
+                }
+            }
         }
     }
 
     @Test
     fun rSocketNotCanceledOnPresentKeepAliveTicks() = test {
-        val rSocket = requester()
-        launch(connection.job) {
-            while (isActive) {
+        val rSocket = requester(KeepAlive(100.seconds, 100.seconds))
+        connection.launch {
+            repeat(50) {
                 delay(100.milliseconds)
                 connection.sendToReceiver(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
             }
         }
         delay(1.5.seconds)
         assertTrue(rSocket.isActive)
+        connection.test {
+            repeat(50) {
+                expectItem()
+            }
+        }
     }
 
     @Test
     fun requesterRespondsToKeepAlive() = test {
         requester(KeepAlive(100.seconds, 100.seconds))
-        launch(connection.job) {
+        connection.launch {
             while (isActive) {
                 delay(100.milliseconds)
                 connection.sendToReceiver(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
             }
         }
 
-        val list = connection.sentAsFlow().take(3).toList()
-        assertEquals(3, list.size)
-        list.forEach {
-            assertTrue(it is KeepAliveFrame)
-            assertFalse(it.respond)
+        connection.test {
+            repeat(5) {
+                expectFrame { frame ->
+                    assertTrue(frame is KeepAliveFrame)
+                    assertFalse(frame.respond)
+                }
+            }
         }
     }
 
     @Test
     fun noKeepAliveSentAfterRSocketCanceled() = test {
         requester().cancel()
-        delay(500.milliseconds)
-        assertEquals(0, connection.sentFrames.size)
+        connection.test {
+            expectNoEventsIn(500)
+        }
     }
 
     @Test
     fun rSocketCanceledOnMissingKeepAliveTicks() = test {
         val rSocket = requester()
-        delay(1.5.seconds)
-        assertFalse(rSocket.isActive)
+        connection.test {
+            while (rSocket.isActive) kotlin.runCatching { expectItem() }
+        }
         assertTrue(rSocket.job.getCancellationException().cause is RSocketError.ConnectionError)
     }
 

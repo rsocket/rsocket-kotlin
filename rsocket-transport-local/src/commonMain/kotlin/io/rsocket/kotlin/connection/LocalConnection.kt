@@ -17,17 +17,39 @@
 package io.rsocket.kotlin.connection
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 
-class LocalConnection(
+@OptIn(DangerousInternalIoApi::class)
+fun LocalConnection(
+    name: String,
+    sender: Channel<ByteReadPacket>,
+    receiver: Channel<ByteReadPacket>,
+    parentJob: Job? = null,
+): LocalConnection = LocalConnection(name, sender, receiver, ChunkBuffer.Pool, parentJob)
+
+class LocalConnection
+@DangerousInternalIoApi
+internal constructor(
     private val name: String,
     private val sender: Channel<ByteReadPacket>,
     private val receiver: Channel<ByteReadPacket>,
+    override val pool: ObjectPool<ChunkBuffer>,
     parentJob: Job? = null,
 ) : Connection, Cancelable {
     override val job: Job = Job(parentJob)
+
+    init {
+        job.invokeOnCompletion {
+            sender.closeReceivedElements()
+            receiver.closeReceivedElements()
+            sender.close(it)
+            receiver.close(it)
+        }
+    }
 
     override suspend fun send(packet: ByteReadPacket) {
         sender.send(packet)
@@ -38,16 +60,29 @@ class LocalConnection(
     }
 }
 
+@OptIn(DangerousInternalIoApi::class)
+@Suppress("FunctionName")
+public fun SimpleLocalConnection(parentJob: Job? = null): Pair<LocalConnection, LocalConnection> =
+    SimpleLocalConnection(ChunkBuffer.Pool, parentJob)
+
 /**
  * Returns pair of client and server local connections
  */
 @Suppress("FunctionName")
-fun SimpleLocalConnection(parentJob: Job? = null): Pair<LocalConnection, LocalConnection> {
+@DangerousInternalIoApi
+internal fun SimpleLocalConnection(pool: ObjectPool<ChunkBuffer>, parentJob: Job? = null): Pair<LocalConnection, LocalConnection> {
     val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
     val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
 
-    val clientConnection = LocalConnection("client", serverChannel, clientChannel, parentJob)
-    val serverConnection = LocalConnection("server", clientChannel, serverChannel, parentJob)
+    val clientConnection = LocalConnection("client", serverChannel, clientChannel, pool, parentJob)
+    val serverConnection = LocalConnection("server", clientChannel, serverChannel, pool, parentJob)
 
     return clientConnection to serverConnection
+}
+
+private fun ReceiveChannel<Closeable>.closeReceivedElements() {
+    try {
+        while (true) poll()?.close() ?: break
+    } catch (e: Throwable) {
+    }
 }

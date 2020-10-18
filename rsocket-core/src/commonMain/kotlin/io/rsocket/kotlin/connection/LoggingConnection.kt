@@ -17,18 +17,23 @@
 package io.rsocket.kotlin.connection
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.logging.*
-import kotlinx.coroutines.*
 
 internal fun Connection.logging(logger: Logger): Connection =
     if (logger.isLoggable(LoggingLevel.DEBUG)) LoggingConnection(this, logger) else this
 
+@OptIn(DangerousInternalIoApi::class)
 private class LoggingConnection(
     private val delegate: Connection,
     private val logger: Logger,
-) : Connection {
-    override val job: Job get() = delegate.job
+) : Connection by delegate {
+
+    private fun ByteReadPacket.dumpFrameToString(): String {
+        val length = remaining
+        return copy().use { it.readFrame(pool).use { it.dump(length) } }
+    }
 
     override suspend fun send(packet: ByteReadPacket) {
         logger.debug { "Send: ${packet.dumpFrameToString()}" }

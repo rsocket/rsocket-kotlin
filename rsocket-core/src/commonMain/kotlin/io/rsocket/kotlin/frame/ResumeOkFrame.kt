@@ -18,11 +18,13 @@ package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
 
-class ResumeOkFrame(
+internal class ResumeOkFrame(
     val lastReceivedClientPosition: Long,
 ) : Frame(FrameType.ResumeOk) {
     override val streamId: Int get() = 0
     override val flags: Int get() = 0
+
+    override fun release(): Unit = Unit
 
     override fun BytePacketBuilder.writeSelf() {
         writeLong(lastReceivedClientPosition)
@@ -35,4 +37,4 @@ class ResumeOkFrame(
     }
 }
 
-fun ByteReadPacket.readResumeOk(): ResumeOkFrame = ResumeOkFrame(readLong())
+internal fun ByteReadPacket.readResumeOk(): ResumeOkFrame = ResumeOkFrame(readLong())

@@ -14,16 +14,28 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.test
+package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 
-actual class TestPacketStore actual constructor() {
-    private val _stored = mutableListOf<ByteReadPacket>()
+internal inline fun <T> Closeable.closeOnError(block: () -> T): T {
+    try {
+        return block()
+    } catch (e: Throwable) {
+        close()
+        throw e
+    }
+}
 
-    actual val stored: List<ByteReadPacket> get() = _stored
+internal fun ReceiveChannel<*>.cancelConsumed(cause: Throwable?) {
+    cancel(cause?.let { it as? CancellationException ?: CancellationException("Channel was consumed, consumer had failed", it) })
+}
 
-    actual fun store(packet: ByteReadPacket) {
-        _stored += packet
+internal fun ReceiveChannel<Closeable>.closeReceivedElements() {
+    try {
+        while (true) poll()?.close() ?: break
+    } catch (e: Throwable) {
     }
 }

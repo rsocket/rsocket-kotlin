@@ -17,7 +17,6 @@
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
 
-@Suppress("FunctionName")
 fun Payload(route: String, packet: ByteReadPacket): Payload = Payload {
     data(packet)
     metadata(route)

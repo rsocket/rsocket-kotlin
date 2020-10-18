@@ -17,20 +17,38 @@
 package io.rsocket.kotlin.connection
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.frame.*
 import kotlinx.coroutines.*
 
+/**
+ * That interface isn't stable for inheritance.
+ */
 interface Connection : Cancelable {
+
+    @DangerousInternalIoApi
+    val pool: ObjectPool<ChunkBuffer>
+        get() = ChunkBuffer.Pool
+
     suspend fun send(packet: ByteReadPacket)
     suspend fun receive(): ByteReadPacket
 }
 
 suspend fun Connection.connectClient(
-    configuration: RSocketConnectorConfiguration = RSocketConnectorConfiguration()
+    configuration: RSocketConnectorConfiguration = RSocketConnectorConfiguration(),
 ): RSocket = RSocketConnector(ConnectionProvider(this), configuration).connect()
 
 suspend fun Connection.startServer(
     configuration: RSocketServerConfiguration = RSocketServerConfiguration(),
-    acceptor: RSocketAcceptor
+    acceptor: RSocketAcceptor,
 ): Job = RSocketServer(ConnectionProvider(this), configuration).start(acceptor)
+
+
+@OptIn(DangerousInternalIoApi::class)
+internal suspend fun Connection.receiveFrame(): Frame = receive().readFrame(pool)
+
+@OptIn(DangerousInternalIoApi::class)
+internal suspend fun Connection.sendFrame(frame: Frame): Unit = send(frame.toPacket(pool))

@@ -43,6 +43,7 @@ internal class RequestChannelRequesterFlow(
                 streamId,
                 RequestChannelRequesterFlowCollector(state, streamId, receiverDeferred, requestSize)
             )
+            if (receiverDeferred.isCompleted && !receiverDeferred.isCancelled) send(CompletePayloadFrame(streamId))
         }
         request.invokeOnCompletion {
             if (receiverDeferred.isCompleted) {

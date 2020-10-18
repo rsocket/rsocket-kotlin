@@ -22,7 +22,7 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
 
-class RequestFrame(
+internal class RequestFrame(
     override val type: FrameType,
     override val streamId: Int,
     val follows: Boolean,
@@ -40,6 +40,10 @@ class RequestFrame(
             if (next) flags = flags or Flags.Next
             return flags
         }
+
+    override fun release() {
+        payload.release()
+    }
 
     override fun BytePacketBuilder.writeSelf() {
         if (initialRequest > 0) writeInt(initialRequest)
@@ -59,34 +63,34 @@ class RequestFrame(
     }
 }
 
-fun ByteReadPacket.readRequest(type: FrameType, streamId: Int, flags: Int, withInitial: Boolean): RequestFrame {
+internal fun ByteReadPacket.readRequest(pool: BufferPool, type: FrameType, streamId: Int, flags: Int, withInitial: Boolean): RequestFrame {
     val fragmentFollows = flags check Flags.Follows
     val complete = flags check Flags.Complete
     val next = flags check Flags.Next
 
     val initialRequest = if (withInitial) readInt() else 0
-    val payload = readPayload(flags)
+    val payload = readPayload(pool, flags)
     return RequestFrame(type, streamId, fragmentFollows, complete, next, initialRequest, payload)
 }
 
 //TODO rename or remove on fragmentation implementation
-fun RequestFireAndForgetFrame(streamId: Int, payload: Payload): RequestFrame =
+internal fun RequestFireAndForgetFrame(streamId: Int, payload: Payload): RequestFrame =
     RequestFrame(FrameType.RequestFnF, streamId, false, false, false, 0, payload)
 
-fun RequestResponseFrame(streamId: Int, payload: Payload): RequestFrame =
+internal fun RequestResponseFrame(streamId: Int, payload: Payload): RequestFrame =
     RequestFrame(FrameType.RequestResponse, streamId, false, false, false, 0, payload)
 
-fun RequestStreamFrame(streamId: Int, initialRequestN: Int, payload: Payload): RequestFrame =
+internal fun RequestStreamFrame(streamId: Int, initialRequestN: Int, payload: Payload): RequestFrame =
     RequestFrame(FrameType.RequestStream, streamId, false, false, false, initialRequestN, payload)
 
-fun RequestChannelFrame(streamId: Int, initialRequestN: Int, payload: Payload): RequestFrame =
+internal fun RequestChannelFrame(streamId: Int, initialRequestN: Int, payload: Payload): RequestFrame =
     RequestFrame(FrameType.RequestChannel, streamId, false, false, false, initialRequestN, payload)
 
-fun NextPayloadFrame(streamId: Int, payload: Payload): RequestFrame =
+internal fun NextPayloadFrame(streamId: Int, payload: Payload): RequestFrame =
     RequestFrame(FrameType.Payload, streamId, false, false, true, 0, payload)
 
-fun CompletePayloadFrame(streamId: Int): RequestFrame =
+internal fun CompletePayloadFrame(streamId: Int): RequestFrame =
     RequestFrame(FrameType.Payload, streamId, false, true, false, 0, Payload.Empty)
 
-fun NextCompletePayloadFrame(streamId: Int, payload: Payload): RequestFrame =
+internal fun NextCompletePayloadFrame(streamId: Int, payload: Payload): RequestFrame =
     RequestFrame(FrameType.Payload, streamId, false, true, true, 0, payload)

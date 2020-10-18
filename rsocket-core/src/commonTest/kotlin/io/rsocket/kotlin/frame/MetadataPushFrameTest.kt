@@ -17,16 +17,17 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class MetadataPushFrameTest {
+class MetadataPushFrameTest : TestWithLeakCheck {
 
     private val metadata = ByteArray(65000) { 6 }
 
     @Test
     fun testEncoding() {
-        val frame = MetadataPushFrame(ByteReadPacket(metadata))
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = MetadataPushFrame(packet(metadata))
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is MetadataPushFrame)
         assertEquals(0, decodedFrame.streamId)

@@ -18,9 +18,10 @@ package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class ResumeFrameTest {
+class ResumeFrameTest : TestWithLeakCheck {
 
     private val version = Version.Current
     private val lastReceivedServerPosition = 21L
@@ -29,8 +30,8 @@ class ResumeFrameTest {
     @Test
     fun testBigToken() {
         val token = ByteArray(65000) { 1 }
-        val frame = ResumeFrame(version, ByteReadPacket(token), lastReceivedServerPosition, firstAvailableClientPosition)
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = ResumeFrame(version, packet(token), lastReceivedServerPosition, firstAvailableClientPosition)
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is ResumeFrame)
         assertEquals(0, decodedFrame.streamId)
@@ -43,9 +44,9 @@ class ResumeFrameTest {
     @Test
     fun testBigChunkedToken() {
         val token = ByteArray(63000) { 1 }
-        val packet = buildPacket { writeFully(token) }
+        val packet = packet(token)
         val frame = ResumeFrame(version, packet, lastReceivedServerPosition, firstAvailableClientPosition)
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is ResumeFrame)
         assertEquals(0, decodedFrame.streamId)
@@ -58,8 +59,8 @@ class ResumeFrameTest {
     @Test
     fun testSmallToken() {
         val token = ByteArray(100) { 1 }
-        val frame = ResumeFrame(version, ByteReadPacket(token), lastReceivedServerPosition, firstAvailableClientPosition)
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = ResumeFrame(version, packet(token), lastReceivedServerPosition, firstAvailableClientPosition)
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is ResumeFrame)
         assertEquals(0, decodedFrame.streamId)

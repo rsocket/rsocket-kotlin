@@ -16,16 +16,17 @@
 
 package io.rsocket.kotlin.frame
 
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class ResumeOkFrameTest {
+class ResumeOkFrameTest : TestWithLeakCheck {
 
     private val lastReceivedClientPosition = 42L
 
     @Test
     fun testEncoding() {
         val frame = ResumeOkFrame(lastReceivedClientPosition)
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is ResumeOkFrame)
         assertEquals(0, decodedFrame.streamId)

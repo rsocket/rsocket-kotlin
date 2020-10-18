@@ -16,15 +16,15 @@
 
 package io.rsocket.kotlin.frame
 
-import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class RequestFireAndForgetFrameTest {
+class RequestFireAndForgetFrameTest : TestWithLeakCheck {
 
     @Test
     fun testData() {
-        val frame = RequestFireAndForgetFrame(3, Payload("d"))
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = RequestFireAndForgetFrame(3, payload("d"))
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.RequestFnF, decodedFrame.type)
@@ -38,8 +38,8 @@ class RequestFireAndForgetFrameTest {
 
     @Test
     fun testDataMetadata() {
-        val frame = RequestFireAndForgetFrame(3, Payload("d", "md"))
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = RequestFireAndForgetFrame(3, payload("d", "md"))
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
         assertEquals(FrameType.RequestFnF, decodedFrame.type)

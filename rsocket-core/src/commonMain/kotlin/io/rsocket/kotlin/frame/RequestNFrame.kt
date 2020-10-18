@@ -18,11 +18,14 @@ package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
 
-class RequestNFrame(
+internal class RequestNFrame(
     override val streamId: Int,
     val requestN: Int,
 ) : Frame(FrameType.RequestN) {
     override val flags: Int get() = 0
+
+    override fun release(): Unit = Unit
+
     override fun BytePacketBuilder.writeSelf() {
         writeInt(requestN)
     }
@@ -34,7 +37,7 @@ class RequestNFrame(
     }
 }
 
-fun ByteReadPacket.readRequestN(streamId: Int): RequestNFrame {
+internal fun ByteReadPacket.readRequestN(streamId: Int): RequestNFrame {
     val requestN = readInt()
     return RequestNFrame(streamId, requestN)
 }

@@ -39,10 +39,10 @@ RSocket interface contains 5 methods:
   `suspend fun metadataPush(metadata: ByteReadPacket)`
 
 ## Using in your projects
-The `master` branch is now dedicated to development of multiplatform rsocket-kotlin.
-For now only snapshots are available via [oss.jfrog.org](oss.jfrog.org) (OJO).
+The `master` branch is now dedicated to development of multiplatform rsocket-kotlin. For now only snapshots are available
+via [oss.jfrog.org](https://oss.jfrog.org/artifactory/oss-snapshot-local/io/rsocket/kotlin/) (OJO).
 
-Make sure, that you use Kotlin 1.4.
+Make sure, that you use Kotlin 1.4.X.
 
 ### Gradle:
 
@@ -225,7 +225,7 @@ val bufferedStream: Flow<Payload> = stream.buffer(10) //here buffer is 10, if `b
 bufferedStream.collect { payload: Payload ->
     println(payload.data.readText())
 }
-``` 
+```
 
 ## Bugs and Feedback
 

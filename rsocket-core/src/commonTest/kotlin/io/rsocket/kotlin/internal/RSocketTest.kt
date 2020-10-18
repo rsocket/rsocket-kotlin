@@ -16,12 +16,14 @@
 
 package io.rsocket.kotlin.internal
 
+import app.cash.turbine.*
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.keepalive.*
+import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
@@ -30,7 +32,7 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
-class RSocketTest : SuspendTest {
+class RSocketTest : SuspendTest, TestWithLeakCheck {
 
     lateinit var serverConnection: LocalConnection
     lateinit var clientConnection: LocalConnection
@@ -55,15 +57,18 @@ class RSocketTest : SuspendTest {
 
     private suspend fun start(handler: RSocket? = null): RSocket = coroutineScope {
         launch {
-            serverConnection.startServer {
+            serverConnection.startServer(
+                RSocketServerConfiguration(loggerFactory = NoopLogger)
+            ) {
                 handler ?: RSocketRequestHandler {
                     requestResponse = { it }
                     requestStream = {
-                        flow { repeat(10) { emit(Payload("server got -> [$it]")) } }
+                        it.release()
+                        flow { repeat(10) { emit(payload("server got -> [$it]")) } }
                     }
                     requestChannel = {
-                        it.launchIn(CoroutineScope(job))
-                        flow { repeat(10) { emit(Payload("server got -> [$it]")) } }
+                        it.onEach { it.release() }.launchIn(CoroutineScope(job))
+                        flow { repeat(10) { emit(payload("server got -> [$it]")) } }
                     }
                 }
             }
@@ -71,7 +76,7 @@ class RSocketTest : SuspendTest {
         clientConnection.connectClient(
             RSocketConnectorConfiguration(
                 keepAlive = KeepAlive(1000.seconds, 1000.seconds),
-                loggerFactory = TestLoggerFactory
+                loggerFactory = NoopLogger
             )
         )
     }
@@ -79,7 +84,7 @@ class RSocketTest : SuspendTest {
     @Test
     fun testRequestResponseNoError() = test {
         val requester = start()
-        requester.requestResponse(Payload("HELLO"))
+        requester.requestResponse(payload("HELLO")).release()
     }
 
     @Test
@@ -87,7 +92,7 @@ class RSocketTest : SuspendTest {
         val requester = start(RSocketRequestHandler {
             requestResponse = { error("stub") }
         })
-        assertFailsWith(RSocketError.ApplicationError::class) { requester.requestResponse(Payload("HELLO")) }
+        assertFailsWith(RSocketError.ApplicationError::class) { requester.requestResponse(payload("HELLO")) }
     }
 
     @Test
@@ -95,23 +100,127 @@ class RSocketTest : SuspendTest {
         val requester = start(RSocketRequestHandler {
             requestResponse = { throw RSocketError.Custom(0x00000501, "stub") }
         })
-        val error = assertFailsWith(RSocketError.Custom::class) { requester.requestResponse(Payload("HELLO")) }
+        val error = assertFailsWith(RSocketError.Custom::class) { requester.requestResponse(payload("HELLO")) }
         assertEquals(0x00000501, error.errorCode)
     }
 
     @Test
     fun testStream() = test {
         val requester = start()
-        val response = requester.requestStream(Payload.Empty).toList()
-        assertEquals(10, response.size)
+        requester.requestStream(payload("HELLO")).test {
+            repeat(10) {
+                expectItem().release()
+            }
+            expectComplete()
+        }
+    }
+
+    @Test //ignored on native because of bug inside native coroutines
+    fun testStreamResponderError() = test(ignoreNative = true) {
+        var p: Payload? = null
+        val requester = start(RSocketRequestHandler {
+            requestStream = {
+                //copy payload, for some specific usage, and don't release original payload
+                val text = it.copy().use { it.data.readText() }
+                p = it
+                //don't use payload
+                flow {
+                    emit(payload(text + "123"))
+                    emit(payload(text + "456"))
+                    emit(payload(text + "789"))
+                    error("FAIL")
+                }
+            }
+        })
+        requester.requestStream(payload("HELLO")).buffer(1).test {
+            repeat(3) {
+                expectItem().release()
+            }
+            val error = expectError()
+            assertTrue(error is RSocketError.ApplicationError)
+            assertEquals("FAIL", error.message)
+        }
+        delay(100) //async cancellation
+        assertEquals(0, p?.data?.remaining)
+    }
+
+    @Test
+    fun testStreamRequesterError() = test {
+        val requester = start(RSocketRequestHandler {
+            requestStream = {
+                (0..100).asFlow().map {
+                    payload(it.toString())
+                }
+            }
+        })
+        requester.requestStream(payload("HELLO"))
+            .buffer(10)
+            .withIndex()
+            .onEach { if (it.index == 23) throw error("oops") }
+            .map { it.value }
+            .test {
+                repeat(23) {
+                    expectItem().release()
+                }
+                val error = expectError()
+                assertTrue(error is IllegalStateException)
+                assertEquals("oops", error.message)
+            }
+    }
+
+    @Test
+    fun testStreamCancel() = test {
+        val requester = start(RSocketRequestHandler {
+            requestStream = {
+                (0..100).asFlow().map {
+                    payload(it.toString())
+                }
+            }
+        })
+        requester.requestStream(payload("HELLO"))
+            .buffer(15)
+            .take(3) //canceled after 3 element
+            .test {
+                repeat(3) {
+                    expectItem().release()
+                }
+                expectComplete()
+            }
+    }
+
+    @Test
+    fun testStreamCancelWithChannel() = test {
+        val requester = start(RSocketRequestHandler {
+            requestStream = {
+                (0..100).asFlow().map {
+                    payload(it.toString())
+                }
+            }
+        })
+        val channel = requester.requestStream(payload("HELLO"))
+            .buffer(5)
+            .take(18) //canceled after 18 element
+            .produceIn(this)
+
+        repeat(18) {
+            channel.receive().release()
+        }
+        assertTrue(channel.receiveOrClosed().isClosed)
     }
 
     @Test
     fun testChannel() = test {
+        val awaiter = Job()
         val requester = start()
-        val request = (1..10).asFlow().map { Payload(it.toString()) }
-        val response = requester.requestChannel(request).toList()
-        assertEquals(10, response.size)
+        val request = (1..10).asFlow().map { payload(it.toString()) }.onCompletion { awaiter.complete() }
+        requester.requestChannel(request).test {
+            repeat(10) {
+                expectItem().release()
+            }
+            expectComplete()
+        }
+        awaiter.join()
+        delay(500)
     }
 
     @Test
@@ -132,29 +241,35 @@ class RSocketTest : SuspendTest {
         val requester = start(RSocketRequestHandler {
             requestChannel = { it.buffer(3).take(3) }
         })
-        val request = (1..3).asFlow().map { Payload(it.toString()) }
-        val response = requester.requestChannel(request).buffer(3).toList()
-        assertEquals(3, response.size)
+        val request = (1..3).asFlow().map { payload(it.toString()) }
+        requester.requestChannel(request).buffer(3).test {
+            repeat(3) {
+                expectItem().release()
+            }
+            expectComplete()
+        }
     }
 
-    private val requesterPayloads = listOf(
-        Payload("d1", "m1"),
-        Payload("d2"),
-        Payload("d3", "m3"),
-        Payload("d4"),
-        Payload("d5", "m5")
-    )
+    private val requesterPayloads
+        get() = listOf(
+            payload("d1", "m1"),
+            payload("d2"),
+            payload("d3", "m3"),
+            payload("d4"),
+            payload("d5", "m5")
+        )
 
-    private val responderPayloads = listOf(
-        Payload("rd1", "rm1"),
-        Payload("rd2"),
-        Payload("rd3", "rm3"),
-        Payload("rd4"),
-        Payload("rd5", "rm5")
-    )
+    private val responderPayloads
+        get() = listOf(
+            payload("rd1", "rm1"),
+            payload("rd2"),
+            payload("rd3", "rm3"),
+            payload("rd4"),
+            payload("rd5", "rm5")
+        )
 
     @Test
-    fun requestChannelCase_StreamIsTerminatedAfterBothSidesSentCompletion1() = test {
+    fun requestChannelIsTerminatedAfterBothSidesSentCompletion1() = test {
         val requesterSendChannel = Channel<Payload>(Channel.UNLIMITED)
         val responderSendChannel = Channel<Payload>(Channel.UNLIMITED)
         val (requesterReceiveChannel, responderReceiveChannel) = initRequestChannel(requesterSendChannel, responderSendChannel)
@@ -167,7 +282,7 @@ class RSocketTest : SuspendTest {
     }
 
     @Test
-    fun requestChannelCase_StreamIsTerminatedAfterBothSidesSentCompletion2() = test {
+    fun requestChannelTerminatedAfterBothSidesSentCompletion2() = test {
         val requesterSendChannel = Channel<Payload>(Channel.UNLIMITED)
         val responderSendChannel = Channel<Payload>(Channel.UNLIMITED)
         val (requesterReceiveChannel, responderReceiveChannel) = initRequestChannel(requesterSendChannel, responderSendChannel)
@@ -180,7 +295,7 @@ class RSocketTest : SuspendTest {
     }
 
     @Test
-    fun requestChannelCase_CancellationFromResponderShouldLeaveStreamInHalfClosedStateWithNextCompletionPossibleFromRequester() = test {
+    fun requestChannelCancellationFromResponderShouldLeaveStreamInHalfClosedStateWithNextCompletionPossibleFromRequester() = test {
         val requesterSendChannel = Channel<Payload>(Channel.UNLIMITED)
         val responderSendChannel = Channel<Payload>(Channel.UNLIMITED)
         val (requesterReceiveChannel, responderReceiveChannel) = initRequestChannel(requesterSendChannel, responderSendChannel)
@@ -193,7 +308,7 @@ class RSocketTest : SuspendTest {
     }
 
     @Test
-    fun requestChannelCase_CompletionFromRequesterShouldLeaveStreamInHalfClosedStateWithNextCancellationPossibleFromResponder() = test {
+    fun requestChannelCompletionFromRequesterShouldLeaveStreamInHalfClosedStateWithNextCancellationPossibleFromResponder() = test {
         val requesterSendChannel = Channel<Payload>(Channel.UNLIMITED)
         val responderSendChannel = Channel<Payload>(Channel.UNLIMITED)
         val (requesterReceiveChannel, responderReceiveChannel) = initRequestChannel(requesterSendChannel, responderSendChannel)
@@ -206,7 +321,7 @@ class RSocketTest : SuspendTest {
     }
 
     @Test
-    fun requestChannelCase_ensureThatRequesterSubscriberCancellationTerminatesStreamsOnBothSides() = test {
+    fun requestChannelEnsureThatRequesterSubscriberCancellationTerminatesStreamsOnBothSides() = test {
         val requesterSendChannel = Channel<Payload>(Channel.UNLIMITED)
         val responderSendChannel = Channel<Payload>(Channel.UNLIMITED)
         val (requesterReceiveChannel, responderReceiveChannel) = initRequestChannel(requesterSendChannel, responderSendChannel)
@@ -231,17 +346,18 @@ class RSocketTest : SuspendTest {
         val requester = start(RSocketRequestHandler {
             requestChannel = {
                 responderDeferred.complete(it.produceIn(CoroutineScope(job)))
+
                 responderSendChannel.consumeAsFlow()
             }
         })
         val requesterReceiveChannel =
             requester.requestChannel(requesterSendChannel.consumeAsFlow()).produceIn(CoroutineScope(requester.job))
 
-        requesterSendChannel.send(Payload("initData", "initMetadata"))
+        requesterSendChannel.send(payload("initData", "initMetadata"))
 
         val responderReceiveChannel = responderDeferred.await()
 
-        responderReceiveChannel.checkReceived(Payload("initData", "initMetadata"))
+        responderReceiveChannel.checkReceived(payload("initData", "initMetadata"))
         return requesterReceiveChannel to responderReceiveChannel
     }
 

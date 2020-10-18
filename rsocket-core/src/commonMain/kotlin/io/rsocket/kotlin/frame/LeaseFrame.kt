@@ -19,13 +19,18 @@ package io.rsocket.kotlin.frame
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 
-class LeaseFrame(
+internal class LeaseFrame(
     val ttl: Int,
     val numberOfRequests: Int,
     val metadata: ByteReadPacket?,
 ) : Frame(FrameType.Lease) {
     override val streamId: Int get() = 0
     override val flags: Int get() = if (metadata != null) Flags.Metadata else 0
+
+    override fun release() {
+        metadata?.release()
+    }
+
     override fun BytePacketBuilder.writeSelf() {
         writeInt(ttl)
         writeInt(numberOfRequests)
@@ -42,9 +47,9 @@ class LeaseFrame(
     }
 }
 
-fun ByteReadPacket.readLease(flags: Int): LeaseFrame {
+internal fun ByteReadPacket.readLease(pool: BufferPool, flags: Int): LeaseFrame {
     val ttl = readInt()
     val numberOfRequests = readInt()
-    val metadata = if (flags check Flags.Metadata) readMetadata() else null
+    val metadata = if (flags check Flags.Metadata) readMetadata(pool) else null
     return LeaseFrame(ttl, numberOfRequests, metadata)
 }

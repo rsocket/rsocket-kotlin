@@ -46,7 +46,6 @@ class RSocketConnector(
             connection = connection,
             plugin = configuration.plugin,
             setupFrame = setupFrame,
-            ignoredFrameConsumer = configuration.ignoredFrameConsumer,
             acceptor = configuration.acceptor
         )
     }

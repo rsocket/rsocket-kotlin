@@ -22,7 +22,7 @@ import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 
-class LocalTransportTest : TransportTest() {
+class LocalTransportTest : TransportTest(), TestWithLeakCheck {
 
     private val testJob: Job = Job()
 
@@ -32,8 +32,8 @@ class LocalTransportTest : TransportTest() {
         val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
         val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
 
-        val clientConnection = LocalConnection("client", serverChannel, clientChannel, testJob)
-        val serverConnection = LocalConnection("server", clientChannel, serverChannel, testJob)
+        val clientConnection = LocalConnection("client", serverChannel, clientChannel, InUseTrackingPool, testJob)
+        val serverConnection = LocalConnection("server", clientChannel, serverChannel, InUseTrackingPool, testJob)
         client = coroutineScope {
             launch {
                 serverConnection.startServer(SERVER_CONFIG, ACCEPTOR)
@@ -43,7 +43,6 @@ class LocalTransportTest : TransportTest() {
     }
 
     override suspend fun after() {
-
         super.after()
         testJob.cancelAndJoin()
     }

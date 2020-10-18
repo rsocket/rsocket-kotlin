@@ -18,9 +18,10 @@ package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class ExtensionFrameTest {
+class ExtensionFrameTest : TestWithLeakCheck {
 
     private val streamId = 1
     private val extendedType = 1
@@ -29,8 +30,8 @@ class ExtensionFrameTest {
 
     @Test
     fun testData() {
-        val frame = ExtensionFrame(streamId, extendedType, Payload(data))
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = ExtensionFrame(streamId, extendedType, payload(data))
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is ExtensionFrame)
         assertEquals(streamId, decodedFrame.streamId)
@@ -42,7 +43,7 @@ class ExtensionFrameTest {
     @Test
     fun testMetadata() {
         val frame = ExtensionFrame(1, extendedType, Payload(ByteReadPacket.Empty, packet(metadata)))
-        val decodedFrame = frame.toPacket().toFrame()
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is ExtensionFrame)
         assertEquals(streamId, decodedFrame.streamId)
@@ -53,8 +54,8 @@ class ExtensionFrameTest {
 
     @Test
     fun testDataMetadata() {
-        val frame = ExtensionFrame(streamId, extendedType, Payload(data, metadata))
-        val decodedFrame = frame.toPacket().toFrame()
+        val frame = ExtensionFrame(streamId, extendedType, payload(data, metadata))
+        val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is ExtensionFrame)
         assertEquals(streamId, decodedFrame.streamId)

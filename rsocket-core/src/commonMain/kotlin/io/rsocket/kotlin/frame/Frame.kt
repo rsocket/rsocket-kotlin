@@ -17,29 +17,33 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
 import io.rsocket.kotlin.frame.io.*
 
 private const val FlagsMask: Int = 1023
 private const val FrameTypeShift: Int = 10
 
-abstract class Frame(open val type: FrameType) {
+abstract class Frame internal constructor(open val type: FrameType) : Closeable {
     abstract val streamId: Int
     abstract val flags: Int
+
+    abstract fun release()
 
     protected abstract fun BytePacketBuilder.writeSelf()
     protected abstract fun StringBuilder.appendFlags()
     protected abstract fun StringBuilder.appendSelf()
 
-    fun toPacket(): ByteReadPacket {
+    @DangerousInternalIoApi
+    fun toPacket(pool: BufferPool): ByteReadPacket {
         check(type.canHaveMetadata || !(flags check Flags.Metadata)) { "bad value for metadata flag" }
-        return buildPacket {
+        return buildPacket(pool) {
             writeInt(streamId)
             writeShort((type.encodedType shl FrameTypeShift or flags).toShort())
             writeSelf()
         }
     }
 
-    fun dump(length: Long): String = buildString {
+    internal fun dump(length: Long): String = buildString {
         append("\n").append(type).append(" frame -> Stream Id: ").append(streamId).append(" Length: ").append(length)
         append("\nFlags: 0b").append(flags.toBinaryString()).append(" (").apply { appendFlags() }.append(")")
         appendSelf()
@@ -49,36 +53,37 @@ abstract class Frame(open val type: FrameType) {
         append(flag)
         if (value) append(1) else append(0)
     }
+
+    override fun close() {
+        release()
+    }
 }
 
-fun ByteReadPacket.toFrame(): Frame = use {
+@DangerousInternalIoApi
+fun ByteReadPacket.readFrame(pool: BufferPool): Frame = use {
     val streamId = readInt()
     val typeAndFlags = readShort().toInt() and 0xFFFF
     val flags = typeAndFlags and FlagsMask
     when (val type = FrameType(typeAndFlags shr FrameTypeShift)) {
         //stream id = 0
-        FrameType.Setup           -> readSetup(flags)
-        FrameType.Resume          -> readResume()
-        FrameType.ResumeOk        -> readResumeOk()
-        FrameType.MetadataPush    -> readMetadataPush()
-        FrameType.Lease           -> readLease(flags)
-        FrameType.KeepAlive       -> readKeepAlive(flags)
+        FrameType.Setup        -> readSetup(pool, flags)
+        FrameType.Resume       -> readResume(pool)
+        FrameType.ResumeOk     -> readResumeOk()
+        FrameType.MetadataPush -> readMetadataPush(pool)
+        FrameType.Lease        -> readLease(pool, flags)
+        FrameType.KeepAlive    -> readKeepAlive(pool, flags)
         //stream id != 0
-        FrameType.Cancel          -> CancelFrame(streamId)
-        FrameType.Error           -> readError(streamId)
-        FrameType.RequestN        -> readRequestN(streamId)
-        FrameType.Extension       -> readExtension(streamId, flags)
+        FrameType.Cancel       -> CancelFrame(streamId)
+        FrameType.Error        -> readError(streamId)
+        FrameType.RequestN     -> readRequestN(streamId)
+        FrameType.Extension    -> readExtension(pool, streamId, flags)
         FrameType.Payload,
         FrameType.RequestFnF,
-        FrameType.RequestResponse -> readRequest(type, streamId, flags, withInitial = false)
+        FrameType.RequestResponse,
+                               -> readRequest(pool, type, streamId, flags, withInitial = false)
         FrameType.RequestStream,
-        FrameType.RequestChannel  -> readRequest(type, streamId, flags, withInitial = true)
-        FrameType.Reserved        -> error("Reserved")
+        FrameType.RequestChannel,
+                               -> readRequest(pool, type, streamId, flags, withInitial = true)
+        FrameType.Reserved     -> error("Reserved")
     }
-}
-
-fun ByteReadPacket.dumpFrameToString(): String {
-    val length = remaining
-    val frame = copy().toFrame()
-    return frame.dump(length)
 }

@@ -23,8 +23,10 @@ import kotlin.native.concurrent.*
 @SharedImmutable
 private val digits = "0123456789abcdef".toCharArray()
 
+@SharedImmutable
 private const val divider = "+--------+-------------------------------------------------+----------------+"
 
+@SharedImmutable
 private const val header = """
          +-------------------------------------------------+
          |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |
@@ -36,7 +38,7 @@ private const val header = """
 //|00000000| 74 65 73 74 2d 64 61 74 61 20 74 65 73 74 2d 64 |test-data test-d|
 //|00000001| 61 74 61 20 74 65 73 74 2d 64 61 74 61          |ata test-data   |
 //+--------+-------------------------------------------------+----------------+
-fun StringBuilder.appendPacket(packet: ByteReadPacket) {
+internal fun StringBuilder.appendPacket(packet: ByteReadPacket) {
 
     var rowIndex = 0
     var byteIndex = 0
@@ -90,7 +92,7 @@ fun StringBuilder.appendPacket(packet: ByteReadPacket) {
     append(divider)
 }
 
-fun StringBuilder.appendPacket(tag: String, packet: ByteReadPacket) {
+internal fun StringBuilder.appendPacket(tag: String, packet: ByteReadPacket) {
     append("\n").append(tag)
     if (packet.remaining > 0) {
         append("(length=").append(packet.remaining).append("):")
@@ -100,12 +102,12 @@ fun StringBuilder.appendPacket(tag: String, packet: ByteReadPacket) {
     }
 }
 
-fun StringBuilder.appendPayload(payload: Payload) {
+internal fun StringBuilder.appendPayload(payload: Payload) {
     if (payload.metadata != null) appendPacket("Metadata", payload.metadata)
     appendPacket("Data", payload.data)
 }
 
-fun Int.toBinaryString(): String {
+internal fun Int.toBinaryString(): String {
     val string = toString(2)
     return "0".repeat(9 - string.length) + string
 }
