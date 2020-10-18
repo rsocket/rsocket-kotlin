@@ -40,7 +40,7 @@ RSocket interface contains 5 methods:
 
 ## Using in your projects
 The `master` branch is now dedicated to development of multiplatform rsocket-kotlin. For now only snapshots are available
-via [oss.jfrog.org](oss.jfrog.org) (OJO).
+via [oss.jfrog.org](https://oss.jfrog.org/artifactory/oss-snapshot-local/io/rsocket/kotlin/) (OJO).
 
 Make sure, that you use Kotlin 1.4.X.
 
