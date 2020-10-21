@@ -17,36 +17,37 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
-import io.rsocket.kotlin.plugin.*
+import io.rsocket.kotlin.logging.*
+import io.rsocket.kotlin.transport.*
 
-class RSocketConnector(
-    private val connectionProvider: ConnectionProvider,
-    private val configuration: RSocketConnectorConfiguration = RSocketConnectorConfiguration(),
+@OptIn(TransportApi::class)
+class RSocketConnector internal constructor(
+    private val loggerFactory: LoggerFactory,
+    private val interceptors: Interceptors,
+    private val connectionConfigProvider: () -> ConnectionConfig,
+    private val acceptor: ConnectionAcceptor,
 ) {
 
-    suspend fun connect(): RSocket {
-        val connection =
-            connectionProvider.connect()
-                .let(configuration.plugin::wrapConnection)
-                .logging(configuration.loggerFactory.logger("io.rsocket.kotlin.frame.Frame"))
+    suspend fun connect(transport: ClientTransport): RSocket {
+        val connection = transport.connect().wrapConnection()
+        val connectionConfig = connectionConfigProvider()
 
-        val setupFrame = SetupFrame(
-            version = Version.Current,
-            honorLease = false,
-            keepAlive = configuration.keepAlive,
-            resumeToken = null,
-            payloadMimeType = configuration.payloadMimeType,
-            payload = configuration.setupPayload
-        )
-        return connectClient(
-            connection = connection,
-            plugin = configuration.plugin,
-            setupFrame = setupFrame,
-            acceptor = configuration.acceptor
-        )
+        return connection.connect(isServer = false, interceptors, connectionConfig, acceptor) {
+            val setupFrame = SetupFrame(
+                version = Version.Current,
+                honorLease = false,
+                keepAlive = connectionConfig.keepAlive,
+                resumeToken = null,
+                payloadMimeType = connectionConfig.payloadMimeType,
+                payload = connectionConfig.setupPayload
+            )
+            connection.sendFrame(setupFrame)
+        }
     }
+
+    private fun Connection.wrapConnection(): Connection =
+        interceptors.wrapConnection(this)
+            .logging(loggerFactory.logger("io.rsocket.kotlin.frame.Frame"))
 }

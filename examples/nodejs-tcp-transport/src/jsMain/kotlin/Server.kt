@@ -17,35 +17,45 @@
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.js.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
+import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import net.*
 import org.khronos.webgl.*
 
 fun main() {
-    //create nodejs TCP server
-    createServer {
-        GlobalScope.launch {
-            //wrap TCP connection with RSocket connection and start server
-            NodeJsTcpConnection(it).startServer {
-                RSocketRequestHandler {
-                    requestResponse = {
-                        println("Received: ${it.data.readText()}")
-                        Payload("Hello from nodejs")
-                    }
-                }
-            }.join()
+    //create transport
+    val serverTransport = NodeJsTcpServerTransport(9000) {
+        println("Server started")
+    }
+
+    //start server
+    RSocketServer().bind(serverTransport) {
+        RSocketRequestHandler {
+            requestResponse {
+                println("Received: ${it.data.readText()}")
+                Payload("Hello from nodejs")
+            }
         }
-    }.listen(9000) {
-        println("opened server")
     }
 }
 
+//TODO fun interface with lambda fail on IR
+@OptIn(TransportApi::class)
+fun NodeJsTcpServerTransport(port: Int, onStart: () -> Unit = {}): ServerTransport<Server> = object : ServerTransport<Server> {
+    override fun start(accept: suspend (Connection) -> Unit): Server =
+        //create nodejs TCP server
+        createServer {
+            //wrap TCP connection with RSocket connection and start server
+            GlobalScope.launch { accept(NodeJsTcpConnection(it)) }
+        }.listen(port, onStart)
+}
+
 // nodejs TCP transport connection - may not work in all cases, not tested properly
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, TransportApi::class)
 class NodeJsTcpConnection(private val socket: Socket) : Connection {
     override val job: Job = Job()
 
@@ -55,7 +65,7 @@ class NodeJsTcpConnection(private val socket: Socket) : Connection {
     init {
         //setup closing of job/socket
         socket.on("close") { _ -> job.cancel() }
-        job.invokeOnCompletion { socket.end(it?.message ?: "Closed") }
+        job.invokeOnCompletion { if (!socket.writableEnded) socket.end(it?.message ?: "Closed") }
 
         handleSending()
         handleReceiving()

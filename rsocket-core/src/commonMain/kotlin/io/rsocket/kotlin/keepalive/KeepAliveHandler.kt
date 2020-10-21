@@ -17,7 +17,7 @@
 package io.rsocket.kotlin.keepalive
 
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.error.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*

@@ -24,6 +24,8 @@ import io.ktor.util.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.transport.ktor.*
+import io.rsocket.kotlin.transport.ktor.server.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.*
@@ -39,14 +41,16 @@ fun main() {
     val chatsApi = ChatApi(chats, messages)
     val messagesApi = MessageApi(messages, chats)
 
+    val rSocketServer = RSocketServer()
+
     //create acceptor
-    val acceptor: RSocketAcceptor = {
-        val userName = payload.data.readText()
+    val acceptor = ConnectionAcceptor {
+        val userName = config.setupPayload.data.readText()
         val user = users.getOrCreate(userName)
         val session = Session(user.id)
 
         RSocketRequestHandler {
-            fireAndForget = {
+            fireAndForget {
                 withContext(session) {
                     when (val route = it.metadata?.readText()) {
                         null -> error("No route provided")
@@ -57,7 +61,7 @@ fun main() {
                     }
                 }
             }
-            requestResponse = {
+            requestResponse {
                 withContext(session) {
                     when (val route = it.metadata?.readText()) {
                         null -> error("No route provided")
@@ -80,7 +84,7 @@ fun main() {
                     }
                 }
             }
-            requestStream = {
+            requestStream {
                 when (val route = it.metadata?.readText()) {
                     null -> error("No route provided")
 
@@ -96,14 +100,15 @@ fun main() {
     }
 
     //start TCP server
-    GlobalScope.launch {
-        aSocket(ActorSelectorManager(Dispatchers.IO)).tcp().bind(port = 8000).rSocket(acceptor = acceptor)
-    }
+    val tcpTransport = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp().serverTransport(port = 8000)
+    rSocketServer.bind(tcpTransport, acceptor)
 
     //start WS server
     embeddedServer(CIO, port = 9000) {
         install(WebSockets)
-        install(RSocketServerSupport)
+        install(RSocketSupport) {
+            server = rSocketServer
+        }
 
         routing {
             rSocket(acceptor = acceptor)

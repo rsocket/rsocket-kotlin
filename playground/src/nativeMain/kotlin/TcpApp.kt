@@ -22,7 +22,6 @@ import kotlin.coroutines.*
 fun main() {
     runBlocking {
         runTcpClient(EmptyCoroutineContext)
-//        runTcpServer(EmptyCoroutineContext)
     }
 }
 

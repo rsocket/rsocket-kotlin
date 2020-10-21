@@ -19,13 +19,12 @@ package io.rsocket.kotlin.internal
 import app.cash.turbine.*
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
+import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
@@ -34,51 +33,37 @@ import kotlin.time.*
 
 class RSocketTest : SuspendTest, TestWithLeakCheck {
 
-    lateinit var serverConnection: LocalConnection
-    lateinit var clientConnection: LocalConnection
-
-    override suspend fun before() {
-        super.before()
-
-        val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
-        val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
-
-        serverConnection = LocalConnection("server", clientChannel, serverChannel)
-        clientConnection = LocalConnection("client", serverChannel, clientChannel)
-
-    }
+    private val testJob: Job = Job()
 
     override suspend fun after() {
         super.after()
-
-        serverConnection.job.cancelAndJoin()
-        clientConnection.job.cancelAndJoin()
+        testJob.cancelAndJoin()
     }
 
-    private suspend fun start(handler: RSocket? = null): RSocket = coroutineScope {
-        launch {
-            serverConnection.startServer(
-                RSocketServerConfiguration(loggerFactory = NoopLogger)
-            ) {
-                handler ?: RSocketRequestHandler {
-                    requestResponse = { it }
-                    requestStream = {
-                        it.release()
-                        flow { repeat(10) { emit(payload("server got -> [$it]")) } }
-                    }
-                    requestChannel = {
-                        it.onEach { it.release() }.launchIn(CoroutineScope(job))
-                        flow { repeat(10) { emit(payload("server got -> [$it]")) } }
-                    }
+    private suspend fun start(handler: RSocket? = null): RSocket {
+        val localServer = LocalServer(testJob)
+        RSocketServer {
+            loggerFactory = NoopLogger
+        }.bind(localServer) {
+            handler ?: RSocketRequestHandler {
+                requestResponse { it }
+                requestStream {
+                    it.release()
+                    flow { repeat(10) { emit(payload("server got -> [$it]")) } }
+                }
+                requestChannel {
+                    it.onEach { it.release() }.launchIn(CoroutineScope(job))
+                    flow { repeat(10) { emit(payload("server got -> [$it]")) } }
                 }
             }
         }
-        clientConnection.connectClient(
-            RSocketConnectorConfiguration(
-                keepAlive = KeepAlive(1000.seconds, 1000.seconds),
-                loggerFactory = NoopLogger
-            )
-        )
+
+        return RSocketConnector {
+            loggerFactory = NoopLogger
+            connectionConfig {
+                keepAlive = KeepAlive(1000.seconds, 1000.seconds)
+            }
+        }.connect(localServer)
     }
 
     @Test
@@ -90,7 +75,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testRequestResponseError() = test {
         val requester = start(RSocketRequestHandler {
-            requestResponse = { error("stub") }
+            requestResponse { error("stub") }
         })
         assertFailsWith(RSocketError.ApplicationError::class) { requester.requestResponse(payload("HELLO")) }
     }
@@ -98,7 +83,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testRequestResponseCustomError() = test {
         val requester = start(RSocketRequestHandler {
-            requestResponse = { throw RSocketError.Custom(0x00000501, "stub") }
+            requestResponse { throw RSocketError.Custom(0x00000501, "stub") }
         })
         val error = assertFailsWith(RSocketError.Custom::class) { requester.requestResponse(payload("HELLO")) }
         assertEquals(0x00000501, error.errorCode)
@@ -119,7 +104,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     fun testStreamResponderError() = test(ignoreNative = true) {
         var p: Payload? = null
         val requester = start(RSocketRequestHandler {
-            requestStream = {
+            requestStream {
                 //copy payload, for some specific usage, and don't release original payload
                 val text = it.copy().use { it.data.readText() }
                 p = it
@@ -147,7 +132,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testStreamRequesterError() = test {
         val requester = start(RSocketRequestHandler {
-            requestStream = {
+            requestStream {
                 (0..100).asFlow().map {
                     payload(it.toString())
                 }
@@ -171,7 +156,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testStreamCancel() = test {
         val requester = start(RSocketRequestHandler {
-            requestStream = {
+            requestStream {
                 (0..100).asFlow().map {
                     payload(it.toString())
                 }
@@ -191,7 +176,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testStreamCancelWithChannel() = test {
         val requester = start(RSocketRequestHandler {
-            requestStream = {
+            requestStream {
                 (0..100).asFlow().map {
                     payload(it.toString())
                 }
@@ -227,7 +212,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     fun testErrorPropagatesCorrectly() = test {
         val error = CompletableDeferred<Throwable>()
         val requester = start(RSocketRequestHandler {
-            requestChannel = { it.catch { error.complete(it) } }
+            requestChannel { it.catch { error.complete(it) } }
         })
         val request = flow<Payload> { error("test") }
         val response = requester.requestChannel(request)
@@ -239,7 +224,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testRequestPropagatesCorrectlyForRequestChannel() = test {
         val requester = start(RSocketRequestHandler {
-            requestChannel = { it.buffer(3).take(3) }
+            requestChannel { it.buffer(3).take(3) }
         })
         val request = (1..3).asFlow().map { payload(it.toString()) }
         requester.requestChannel(request).buffer(3).test {
@@ -344,7 +329,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     ): Pair<ReceiveChannel<Payload>, ReceiveChannel<Payload>> {
         val responderDeferred = CompletableDeferred<ReceiveChannel<Payload>>()
         val requester = start(RSocketRequestHandler {
-            requestChannel = {
+            requestChannel {
                 responderDeferred.complete(it.produceIn(CoroutineScope(job)))
 
                 responderSendChannel.consumeAsFlow()

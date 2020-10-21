@@ -17,7 +17,6 @@
 package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.flow.*
 import io.rsocket.kotlin.keepalive.*
@@ -28,7 +27,8 @@ import kotlinx.coroutines.flow.*
 
 @OptIn(
     InternalCoroutinesApi::class,
-    ExperimentalCoroutinesApi::class
+    ExperimentalCoroutinesApi::class,
+    TransportApi::class
 )
 internal class RSocketState(
     private val connection: Connection,
@@ -146,7 +146,7 @@ internal class RSocketState(
         }
     }
 
-    fun start(requestHandler: RSocket): Job {
+    fun start(requestHandler: RSocket) {
         val responder = RSocketResponder(this, requestHandler)
         keepAliveHandler.startIn(scope)
         requestHandler.job.invokeOnCompletion { cancel("Request handled stopped", it) }
@@ -170,6 +170,5 @@ internal class RSocketState(
                 frame.closeOnError { handleFrame(responder, frame) }
             }
         }
-        return job
     }
 }

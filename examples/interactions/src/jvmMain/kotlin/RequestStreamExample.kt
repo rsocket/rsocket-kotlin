@@ -15,39 +15,36 @@
  */
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
+import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 fun main(): Unit = runBlocking {
-    val (clientConnection, serverConnection) = SimpleLocalConnection()
+    val server = LocalServer()
+    RSocketServer().bind(server) {
+        RSocketRequestHandler {
+            requestStream {
+                val data = it.data.readText()
+                val metadata = it.metadata?.readText()
+                println("Server received payload: data=$data, metadata=$metadata")
 
-    launch {
-        serverConnection.startServer {
-            RSocketRequestHandler {
-                requestStream = {
-                    val data = it.data.readText()
-                    val metadata = it.metadata?.readText()
-                    println("Server received payload: data=$data, metadata=$metadata")
-
-                    flow {
-                        repeat(10) { i ->
-                            emit(Payload("Payload: $i", metadata))
-                            println("Server sent: $i")
-                        }
+                flow {
+                    repeat(10) { i ->
+                        emit(Payload("Payload: $i", metadata))
+                        println("Server sent: $i")
                     }
                 }
             }
         }
     }
-
-    val rSocket = clientConnection.connectClient()
+    val rSocket = RSocketConnector().connect(server)
 
     val response = rSocket.requestStream(Payload("Hello", "World"))
 
     response
-        .buffer(2) //use buffer as first operator to use RequestN semantic
+        .buffer(2) //use buffer as first operator to use RequestN semantic, so request by 2 elements
         .map { it.data.readText().substringAfter("Payload: ").toInt() }
         .take(2)
         .collect {

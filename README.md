@@ -17,7 +17,7 @@ Transports are implemented based on [ktor](https://github.com/ktorio/ktor) to en
 So it depends on `ktor` engines for available transports and platforms (JVM, JS, Native):
 * JVM - TCP and WebSocket for both client and server
 * JS - WebSocket client only
-* Native - TCP for both client and server (linux x64, macos, ios, watchos, tvos)
+* Native - TCP client only (linux x64, macos, ios, watchos, tvos)
 
 ## Interactions
 
@@ -113,27 +113,30 @@ dependencies {
 //create ktor client
 val client = HttpClient(CIO) {
     install(WebSockets)
-    install(RSocketClientSupport) {
-        //configure rSocket client (all values have defaults)
-        
-        keepAlive = KeepAlive(
-            interval = 30.seconds,
-            maxLifetime = 2.minutes 
-        )
-        
-        //payload for setup frame
-        setupPayload = Payload(...)
+    install(RSocketSupport) {
+        connector = RSocketConnector {
+            //configure rSocket connector (all values have defaults)
+            connectionConfig {
+                keepAlive = KeepAlive(
+                    interval = 30.seconds,
+                    maxLifetime = 2.minutes 
+                )
+
+                //payload for setup frame
+                setupPayload { Payload("hello world") }
+                
+                //mime types
+                payloadMimeType = PayloadMimeType(
+                    data = "application/json",
+                    metadata = "application/json"
+                )
+            }
             
-        //mime types
-        payloadMimeType = PayloadMimeType(
-            data = "application/json",
-            metadata = "application/json"
-        )   
-        
-        //optional acceptor for server requests
-        acceptor = {
-            RSocketRequestHandler {
-                requestResponse = { it } //echo request payload
+            //optional acceptor for server requests
+            acceptor {
+                RSocketRequestHandler {
+                    requestResponse { it } //echo request payload
+                }
             }
         }
     }   
@@ -156,13 +159,14 @@ stream.take(5).collect { payload: Payload ->
 ```kotlin
 //create ktor server
 embeddedServer(CIO) {
-    install(RSocketServerSupport) {
+    install(RSocketSupport) {
         //configure rSocket server (all values have defaults)
-        
-        //install interceptors
-        plugin = Plugin(
-            connection = listOf(::SomeConnectionInterceptor)
-        )   
+        server = RSocketServer {
+            //install interceptors
+            interceptors {
+                forConnection(::SomeConnectionInterceptor)
+            }
+        }
     }   
     //configure routing
     routing {
@@ -170,13 +174,13 @@ embeddedServer(CIO) {
         rSocket("rsocket") {
             RSocketRequestHandler {
                 //handler for request/response
-                requestResponse = { request: Payload ->
+                requestResponse { request: Payload ->
                     //... some work here
                     delay(500) // work emulation
                     Payload("data", "metadata")
                 }         
                 //handler for request/stream      
-                requestStream = { request: Payload ->
+                requestStream { request: Payload ->
                     flow {
                         repeat(1000) { i -> 
                             emit(Payload("data: $i"))

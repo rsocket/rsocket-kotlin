@@ -16,13 +16,11 @@
 
 package io.rsocket.kotlin.benchmarks
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 import kotlin.random.*
 
@@ -38,28 +36,22 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
         payload = createPayload(payloadSize)
         payloadsFlow = flow { repeat(5000) { emit(payload.copy()) } }
 
-        val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
-        val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
-        val serverConnection = LocalConnection("server", clientChannel, serverChannel)
-        val clientConnection = LocalConnection("client", serverChannel, clientChannel)
-
-        client = runBlocking {
-            launch {
-                server = RSocketServer(ConnectionProvider(serverConnection)).start {
-                    RSocketRequestHandler {
-                        requestResponse = {
-                            it.release()
-                            payload
-                        }
-                        requestStream = {
-                            it.release()
-                            payloadsFlow
-                        }
-                        requestChannel = { it }
-                    }
+        val localServer = LocalServer()
+        server = RSocketServer().bind(localServer) {
+            RSocketRequestHandler {
+                requestResponse {
+                    it.release()
+                    payload
                 }
+                requestStream {
+                    it.release()
+                    payloadsFlow
+                }
+                requestChannel { it }
             }
-            RSocketConnector(ConnectionProvider(clientConnection)).connect()
+        }
+        return runBlocking {
+            RSocketConnector().connect(localServer)
         }
     }
 

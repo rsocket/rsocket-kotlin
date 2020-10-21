@@ -20,7 +20,7 @@ import app.cash.turbine.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
-import io.rsocket.kotlin.connection.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*

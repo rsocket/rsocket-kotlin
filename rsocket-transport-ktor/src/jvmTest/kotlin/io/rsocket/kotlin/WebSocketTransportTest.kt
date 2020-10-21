@@ -21,13 +21,16 @@ import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
-import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.test.*
+import io.rsocket.kotlin.transport.ktor.client.*
+import io.rsocket.kotlin.transport.ktor.server.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlin.random.*
 import io.ktor.client.features.websocket.WebSockets as ClientWebSockets
 import io.ktor.websocket.WebSockets as ServerWebSockets
+import io.rsocket.kotlin.transport.ktor.client.RSocketSupport as ClientRSocketSupport
+import io.rsocket.kotlin.transport.ktor.server.RSocketSupport as ServerRSocketSupport
 
 abstract class WebSocketTransportTest(
     clientEngine: HttpClientEngineFactory<*>,
@@ -36,21 +39,15 @@ abstract class WebSocketTransportTest(
 
     private val httpClient = HttpClient(clientEngine) {
         install(ClientWebSockets)
-        install(RSocketClientSupport) {
-            fromConfig(CONNECTOR_CONFIG)
-        }
+        install(ClientRSocketSupport) { connector = CONNECTOR }
     }
 
     private val currentPort = port.incrementAndGet()
 
     private val server = embeddedServer(serverEngine, currentPort) {
         install(ServerWebSockets)
-        install(RSocketServerSupport) {
-            fromConfig(SERVER_CONFIG)
-        }
-        routing {
-            rSocket(acceptor = ACCEPTOR)
-        }
+        install(ServerRSocketSupport) { server = SERVER }
+        install(Routing) { rSocket(acceptor = ACCEPTOR) }
     }
 
     override suspend fun before() {

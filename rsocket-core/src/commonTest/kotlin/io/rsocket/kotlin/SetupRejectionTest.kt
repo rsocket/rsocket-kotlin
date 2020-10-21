@@ -16,14 +16,13 @@
 
 package io.rsocket.kotlin
 
-import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
+import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.test.*
 
@@ -32,17 +31,21 @@ class SetupRejectionTest : SuspendTest, TestWithLeakCheck {
     fun responderRejectSetup() = test {
         val errorMessage = "error"
         val sendingRSocket = CompletableDeferred<RSocket>()
-        val acceptor: RSocketAcceptor = {
-            sendingRSocket.complete(it)
-            error(errorMessage)
-        }
+
         val connection = TestConnection()
 
-        val server = RSocketServer(ConnectionProvider(connection))
+        val serverTransport = ServerTransport { accept ->
+            GlobalScope.async { accept(connection) }
+        }
+
+        val deferred = RSocketServer().bind(serverTransport) {
+            sendingRSocket.complete(requester)
+            error(errorMessage)
+        }
 
         connection.sendToReceiver(SetupFrame(Version.Current, false, KeepAlive(), null, PayloadMimeType(), Payload.Empty))
 
-        assertFailsWith(RSocketError.Setup.Rejected::class, errorMessage) { server.start(acceptor) }
+        assertFailsWith(RSocketError.Setup.Rejected::class, errorMessage) { deferred.await() }
 
         connection.test {
             expectFrame { frame ->

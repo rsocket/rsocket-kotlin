@@ -15,42 +15,36 @@
  */
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
 
 fun main(): Unit = runBlocking {
-    val (clientConnection, serverConnection) = SimpleLocalConnection()
-
-    launch {
-        serverConnection.startServer { clientRSocket ->
-            RSocketRequestHandler {
-                requestResponse = {
-                    val clientRequest = it.data.readText()
-                    println("Server got from client request: $clientRequest")
-                    val response = clientRSocket.requestResponse(Payload("What happens?"))
-                    val clientResponse = response.data.readText()
-                    println("Server got from client response: $clientResponse")
-                    Payload("I'm frustrated because of `$clientResponse`")
-                }
+    val server = LocalServer()
+    RSocketServer().bind(server) {
+        RSocketRequestHandler {
+            requestResponse {
+                val clientRequest = it.data.readText()
+                println("Server got from client request: $clientRequest")
+                val response = requester.requestResponse(Payload("What happens?"))
+                val clientResponse = response.data.readText()
+                println("Server got from client response: $clientResponse")
+                Payload("I'm frustrated because of `$clientResponse`")
             }
         }
     }
-
-    val rSocket = clientConnection.connectClient(
-        RSocketConnectorConfiguration(
-            acceptor = {
-                RSocketRequestHandler {
-                    requestResponse = {
-                        val serverRequest = it.data.readText()
-                        println("Client got from server request: $serverRequest")
-                        Payload("I'm client!")
-                    }
+    val rSocket = RSocketConnector {
+        acceptor {
+            RSocketRequestHandler {
+                requestResponse {
+                    val serverRequest = it.data.readText()
+                    println("Client got from server request: $serverRequest")
+                    Payload("I'm client!")
                 }
             }
-        )
-    )
+        }
+    }.connect(server)
 
     val response = rSocket.requestResponse(Payload("How are you server?"))
     val data = response.data.readText()
