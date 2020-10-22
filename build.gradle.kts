@@ -360,10 +360,10 @@ if (bintrayUser != null && bintrayKey != null) {
 
                 //workaround for https://github.com/bintray/gradle-bintray-plugin/issues/229
                 tasks.withType<BintrayUploadTask> {
-                    dependsOn("publishToMavenLocal")
+                    val names = publicationNames
+                    names.forEach { dependsOn("publish${it.capitalize()}PublicationToMavenLocal") }
                     doFirst {
-                        val publishing: PublishingExtension by extensions
-                        val names = publicationNames
+                        val publishing: PublishingExtension by project.extensions
                         publishing.publications
                             .filterIsInstance<MavenPublication>()
                             .filter { it.name in names }
