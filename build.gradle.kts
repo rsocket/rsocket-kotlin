@@ -272,8 +272,8 @@ subprojects {
                             }
                         }
                         scm {
-                            connection.set("scm:git:https://github.com/rsocket/rsocket-kotlin.git")
-                            developerConnection.set("scm:git:https://github.com/rsocket/rsocket-kotlin.git")
+                            connection.set("https://github.com/rsocket/rsocket-kotlin.git")
+                            developerConnection.set("https://github.com/rsocket/rsocket-kotlin.git")
                             url.set("https://github.com/rsocket/rsocket-kotlin")
                         }
                     }
