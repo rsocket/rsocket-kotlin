@@ -28,22 +28,30 @@ class RSocketConnector internal constructor(
     private val interceptors: Interceptors,
     private val connectionConfigProvider: () -> ConnectionConfig,
     private val acceptor: ConnectionAcceptor,
+    private val reconnectPredicate: ReconnectPredicate?,
 ) {
 
     suspend fun connect(transport: ClientTransport): RSocket {
-        val connection = transport.connect().wrapConnection()
-        val connectionConfig = connectionConfigProvider()
+        suspend fun connect(): RSocket {
+            val connection = transport.connect().wrapConnection()
+            val connectionConfig = connectionConfigProvider()
 
-        return connection.connect(isServer = false, interceptors, connectionConfig, acceptor) {
-            val setupFrame = SetupFrame(
-                version = Version.Current,
-                honorLease = false,
-                keepAlive = connectionConfig.keepAlive,
-                resumeToken = null,
-                payloadMimeType = connectionConfig.payloadMimeType,
-                payload = connectionConfig.setupPayload
-            )
-            connection.sendFrame(setupFrame)
+            return connection.connect(isServer = false, interceptors, connectionConfig, acceptor) {
+                val setupFrame = SetupFrame(
+                    version = Version.Current,
+                    honorLease = false,
+                    keepAlive = connectionConfig.keepAlive,
+                    resumeToken = null,
+                    payloadMimeType = connectionConfig.payloadMimeType,
+                    payload = connectionConfig.setupPayload
+                )
+                connection.sendFrame(setupFrame)
+            }
+        }
+
+        return when (reconnectPredicate) {
+            null -> connect()
+            else -> ReconnectableRSocket(::connect, reconnectPredicate)
         }
     }
 

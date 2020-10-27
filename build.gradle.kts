@@ -169,26 +169,26 @@ subprojects {
                             else      -> emptyList()
                         }
                     }
-                    else                     -> emptyList()
+                    else -> emptyList()
                 }.forEach(KotlinNativeTarget::disableCompilation)
+
+                //run tests on release + mimalloc to reduce tests execution time
+                //compilation is slower in that mode, but work with buffers is much faster
+                targets.all {
+                    if (this is KotlinNativeTargetWithTests<*>) {
+                        binaries.test(listOf(RELEASE))
+                        testRuns.all { setExecutionSourceFrom(binaries.getTest(RELEASE)) }
+                        compilations.all {
+                            kotlinOptions.freeCompilerArgs += "-Xallocator=mimalloc"
+                        }
+                    }
+                }
             } else {
                 //if not on CI, use only one native target same as host, DON'T PUBLISH IN THAT MODE LOCALLY!!!
                 when {
                     HostManager.hostIsLinux                 -> linuxX64("native")
                     HostManager.hostIsMingw && supportMingw -> mingwX64("native")
                     HostManager.hostIsMac                   -> macosX64("native")
-                }
-            }
-
-            //run tests on release + mimalloc to reduce tests execution time
-            //compilation is slower in that mode
-            targets.all {
-                if (this is KotlinNativeTargetWithTests<*>) {
-                    binaries.test(listOf(RELEASE))
-                    testRuns.all { setExecutionSourceFrom(binaries.getTest(RELEASE)) }
-                    compilations.all {
-                        kotlinOptions.freeCompilerArgs += "-Xallocator=mimalloc"
-                    }
                 }
             }
         }

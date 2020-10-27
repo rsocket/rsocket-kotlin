@@ -28,6 +28,7 @@ public class RSocketConnectorBuilder internal constructor() {
     private val connectionConfig: ConnectionConfigBuilder = ConnectionConfigBuilder()
     private val interceptors: InterceptorsBuilder = InterceptorsBuilder()
     private var acceptor: ConnectionAcceptor? = null
+    private var reconnectPredicate: ReconnectPredicate? = null
 
     public fun connectionConfig(configure: ConnectionConfigBuilder.() -> Unit) {
         connectionConfig.configure()
@@ -39,6 +40,18 @@ public class RSocketConnectorBuilder internal constructor() {
 
     public fun acceptor(block: ConnectionAcceptor?) {
         acceptor = block
+    }
+
+    public fun reconnectable(retries: Long) {
+        reconnectPredicate = { _, attempt -> attempt < retries }
+    }
+
+    public fun reconnectable(retries: Long, predicate: suspend (cause: Throwable) -> Boolean) {
+        reconnectPredicate = { cause, attempt -> predicate(cause) && attempt < retries }
+    }
+
+    public fun reconnectable(predicate: suspend (cause: Throwable, attempt: Long) -> Boolean) {
+        reconnectPredicate = predicate
     }
 
     public class ConnectionConfigBuilder internal constructor() {
@@ -71,6 +84,7 @@ public class RSocketConnectorBuilder internal constructor() {
         interceptors.build(),
         connectionConfig.producer(),
         acceptor ?: defaultAcceptor,
+        reconnectPredicate
     )
 
     private companion object {
