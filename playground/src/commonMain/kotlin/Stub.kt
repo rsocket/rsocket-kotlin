@@ -16,19 +16,18 @@
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.random.*
 
-val rSocketAcceptor: RSocketAcceptor = {
+val rSocketAcceptor: ConnectionAcceptor = ConnectionAcceptor {
     RSocketRequestHandler {
-        requestResponse = {
+        requestResponse {
             delay(Random.nextLong(1000, 3000))
             throw RSocketError.Invalid(it.toString())
         }
-        requestStream = {
+        requestStream {
             flow {
                 coroutineScope {
                     while (isActive) {

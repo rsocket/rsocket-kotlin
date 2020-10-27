@@ -15,24 +15,25 @@
  */
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 
 fun main(): Unit = runBlocking {
 
-    val acceptor: RSocketAcceptor = {
-        val data = payload.metadata?.readText() ?: error("Empty metadata")
+    val server = LocalServer()
+    RSocketServer().bind(server) {
+        val data = config.setupPayload.metadata?.readText() ?: error("Empty metadata")
         RSocketRequestHandler {
             when (data) {
-                "rr" -> requestResponse = {
+                "rr" -> requestResponse {
                     println("Server receive: ${it.data.readText()}")
                     Payload("From server")
                 }
-                "rs" -> requestStream = {
+                "rs" -> requestStream {
                     println("Server receive: ${it.data.readText()}")
                     flowOf(Payload("From server"))
                 }
@@ -41,14 +42,7 @@ fun main(): Unit = runBlocking {
     }
 
     suspend fun client1() {
-
-        val (clientConnection, serverConnection) = SimpleLocalConnection()
-
-        GlobalScope.launch {
-            serverConnection.startServer(acceptor = acceptor)
-        }
-
-        val rSocketClient = clientConnection.connectClient()
+        val rSocketClient = RSocketConnector().connect(server)
         rSocketClient.job.join()
         println("Client 1 canceled: ${rSocketClient.job.isCancelled}")
         try {
@@ -59,16 +53,11 @@ fun main(): Unit = runBlocking {
     }
 
     suspend fun client2() {
-
-        val (clientConnection, serverConnection) = SimpleLocalConnection()
-
-        GlobalScope.launch {
-            serverConnection.startServer(acceptor = acceptor)
-        }
-
-        val rSocketClient = clientConnection.connectClient(
-            RSocketConnectorConfiguration(setupPayload = Payload("", "rr"))
-        )
+        val rSocketClient = RSocketConnector {
+            connectionConfig {
+                setupPayload { Payload("", "rr") }
+            }
+        }.connect(server)
 
         val payload = rSocketClient.requestResponse(Payload("2"))
         println("Client 2 receives: ${payload.data.readText()}")
@@ -80,16 +69,12 @@ fun main(): Unit = runBlocking {
     }
 
     suspend fun client3() {
+        val rSocketClient = RSocketConnector {
+            connectionConfig {
+                setupPayload { Payload("", "rs") }
+            }
+        }.connect(server)
 
-        val (clientConnection, serverConnection) = SimpleLocalConnection()
-
-        GlobalScope.launch {
-            serverConnection.startServer(acceptor = acceptor)
-        }
-
-        val rSocketClient = clientConnection.connectClient(
-            RSocketConnectorConfiguration(setupPayload = Payload("", "rs"))
-        )
         val payloads = rSocketClient.requestStream(Payload("3")).toList()
         println("Client 3 receives: ${payloads.map { it.data.readText() }}")
         try {

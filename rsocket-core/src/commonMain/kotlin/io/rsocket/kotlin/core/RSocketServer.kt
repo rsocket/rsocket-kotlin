@@ -17,41 +17,54 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
-import io.rsocket.kotlin.error.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
-import io.rsocket.kotlin.plugin.*
-import kotlinx.coroutines.*
+import io.rsocket.kotlin.logging.*
+import io.rsocket.kotlin.transport.*
 
-class RSocketServer(
-    private val connectionProvider: ConnectionProvider,
-    private val configuration: RSocketServerConfiguration = RSocketServerConfiguration(),
+@OptIn(TransportApi::class)
+class RSocketServer internal constructor(
+    private val loggerFactory: LoggerFactory,
+    private val interceptors: Interceptors,
 ) {
-    suspend fun start(acceptor: RSocketAcceptor): Job {
-        val connection =
-            connectionProvider.connect()
-                .let(configuration.plugin::wrapConnection)
-                .logging(configuration.loggerFactory.logger("io.rsocket.kotlin.frame.Frame"))
 
-        val setupFrame = connection.receiveFrame()
-        if (setupFrame !is SetupFrame)
-            connection.failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
-        if (setupFrame.version != Version.Current)
-            connection.failSetup(RSocketError.Setup.Invalid("Unsupported version: ${setupFrame.version}"))
+    fun <T> bind(
+        transport: ServerTransport<T>,
+        acceptor: ConnectionAcceptor,
+    ): T = transport.start {
+        val connection = it.wrapConnection()
+        val setupFrame = connection.validateSetup()
+        connection.start(setupFrame, acceptor)
+        connection.join()
+    }
 
+    private suspend fun Connection.start(setupFrame: SetupFrame, acceptor: ConnectionAcceptor) {
+        val connectionConfig = ConnectionConfig(
+            keepAlive = setupFrame.keepAlive,
+            payloadMimeType = setupFrame.payloadMimeType,
+            setupPayload = setupFrame.payload
+        )
         try {
-            return connectServer(
-                connection = connection,
-                plugin = configuration.plugin,
-                setupFrame = setupFrame,
-                acceptor = acceptor
-            )
+            connect(isServer = true, interceptors, connectionConfig, acceptor)
         } catch (e: Throwable) {
-            connection.failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
+            failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
         }
     }
+
+    private suspend fun Connection.validateSetup(): SetupFrame {
+        val setupFrame = receiveFrame()
+        return when {
+            setupFrame !is SetupFrame             -> failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
+            setupFrame.version != Version.Current -> failSetup(RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}"))
+            setupFrame.honorLease                 -> failSetup(RSocketError.Setup.Unsupported("Lease is not supported"))
+            setupFrame.resumeToken != null        -> failSetup(RSocketError.Setup.Unsupported("Resume is not supported"))
+            else                                  -> setupFrame
+        }
+    }
+
+    private fun Connection.wrapConnection(): Connection =
+        interceptors.wrapConnection(this)
+            .logging(loggerFactory.logger("io.rsocket.kotlin.frame.Frame"))
 
     private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
         sendFrame(ErrorFrame(0, error))

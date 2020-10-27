@@ -15,33 +15,30 @@
  */
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
+import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 
 fun main(): Unit = runBlocking {
-    val (clientConnection, serverConnection) = SimpleLocalConnection()
-
-    launch {
-        serverConnection.startServer {
-            RSocketRequestHandler {
-                requestChannel = { request ->
-                    request.buffer(3).take(3).flatMapConcat { payload ->
-                        val data = payload.data.readText()
-                        flow {
-                            repeat(3) {
-                                emit(Payload("$data(copy $it)"))
-                            }
+    val server = LocalServer()
+    RSocketServer().bind(server) {
+        RSocketRequestHandler {
+            requestChannel { request ->
+                request.buffer(3).take(3).flatMapConcat { payload ->
+                    val data = payload.data.readText()
+                    flow {
+                        repeat(3) {
+                            emit(Payload("$data(copy $it)"))
                         }
                     }
                 }
             }
         }
     }
-
-    val rSocket = clientConnection.connectClient()
+    val rSocket = RSocketConnector().connect(server)
 
     val request = flow {
         emit(Payload("Hello"))

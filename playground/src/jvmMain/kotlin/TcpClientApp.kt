@@ -17,3 +17,5 @@
 import kotlinx.coroutines.*
 
 suspend fun main(): Unit = runTcpClient(Dispatchers.IO)
+
+//suspend fun main(): Unit = testNodeJsServer(Dispatchers.IO)

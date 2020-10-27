@@ -15,26 +15,23 @@
  */
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
+import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
 
 fun main(): Unit = runBlocking {
-    val (clientConnection, serverConnection) = SimpleLocalConnection()
-
-    launch {
-        serverConnection.startServer {
-            RSocketRequestHandler {
-                requestResponse = {
-                    val data = it.data.readText()
-                    if ("hello" in data) Payload("hello client")
-                    else error("I don't understand you")
-                }
+    val server = LocalServer()
+    RSocketServer().bind(server) {
+        RSocketRequestHandler {
+            requestResponse {
+                val data = it.data.readText()
+                if ("hello" in data) Payload("hello client")
+                else error("I don't understand you")
             }
         }
     }
-
-    val rSocket = clientConnection.connectClient()
+    val rSocket = RSocketConnector().connect(server)
 
     val response = rSocket.requestResponse(Payload("hello server"))
 

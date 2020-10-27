@@ -33,7 +33,7 @@ abstract class TransportTest : SuspendTest {
     lateinit var client: RSocket //should be assigned in `before`
 
     override suspend fun after() {
-        client.job.cancelAndJoin()
+        client.cancelAndJoin()
     }
 
     @Test
@@ -166,9 +166,21 @@ abstract class TransportTest : SuspendTest {
 
     companion object {
 
-        val ACCEPTOR: RSocketAcceptor = { TestRSocket() }
-        val CONNECTOR_CONFIG = RSocketConnectorConfiguration(keepAlive = KeepAlive(10.minutes, 100.minutes), loggerFactory = NoopLogger)
-        val SERVER_CONFIG = RSocketServerConfiguration(loggerFactory = NoopLogger)
+        val SERVER = RSocketServer {
+            loggerFactory = NoopLogger
+        }
+
+        val CONNECTOR = RSocketConnector {
+            loggerFactory = NoopLogger
+
+            connectionConfig {
+                keepAlive = KeepAlive(10.minutes, 100.minutes)
+            }
+        }
+
+        val ACCEPTOR = ConnectionAcceptor {
+            TestRSocket()
+        }
 
         const val MOCK_DATA: String = "test-data"
         const val MOCK_METADATA: String = "metadata"

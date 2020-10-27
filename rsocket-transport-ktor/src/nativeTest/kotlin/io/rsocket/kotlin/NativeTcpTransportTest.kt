@@ -17,13 +17,40 @@
 package io.rsocket.kotlin
 
 import io.ktor.network.selector.*
+import io.ktor.network.sockets.*
+import io.ktor.util.network.*
+import io.rsocket.kotlin.test.*
+import io.rsocket.kotlin.transport.ktor.*
+import kotlinx.atomicfu.*
+import kotlinx.coroutines.*
+import kotlin.random.*
 
-class NativeTcpTransportTest : TcpTransportTest() {
-    override val clientSelector: SelectorManager get() = selectorClient
-    override val serverSelector: SelectorManager get() = selectorServer
+class NativeTcpTransportTest : TransportTest() {
+    private lateinit var server: ServerSocket
+    private lateinit var serverJob: Job
+
+    override suspend fun before(): Unit = coroutineScope {
+        val address = NetworkAddress("0.0.0.0", port.incrementAndGet())
+        server = aSocket(serverSelector).tcp().bind(address)
+        val clientSocket = aSocket(clientSelector).tcp().clientTransport(address)
+        client = CONNECTOR.connect(clientSocket)
+        val serverSocket = server.accept()
+        val connection = TcpConnection(serverSocket)
+        serverJob = connection.job
+        SERVER.bind({ accept -> GlobalScope.launch { accept(connection) } }, ACCEPTOR)
+    }
+
+    override suspend fun after() {
+        serverJob.cancel()
+        client.cancel()
+        server.close()
+        serverJob.join()
+        client.join()
+    }
 
     companion object {
-        private val selectorClient = SelectorManager()
-        private val selectorServer = SelectorManager()
+        private val port = atomic(Random.nextInt(20, 90) * 100)
+        private val clientSelector = SelectorManager()
+        private val serverSelector = SelectorManager()
     }
 }

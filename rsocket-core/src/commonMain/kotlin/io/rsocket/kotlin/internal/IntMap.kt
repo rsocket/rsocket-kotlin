@@ -118,15 +118,6 @@ internal class IntMap<V : Any>(initialCapacity: Int = 8, private val loadFactor:
             }
         }
 
-        @OptIn(ExperimentalStdlibApi::class)
-        override fun toString(): String {
-            return buildMap<Int, Int?> {
-                repeat(capacity) {
-                    put(store.key(it), store.value(it)?.hashCode())
-                }
-            }.toList().sortedBy { it.first }.toString()
-        }
-
         private fun set(index: Int, key: Int, value: V?) {
             store.setKey(index, key)
             store.setValue(index, value)
@@ -174,7 +165,7 @@ internal class IntMap<V : Any>(initialCapacity: Int = 8, private val loadFactor:
          * @return `true` if the next item was moved back. `false` otherwise.
          */
         private fun removeAt(index: Int): Boolean {
-            val s = store.decrementSize()
+            store.decrementSize()
             // Clearing the key is not strictly necessary (for GC like in a regular collection),
             // but recommended for security. The memory location is still fresh in the cache anyway.
             clear(index)

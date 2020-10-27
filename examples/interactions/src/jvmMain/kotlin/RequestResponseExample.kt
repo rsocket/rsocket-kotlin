@@ -15,28 +15,25 @@
  */
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
+import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
 
 fun main(): Unit = runBlocking {
-    val (clientConnection, serverConnection) = SimpleLocalConnection()
+    val server = LocalServer()
+    RSocketServer().bind(server) {
+        RSocketRequestHandler {
+            requestResponse {
+                val data = it.data.readText()
+                val metadata = it.metadata?.readText()
+                println("Server received payload: data=$data, metadata=$metadata")
 
-    launch {
-        serverConnection.startServer {
-            RSocketRequestHandler {
-                requestResponse = {
-                    val data = it.data.readText()
-                    val metadata = it.metadata?.readText()
-                    println("Server received payload: data=$data, metadata=$metadata")
-
-                    Payload(data.repeat(3), "SERVER_METADATA") //response
-                }
+                Payload(data.repeat(3), "SERVER_METADATA") //response
             }
         }
     }
-
-    val rSocket = clientConnection.connectClient()
+    val rSocket = RSocketConnector().connect(server)
 
     val response = rSocket.requestResponse(Payload("Hello", "World"))
 
