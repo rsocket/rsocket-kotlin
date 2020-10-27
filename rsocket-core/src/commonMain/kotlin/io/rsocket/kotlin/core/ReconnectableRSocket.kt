@@ -26,7 +26,7 @@ internal typealias ReconnectPredicate = suspend (cause: Throwable, attempt: Long
 
 @Suppress("FunctionName")
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-internal fun ReconnectableRSocket(
+internal suspend fun ReconnectableRSocket(
     connect: suspend () -> RSocket,
     predicate: ReconnectPredicate,
 ): RSocket {
@@ -39,7 +39,6 @@ internal fun ReconnectableRSocket(
             .retryWhen { cause, attempts -> predicate(cause, attempts) } //reconnection logic
             .catch { emit(ReconnectState.Failed(it)) } //reconnection failed - state = failed
             .mapNotNull {
-                println("STATE: $it")
                 state.value = it //set state //TODO replace with Flow.stateIn when coroutines 1.4.0 will be released
 
                 when (it) {
@@ -49,6 +48,15 @@ internal fun ReconnectableRSocket(
                 }
             }
             .launchRestarting() //reconnect if old connection completed/failed
+
+    //await first connection to fail fast if something
+    state.mapNotNull {
+        when (it) {
+            is ReconnectState.Connected -> it.rSocket
+            is ReconnectState.Failed    -> throw it.error
+            ReconnectState.Connecting   -> null
+        }
+    }.take(1).collect()
 
     return ReconnectableRSocket(job, state)
 }
