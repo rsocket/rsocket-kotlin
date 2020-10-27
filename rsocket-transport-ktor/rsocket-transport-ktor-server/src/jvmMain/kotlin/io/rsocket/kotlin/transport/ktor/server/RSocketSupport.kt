@@ -31,7 +31,7 @@ public class RSocketSupport(
     public companion object Feature : ApplicationFeature<Application, Config, RSocketSupport> {
         override val key: AttributeKey<RSocketSupport> = AttributeKey("RSocket")
         override fun install(pipeline: Application, configure: Config.() -> Unit): RSocketSupport {
-            pipeline.featureOrNull(WebSockets) ?: error("RSocket require WebSockets to work. Consider using `install(WebSockets)` first.")
+            pipeline.featureOrNull(WebSockets) ?: error("RSocket require WebSockets to work. You must install WebSockets feature first.")
             val server = Config().apply(configure).server
             return RSocketSupport(server)
         }
