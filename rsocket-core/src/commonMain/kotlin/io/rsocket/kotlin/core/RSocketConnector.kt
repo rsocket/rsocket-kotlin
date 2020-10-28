@@ -31,27 +31,29 @@ class RSocketConnector internal constructor(
     private val reconnectPredicate: ReconnectPredicate?,
 ) {
 
-    suspend fun connect(transport: ClientTransport): RSocket {
-        suspend fun connect(): RSocket {
-            val connection = transport.connect().wrapConnection()
-            val connectionConfig = connectionConfigProvider()
+    suspend fun connect(transport: ClientTransport): RSocket = when (reconnectPredicate) {
+        null -> connectOnce(transport)
+        else -> ReconnectableRSocket(
+            logger = loggerFactory.logger("io.rsocket.kotlin.connection"),
+            connect = { connectOnce(transport) },
+            predicate = reconnectPredicate
+        )
+    }
 
-            return connection.connect(isServer = false, interceptors, connectionConfig, acceptor) {
-                val setupFrame = SetupFrame(
-                    version = Version.Current,
-                    honorLease = false,
-                    keepAlive = connectionConfig.keepAlive,
-                    resumeToken = null,
-                    payloadMimeType = connectionConfig.payloadMimeType,
-                    payload = connectionConfig.setupPayload
-                )
-                connection.sendFrame(setupFrame)
-            }
-        }
+    private suspend fun connectOnce(transport: ClientTransport): RSocket {
+        val connection = transport.connect().wrapConnection()
+        val connectionConfig = connectionConfigProvider()
 
-        return when (reconnectPredicate) {
-            null -> connect()
-            else -> ReconnectableRSocket(loggerFactory.logger("io.rsocket.kotlin.connection"), ::connect, reconnectPredicate)
+        return connection.connect(isServer = false, interceptors, connectionConfig, acceptor) {
+            val setupFrame = SetupFrame(
+                version = Version.Current,
+                honorLease = false,
+                keepAlive = connectionConfig.keepAlive,
+                resumeToken = null,
+                payloadMimeType = connectionConfig.payloadMimeType,
+                payload = connectionConfig.setupPayload
+            )
+            connection.sendFrame(setupFrame)
         }
     }
 
