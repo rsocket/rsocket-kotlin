@@ -51,11 +51,11 @@ class RSocketConnector internal constructor(
 
         return when (reconnectPredicate) {
             null -> connect()
-            else -> ReconnectableRSocket(::connect, reconnectPredicate)
+            else -> ReconnectableRSocket(loggerFactory.logger("io.rsocket.kotlin.connection"), ::connect, reconnectPredicate)
         }
     }
 
     private fun Connection.wrapConnection(): Connection =
         interceptors.wrapConnection(this)
-            .logging(loggerFactory.logger("io.rsocket.kotlin.frame.Frame"))
+            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"))
 }

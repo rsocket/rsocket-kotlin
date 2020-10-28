@@ -18,6 +18,7 @@ package io.rsocket.kotlin.core
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -27,6 +28,7 @@ internal typealias ReconnectPredicate = suspend (cause: Throwable, attempt: Long
 @Suppress("FunctionName")
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 internal suspend fun ReconnectableRSocket(
+    logger: Logger,
     connect: suspend () -> RSocket,
     predicate: ReconnectPredicate,
 ): RSocket {
@@ -36,15 +38,25 @@ internal suspend fun ReconnectableRSocket(
         connect.asFlow()
             .map<RSocket, ReconnectState> { ReconnectState.Connected(it) } //if connection established - state = connected
             .onStart { emit(ReconnectState.Connecting) } //init - state = connecting
-            .retryWhen { cause, attempts -> predicate(cause, attempts) } //reconnection logic
-            .catch { emit(ReconnectState.Failed(it)) } //reconnection failed - state = failed
+            .retryWhen { cause, attempt ->
+                logger.debug(cause) { "Connection establishment failed, attempt: $attempt. Trying to reconnect..." }
+                predicate(cause, attempt)
+            } //reconnection logic
+            .catch {
+                logger.debug(it) { "Reconnection failed" }
+                emit(ReconnectState.Failed(it))
+            } //reconnection failed - state = failed
             .mapNotNull {
-                state.value = it //set state //TODO replace with Flow.stateIn when coroutines 1.4.0 will be released
+                state.value = it //set state //TODO replace with Flow.stateIn when coroutines 1.4.0-native-mt will be released
 
                 when (it) {
-                    is ReconnectState.Connected -> it.rSocket.join()  //await for connection completion
+                    is ReconnectState.Connected -> {
+                        logger.debug { "Connection established" }
+                        it.rSocket.join() //await for connection completion
+                        logger.debug { "Connection closed. Reconnecting..." }
+                    }
                     is ReconnectState.Failed    -> throw it.error //reconnect failed, cancel job
-                    ReconnectState.Connecting   -> null //ignore, should never happen
+                    ReconnectState.Connecting   -> null //skip, still waiting for new connection
                 }
             }
             .launchRestarting() //reconnect if old connection completed/failed
@@ -67,7 +79,7 @@ private fun Flow<*>.launchRestarting(): Job = GlobalScope.launch(Dispatchers.Unc
             collect()
         } catch (e: Throwable) {
             // KLUDGE: K/N
-            cancel("Reconnect failed", e)
+            cancel("Reconnection failed", e)
             break
         }
     }

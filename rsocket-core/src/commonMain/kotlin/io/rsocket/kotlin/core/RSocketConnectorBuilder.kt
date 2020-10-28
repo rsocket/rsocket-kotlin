@@ -44,26 +44,13 @@ public class RSocketConnectorBuilder internal constructor() {
 
     /**
      * When configured, [RSocketConnector.connect] will return custom [RSocket] implementation,
-     * which will try to reconnect if connection lost and [retries] are not exhausted.
-     *
-     * **This is not Resumption**: by using [reconnectable] only connection will be re-established, streams will fail
-     *
-     * @param retries number of retries to do, if connection establishment failed
-     */
-    public fun reconnectable(retries: Long) {
-        reconnectPredicate = { _, attempt -> attempt < retries }
-    }
-
-    /**
-     * When configured, [RSocketConnector.connect] will return custom [RSocket] implementation,
      * which will try to reconnect if connection lost and [retries] are not exhausted with [predicate] returning `true`.
      *
      * **This is not Resumption**: by using [reconnectable] only connection will be re-established, streams will fail
      *
      * @param retries number of retries to do, if connection establishment failed
-     * @param predicate additional predicate to adapt retry logic for specific errors
      */
-    public fun reconnectable(retries: Long, predicate: suspend (cause: Throwable) -> Boolean) {
+    public fun reconnectable(retries: Long, predicate: suspend (cause: Throwable) -> Boolean = { true }) {
         reconnectPredicate = { cause, attempt -> predicate(cause) && attempt < retries }
     }
 

@@ -29,9 +29,9 @@ fun main(): Unit = runBlocking {
     val server = LocalServer()
     RSocketServer().bind(server) {
         RSocketRequestHandler {
-            requestStream {
-                val data = it.data.readText()
-                val metadata = it.metadata?.readText()
+            requestStream { requestPayload ->
+                val data = requestPayload.data.readText()
+                val metadata = requestPayload.metadata?.readText()
                 println("Server received payload: data=$data, metadata=$metadata")
 
                 flow {
@@ -67,7 +67,7 @@ fun main(): Unit = runBlocking {
             println("Client receives index: $index")
         }
     } catch (e: Throwable) {
-        println("Connection failed with error: $e")
+        println("Request failed with error: $e")
     }
 
     //do request just after it

@@ -27,9 +27,9 @@ fun main(): Unit = runBlocking {
     val server = LocalServer()
     RSocketServer().bind(server) {
         RSocketRequestHandler {
-            requestStream {
-                val data = it.data.readText()
-                val metadata = it.metadata?.readText()
+            requestStream { requestPayload ->
+                val data = requestPayload.data.readText()
+                val metadata = requestPayload.metadata?.readText()
                 println("Server received payload: data=$data, metadata=$metadata")
 
                 flow {
@@ -50,7 +50,7 @@ fun main(): Unit = runBlocking {
         //reconnect 10 times with 1 second delay if connection establishment failed
         reconnectable(10) {
             delay(1000)
-            println("RECONNECT")
+            println("Retry after error: $it")
             true
         }
     }.connect(ClientTransport {

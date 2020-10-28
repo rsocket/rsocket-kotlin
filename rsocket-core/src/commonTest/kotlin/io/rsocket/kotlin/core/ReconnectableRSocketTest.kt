@@ -18,6 +18,7 @@ package io.rsocket.kotlin.core
 
 import app.cash.turbine.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import kotlinx.atomicfu.*
@@ -30,13 +31,14 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
     //needed for native
     private val fails = atomic(0)
     private val first = atomic(true)
+    private val logger = DefaultLoggerFactory.logger("io.rsocket.kotlin.connection")
 
     @Test
     fun testConnectFail() = test {
         val connect: suspend () -> RSocket = { error("Failed to connect") }
 
         assertFailsWith(IllegalStateException::class, "Failed to connect") {
-            ReconnectableRSocket(connect) { cause, attempt ->
+            ReconnectableRSocket(logger, connect) { cause, attempt ->
                 fails.incrementAndGet()
                 assertTrue(cause is IllegalStateException)
                 assertEquals("Failed to connect", cause.message)
@@ -57,7 +59,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
                 error("Failed to connect")
             }
         }
-        val rSocket = ReconnectableRSocket(connect) { cause, attempt ->
+        val rSocket = ReconnectableRSocket(logger, connect) { cause, attempt ->
             fails.incrementAndGet()
             assertTrue(cause is IllegalStateException)
             assertEquals("Failed to connect", cause.message)
@@ -90,7 +92,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
                 rrHandler(handlerJob)
             }
         }
-        val rSocket = ReconnectableRSocket(connect) { cause, attempt ->
+        val rSocket = ReconnectableRSocket(logger, connect) { cause, attempt ->
             fails.incrementAndGet()
             assertTrue(cause is IllegalStateException)
             assertEquals("Failed to connect", cause.message)
@@ -115,7 +117,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
                 rrHandler(Job())
             }
         }
-        val rSocket = ReconnectableRSocket(connect) { cause, attempt ->
+        val rSocket = ReconnectableRSocket(logger, connect) { cause, attempt ->
             fails.incrementAndGet()
             assertTrue(cause is IllegalStateException)
             assertEquals("Failed to connect", cause.message)
@@ -144,7 +146,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
                 else            -> rrHandler(Job())
             }
         }
-        val rSocket = ReconnectableRSocket(connect) { cause, attempt ->
+        val rSocket = ReconnectableRSocket(logger, connect) { cause, attempt ->
             fails.incrementAndGet()
             assertTrue(cause is IllegalStateException)
             assertEquals("Failed to connect", cause.message)
@@ -177,7 +179,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
                 else            -> streamHandler(Job())
             }
         }
-        val rSocket = ReconnectableRSocket(connect) { cause, attempt ->
+        val rSocket = ReconnectableRSocket(logger, connect) { cause, attempt ->
             fails.incrementAndGet()
             assertTrue(cause is IllegalStateException)
             assertEquals("Failed to connect", cause.message)
