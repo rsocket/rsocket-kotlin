@@ -52,14 +52,14 @@ repositories {
     maven { url 'https://oss.jfrog.org/oss-snapshot-local' }
 }
 dependencies {
-    implementation 'io.rsocket.kotlin:rsocket-core:0.10.0-SNAPSHOT'
-    implementation 'io.rsocket.kotlin:rsocket-transport-ktor:0.10.0-SNAPSHOT'
+    implementation 'io.rsocket.kotlin:rsocket-core:0.11.0-SNAPSHOT'
+    implementation 'io.rsocket.kotlin:rsocket-transport-ktor:0.11.0-SNAPSHOT'
 
 //  client feature for ktor
-//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-client:0.10.0-SNAPSHOT'
+//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-client:0.11.0-SNAPSHOT'
 
 //  server feature for ktor 
-//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-server:0.10.0-SNAPSHOT' 
+//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-server:0.11.0-SNAPSHOT' 
 
 //  one of ktor engines to work with websockets
 //  client engines
@@ -82,14 +82,14 @@ repositories {
     maven("https://oss.jfrog.org/oss-snapshot-local")
 }
 dependencies {
-    implementation("io.rsocket.kotlin:rsocket-core:0.10.0-SNAPSHOT")
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor:0.10.0-SNAPSHOT")
+    implementation("io.rsocket.kotlin:rsocket-core:0.11.0-SNAPSHOT")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor:0.11.0-SNAPSHOT")
 
 //  client feature for ktor
-//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-client:0.10.0-SNAPSHOT")
+//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-client:0.11.0-SNAPSHOT")
 
 //  server feature for ktor 
-//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-server:0.10.0-SNAPSHOT") 
+//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-server:0.11.0-SNAPSHOT") 
 
 //  one of ktor engines to work with websockets
 //  client engines
