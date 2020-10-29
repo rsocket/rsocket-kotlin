@@ -28,6 +28,7 @@ public class RSocketConnectorBuilder internal constructor() {
     private val connectionConfig: ConnectionConfigBuilder = ConnectionConfigBuilder()
     private val interceptors: InterceptorsBuilder = InterceptorsBuilder()
     private var acceptor: ConnectionAcceptor? = null
+    private var reconnectPredicate: ReconnectPredicate? = null
 
     public fun connectionConfig(configure: ConnectionConfigBuilder.() -> Unit) {
         connectionConfig.configure()
@@ -39,6 +40,30 @@ public class RSocketConnectorBuilder internal constructor() {
 
     public fun acceptor(block: ConnectionAcceptor?) {
         acceptor = block
+    }
+
+    /**
+     * When configured, [RSocketConnector.connect] will return custom [RSocket] implementation,
+     * which will try to reconnect if connection lost and [retries] are not exhausted with [predicate] returning `true`.
+     *
+     * **This is not Resumption**: by using [reconnectable] only connection will be re-established, streams will fail
+     *
+     * @param retries number of retries to do, if connection establishment failed
+     */
+    public fun reconnectable(retries: Long, predicate: suspend (cause: Throwable) -> Boolean = { true }) {
+        reconnectPredicate = { cause, attempt -> predicate(cause) && attempt < retries }
+    }
+
+    /**
+     * When configured, [RSocketConnector.connect] will return custom [RSocket] implementation,
+     * which will try to reconnect if connection lost and [predicate] returns `true`.
+     *
+     * **This is not Resumption**: by using [reconnectable] only connection will be re-established, streams will fail
+     *
+     * @param predicate predicate for retry logic
+     */
+    public fun reconnectable(predicate: suspend (cause: Throwable, attempt: Long) -> Boolean) {
+        reconnectPredicate = predicate
     }
 
     public class ConnectionConfigBuilder internal constructor() {
@@ -71,6 +96,7 @@ public class RSocketConnectorBuilder internal constructor() {
         interceptors.build(),
         connectionConfig.producer(),
         acceptor ?: defaultAcceptor,
+        reconnectPredicate
     )
 
     private companion object {

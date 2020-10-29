@@ -28,9 +28,19 @@ class RSocketConnector internal constructor(
     private val interceptors: Interceptors,
     private val connectionConfigProvider: () -> ConnectionConfig,
     private val acceptor: ConnectionAcceptor,
+    private val reconnectPredicate: ReconnectPredicate?,
 ) {
 
-    suspend fun connect(transport: ClientTransport): RSocket {
+    suspend fun connect(transport: ClientTransport): RSocket = when (reconnectPredicate) {
+        null -> connectOnce(transport)
+        else -> ReconnectableRSocket(
+            logger = loggerFactory.logger("io.rsocket.kotlin.connection"),
+            connect = { connectOnce(transport) },
+            predicate = reconnectPredicate
+        )
+    }
+
+    private suspend fun connectOnce(transport: ClientTransport): RSocket {
         val connection = transport.connect().wrapConnection()
         val connectionConfig = connectionConfigProvider()
 
@@ -49,5 +59,5 @@ class RSocketConnector internal constructor(
 
     private fun Connection.wrapConnection(): Connection =
         interceptors.wrapConnection(this)
-            .logging(loggerFactory.logger("io.rsocket.kotlin.frame.Frame"))
+            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"))
 }

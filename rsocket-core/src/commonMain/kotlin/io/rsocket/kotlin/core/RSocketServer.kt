@@ -64,7 +64,7 @@ class RSocketServer internal constructor(
 
     private fun Connection.wrapConnection(): Connection =
         interceptors.wrapConnection(this)
-            .logging(loggerFactory.logger("io.rsocket.kotlin.frame.Frame"))
+            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"))
 
     private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
         sendFrame(ErrorFrame(0, error))
