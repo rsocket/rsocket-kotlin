@@ -15,6 +15,7 @@
  */
 
 import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.metadata.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.serialization.*
 import kotlinx.serialization.protobuf.*
@@ -27,20 +28,15 @@ val ConfiguredProtoBuf = ProtoBuf
 inline fun <reified T> ProtoBuf.decodeFromPayload(payload: Payload): T = decodeFromByteArray(payload.data.readBytes())
 
 @ExperimentalSerializationApi
-inline fun <reified T> ProtoBuf.encodeToPayload(route: String, value: T): Payload {
-    return kotlin.runCatching { //TODO some ktor issue...
-        Payload {
-            data(encodeToByteArray(value))
-            metadata(route)
-        }
-    }.getOrNull() ?: Payload {
-        data(encodeToByteArray(value))
-        metadata(route)
-    }
+inline fun <reified T> ProtoBuf.encodeToPayload(route: String, value: T): Payload = buildPayload {
+    data(encodeToByteArray(value))
+    metadata(RoutingMetadata(route))
 }
 
 @ExperimentalSerializationApi
-inline fun <reified T> ProtoBuf.encodeToPayload(value: T): Payload = Payload(encodeToByteArray(value))
+inline fun <reified T> ProtoBuf.encodeToPayload(value: T): Payload = buildPayload {
+    data(encodeToByteArray(value))
+}
 
 @ExperimentalSerializationApi
 inline fun <reified I, reified O> ProtoBuf.decoding(payload: Payload, block: (I) -> O): Payload =

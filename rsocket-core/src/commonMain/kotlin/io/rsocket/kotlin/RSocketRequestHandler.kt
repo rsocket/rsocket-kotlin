@@ -29,27 +29,27 @@ class RSocketRequestHandlerBuilder internal constructor() {
     private var requestChannel: (RSocket.(payloads: Flow<Payload>) -> Flow<Payload>)? = null
 
     public fun metadataPush(block: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)) {
-        require(metadataPush == null) { "Metadata Push handler already configured" }
+        check(metadataPush == null) { "Metadata Push handler already configured" }
         metadataPush = block
     }
 
     public fun fireAndForget(block: (suspend RSocket.(payload: Payload) -> Unit)) {
-        require(metadataPush == null) { "Fire and Forget handler already configured" }
+        check(metadataPush == null) { "Fire and Forget handler already configured" }
         fireAndForget = block
     }
 
     public fun requestResponse(block: (suspend RSocket.(payload: Payload) -> Payload)) {
-        require(metadataPush == null) { "Request Response Push handler already configured" }
+        check(metadataPush == null) { "Request Response Push handler already configured" }
         requestResponse = block
     }
 
     public fun requestStream(block: (RSocket.(payload: Payload) -> Flow<Payload>)) {
-        require(metadataPush == null) { "Request Stream handler already configured" }
+        check(metadataPush == null) { "Request Stream handler already configured" }
         requestStream = block
     }
 
     public fun requestChannel(block: (RSocket.(payloads: Flow<Payload>) -> Flow<Payload>)) {
-        require(metadataPush == null) { "Request Channel handler already configured" }
+        check(metadataPush == null) { "Request Channel handler already configured" }
         requestChannel = block
     }
 

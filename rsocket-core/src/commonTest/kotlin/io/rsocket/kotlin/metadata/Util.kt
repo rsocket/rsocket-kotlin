@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.frame.io
+package io.rsocket.kotlin.metadata
 
-import kotlin.experimental.*
+import io.rsocket.kotlin.test.*
 
-internal object Flags {
-    const val Ignore = 512
-    const val Metadata = 256
-    const val Follows = 128
-    const val Complete = 64
-    const val Next = 32
-}
-
-internal infix fun Int.check(flag: Int): Boolean = this and flag == flag
-
-internal infix fun Byte.check(flag: Byte): Boolean = this and flag == flag
+fun <M : Metadata> Metadata.readLoop(reader: MetadataReader<M>): M = toPacket(InUseTrackingPool).read(InUseTrackingPool, reader)

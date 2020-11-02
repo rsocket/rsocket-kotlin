@@ -103,7 +103,8 @@ internal fun StringBuilder.appendPacket(tag: String, packet: ByteReadPacket) {
 }
 
 internal fun StringBuilder.appendPayload(payload: Payload) {
-    if (payload.metadata != null) appendPacket("Metadata", payload.metadata)
+    val metadata = payload.metadata
+    if (metadata != null) appendPacket("Metadata", metadata)
     appendPacket("Data", payload.data)
 }
 

@@ -31,7 +31,7 @@ class TestRSocket : RSocket {
 
     override suspend fun requestResponse(payload: Payload): Payload {
         payload.release()
-        return Payload(data, metadata)
+        return Payload(packet(data), packet(metadata))
     }
 
     override fun requestStream(payload: Payload): Flow<Payload> = flow {

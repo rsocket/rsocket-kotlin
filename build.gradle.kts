@@ -206,13 +206,18 @@ subprojects {
                     if (name.contains("test", ignoreCase = true) || project.name == "rsocket-test") {
                         useExperimentalAnnotation("kotlin.time.ExperimentalTime")
                         useExperimentalAnnotation("kotlin.ExperimentalStdlibApi")
+
                         useExperimentalAnnotation("kotlinx.coroutines.ExperimentalCoroutinesApi")
                         useExperimentalAnnotation("kotlinx.coroutines.InternalCoroutinesApi")
                         useExperimentalAnnotation("kotlinx.coroutines.ObsoleteCoroutinesApi")
                         useExperimentalAnnotation("kotlinx.coroutines.FlowPreview")
+
                         useExperimentalAnnotation("io.ktor.util.KtorExperimentalAPI")
                         useExperimentalAnnotation("io.ktor.util.InternalAPI")
                         useExperimentalAnnotation("io.ktor.utils.io.core.internal.DangerousInternalIoApi")
+
+                        useExperimentalAnnotation("io.rsocket.kotlin.TransportApi")
+                        useExperimentalAnnotation("io.rsocket.kotlin.ExperimentalMetadataApi")
                     }
                 }
             }

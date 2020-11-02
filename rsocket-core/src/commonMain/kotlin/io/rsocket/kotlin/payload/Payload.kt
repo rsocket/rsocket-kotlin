@@ -18,14 +18,15 @@ package io.rsocket.kotlin.payload
 
 import io.ktor.utils.io.core.*
 
-class Payload(
-    val data: ByteReadPacket,
-    val metadata: ByteReadPacket? = null,
-) : Closeable {
+public fun Payload(data: ByteReadPacket, metadata: ByteReadPacket? = null): Payload = DefaultPayload(data, metadata)
 
-    fun copy(): Payload = Payload(data.copy(), metadata?.copy())
+public interface Payload : Closeable {
+    public val data: ByteReadPacket
+    public val metadata: ByteReadPacket?
 
-    fun release() {
+    public fun copy(): Payload = DefaultPayload(data.copy(), metadata?.copy())
+
+    public fun release() {
         data.release()
         metadata?.release()
     }
@@ -34,26 +35,12 @@ class Payload(
         release()
     }
 
-    companion object {
-        val Empty = Payload(ByteReadPacket.Empty)
+    public companion object {
+        public val Empty: Payload = Payload(ByteReadPacket.Empty)
     }
 }
 
-fun Payload(data: String, metadata: String? = null): Payload = Payload(
-    data = buildPacket { writeText(data) },
-    metadata = metadata?.let { buildPacket { writeText(it) } }
-)
-
-fun Payload(data: ByteArray, metadata: ByteArray? = null): Payload = Payload(
-    data = buildPacket { writeFully(data) },
-    metadata = metadata?.let { buildPacket { writeFully(it) } }
-)
-
-/**
- * Wrap data and metadata arrays without copying them.
- * Changes in input arrays will change payload data, same as reading from payload will change input arrays.
- */
-fun Payload.Companion.wrap(data: ByteArray, metadata: ByteArray? = null): Payload = Payload(
-    data = ByteReadPacket(data),
-    metadata = metadata?.let { ByteReadPacket(it) }
-)
+private class DefaultPayload(
+    override val data: ByteReadPacket,
+    override val metadata: ByteReadPacket?,
+) : Payload

@@ -35,6 +35,6 @@ suspend fun testNodeJsServer(dispatcher: CoroutineContext) {
     val transport = aSocket(SelectorManager(dispatcher)).tcp().clientTransport("127.0.0.1", 9000)
     val client = RSocketConnector().connect(transport)
 
-    val response = client.requestResponse(Payload("Hello from JVM"))
+    val response = client.requestResponse(buildPayload { data("Hello from JVM") })
     println(response.data.readText())
 }

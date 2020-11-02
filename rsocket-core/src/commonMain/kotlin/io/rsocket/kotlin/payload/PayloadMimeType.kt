@@ -16,7 +16,20 @@
 
 package io.rsocket.kotlin.payload
 
+import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.frame.io.*
+
 data class PayloadMimeType(
     val data: String = "application/binary",
-    val metadata: String = "application/binary"
-)
+    val metadata: String = "application/binary",
+) {
+    init {
+        data.requireAscii()
+        metadata.requireAscii()
+    }
+}
+
+public fun PayloadMimeType(
+    data: MimeTypeWithName,
+    metadata: MimeTypeWithName,
+): PayloadMimeType = PayloadMimeType(data.text, metadata.text)

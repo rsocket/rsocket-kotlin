@@ -20,6 +20,7 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
+import kotlin.time.*
 
 private const val HonorLeaseFlag = 64
 private const val ResumeEnabledFlag = 128
@@ -84,4 +85,45 @@ internal fun ByteReadPacket.readSetup(pool: BufferPool, flags: Int): SetupFrame 
         payloadMimeType = payloadMimeType,
         payload = payload
     )
+}
+
+private fun ByteReadPacket.readMimeType(): String {
+    val length = readByte().toInt()
+    return readTextExactBytes(length)
+}
+
+private fun BytePacketBuilder.writeMimeType(mimeType: String) {
+    val bytes = mimeType.encodeToByteArray() //TODO check
+    writeByte(bytes.size.toByte())
+    writeFully(bytes)
+}
+
+private fun ByteReadPacket.readPayloadMimeType(): PayloadMimeType {
+    val metadata = readMimeType()
+    val data = readMimeType()
+    return PayloadMimeType(data = data, metadata = metadata)
+}
+
+private fun BytePacketBuilder.writePayloadMimeType(payloadMimeType: PayloadMimeType) {
+    writeMimeType(payloadMimeType.metadata)
+    writeMimeType(payloadMimeType.data)
+}
+
+@OptIn(ExperimentalTime::class)
+private fun ByteReadPacket.readMillis(): Duration = readInt().milliseconds
+
+@OptIn(ExperimentalTime::class)
+private fun BytePacketBuilder.writeMillis(duration: Duration) {
+    writeInt(duration.toInt(DurationUnit.MILLISECONDS))
+}
+
+private fun ByteReadPacket.readKeepAlive(): KeepAlive {
+    val interval = readMillis()
+    val maxLifetime = readMillis()
+    return KeepAlive(interval = interval, maxLifetime = maxLifetime)
+}
+
+private fun BytePacketBuilder.writeKeepAlive(keepAlive: KeepAlive) {
+    writeMillis(keepAlive.interval)
+    writeMillis(keepAlive.maxLifetime)
 }

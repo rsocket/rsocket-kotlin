@@ -37,7 +37,7 @@ fun main() {
         RSocketRequestHandler {
             requestResponse {
                 println("Received: ${it.data.readText()}")
-                Payload("Hello from nodejs")
+                buildPayload { data("Hello from nodejs") }
             }
         }
     }
