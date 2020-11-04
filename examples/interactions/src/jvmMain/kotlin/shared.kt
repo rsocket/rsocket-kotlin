@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.frame.io
+import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.payload.*
 
-import kotlin.experimental.*
-
-internal object Flags {
-    const val Ignore = 512
-    const val Metadata = 256
-    const val Follows = 128
-    const val Complete = 64
-    const val Next = 32
+/**
+ * Simple custom [Payload] factory function with string data and metadata.
+ * Has almost no overhead over call to [Payload] constructor with data and metadata as [ByteReadPacket].
+ * Similar functions can be created for all needed use cases
+ */
+fun Payload(data: String, metadata: String? = null): Payload = buildPayload {
+    data(data)
+    if (metadata != null) metadata(metadata)
 }
-
-internal infix fun Int.check(flag: Int): Boolean = this and flag == flag
-
-internal infix fun Byte.check(flag: Byte): Boolean = this and flag == flag

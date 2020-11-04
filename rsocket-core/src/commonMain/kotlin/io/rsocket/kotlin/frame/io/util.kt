@@ -34,47 +34,6 @@ internal fun BytePacketBuilder.writeResumeToken(resumeToken: ByteReadPacket?) {
     }
 }
 
-internal fun ByteReadPacket.readMimeType(): String {
-    val length = readByte().toInt()
-    return readText(max = length)
-}
-
-internal fun BytePacketBuilder.writeMimeType(mimeType: String) {
-    val bytes = mimeType.encodeToByteArray() //TODO check
-    writeByte(bytes.size.toByte())
-    writeFully(bytes)
-}
-
-internal fun ByteReadPacket.readPayloadMimeType(): PayloadMimeType {
-    val metadata = readMimeType()
-    val data = readMimeType()
-    return PayloadMimeType(data = data, metadata = metadata)
-}
-
-internal fun BytePacketBuilder.writePayloadMimeType(payloadMimeType: PayloadMimeType) {
-    writeMimeType(payloadMimeType.metadata)
-    writeMimeType(payloadMimeType.data)
-}
-
-@OptIn(ExperimentalTime::class)
-internal fun ByteReadPacket.readMillis(): Duration = readInt().milliseconds
-
-@OptIn(ExperimentalTime::class)
-internal fun BytePacketBuilder.writeMillis(duration: Duration) {
-    writeInt(duration.toInt(DurationUnit.MILLISECONDS))
-}
-
-internal fun ByteReadPacket.readKeepAlive(): KeepAlive {
-    val interval = readMillis()
-    val maxLifetime = readMillis()
-    return KeepAlive(interval = interval, maxLifetime = maxLifetime)
-}
-
-internal fun BytePacketBuilder.writeKeepAlive(keepAlive: KeepAlive) {
-    writeMillis(keepAlive.interval)
-    writeMillis(keepAlive.maxLifetime)
-}
-
 internal fun ByteReadPacket.readPacket(pool: BufferPool): ByteReadPacket {
     if (isEmpty) return ByteReadPacket.Empty
     return buildPacket(pool) {

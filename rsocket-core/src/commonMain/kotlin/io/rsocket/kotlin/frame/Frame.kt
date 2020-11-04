@@ -18,6 +18,7 @@ package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.io.*
 
 private const val FlagsMask: Int = 1023
@@ -34,7 +35,7 @@ abstract class Frame internal constructor(open val type: FrameType) : Closeable 
     protected abstract fun StringBuilder.appendSelf()
 
     @DangerousInternalIoApi
-    fun toPacket(pool: BufferPool): ByteReadPacket {
+    fun toPacket(pool: ObjectPool<ChunkBuffer>): ByteReadPacket {
         check(type.canHaveMetadata || !(flags check Flags.Metadata)) { "bad value for metadata flag" }
         return buildPacket(pool) {
             writeInt(streamId)
@@ -60,7 +61,7 @@ abstract class Frame internal constructor(open val type: FrameType) : Closeable 
 }
 
 @DangerousInternalIoApi
-fun ByteReadPacket.readFrame(pool: BufferPool): Frame = use {
+fun ByteReadPacket.readFrame(pool: ObjectPool<ChunkBuffer>): Frame = use {
     val streamId = readInt()
     val typeAndFlags = readShort().toInt() and 0xFFFF
     val flags = typeAndFlags and FlagsMask

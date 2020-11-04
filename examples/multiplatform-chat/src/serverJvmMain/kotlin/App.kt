@@ -24,13 +24,15 @@ import io.ktor.util.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.metadata.*
+import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.ktor.*
 import io.rsocket.kotlin.transport.ktor.server.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.*
 
-@OptIn(KtorExperimentalAPI::class, ExperimentalSerializationApi::class)
+@OptIn(KtorExperimentalAPI::class, ExperimentalSerializationApi::class, ExperimentalMetadataApi::class)
 fun main() {
     val proto = ConfiguredProtoBuf
     val users = Users()
@@ -43,6 +45,8 @@ fun main() {
 
     val rSocketServer = RSocketServer()
 
+    fun Payload.route(): String = metadata?.read(RoutingMetadata)?.tags?.first() ?: error("No route provided")
+
     //create acceptor
     val acceptor = ConnectionAcceptor {
         val userName = config.setupPayload.data.readText()
@@ -52,9 +56,7 @@ fun main() {
         RSocketRequestHandler {
             fireAndForget {
                 withContext(session) {
-                    when (val route = it.metadata?.readText()) {
-                        null -> error("No route provided")
-
+                    when (val route = it.route()) {
                         "users.deleteMe" -> userApi.deleteMe()
 
                         else             -> error("Wrong route: $route")
@@ -63,17 +65,15 @@ fun main() {
             }
             requestResponse {
                 withContext(session) {
-                    when (val route = it.metadata?.readText()) {
-                        null -> error("No route provided")
+                    when (val route = it.route()) {
+                        "users.getMe"      -> proto.encodeToPayload(userApi.getMe())
+                        "users.all"        -> proto.encodeToPayload(userApi.all())
 
-                        "users.getMe" -> proto.encodeToPayload(userApi.getMe())
-                        "users.all" -> proto.encodeToPayload(userApi.all())
+                        "chats.all"        -> proto.encodeToPayload(chatsApi.all())
+                        "chats.new"        -> proto.decoding<NewChat, Chat>(it) { (name) -> chatsApi.new(name) }
+                        "chats.delete"     -> proto.decoding<DeleteChat>(it) { (id) -> chatsApi.delete(id) }
 
-                        "chats.all" -> proto.encodeToPayload(chatsApi.all())
-                        "chats.new" -> proto.decoding<NewChat, Chat>(it) { (name) -> chatsApi.new(name) }
-                        "chats.delete" -> proto.decoding<DeleteChat>(it) { (id) -> chatsApi.delete(id) }
-
-                        "messages.send" -> proto.decoding<SendMessage, Message>(it) { (chatId, content) ->
+                        "messages.send"    -> proto.decoding<SendMessage, Message>(it) { (chatId, content) ->
                             messagesApi.send(chatId, content)
                         }
                         "messages.history" -> proto.decoding<HistoryMessages, List<Message>>(it) { (chatId, limit) ->
@@ -85,9 +85,7 @@ fun main() {
                 }
             }
             requestStream {
-                when (val route = it.metadata?.readText()) {
-                    null -> error("No route provided")
-
+                when (val route = it.route()) {
                     "messages.stream" -> {
                         val (chatId, fromMessageId) = proto.decodeFromPayload<StreamMessages>(it)
                         messagesApi.messages(chatId, fromMessageId).map { m -> proto.encodeToPayload(m) }

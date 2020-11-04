@@ -44,7 +44,10 @@ suspend fun RSocket.doSomething() {
 //        launch { rSocket.fireAndForget(Payload(byteArrayOf(1, 1, 1), byteArrayOf(2, 2, 2))) }
 //        launch { rSocket.metadataPush(byteArrayOf(1, 2, 3)) }
     var i = 0
-    requestStream(Payload(byteArrayOf(1, 1, 1), byteArrayOf(2, 2, 2))).buffer(10000).collect {
+    requestStream(buildPayload {
+        data(byteArrayOf(1, 1, 1))
+        metadata(byteArrayOf(2, 2, 2))
+    }).buffer(10000).collect {
         println(it.data.readBytes().contentToString())
         if (++i == 10000) error("")
     }

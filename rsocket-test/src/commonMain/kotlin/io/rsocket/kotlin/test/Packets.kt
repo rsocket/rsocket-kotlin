@@ -23,6 +23,8 @@ import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.payload.*
 import kotlin.test.*
 
+fun packet(block: BytePacketBuilder.() -> Unit): ByteReadPacket = buildPacket(InUseTrackingPool, block)
+
 fun packet(text: String): ByteReadPacket = buildPacket(InUseTrackingPool) { writeText(text) }
 
 fun packet(array: ByteArray): ByteReadPacket = buildPacket(InUseTrackingPool) { writeFully(array) }

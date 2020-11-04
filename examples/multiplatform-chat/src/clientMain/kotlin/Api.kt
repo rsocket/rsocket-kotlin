@@ -51,6 +51,6 @@ suspend fun connectToApiUsingTCP(name: String): Api {
 
 private fun connector(name: String): RSocketConnector = RSocketConnector {
     connectionConfig {
-        setupPayload { Payload(name) }
+        setupPayload { buildPayload { data(name) } }
     }
 }

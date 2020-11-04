@@ -18,65 +18,67 @@ package io.rsocket.kotlin.payload
 
 import io.ktor.utils.io.core.*
 
-class PayloadBuilder
-@PublishedApi
-internal constructor() {
-    private var data: BytePacketBuilder? = null
-    private var metadata: BytePacketBuilder? = null
+public interface PayloadBuilder {
+    public fun data(value: ByteReadPacket)
+    public fun metadata(value: ByteReadPacket)
 
-    @PublishedApi
-    internal fun data(): BytePacketBuilder = (data ?: BytePacketBuilder().also { data = it })
-
-    @PublishedApi
-    internal fun metadata(): BytePacketBuilder = (metadata ?: BytePacketBuilder().also { metadata = it })
-
-    inline fun data(block: BytePacketBuilder.() -> Unit): Unit = data().block()
-    inline fun metadata(block: BytePacketBuilder.() -> Unit): Unit = metadata().block()
-
-    @PublishedApi
-    internal fun build(): Payload = Payload(
-        data = data?.build() ?: ByteReadPacket.Empty,
-        metadata = metadata?.build()
-    )
-
-    @PublishedApi
-    internal fun release() {
-        data?.release()
-        metadata?.release()
-    }
+    public fun clean()
+    public fun build(): Payload
 }
 
-inline fun Payload(config: PayloadBuilder.() -> Unit): Payload {
-    val builder = PayloadBuilder()
+public inline fun buildPayload(block: PayloadBuilder.() -> Unit): Payload {
+    val builder = createPayloadBuilder()
     try {
-        builder.config()
+        builder.block()
         return builder.build()
-    } catch (e: Throwable) {
-        builder.release()
-        throw e
+    } catch (t: Throwable) {
+        builder.clean()
+        throw t
     }
 }
 
-fun PayloadBuilder.data(text: String): Unit = data {
-    writeText(text)
-}
+public inline fun PayloadBuilder.data(block: BytePacketBuilder.() -> Unit): Unit = data(buildPacket(block = block))
+public fun PayloadBuilder.data(value: String): Unit = data { writeText(value) }
+public fun PayloadBuilder.data(value: ByteArray): Unit = data { writeFully(value) }
 
-fun PayloadBuilder.data(bytes: ByteArray): Unit = data {
-    writeFully(bytes)
-}
+public inline fun PayloadBuilder.metadata(block: BytePacketBuilder.() -> Unit): Unit = metadata(buildPacket(block = block))
+public fun PayloadBuilder.metadata(value: String): Unit = metadata { writeText(value) }
+public fun PayloadBuilder.metadata(value: ByteArray): Unit = metadata { writeFully(value) }
 
-fun PayloadBuilder.data(packet: ByteReadPacket): Unit = data {
-    writePacket(packet)
-}
 
-fun PayloadBuilder.metadata(text: String): Unit = metadata {
-    writeText(text)
-}
+@PublishedApi
+internal fun createPayloadBuilder(): PayloadBuilder = PayloadFromBuilder()
 
-fun PayloadBuilder.metadata(bytes: ByteArray): Unit = metadata {
-    writeFully(bytes)
-}
+private class PayloadFromBuilder : PayloadBuilder, Payload {
+    private var hasData = false
+    private var hasMetadata = false
 
-fun PayloadBuilder.metadata(packet: ByteReadPacket): Unit = metadata {
-    writePacket(packet)
+    override var data: ByteReadPacket = ByteReadPacket.Empty
+        private set
+    override var metadata: ByteReadPacket? = null
+        private set
+
+    override fun data(value: ByteReadPacket) {
+        if (hasData) {
+            value.release()
+            error("Data already provided")
+        }
+        data = value
+        hasData = true
+    }
+
+    override fun metadata(value: ByteReadPacket) {
+        if (hasMetadata) {
+            value.release()
+            error("Metadata already provided")
+        }
+        metadata = value
+        hasMetadata = true
+    }
+
+    override fun clean(): Unit = release()
+    override fun build(): Payload {
+        check(hasData) { "Data is required" }
+        return this
+    }
 }

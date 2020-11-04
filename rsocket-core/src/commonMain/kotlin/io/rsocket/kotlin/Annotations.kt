@@ -23,3 +23,10 @@ package io.rsocket.kotlin
             "This API can change in future in non backwards-incompatible manner."
 )
 public annotation class TransportApi
+
+@Retention(value = AnnotationRetention.BINARY)
+@RequiresOptIn(
+    level = RequiresOptIn.Level.WARNING,
+    message = "This is an API to work with metadata. This API can change in future in non backwards-incompatible manner."
+)
+public annotation class ExperimentalMetadataApi
