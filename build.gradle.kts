@@ -337,7 +337,7 @@ if (bintrayUser != null && bintrayKey != null) {
                     pkg.apply {
 
                         repo = "RSocket"
-                        name = "rsocket-kotlin"
+                        name = "rsocket-kotlinx"
 
                         setLicenses("Apache-2.0")
 
