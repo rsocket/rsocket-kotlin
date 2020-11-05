@@ -44,7 +44,6 @@ jobs:
       matrix:
         os: [ ubuntu-20.04, macos-latest, windows-latest ]
       fail-fast: false
-      max-parallel: 1
 
     steps:
       - uses: actions/checkout@v2
