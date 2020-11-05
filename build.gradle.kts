@@ -355,10 +355,10 @@ if (bintrayUser != null && bintrayKey != null) {
 
                             gpg.sign = true
 
-                            mavenCentralSync.apply {
-                                user = sonatypeUsername
-                                password = sonatypePassword
-                            }
+//                            mavenCentralSync.apply {
+//                                user = sonatypeUsername
+//                                password = sonatypePassword
+//                            }
                         }
                     }
                 }
