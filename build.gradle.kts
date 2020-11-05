@@ -353,7 +353,7 @@ if (bintrayUser != null && bintrayKey != null) {
                             vcsTag = project.version.toString()
                             released = java.util.Date().toString()
 
-                            gpg.sign = true
+//                            gpg.sign = true
 
 //                            mavenCentralSync.apply {
 //                                user = sonatypeUsername
