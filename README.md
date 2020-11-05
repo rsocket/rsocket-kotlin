@@ -39,9 +39,6 @@ RSocket interface contains 5 methods:
   `suspend fun metadataPush(metadata: ByteReadPacket)`
 
 ## Using in your projects
-The `master` branch is now dedicated to development of multiplatform rsocket-kotlin. For now only snapshots are available
-via [oss.jfrog.org](https://oss.jfrog.org/artifactory/oss-snapshot-local/io/rsocket/kotlin/) (OJO).
-
 Make sure, that you use Kotlin 1.4.X.
 
 ### Gradle:
@@ -49,17 +46,17 @@ Make sure, that you use Kotlin 1.4.X.
 
 ```groovy
 repositories {
-    maven { url 'https://oss.jfrog.org/oss-snapshot-local' }
+    jcenter()
 }
 dependencies {
-    implementation 'io.rsocket.kotlin:rsocket-core:0.11.0-SNAPSHOT'
-    implementation 'io.rsocket.kotlin:rsocket-transport-ktor:0.11.0-SNAPSHOT'
+    implementation 'io.rsocket.kotlin:rsocket-core:0.11.1'
+    implementation 'io.rsocket.kotlin:rsocket-transport-ktor:0.11.1'
 
 //  client feature for ktor
-//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-client:0.11.0-SNAPSHOT'
+//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-client:0.11.1'
 
 //  server feature for ktor 
-//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-server:0.11.0-SNAPSHOT' 
+//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-server:0.11.1' 
 
 //  one of ktor engines to work with websockets
 //  client engines
@@ -79,17 +76,17 @@ dependencies {
 
 ```kotlin
 repositories {
-    maven("https://oss.jfrog.org/oss-snapshot-local")
+    jcenter()
 }
 dependencies {
-    implementation("io.rsocket.kotlin:rsocket-core:0.11.0-SNAPSHOT")
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor:0.11.0-SNAPSHOT")
+    implementation("io.rsocket.kotlin:rsocket-core:0.11.1")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor:0.11.1")
 
 //  client feature for ktor
-//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-client:0.11.0-SNAPSHOT")
+//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-client:0.11.1")
 
 //  server feature for ktor 
-//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-server:0.11.0-SNAPSHOT") 
+//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-server:0.11.1") 
 
 //  one of ktor engines to work with websockets
 //  client engines
@@ -123,8 +120,8 @@ val client = HttpClient(CIO) {
                 )
 
                 //payload for setup frame
-                setupPayload { Payload("hello world") }
-                
+                setupPayload { buildPayload { data("hello world") } }
+
                 //mime types
                 payloadMimeType = PayloadMimeType(
                     data = "application/json",
@@ -167,7 +164,7 @@ embeddedServer(CIO) {
                 forConnection(::SomeConnectionInterceptor)
             }
         }
-    }   
+    }
     //configure routing
     routing {
         //configure route `url:port/rsocket`
@@ -177,18 +174,21 @@ embeddedServer(CIO) {
                 requestResponse { request: Payload ->
                     //... some work here
                     delay(500) // work emulation
-                    Payload("data", "metadata")
-                }         
+                    buildPayload {
+                        data("data")
+                        metadata("metadata")
+                    }
+                }
                 //handler for request/stream      
                 requestStream { request: Payload ->
                     flow {
-                        repeat(1000) { i -> 
-                            emit(Payload("data: $i"))
-                        }               
-                    }        
-                }           
-            }       
-        }       
+                        repeat(1000) { i ->
+                            emit(buildPayload { data("data: $i") })
+                        }
+                    }
+                }
+            }
+        }
     }
 }.start(true)
 ```
