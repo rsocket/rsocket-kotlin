@@ -47,7 +47,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("io.rsocket.kotlin:rsocket-core:0.11.1")
+                implementation(project(":rsocket-core"))
 
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.0.0-RC")
             }
@@ -56,13 +56,13 @@ kotlin {
         val clientMain by creating {
             dependsOn(commonMain)
             dependencies {
-                implementation("io.rsocket.kotlin:rsocket-transport-ktor-client:0.11.1")
+                implementation(project(":rsocket-transport-ktor-client"))
             }
         }
 
         val serverJvmMain by getting {
             dependencies {
-                implementation("io.rsocket.kotlin:rsocket-transport-ktor-server:0.11.1")
+                implementation(project(":rsocket-transport-ktor-server"))
                 implementation("io.ktor:ktor-server-cio:1.4.1")
             }
         }
