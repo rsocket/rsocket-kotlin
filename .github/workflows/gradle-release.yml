@@ -8,43 +8,42 @@ on:
       - '*' # Push events to matching *, i.e. 1.0, 20.15.10
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ macos-latest ]
-        macTargetsCompilation: [ macos, ios, watchos, tvos ]
-        include:
-          - os: ubuntu-20.04
-          - os: windows-latest
-      fail-fast: false
-
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Cache Gradle packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle/caches/modules-2
-            ~/.konan
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.*') }} #hash based on *.gradle.kts and *.gradle.properties
-          restore-keys: ${{ runner.os }}-gradle
-      - uses: eskatos/gradle-command-action@v1
-        with:
-          arguments: build -PmacTargetsCompilation=${{ matrix.macTargetsCompilation }} --scan --no-daemon
+#  build:
+  #    runs-on: ${{ matrix.os }}
+  #    strategy:
+  #      matrix:
+  #        os: [ macos-latest ]
+  #        macTargetsCompilation: [ macos, ios, watchos, tvos ]
+  #        include:
+  #          - os: ubuntu-20.04
+  #          - os: windows-latest
+  #      fail-fast: false
+  #
+  #    steps:
+  #      - uses: actions/checkout@v2
+  #      - name: Set up JDK
+  #        uses: actions/setup-java@v1
+  #        with:
+  #          java-version: 11
+  #      - name: Cache Gradle packages
+  #        uses: actions/cache@v2
+  #        with:
+  #          path: |
+  #            ~/.gradle/caches/modules-2
+  #            ~/.konan
+  #          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.*') }} #hash based on *.gradle.kts and *.gradle.properties
+  #          restore-keys: ${{ runner.os }}-gradle
+  #      - uses: eskatos/gradle-command-action@v1
+  #        with:
+  #          arguments: build -PmacTargetsCompilation=${{ matrix.macTargetsCompilation }} --scan --no-daemon
 
   publish:
-    needs: build
+    #    needs: build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ ubuntu-20.04, macos-latest, windows-latest ]
       fail-fast: false
-      max-parallel: 1
 
     steps:
       - uses: actions/checkout@v2
@@ -67,4 +66,4 @@ jobs:
       - name: Publish Packages to Bintray
         uses: eskatos/gradle-command-action@v1
         with:
-          arguments: bintrayUpload -PbintrayUser=${{ secrets.bintrayUser }} -PbintrayKey=${{ secrets.bintrayKey }} -PsonatypeUsername=${{ secrets.sonatypeUsername }} -PsonatypePassword=${{ secrets.sonatypePassword }} -Pversion=${{ env.TAG_NAME }} -PbuildNumber=${{ github.run_number }} --stacktrace --no-daemon
+          arguments: bintrayUpload -PbintrayUser=${{ secrets.bintrayUser }} -PbintrayKey=${{ secrets.bintrayKey }} -PsonatypeUsername=${{ secrets.sonatypeUsername }} -PsonatypePassword=${{ secrets.sonatypePassword }} -Pversion=${{ env.TAG_NAME }} -PbuildNumber=${{ github.run_number }} --debug --no-daemon
