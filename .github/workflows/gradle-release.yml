@@ -66,4 +66,4 @@ jobs:
       - name: Publish Packages to Bintray
         uses: eskatos/gradle-command-action@v1
         with:
-          arguments: bintrayUpload -PbintrayUser=${{ secrets.bintrayUser }} -PbintrayKey=${{ secrets.bintrayKey }} -PsonatypeUsername=${{ secrets.sonatypeUsername }} -PsonatypePassword=${{ secrets.sonatypePassword }} -Pversion=${{ env.TAG_NAME }} -PbuildNumber=${{ github.run_number }} --debug --no-daemon
+          arguments: bintrayUpload -PbintrayUser=${{ secrets.bintrayUser }} -PbintrayKey=${{ secrets.bintrayKey }} -PsonatypeUsername=${{ secrets.sonatypeUsername }} -PsonatypePassword=${{ secrets.sonatypePassword }} -Pversion=${{ env.TAG_NAME }} -PbuildNumber=${{ github.run_number }} --info --no-daemon
