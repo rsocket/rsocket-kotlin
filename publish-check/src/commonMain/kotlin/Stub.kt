@@ -14,23 +14,9 @@
  * limitations under the License.
  */
 
-plugins {
-    kotlin("multiplatform")
-}
+import io.rsocket.kotlin.*
+import io.rsocket.kotlin.payload.*
 
-kotlin {
-    js(IR) {
-        nodejs {
-            binaries.executable()
-        }
-    }
-
-    sourceSets {
-        val jsMain by getting {
-            dependencies {
-                implementation(project(":rsocket-core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-nodejs:0.0.7")
-            }
-        }
-    }
+val rSocket = RSocketRequestHandler {
+    requestResponse { payload: Payload -> payload }
 }

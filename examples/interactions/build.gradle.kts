@@ -24,10 +24,9 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("io.rsocket.kotlin:rsocket-core:0.11.5")
-                implementation("io.rsocket.kotlin:rsocket-transport-local:0.11.5")
+                implementation(project(":rsocket-core"))
+                implementation(project(":rsocket-transport-local"))
             }
         }
     }
 }
-

@@ -32,6 +32,13 @@ plugins {
     id("com.gradle.enterprise") version "3.4.1"
 }
 
+gradleEnterprise {
+    buildScan {
+        termsOfServiceUrl = "https://gradle.com/terms-of-service"
+        termsOfServiceAgree = "yes"
+    }
+}
+
 rootProject.name = "rsocket-kotlin"
 
 include("benchmarks")
@@ -56,9 +63,5 @@ includeExample("nodejs-tcp-transport")
 includeExample("interactions")
 includeExample("multiplatform-chat")
 
-gradleEnterprise {
-    buildScan {
-        termsOfServiceUrl = "https://gradle.com/terms-of-service"
-        termsOfServiceAgree = "yes"
-    }
-}
+val publishCheckVersion: String? by settings
+if (publishCheckVersion != null) include("publish-check")

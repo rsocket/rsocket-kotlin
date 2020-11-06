@@ -155,7 +155,7 @@ subprojects {
 
                 //disable compilation of part of mac targets
                 if (HostManager.hostIsMac) when (macTargetsCompilation) {
-                    "macos" -> iosTargets + tvosTargets + watchosTargets
+                    "macos"                  -> iosTargets + tvosTargets + watchosTargets
                     "ios", "watchos", "tvos" -> {
                         //disable test compilation for macos, but leave main to compile examples and playground
                         macosX64 {
@@ -169,7 +169,7 @@ subprojects {
                             else      -> emptyList()
                         }
                     }
-                    else -> emptyList()
+                    else                     -> emptyList()
                 }.forEach(KotlinNativeTarget::disableCompilation)
 
                 //run tests on release + mimalloc to reduce tests execution time
@@ -195,6 +195,9 @@ subprojects {
 
         //common configuration
         extensions.configure<KotlinMultiplatformExtension> {
+            val isTestProject = project.name == "rsocket-test"
+            val isLibProject = project.name.startsWith("rsocket")
+
             sourceSets.all {
                 languageSettings.apply {
                     progressiveMode = true
@@ -203,7 +206,7 @@ subprojects {
 
                     useExperimentalAnnotation("kotlin.RequiresOptIn")
 
-                    if (name.contains("test", ignoreCase = true) || project.name == "rsocket-test") {
+                    if (name.contains("test", ignoreCase = true) || isTestProject) {
                         useExperimentalAnnotation("kotlin.time.ExperimentalTime")
                         useExperimentalAnnotation("kotlin.ExperimentalStdlibApi")
 
@@ -222,7 +225,7 @@ subprojects {
                 }
             }
 
-            if (project.name != "rsocket-test") {
+            if (isLibProject && !isTestProject) {
                 explicitApiWarning() //TODO change to strict before release
                 sourceSets["commonTest"].dependencies {
                     implementation(project(":rsocket-test"))
