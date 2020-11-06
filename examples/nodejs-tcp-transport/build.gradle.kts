@@ -28,7 +28,7 @@ kotlin {
     sourceSets {
         val jsMain by getting {
             dependencies {
-                implementation(project(":rsocket-core"))
+                implementation("io.rsocket.kotlin:rsocket-core:0.11.5")
                 implementation("org.jetbrains.kotlinx:kotlinx-nodejs:0.0.7")
             }
         }
