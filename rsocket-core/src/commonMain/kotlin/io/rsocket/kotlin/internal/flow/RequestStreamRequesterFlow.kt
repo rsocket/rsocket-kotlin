@@ -16,29 +16,33 @@
 
 package io.rsocket.kotlin.internal.flow
 
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
-import kotlinx.coroutines.channels.*
+import kotlinx.atomicfu.*
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlin.coroutines.*
 
+@OptIn(ExperimentalStreamsApi::class)
 internal class RequestStreamRequesterFlow(
     private val payload: Payload,
     private val requester: RSocketRequester,
-    state: RSocketState,
-    context: CoroutineContext = EmptyCoroutineContext,
-    capacity: Int = Channel.BUFFERED,
-) : StreamFlow(state, context, capacity) {
-    override fun create(context: CoroutineContext, capacity: Int): RequestStreamRequesterFlow =
-        RequestStreamRequesterFlow(payload, requester, state, context, capacity)
+    private val state: RSocketState,
+) : Flow<Payload> {
+    private val consumed = atomic(false)
 
-    override suspend fun collectImpl(collectContext: CoroutineContext, collector: FlowCollector<Payload>): Unit = with(state) {
+    @InternalCoroutinesApi
+    override suspend fun collect(collector: FlowCollector<Payload>): Unit = with(state) {
+        check(!consumed.getAndSet(true)) { "RSocket.requestStream can be collected just once" }
+
+        val strategy = currentCoroutineContext().requestStrategy()
+        val initialRequest = strategy.firstRequest()
         payload.closeOnError {
             val streamId = requester.createStream()
             val receiver = createReceiverFor(streamId)
-            send(RequestStreamFrame(streamId, requestSize, payload))
-            collectStream(streamId, receiver, collectContext, collector)
+            send(RequestStreamFrame(streamId, initialRequest, payload))
+            collectStream(streamId, receiver, strategy, collector)
         }
     }
 }

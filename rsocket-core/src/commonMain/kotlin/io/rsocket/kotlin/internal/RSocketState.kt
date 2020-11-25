@@ -27,8 +27,8 @@ import kotlinx.coroutines.flow.*
 
 @OptIn(
     InternalCoroutinesApi::class,
-    ExperimentalCoroutinesApi::class,
-    TransportApi::class
+    TransportApi::class,
+    ExperimentalStreamsApi::class
 )
 internal class RSocketState(
     private val connection: Connection,
@@ -77,6 +77,21 @@ internal class RSocketState(
         }
     }
 
+    suspend fun collectStream(
+        streamId: Int,
+        receiver: ReceiveChannel<RequestFrame>,
+        strategy: RequestStrategy.Element,
+        collector: FlowCollector<Payload>,
+    ): Unit = consumeReceiverFor(streamId) {
+        //TODO fragmentation
+        for (frame in receiver) {
+            if (frame.complete) return //TODO check next flag
+            collector.emit(frame.payload)
+            val next = strategy.nextRequest()
+            if (next > 0) send(RequestNFrame(streamId, next))
+        }
+    }
+
     suspend inline fun Flow<Payload>.collectLimiting(
         streamId: Int,
         limitingCollector: LimitingFlowCollector,
@@ -103,7 +118,7 @@ internal class RSocketState(
 
     private fun handleFrame(responder: RSocketResponder, frame: Frame) {
         when (val streamId = frame.streamId) {
-            0 -> when (frame) {
+            0    -> when (frame) {
                 is ErrorFrame        -> {
                     cancel("Zero stream error", frame.throwable)
                     frame.release() //TODO
@@ -122,15 +137,15 @@ internal class RSocketState(
             }
             else -> when (frame) {
                 is RequestNFrame -> limits[streamId]?.updateRequests(frame.requestN)
-                is CancelFrame -> senders.remove(streamId)?.cancel()
-                is ErrorFrame -> {
+                is CancelFrame   -> senders.remove(streamId)?.cancel()
+                is ErrorFrame    -> {
                     receivers.remove(streamId)?.apply {
                         closeReceivedElements()
                         close(frame.throwable)
                     }
                     frame.release()
                 }
-                is RequestFrame -> when (frame.type) {
+                is RequestFrame  -> when (frame.type) {
                     FrameType.Payload         -> receivers[streamId]?.offer(frame)
                     FrameType.RequestFnF      -> responder.handleFireAndForget(frame)
                     FrameType.RequestResponse -> responder.handlerRequestResponse(frame)

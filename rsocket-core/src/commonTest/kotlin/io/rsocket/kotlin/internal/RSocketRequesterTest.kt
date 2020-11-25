@@ -24,7 +24,6 @@ import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
-import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.*
 
@@ -49,7 +48,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     @Test
     fun testStreamInitialN() = test {
         connection.test {
-            val flow = requester.requestStream(Payload.Empty).buffer(5)
+            val flow = requester.requestStream(Payload.Empty).flowOn(PrefetchStrategy(5, 0))
 
             expectNoEventsIn(200)
             flow.launchIn(connection)
@@ -65,9 +64,9 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     }
 
     @Test
-    fun testStreamBuffer() = test {
+    fun testStreamRequestOnly() = test {
         connection.test {
-            val flow = requester.requestStream(Payload.Empty).buffer(2).take(2)
+            val flow = requester.requestStream(Payload.Empty).flowOn(PrefetchStrategy(2, 0)).take(2)
 
             expectNoEventsIn(200)
             flow.launchIn(connection)
@@ -90,16 +89,12 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
 
             expectNoEventsIn(200)
         }
-    }
-
-    class SomeContext(val context: Int) : AbstractCoroutineContextElement(SomeContext) {
-        companion object Key : CoroutineContext.Key<SomeContext>
     }
 
     @Test
-    fun testStreamBufferWithAdditionalContext() = test {
+    fun testStreamRequestByFixed() = test {
         connection.test {
-            val flow = requester.requestStream(Payload.Empty).buffer(2).flowOn(SomeContext(2)).take(2)
+            val flow = requester.requestStream(Payload.Empty).flowOn(PrefetchStrategy(2, 0)).take(4)
 
             expectNoEventsIn(200)
             flow.launchIn(connection)
@@ -117,21 +112,24 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
             connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
 
             expectFrame { frame ->
-                assertTrue(frame is CancelFrame)
+                assertTrue(frame is RequestNFrame)
+                assertEquals(2, frame.requestN)
             }
+
+            expectNoEventsIn(200)
+            connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
+
+            expectNoEventsIn(200)
+            connection.sendToReceiver(NextCompletePayloadFrame(1, Payload.Empty))
+
             expectNoEventsIn(200)
         }
     }
 
-    @Test //ignored on native because of dispatcher switching
-    fun testStreamBufferWithAnotherDispatcher() = test(ignoreNative = true) {
+    @Test
+    fun testStreamRequestBy() = test {
         connection.test {
-            val flow =
-                requester.requestStream(Payload.Empty)
-                    .buffer(2)
-                    .flowOn(anotherDispatcher) //change dispatcher before take
-                    .take(2)
-                    .transform { emit(it) } //force using SafeCollector to check that `Flow invariant is violated` not happens
+            val flow = requester.requestStream(Payload.Empty).flowOn(PrefetchStrategy(5, 2)).take(6)
 
             expectNoEventsIn(200)
             flow.launchIn(connection)
@@ -139,18 +137,31 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
             expectFrame { frame ->
                 assertTrue(frame is RequestFrame)
                 assertEquals(FrameType.RequestStream, frame.type)
-                assertEquals(2, frame.initialRequest)
+                assertEquals(5, frame.initialRequest)
             }
 
             expectNoEventsIn(200)
             connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
 
-            expectNoEventsIn(200) //will fail here if `Flow invariant is violated`
+            expectNoEventsIn(200)
+            connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
+
+            expectNoEventsIn(200)
             connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
 
             expectFrame { frame ->
-                assertTrue(frame is CancelFrame)
+                assertTrue(frame is RequestNFrame)
+                assertEquals(5, frame.requestN)
             }
+
+            expectNoEventsIn(200)
+            connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
+
+            expectNoEventsIn(200)
+            connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
+
+            expectNoEventsIn(200)
+            connection.sendToReceiver(NextCompletePayloadFrame(1, Payload.Empty))
 
             expectNoEventsIn(200)
         }
@@ -269,7 +280,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
             }
         }
 
-        requester.requestChannel(request).buffer(Int.MAX_VALUE).launchIn(connection)
+        requester.requestChannel(request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).launchIn(connection)
         connection.test {
             expectNoEventsIn(200)
             delay.complete()
@@ -285,15 +296,18 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
 
     private fun streamIsTerminatedOnConnectionClose(request: suspend () -> Unit) = test {
         connection.launch {
+            delay(200)
             connection.test {
                 expectFrame { assertTrue(it is RequestFrame) }
                 connection.job.cancel()
-                expectNoEventsIn(200)
+                expectComplete()
             }
         }
         assertFailsWith(CancellationException::class) { request() }
 
         assertFailsWith(CancellationException::class) { request() }
+
+        delay(200)
     }
 
     @Test

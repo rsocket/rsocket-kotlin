@@ -16,7 +16,6 @@
 
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
@@ -62,7 +61,7 @@ fun main(): Unit = runBlocking {
     })
 
     //do request
-    rSocket.requestStream(Payload("Hello", "World")).buffer(3).take(3).collect {
+    rSocket.requestStream(Payload("Hello", "World")).flowOn(PrefetchStrategy(3, 0)).take(3).collect {
         val index = it.data.readText().substringAfter("Payload: ").toInt()
         println("Client receives index: $index")
     }
