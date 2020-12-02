@@ -92,6 +92,39 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     }
 
     @Test
+    fun testStreamRequestWithContextSwitch() = test {
+        connection.test {
+            val flow = requester.requestStream(Payload.Empty).take(2).flowOn(PrefetchStrategy(1, 0))
+
+            expectNoEventsIn(200)
+            flow.launchIn(connection + anotherDispatcher)
+
+            expectFrame { frame ->
+                assertTrue(frame is RequestFrame)
+                assertEquals(FrameType.RequestStream, frame.type)
+                assertEquals(1, frame.initialRequest)
+            }
+
+            expectNoEventsIn(200)
+            connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
+
+            expectFrame { frame ->
+                assertTrue(frame is RequestNFrame)
+                assertEquals(1, frame.requestN)
+            }
+
+            expectNoEventsIn(200)
+            connection.sendToReceiver(NextPayloadFrame(1, Payload.Empty))
+
+            expectFrame { frame ->
+                assertTrue(frame is CancelFrame)
+            }
+
+            expectNoEventsIn(200)
+        }
+    }
+
+    @Test
     fun testStreamRequestByFixed() = test {
         connection.test {
             val flow = requester.requestStream(Payload.Empty).flowOn(PrefetchStrategy(2, 0)).take(4)

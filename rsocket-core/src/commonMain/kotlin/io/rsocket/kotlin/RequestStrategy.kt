@@ -61,11 +61,12 @@ public class PrefetchStrategy(
         private val requestSize: Int,
         private val requestOn: Int,
     ) : RequestStrategy.Element {
-        private val requested = atomic(requestSize)
+        private var requested = requestSize
         override suspend fun firstRequest(): Int = requestSize
 
         override suspend fun nextRequest(): Int {
-            if (requested.decrementAndGet() != requestOn) return 0
+            requested -= 1
+            if (requested != requestOn) return 0
 
             requested += requestSize
             return requestSize
@@ -78,12 +79,14 @@ public class ChannelStrategy(
     private val channel: ReceiveChannel<Int>,
 ) : RequestStrategy, RequestStrategy.Element {
     private val used = atomic(false)
-    private val requested = atomic(0)
+    private var requested = 0
 
     override suspend fun firstRequest(): Int = takePositive()
 
     override suspend fun nextRequest(): Int {
-        if (requested.decrementAndGet() != 0) return 0
+        requested -= 1
+        if (requested != 0) return 0
+
         val requestSize = takePositive()
         requested += requestSize
         return requestSize
@@ -91,7 +94,7 @@ public class ChannelStrategy(
 
     private suspend fun takePositive(): Int {
         var v = channel.receive()
-        while (v < 0) v = channel.receive()
+        while (v <= 0) v = channel.receive()
         return v
     }
 
