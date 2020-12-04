@@ -17,7 +17,6 @@
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.local.*
 import kotlinx.atomicfu.*
@@ -62,7 +61,7 @@ fun main(): Unit = runBlocking {
 
     //do request
     try {
-        rSocket.requestStream(Payload("Hello", "World")).buffer(3).collect {
+        rSocket.requestStream(Payload("Hello", "World")).flowOn(PrefetchStrategy(3, 0)).collect {
             val index = it.data.readText().substringAfter("Payload: ").toInt()
             println("Client receives index: $index")
         }
@@ -72,7 +71,7 @@ fun main(): Unit = runBlocking {
 
     //do request just after it
 
-    rSocket.requestStream(Payload("Hello", "World")).buffer(3).take(3).collect {
+    rSocket.requestStream(Payload("Hello", "World")).flowOn(PrefetchStrategy(3, 0)).take(3).collect {
         val index = it.data.readText().substringAfter("Payload: ").toInt()
         println("Client receives index: $index after reconnection")
     }

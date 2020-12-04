@@ -208,8 +208,9 @@ From [RSocket protocol](https://github.com/rsocket/rsocket/blob/master/Protocol.
     This is a credit-based model where the Requester grants the Responder credit for the number of PAYLOADs it can send. 
     It is sometimes referred to as "request-n" or "request(n)".
 
-`kotlinx.coroutines` doesn't truly support `request(n)` semantic, but it has `Flow.buffer(n)` operator
-which can be used to achieve something similar:
+`kotlinx.coroutines` doesn't truly support `request(n)` semantic, but it has flexible `CoroutineContext`
+which can be used to achieve something similar. `rsocket-kotlin` contains `RequestStrategy` coroutine context element, which defines,
+strategy for sending of `requestN` frames.
 
 Example:
 
@@ -220,13 +221,11 @@ val client: RSocket = TODO()
 //and stream
 val stream: Flow<Payload> = client.requestStream(Payload("data"))
 
-//now we can use buffer to tell underlying transport to request values in chunks
-val bufferedStream: Flow<Payload> = stream.buffer(10) //here buffer is 10, if `buffer` operator is not used buffer is by default 64
-
-//now you can collect as any other `Flow`
-//just after collection first request for 10 elements will be sent
-//after 10 elements collected, 10 more elements will be requested, and so on
-bufferedStream.collect { payload: Payload ->
+//now we can use `flowOn` to add request strategy to context of flow
+//here we use prefetch strategy which will send requestN for 10 elements, when, there is 5 elements left to collect
+//so on call `collect`, requestStream frame with requestN will be sent, and then, after 5 elements will be collected
+//new requestN with 5 will be sent, so collect will be smooth 
+stream.flowOn(PrefetchStrategy(requestSize = 10, requestOn = 5)).collect { payload: Payload ->
     println(payload.data.readText())
 }
 ```

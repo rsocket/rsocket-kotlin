@@ -24,8 +24,8 @@ import java.util.concurrent.locks.*
 
 @BenchmarkMode(Mode.Throughput)
 @Fork(value = 2)
-@Warmup(iterations = 10, time = 10)
-@Measurement(iterations = 7, time = 10)
+@Warmup(iterations = 5, time = 5)
+@Measurement(iterations = 5, time = 5)
 @State(Scope.Benchmark)
 abstract class RSocketBenchmark<Payload : Any> {
 
@@ -40,7 +40,7 @@ abstract class RSocketBenchmark<Payload : Any> {
 
     @TearDown(Level.Iteration)
     fun awaitToBeConsumed() {
-        LockSupport.parkNanos(5000)
+        LockSupport.parkNanos(2000)
     }
 
     abstract fun createPayload(size: Int): Payload
@@ -58,10 +58,10 @@ abstract class RSocketBenchmark<Payload : Any> {
     fun requestResponseBlocking(bh: Blackhole) = blocking(bh, ::requestResponse)
 
     @Benchmark
-    fun requestResponseParallel(bh: Blackhole) = parallel(bh, 500, ::requestResponse)
+    fun requestResponseParallel(bh: Blackhole) = parallel(bh, 1000, ::requestResponse)
 
     @Benchmark
-    fun requestResponseConcurrent(bh: Blackhole) = concurrent(bh, 500, ::requestResponse)
+    fun requestResponseConcurrent(bh: Blackhole) = concurrent(bh, 1000, ::requestResponse)
 
 
     @Benchmark
@@ -78,10 +78,10 @@ abstract class RSocketBenchmark<Payload : Any> {
     fun requestChannelBlocking(bh: Blackhole) = blocking(bh, ::requestChannel)
 
     @Benchmark
-    fun requestChannelParallel(bh: Blackhole) = parallel(bh, 3, ::requestChannel)
+    fun requestChannelParallel(bh: Blackhole) = parallel(bh, 10, ::requestChannel)
 
     @Benchmark
-    fun requestChannelConcurrent(bh: Blackhole) = concurrent(bh, 3, ::requestChannel)
+    fun requestChannelConcurrent(bh: Blackhole) = concurrent(bh, 10, ::requestChannel)
 
 
     private suspend fun requestResponse(bh: Blackhole) {

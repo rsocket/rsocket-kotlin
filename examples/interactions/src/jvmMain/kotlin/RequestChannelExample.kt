@@ -16,7 +16,6 @@
 
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -27,7 +26,7 @@ fun main(): Unit = runBlocking {
     RSocketServer().bind(server) {
         RSocketRequestHandler {
             requestChannel { request ->
-                request.buffer(3).take(3).flatMapConcat { payload ->
+                request.flowOn(PrefetchStrategy(3, 0)).take(3).flatMapConcat { payload ->
                     val data = payload.data.readText()
                     flow {
                         repeat(3) {

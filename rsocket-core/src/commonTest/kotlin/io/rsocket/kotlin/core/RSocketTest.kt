@@ -112,11 +112,12 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
                     emit(payload(text + "123"))
                     emit(payload(text + "456"))
                     emit(payload(text + "789"))
+                    delay(200)
                     error("FAIL")
                 }
             }
         })
-        requester.requestStream(payload("HELLO")).buffer(1).test {
+        requester.requestStream(payload("HELLO")).flowOn(PrefetchStrategy(1, 0)).test {
             repeat(3) {
                 expectItem().release()
             }
@@ -138,7 +139,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             }
         })
         requester.requestStream(payload("HELLO"))
-            .buffer(10)
+            .flowOn(PrefetchStrategy(10, 0))
             .withIndex()
             .onEach { if (it.index == 23) throw error("oops") }
             .map { it.value }
@@ -162,7 +163,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             }
         })
         requester.requestStream(payload("HELLO"))
-            .buffer(15)
+            .flowOn(PrefetchStrategy(15, 0))
             .take(3) //canceled after 3 element
             .test {
                 repeat(3) {
@@ -182,7 +183,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             }
         })
         val channel = requester.requestStream(payload("HELLO"))
-            .buffer(5)
+            .flowOn(PrefetchStrategy(5, 0))
             .take(18) //canceled after 18 element
             .produceIn(this)
 
@@ -226,7 +227,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             requestChannel { it.buffer(3).take(3) }
         })
         val request = (1..3).asFlow().map { payload(it.toString()) }
-        requester.requestChannel(request).buffer(3).test {
+        requester.requestChannel(request).flowOn(PrefetchStrategy(3, 0)).test {
             repeat(3) {
                 expectItem().release()
             }

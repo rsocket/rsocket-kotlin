@@ -20,13 +20,20 @@ package io.rsocket.kotlin
 @RequiresOptIn(
     level = RequiresOptIn.Level.WARNING,
     message = "This is an API which is used to implement transport for RSocket, such as WS or TCP. " +
-            "This API can change in future in non backwards-incompatible manner."
+            "This API can change in future in non backwards-compatible manner."
 )
 public annotation class TransportApi
 
 @Retention(value = AnnotationRetention.BINARY)
 @RequiresOptIn(
     level = RequiresOptIn.Level.WARNING,
-    message = "This is an API to work with metadata. This API can change in future in non backwards-incompatible manner."
+    message = "This is an API to work with metadata. This API can change in future in non backwards-compatible manner."
 )
 public annotation class ExperimentalMetadataApi
+
+@Retention(value = AnnotationRetention.BINARY)
+@RequiresOptIn(
+    level = RequiresOptIn.Level.WARNING,
+    message = "This is an API to customize request strategy of streams. This API can change in future in non backwards-compatible manner."
+)
+public annotation class ExperimentalStreamsApi
