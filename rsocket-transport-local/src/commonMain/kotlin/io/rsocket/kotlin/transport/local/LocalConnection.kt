@@ -25,21 +25,12 @@ import kotlinx.coroutines.channels.*
 
 @OptIn(DangerousInternalIoApi::class, TransportApi::class)
 internal class LocalConnection(
-    private val sender: Channel<ByteReadPacket>,
-    private val receiver: Channel<ByteReadPacket>,
+    private val sender: SendChannel<ByteReadPacket>,
+    private val receiver: ReceiveChannel<ByteReadPacket>,
     override val pool: ObjectPool<ChunkBuffer>,
     parentJob: Job? = null,
-) : Connection, Cancelable {
-    override val job: Job = Job(parentJob)
-
-    init {
-        job.invokeOnCompletion {
-            sender.closeReceivedElements()
-            receiver.closeReceivedElements()
-            sender.close(it)
-            receiver.close(it)
-        }
-    }
+) : Connection, Cancellable {
+    override val job: CompletableJob = Job(parentJob)
 
     override suspend fun send(packet: ByteReadPacket) {
         sender.send(packet)
@@ -47,12 +38,5 @@ internal class LocalConnection(
 
     override suspend fun receive(): ByteReadPacket {
         return receiver.receive()
-    }
-}
-
-private fun ReceiveChannel<Closeable>.closeReceivedElements() {
-    try {
-        while (true) poll()?.close() ?: break
-    } catch (e: Throwable) {
     }
 }

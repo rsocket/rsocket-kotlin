@@ -25,7 +25,7 @@ import io.rsocket.kotlin.frame.*
  * That interface isn't stable for inheritance.
  */
 @TransportApi
-interface Connection : Cancelable {
+interface Connection : Cancellable {
 
     @DangerousInternalIoApi
     val pool: ObjectPool<ChunkBuffer>

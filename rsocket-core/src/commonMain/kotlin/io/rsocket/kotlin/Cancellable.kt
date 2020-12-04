@@ -18,12 +18,10 @@ package io.rsocket.kotlin
 
 import kotlinx.coroutines.*
 
-interface Cancelable {
-    val job: Job
+interface Cancellable {
+    val job: CompletableJob
 }
 
-val Cancelable.isActive: Boolean get() = job.isActive
-fun Cancelable.cancel(cause: CancellationException? = null): Unit = job.cancel(cause)
-fun Cancelable.cancel(message: String, cause: Throwable? = null): Unit = job.cancel(message, cause)
-suspend fun Cancelable.join(): Unit = job.join()
-suspend fun Cancelable.cancelAndJoin(): Unit = job.cancelAndJoin()
+val Cancellable.isActive: Boolean get() = job.isActive
+suspend fun Cancellable.join(): Unit = job.join()
+suspend fun Cancellable.cancelAndJoin(): Unit = job.cancelAndJoin()

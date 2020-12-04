@@ -87,7 +87,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun noKeepAliveSentAfterRSocketCanceled() = test {
-        requester().cancel()
+        requester().job.cancel()
         connection.test {
             expectNoEventsIn(500)
         }

@@ -25,6 +25,7 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlin.native.concurrent.*
 
 @Suppress("FunctionName")
 @OptIn(DangerousInternalIoApi::class)
@@ -35,22 +36,41 @@ public class LocalServer
 internal constructor(
     parentJob: Job?,
     private val pool: ObjectPool<ChunkBuffer>,
-) : Cancelable, ServerTransport<Job>, ClientTransport {
+) : Cancellable, ServerTransport<Job>, ClientTransport {
     private val connections = Channel<Connection>()
-    override val job: Job = SupervisorJob(parentJob)
+    override val job: CompletableJob = SupervisorJob(parentJob)
 
     override suspend fun connect(): Connection {
-        val clientChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
-        val serverChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
+        val clientChannel = SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
+        val serverChannel = SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
         val connectionJob = Job(job)
+        connectionJob.invokeOnCompletion { cause ->
+            val error = cause?.let { it as? CancellationException ?: CancellationException("Connection failed", it) }
+            clientChannel.closeReceivedElements()
+            serverChannel.closeReceivedElements()
+            clientChannel.cancel(error)
+            serverChannel.cancel(error)
+        }
         val clientConnection = LocalConnection(serverChannel, clientChannel, pool, connectionJob)
         val serverConnection = LocalConnection(clientChannel, serverChannel, pool, connectionJob)
         connections.send(serverConnection)
         return clientConnection
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override fun start(accept: suspend (Connection) -> Unit): Job = GlobalScope.launch(job) {
         connections.consumeEach { launch(job) { accept(it) } }
+    }
+}
+
+@SharedImmutable
+private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
+
+@Suppress("FunctionName")
+private fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
+
+private fun ReceiveChannel<Closeable>.closeReceivedElements() {
+    try {
+        while (true) poll()?.close() ?: break
+    } catch (e: Throwable) {
     }
 }

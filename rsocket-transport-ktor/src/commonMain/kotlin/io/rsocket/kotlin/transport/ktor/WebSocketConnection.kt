@@ -24,7 +24,7 @@ import kotlinx.coroutines.*
 @TransportApi
 public class WebSocketConnection(private val session: WebSocketSession) : Connection {
 
-    override val job: Job get() = session.coroutineContext[Job]!!
+    override val job: CompletableJob = Job(session.coroutineContext[Job])
 
     override suspend fun send(packet: ByteReadPacket) {
         session.send(Frame.Binary(true, packet))
