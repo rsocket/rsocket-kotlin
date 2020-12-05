@@ -18,6 +18,7 @@ package io.rsocket.kotlin.core
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
@@ -97,30 +98,33 @@ private class ReconnectableRSocket(
     private val state: StateFlow<ReconnectState>,
 ) : RSocket {
 
-    private val reconnectHandler = state.mapNotNull { it.handleState { null } }.take(1)
+    private val reconnectHandler = state.mapNotNull { it.current() }.take(1)
 
-    //null pointer will never happen
-    private suspend fun currentRSocket(): RSocket = state.value.handleState { reconnectHandler.first() }!!
+    private suspend fun currentRSocket(closeable: Closeable): RSocket = closeable.closeOnError { currentRSocket() }
 
-    private inline fun ReconnectState.handleState(onReconnect: () -> RSocket?): RSocket? = when (this) {
-        is ReconnectState.Connected -> when {
-            rSocket.isActive -> rSocket //connection is ready to handle requests
-            else             -> onReconnect() //reconnection
-        }
+    private suspend fun currentRSocket(): RSocket = state.value.current() ?: reconnectHandler.first()
+
+    private fun ReconnectState.current(): RSocket? = when (this) {
+        is ReconnectState.Connected -> rSocket.takeIf(RSocket::isActive) //connection is ready to handle requests
         is ReconnectState.Failed    -> throw error //connection failed - fail requests
-        ReconnectState.Connecting   -> onReconnect() //reconnection
+        ReconnectState.Connecting   -> null //reconnection
     }
 
-    private suspend inline fun <T : Any> execSuspend(operation: RSocket.() -> T): T =
-        currentRSocket().operation()
+    override suspend fun metadataPush(metadata: ByteReadPacket): Unit =
+        currentRSocket(metadata).metadataPush(metadata)
 
-    private inline fun execFlow(crossinline operation: RSocket.() -> Flow<Payload>): Flow<Payload> =
-        flow { emitAll(currentRSocket().operation()) }
+    override suspend fun fireAndForget(payload: Payload): Unit =
+        currentRSocket(payload).fireAndForget(payload)
 
-    override suspend fun metadataPush(metadata: ByteReadPacket): Unit = execSuspend { metadataPush(metadata) }
-    override suspend fun fireAndForget(payload: Payload): Unit = execSuspend { fireAndForget(payload) }
-    override suspend fun requestResponse(payload: Payload): Payload = execSuspend { requestResponse(payload) }
-    override fun requestStream(payload: Payload): Flow<Payload> = execFlow { requestStream(payload) }
-    override fun requestChannel(payloads: Flow<Payload>): Flow<Payload> = execFlow { requestChannel(payloads) }
+    override suspend fun requestResponse(payload: Payload): Payload =
+        currentRSocket(payload).requestResponse(payload)
+
+    override fun requestStream(payload: Payload): Flow<Payload> = flow {
+        emitAll(currentRSocket(payload).requestStream(payload))
+    }
+
+    override fun requestChannel(payloads: Flow<Payload>): Flow<Payload> = flow {
+        emitAll(currentRSocket().requestChannel(payloads))
+    }
 
 }
