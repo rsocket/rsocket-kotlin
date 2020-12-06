@@ -25,7 +25,8 @@ fun main(): Unit = runBlocking {
     val server = LocalServer()
     RSocketServer().bind(server) {
         RSocketRequestHandler {
-            requestChannel { request ->
+            requestChannel { init, request ->
+                println("Init with: ${init.data.readText()}")
                 request.flowOn(PrefetchStrategy(3, 0)).take(3).flatMapConcat { payload ->
                     val data = payload.data.readText()
                     flow {
@@ -50,7 +51,7 @@ fun main(): Unit = runBlocking {
         println("Client: No") //no print
     }
 
-    val response = rSocket.requestChannel(request)
+    val response = rSocket.requestChannel(Payload("Init"), request)
     response.collect {
         val data = it.data.readText()
         println("Client receives: $data")

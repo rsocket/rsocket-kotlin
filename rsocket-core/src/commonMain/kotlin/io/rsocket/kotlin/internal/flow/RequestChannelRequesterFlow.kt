@@ -19,15 +19,14 @@ package io.rsocket.kotlin.internal.flow
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
-import io.rsocket.kotlin.internal.cancelConsumed
 import io.rsocket.kotlin.payload.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 
-@OptIn(ExperimentalStreamsApi::class)
+@OptIn(ExperimentalStreamsApi::class, ExperimentalCoroutinesApi::class)
 internal class RequestChannelRequesterFlow(
+    private val initPayload: Payload,
     private val payloads: Flow<Payload>,
     private val requester: RSocketRequester,
     private val state: RSocketState,
@@ -40,31 +39,25 @@ internal class RequestChannelRequesterFlow(
 
         val strategy = currentCoroutineContext().requestStrategy()
         val initialRequest = strategy.firstRequest()
-        val streamId = requester.createStream()
-        val receiverDeferred = CompletableDeferred<ReceiveChannel<RequestFrame>?>()
-        val request = launchCancelable(streamId) {
-            payloads.collectLimiting(
-                streamId,
-                RequestChannelRequesterFlowCollector(state, streamId, receiverDeferred, initialRequest)
-            )
-            if (receiverDeferred.isCompleted && !receiverDeferred.isCancelled) send(CompletePayloadFrame(streamId))
-        }
-        request.invokeOnCompletion {
-            if (receiverDeferred.isCompleted) {
-                @OptIn(ExperimentalCoroutinesApi::class)
-                if (it != null && it !is CancellationException) receiverDeferred.getCompleted()?.cancelConsumed(it)
-            } else {
-                if (it == null) receiverDeferred.complete(null)
-                else receiverDeferred.completeExceptionally(it.cause ?: it)
+        initPayload.closeOnError {
+            val streamId = requester.createStream()
+            val receiver = createReceiverFor(streamId)
+            val request = launchCancelable(streamId) {
+                payloads.collectLimiting(streamId, 0) {
+                    send(RequestChannelFrame(streamId, initialRequest, initPayload))
+                }
             }
-        }
-        try {
-            val receiver = receiverDeferred.await() ?: return
-            collectStream(streamId, receiver, strategy, collector)
-        } catch (e: Throwable) {
-            if (e is CancellationException) request.cancel(e)
-            else request.cancel("Receiver failed", e)
-            throw e
+
+            request.invokeOnCompletion {
+                if (it != null && it !is CancellationException) receiver.cancelConsumed(it)
+            }
+            try {
+                collectStream(streamId, receiver, strategy, collector)
+            } catch (e: Throwable) {
+                if (e is CancellationException) request.cancel(e)
+                else request.cancel("Receiver failed", e)
+                throw e
+            }
         }
     }
 }

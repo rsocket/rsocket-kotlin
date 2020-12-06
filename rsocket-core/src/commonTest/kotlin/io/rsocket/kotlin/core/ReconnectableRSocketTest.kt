@@ -219,6 +219,9 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testNoLeakRequestStream() = testNoLeaksInteraction { requestStream(it).collect() }
 
+    @Test
+    fun testNoLeakRequestChannel() = testNoLeaksInteraction { requestChannel(it, emptyFlow()).collect() }
+
     private inline fun testNoLeaksInteraction(crossinline interaction: suspend RSocket.(payload: Payload) -> Unit) = test {
         val firstJob = Job()
         val connect: suspend () -> RSocket = {

@@ -16,17 +16,20 @@
 
 package io.rsocket.kotlin.internal.flow
 
+import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
-internal abstract class LimitingFlowCollector(initial: Int) : FlowCollector<Payload> {
+internal class LimitingFlowCollector(
+    private val state: RSocketState,
+    private val streamId: Int,
+    initial: Int,
+) : FlowCollector<Payload> {
     private val requests = atomic(initial)
     private val awaiter = atomic<CancellableContinuation<Unit>?>(null)
-
-    abstract suspend fun emitValue(value: Payload)
 
     fun updateRequests(n: Int) {
         if (n <= 0) return
@@ -34,9 +37,9 @@ internal abstract class LimitingFlowCollector(initial: Int) : FlowCollector<Payl
         awaiter.getAndSet(null)?.resumeSafely()
     }
 
-    final override suspend fun emit(value: Payload): Unit = value.closeOnError {
+    override suspend fun emit(value: Payload): Unit = value.closeOnError {
         useRequest()
-        emitValue(value)
+        state.send(NextPayloadFrame(streamId, value))
     }
 
     private suspend fun useRequest() {

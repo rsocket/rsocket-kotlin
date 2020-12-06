@@ -58,13 +58,13 @@ abstract class TransportTest : SuspendTest {
 
     @Test
     fun requestChannel0() = test(10.seconds) {
-        val list = client.requestChannel(emptyFlow()).toList()
+        val list = client.requestChannel(payload(0), emptyFlow()).toList()
         assertTrue(list.isEmpty())
     }
 
     @Test
     fun requestChannel1() = test(10.seconds) {
-        val list = client.requestChannel(flowOf(payload(0))).onEach { it.release() }.toList()
+        val list = client.requestChannel(payload(0), flowOf(payload(0))).onEach { it.release() }.toList()
         assertEquals(1, list.size)
     }
 
@@ -73,7 +73,7 @@ abstract class TransportTest : SuspendTest {
         val request = flow {
             repeat(3) { emit(payload(it)) }
         }
-        val list = client.requestChannel(request).flowOn(PrefetchStrategy(3, 0)).onEach { it.release() }.toList()
+        val list = client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(3, 0)).onEach { it.release() }.toList()
         assertEquals(3, list.size)
     }
 
@@ -82,7 +82,11 @@ abstract class TransportTest : SuspendTest {
         val request = flow {
             repeat(200) { emit(LARGE_PAYLOAD) }
         }
-        val list = client.requestChannel(request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).onEach { it.release() }.toList()
+        val list =
+            client.requestChannel(LARGE_PAYLOAD, request)
+                .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
+                .onEach { it.release() }
+                .toList()
         assertEquals(200, list.size)
     }
 
@@ -91,7 +95,7 @@ abstract class TransportTest : SuspendTest {
         val request = flow {
             repeat(20_000) { emit(payload(7)) }
         }
-        val list = client.requestChannel(request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).onEach {
+        val list = client.requestChannel(payload(7), request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).onEach {
             assertEquals(MOCK_DATA, it.data.readText())
             assertEquals(MOCK_METADATA, it.metadata?.readText())
         }.toList()
@@ -103,7 +107,7 @@ abstract class TransportTest : SuspendTest {
         val request = flow {
             repeat(200_000) { emit(payload(it)) }
         }
-        val list = client.requestChannel(request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).onEach { it.release() }.toList()
+        val list = client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).onEach { it.release() }.toList()
         assertEquals(200_000, list.size)
     }
 
@@ -116,7 +120,7 @@ abstract class TransportTest : SuspendTest {
         }
         (0..256).map {
             async(Dispatchers.Default) {
-                val list = client.requestChannel(request).onEach { it.release() }.toList()
+                val list = client.requestChannel(payload(0), request).onEach { it.release() }.toList()
                 assertEquals(512, list.size)
             }
         }.awaitAll()
@@ -189,8 +193,8 @@ abstract class TransportTest : SuspendTest {
 
         private fun payload(metadataPresent: Int): Payload {
             val metadata = when (metadataPresent % 5) {
-                0 -> null
-                1 -> ""
+                0    -> null
+                1    -> ""
                 else -> MOCK_METADATA
             }
             return payload(MOCK_DATA, metadata)

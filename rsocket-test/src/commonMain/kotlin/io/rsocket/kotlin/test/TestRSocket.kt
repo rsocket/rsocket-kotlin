@@ -38,7 +38,8 @@ class TestRSocket : RSocket {
         repeat(10000) { emit(requestResponse(payload)) }
     }
 
-    override fun requestChannel(payloads: Flow<Payload>): Flow<Payload> = flow {
+    override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> = flow {
+        initPayload.release()
         payloads.collect { emit(it) }
     }
 
