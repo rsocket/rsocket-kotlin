@@ -31,9 +31,9 @@ RSocket interface contains 5 methods:
 * Request-Stream: 
   
   `fun requestStream(payload: Payload): Flow<Payload>`
-* Request-Channel: 
+* Request-Channel:
 
-  `fun requestChannel(payloads: Flow<Payload>): Flow<Payload>`
+  `fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload>`
 * Metadata-Push:
   
   `suspend fun metadataPush(metadata: ByteReadPacket)`

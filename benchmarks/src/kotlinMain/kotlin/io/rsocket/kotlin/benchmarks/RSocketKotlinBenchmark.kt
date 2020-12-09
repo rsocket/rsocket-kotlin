@@ -52,7 +52,10 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
                     it.release()
                     payloadsFlow
                 }
-                requestChannel { it.flowOn(requestStrategy) }
+                requestChannel { init, payloads ->
+                    init.release()
+                    payloads.flowOn(requestStrategy)
+                }
             }
         }
         client = runBlocking {
@@ -80,6 +83,6 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
 
     override suspend fun doRequestStream(): Flow<Payload> = client.requestStream(payloadCopy()).flowOn(requestStrategy)
 
-    override suspend fun doRequestChannel(): Flow<Payload> = client.requestChannel(payloadsFlow).flowOn(requestStrategy)
+    override suspend fun doRequestChannel(): Flow<Payload> = client.requestChannel(payloadCopy(), payloadsFlow).flowOn(requestStrategy)
 
 }

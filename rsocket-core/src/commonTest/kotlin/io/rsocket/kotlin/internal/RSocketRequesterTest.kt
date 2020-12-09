@@ -254,10 +254,12 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     fun testChannelRequestCancellation() = test {
         val job = Job()
         val request = flow<Payload> { Job().join() }.onCompletion { job.complete() }
-        val response = requester.requestChannel(request).launchIn(connection)
+        val response = requester.requestChannel(Payload.Empty, request).launchIn(connection)
         connection.test {
+            expectFrame { assertTrue(it is RequestFrame) }
             expectNoEventsIn(200)
             response.cancelAndJoin()
+            expectFrame { assertTrue(it is CancelFrame) }
             expectNoEventsIn(200)
             assertTrue(job.isCompleted)
         }
@@ -267,7 +269,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     fun testChannelRequestCancellationWithPayload() = test {
         val job = Job()
         val request = flow { repeat(100) { emit(Payload.Empty) } }.onCompletion { job.complete() }
-        val response = requester.requestChannel(request).launchIn(connection)
+        val response = requester.requestChannel(Payload.Empty, request).launchIn(connection)
         connection.test {
             expectFrame { assertTrue(it is RequestFrame) }
             expectNoEventsIn(200)
@@ -283,10 +285,9 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
         var ch: SendChannel<Payload>? = null
         val request = channelFlow<Payload> {
             ch = this
-            offer(payload(byteArrayOf(1), byteArrayOf(2)))
             awaitClose()
         }
-        val response = requester.requestChannel(request).launchIn(connection)
+        val response = requester.requestChannel(payload(byteArrayOf(1), byteArrayOf(2)), request).launchIn(connection)
         connection.test {
             expectFrame { frame ->
                 val streamId = frame.streamId
@@ -307,22 +308,21 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
         val delay = Job()
         val request = flow {
             delay.join()
-            emit(payload("INIT"))
             repeat(1000) {
                 emit(payload(it.toString()))
             }
         }
 
-        requester.requestChannel(request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).launchIn(connection)
+        requester.requestChannel(payload("INIT"), request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).launchIn(connection)
         connection.test {
-            expectNoEventsIn(200)
-            delay.complete()
             expectFrame { frame ->
                 assertTrue(frame is RequestFrame)
                 assertEquals(FrameType.RequestChannel, frame.type)
                 assertEquals(Int.MAX_VALUE, frame.initialRequest)
                 assertEquals("INIT", frame.payload.data.readText())
             }
+            expectNoEventsIn(200)
+            delay.complete()
             expectNoEventsIn(200)
         }
     }
@@ -350,6 +350,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     fun rsTerminatedOnConnectionClose() = streamIsTerminatedOnConnectionClose { requester.requestStream(Payload.Empty).collect() }
 
     @Test
-    fun rcTerminatedOnConnectionClose() = streamIsTerminatedOnConnectionClose { requester.requestChannel(flowOf(Payload.Empty)).collect() }
+    fun rcTerminatedOnConnectionClose() =
+        streamIsTerminatedOnConnectionClose { requester.requestChannel(Payload.Empty, emptyFlow()).collect() }
 
 }

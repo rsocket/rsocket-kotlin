@@ -52,9 +52,8 @@ internal class RSocketState(
         prioritizer.sendPrioritized(frame)
     }
 
-    fun createReceiverFor(streamId: Int, initFrame: RequestFrame? = null): ReceiveChannel<RequestFrame> {
+    fun createReceiverFor(streamId: Int): ReceiveChannel<RequestFrame> {
         val receiver = SafeChannel<RequestFrame>(Channel.UNLIMITED)
-        initFrame?.let(receiver::offer) //used only in RequestChannel on responder side
         receivers[streamId] = receiver
         return receiver
     }
@@ -94,11 +93,15 @@ internal class RSocketState(
 
     suspend inline fun Flow<Payload>.collectLimiting(
         streamId: Int,
-        limitingCollector: LimitingFlowCollector,
+        initialRequest: Int,
+        crossinline onStart: () -> Unit = {},
     ): Unit = coroutineScope {
+        val limitingCollector = LimitingFlowCollector(this@RSocketState, streamId, initialRequest)
         limits[streamId] = limitingCollector
         try {
+            onStart()
             collect(limitingCollector)
+            send(CompletePayloadFrame(streamId))
         } catch (e: Throwable) {
             limits.remove(streamId)
             //if isn't active, then, that stream was cancelled, and so no need for error frame

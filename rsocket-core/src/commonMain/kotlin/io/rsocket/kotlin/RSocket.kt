@@ -42,7 +42,8 @@ interface RSocket : Cancellable {
         notImplemented("Request Stream")
     }
 
-    fun requestChannel(payloads: Flow<Payload>): Flow<Payload> {
+    fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> {
+        initPayload.release()
         notImplemented("Request Channel")
     }
 }

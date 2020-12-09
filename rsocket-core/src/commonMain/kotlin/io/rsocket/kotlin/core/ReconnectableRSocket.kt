@@ -112,8 +112,8 @@ private class ReconnectableRSocket(
         emitAll(currentRSocket(payload).requestStream(payload))
     }
 
-    override fun requestChannel(payloads: Flow<Payload>): Flow<Payload> = flow {
-        emitAll(currentRSocket().requestChannel(payloads))
+    override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> = flow {
+        emitAll(currentRSocket(initPayload).requestChannel(initPayload, payloads))
     }
 
 }

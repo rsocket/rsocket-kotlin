@@ -52,7 +52,8 @@ internal class RSocketRequester(
 
     override fun requestStream(payload: Payload): Flow<Payload> = RequestStreamRequesterFlow(payload, this, state)
 
-    override fun requestChannel(payloads: Flow<Payload>): Flow<Payload> = RequestChannelRequesterFlow(payloads, this, state)
+    override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> =
+        RequestChannelRequesterFlow(initPayload, payloads, this, state)
 
     fun createStream(): Int {
         checkAvailable()

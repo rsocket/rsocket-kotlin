@@ -60,11 +60,7 @@ internal class RSocketResponder(
             val response = requestOrCancel(streamId) {
                 requestHandler.requestStream(initFrame.payload)
             } ?: return@launchCancelable
-            response.collectLimiting(
-                streamId,
-                RequestStreamResponderFlowCollector(state, streamId, initFrame.initialRequest)
-            )
-            send(CompletePayloadFrame(streamId))
+            response.collectLimiting(streamId, initFrame.initialRequest)
         }.invokeOnCompletion {
             initFrame.release()
         }
@@ -72,19 +68,15 @@ internal class RSocketResponder(
 
     fun handleRequestChannel(initFrame: RequestFrame): Unit = with(state) {
         val streamId = initFrame.streamId
-        val receiver = createReceiverFor(streamId, initFrame)
+        val receiver = createReceiverFor(streamId)
 
         val request = RequestChannelResponderFlow(streamId, receiver, state)
 
         launchCancelable(streamId) {
             val response = requestOrCancel(streamId) {
-                requestHandler.requestChannel(request)
+                requestHandler.requestChannel(initFrame.payload, request)
             } ?: return@launchCancelable
-            response.collectLimiting(
-                streamId,
-                RequestStreamResponderFlowCollector(state, streamId, initFrame.initialRequest)
-            )
-            send(CompletePayloadFrame(streamId))
+            response.collectLimiting(streamId, initFrame.initialRequest)
         }.invokeOnCompletion {
             initFrame.release()
             receiver.closeReceivedElements()
