@@ -28,7 +28,7 @@ val kotlinxSerializationVersion: String by rootProject
 kotlin {
     jvm("serverJvm")
     jvm("clientJvm")
-    js("clientJs", LEGACY) {
+    js("clientJs", IR) {
         browser {
             binaries.executable()
         }
