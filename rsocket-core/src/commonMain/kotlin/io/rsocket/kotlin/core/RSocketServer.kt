@@ -68,7 +68,7 @@ class RSocketServer internal constructor(
 
     private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
         sendFrame(ErrorFrame(0, error))
-        cancel("Setup failed", error)
+        job.completeExceptionally(error)
         throw error
     }
 }

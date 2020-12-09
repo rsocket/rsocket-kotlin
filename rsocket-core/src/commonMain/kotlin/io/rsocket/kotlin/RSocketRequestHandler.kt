@@ -53,7 +53,7 @@ class RSocketRequestHandlerBuilder internal constructor() {
         requestChannel = block
     }
 
-    internal fun build(job: Job): RSocket =
+    internal fun build(job: CompletableJob): RSocket =
         RSocketRequestHandler(job, metadataPush, fireAndForget, requestResponse, requestStream, requestChannel)
 }
 
@@ -65,7 +65,7 @@ fun RSocketRequestHandler(parentJob: Job? = null, configure: RSocketRequestHandl
 }
 
 private class RSocketRequestHandler(
-    override val job: Job,
+    override val job: CompletableJob,
     private val metadataPush: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)? = null,
     private val fireAndForget: (suspend RSocket.(payload: Payload) -> Unit)? = null,
     private val requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null,

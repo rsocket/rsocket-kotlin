@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.*
 internal class RSocketRequester(
     private val state: RSocketState,
     private val streamId: StreamId,
-) : RSocket, Cancelable by state {
+) : RSocket, Cancellable by state {
 
     override suspend fun metadataPush(metadata: ByteReadPacket): Unit = metadata.closeOnError {
         checkAvailable()

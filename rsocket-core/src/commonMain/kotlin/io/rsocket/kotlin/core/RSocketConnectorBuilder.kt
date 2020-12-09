@@ -100,10 +100,10 @@ public class RSocketConnectorBuilder internal constructor() {
     )
 
     private companion object {
-        private val defaultAcceptor: ConnectionAcceptor = ConnectionAcceptor { EmptyRSocket }
+        private val defaultAcceptor: ConnectionAcceptor = ConnectionAcceptor { EmptyRSocket() }
 
-        private object EmptyRSocket : RSocket {
-            override val job: Job = NonCancellable
+        private class EmptyRSocket : RSocket {
+            override val job: CompletableJob = Job()
         }
     }
 }

@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.*
 internal class RSocketState(
     private val connection: Connection,
     keepAlive: KeepAlive,
-) : Cancelable by connection {
+) : Cancellable by connection {
     private val prioritizer = Prioritizer()
     private val requestScope = CoroutineScope(SupervisorJob(job))
     private val scope = CoroutineScope(job)
@@ -53,7 +53,7 @@ internal class RSocketState(
     }
 
     fun createReceiverFor(streamId: Int, initFrame: RequestFrame? = null): ReceiveChannel<RequestFrame> {
-        val receiver = Channel<RequestFrame>(Channel.UNLIMITED)
+        val receiver = SafeChannel<RequestFrame>(Channel.UNLIMITED)
         initFrame?.let(receiver::offer) //used only in RequestChannel on responder side
         receivers[streamId] = receiver
         return receiver
@@ -71,7 +71,7 @@ internal class RSocketState(
                 if (cause != null) send(CancelFrame(streamId))
                 receivers.remove(streamId)?.apply {
                     closeReceivedElements()
-                    close(cause)
+                    cancelConsumed(cause)
                 }
             }
         }
@@ -120,7 +120,7 @@ internal class RSocketState(
         when (val streamId = frame.streamId) {
             0    -> when (frame) {
                 is ErrorFrame        -> {
-                    cancel("Zero stream error", frame.throwable)
+                    job.completeExceptionally(frame.throwable)
                     frame.release() //TODO
                 }
                 is KeepAliveFrame    -> keepAliveHandler.receive(frame)
@@ -146,7 +146,7 @@ internal class RSocketState(
                     frame.release()
                 }
                 is RequestFrame  -> when (frame.type) {
-                    FrameType.Payload         -> receivers[streamId]?.offer(frame)
+                    FrameType.Payload         -> receivers[streamId]?.safeOffer(frame) ?: frame.release()
                     FrameType.RequestFnF      -> responder.handleFireAndForget(frame)
                     FrameType.RequestResponse -> responder.handlerRequestResponse(frame)
                     FrameType.RequestStream   -> responder.handleRequestStream(frame)
@@ -164,20 +164,35 @@ internal class RSocketState(
     fun start(requestHandler: RSocket) {
         val responder = RSocketResponder(this, requestHandler)
         keepAliveHandler.startIn(scope)
-        requestHandler.job.invokeOnCompletion { cancel("Request handled stopped", it) }
+        requestHandler.job.invokeOnCompletion {
+            when (it) {
+                null                     -> job.complete()
+                is CancellationException -> job.cancel(it)
+                else                     -> job.completeExceptionally(it)
+            }
+        }
         job.invokeOnCompletion { error ->
-            requestHandler.cancel("Connection closed", error)
+            when (error) {
+                null                     -> requestHandler.job.complete()
+                is CancellationException -> requestHandler.job.cancel(error)
+                else                     -> requestHandler.job.completeExceptionally(error)
+            }
+            val cancelError = error as? CancellationException ?: CancellationException("Connection closed", error)
             receivers.values().forEach {
                 it.closeReceivedElements()
-                it.close((error as? CancellationException)?.cause ?: error)
+                it.cancel(cancelError)
             }
+            senders.values().forEach { it.cancel(cancelError) }
             receivers.clear()
             limits.clear()
             senders.clear()
-            prioritizer.close(error)
+            prioritizer.cancel(cancelError)
         }
         scope.launch {
-            while (connection.isActive) connection.sendFrame(prioritizer.receive())
+            while (connection.isActive) {
+                val frame = prioritizer.receive()
+                frame.closeOnError { connection.sendFrame(frame) }
+            }
         }
         scope.launch {
             while (connection.isActive) {

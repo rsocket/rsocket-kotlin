@@ -42,7 +42,7 @@ class NativeTcpTransportTest : TransportTest() {
 
     override suspend fun after() {
         serverJob.cancel()
-        client.cancel()
+        client.job.cancel()
         server.close()
         serverJob.join()
         client.join()

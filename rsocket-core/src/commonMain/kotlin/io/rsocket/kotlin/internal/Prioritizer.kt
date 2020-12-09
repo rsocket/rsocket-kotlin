@@ -17,19 +17,20 @@
 package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.frame.*
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.selects.*
 
 internal class Prioritizer {
-    private val priorityChannel = Channel<Frame>(Channel.UNLIMITED)
-    private val commonChannel = Channel<Frame>(Channel.UNLIMITED)
+    private val priorityChannel = SafeChannel<Frame>(Channel.UNLIMITED)
+    private val commonChannel = SafeChannel<Frame>(Channel.UNLIMITED)
 
     fun send(frame: Frame) {
-        commonChannel.offer(frame)
+        commonChannel.safeOffer(frame)
     }
 
     fun sendPrioritized(frame: Frame) {
-        priorityChannel.offer(frame)
+        priorityChannel.safeOffer(frame)
     }
 
     suspend fun receive(): Frame {
@@ -41,10 +42,10 @@ internal class Prioritizer {
         }
     }
 
-    fun close(throwable: Throwable?) {
+    fun cancel(error: CancellationException) {
         priorityChannel.closeReceivedElements()
         commonChannel.closeReceivedElements()
-        priorityChannel.close(throwable)
-        commonChannel.close(throwable)
+        priorityChannel.cancel(error)
+        commonChannel.cancel(error)
     }
 }

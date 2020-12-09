@@ -20,7 +20,7 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.flow.*
 
-interface RSocket : Cancelable {
+interface RSocket : Cancellable {
 
     suspend fun metadataPush(metadata: ByteReadPacket) {
         metadata.release()
