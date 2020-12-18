@@ -20,7 +20,7 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.internal.*
 
 @OptIn(TransportApi::class)
-internal inline fun Connection.connect(
+internal suspend inline fun Connection.connect(
     isServer: Boolean,
     interceptors: Interceptors,
     connectionConfig: ConnectionConfig,

@@ -23,6 +23,14 @@ import io.rsocket.kotlin.*
 public fun Route.rSocket(
     path: String? = null,
     protocol: String? = null,
+    block: suspend ConnectionAcceptorContext.() -> RSocket
+) {
+    rSocket(path, protocol, ConnectionAcceptor(block))
+}
+
+public fun Route.rSocket(
+    path: String? = null,
+    protocol: String? = null,
     acceptor: ConnectionAcceptor,
 ) {
     val serverTransport = serverTransport(path, protocol)
