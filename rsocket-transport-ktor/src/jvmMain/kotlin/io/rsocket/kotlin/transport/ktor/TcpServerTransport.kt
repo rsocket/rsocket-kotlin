@@ -41,10 +41,12 @@ public class TcpServer(public val socket: ServerSocket) : ServerTransport<Job>, 
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun start(accept: suspend (Connection) -> Unit): Job = launch {
-        while (isActive) {
-            val clientSocket = socket.accept()
-            val connection = TcpConnection(clientSocket)
-            launch { accept(connection) }
+        supervisorScope {
+            while (isActive) {
+                val clientSocket = socket.accept()
+                val connection = TcpConnection(clientSocket)
+                launch { accept(connection) }
+            }
         }
     }
 }
