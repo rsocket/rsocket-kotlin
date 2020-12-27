@@ -20,6 +20,7 @@ import io.ktor.network.sockets.*
 import io.ktor.util.*
 import io.ktor.util.network.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.Connection
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*

@@ -23,6 +23,7 @@ import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.Connection
 import io.rsocket.kotlin.frame.io.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CancellationException
