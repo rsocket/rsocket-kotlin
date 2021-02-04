@@ -21,7 +21,7 @@ plugins {
 val kotlinxNodejsVersion: String by rootProject
 
 kotlin {
-    js(IR) {
+    js {
         nodejs {
             binaries.executable()
         }

@@ -18,7 +18,6 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
-        maven("https://dl.bintray.com/kotlin/kotlinx")
     }
 
     val kotlinVersion: String by settings
@@ -32,12 +31,19 @@ pluginManagement {
         kotlin("plugin.allopen") version kotlinVersion
         kotlin("plugin.serialization") version kotlinVersion
 
-        id("kotlinx.benchmark") version kotlinxBenchmarkVersion
+        id("org.jetbrains.kotlinx.benchmark") version kotlinxBenchmarkVersion
 
         id("com.jfrog.bintray") version bintrayVersion
         id("com.jfrog.artifactory") version artifactoryVersion
         id("com.github.ben-manes.versions") version versionUpdatesVersion
         id("com.gradle.enterprise") version gradleEnterpriseVersion
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven("https://dl.bintray.com/kotlin/kotlinx") //kotlinx.nodejs
     }
 }
 
