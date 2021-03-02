@@ -27,11 +27,16 @@ public class WebSocketConnection(private val session: WebSocketSession) : Connec
     override val job: CompletableJob = Job(session.coroutineContext[Job])
 
     override suspend fun send(packet: ByteReadPacket) {
-        session.send(Frame.Binary(true, packet))
+        session.send(packet.readBytes())
     }
 
     override suspend fun receive(): ByteReadPacket {
-        return ByteReadPacket(session.incoming.receive().data)
+        val frame = session.incoming.receive()
+        // TODO replace with ByteReadPacket(frame.data) after fix for KTOR-960
+        //  now it's not zero copy
+        return buildPacket {
+            writeFully(frame.data)
+        }
     }
 
 }
