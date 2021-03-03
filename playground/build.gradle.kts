@@ -24,7 +24,7 @@ val ktorVersion: String by rootProject
 
 kotlin {
     jvm()
-    js(IR) {
+    js {
         browser {
             binaries.executable()
         }

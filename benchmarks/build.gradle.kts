@@ -18,12 +18,8 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.*
 
 plugins {
     kotlin("multiplatform")
-    id("kotlinx.benchmark")
+    id("org.jetbrains.kotlinx.benchmark")
     kotlin("plugin.allopen")
-}
-
-repositories {
-    maven("https://repo.spring.io/libs-snapshot")
 }
 
 val rsocketJavaVersion: String by rootProject
@@ -38,7 +34,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx.benchmark.runtime:$kotlinxBenchmarkVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:$kotlinxBenchmarkVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
             }
         }
