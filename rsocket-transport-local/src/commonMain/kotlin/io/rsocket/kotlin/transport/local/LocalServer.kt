@@ -46,8 +46,6 @@ internal constructor(
         val connectionJob = Job(job)
         connectionJob.invokeOnCompletion { cause ->
             val error = cause?.let { it as? CancellationException ?: CancellationException("Connection failed", it) }
-            clientChannel.closeReceivedElements()
-            serverChannel.closeReceivedElements()
             clientChannel.cancel(error)
             serverChannel.cancel(error)
         }
@@ -67,10 +65,3 @@ private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
 
 @Suppress("FunctionName")
 private fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
-
-private fun ReceiveChannel<Closeable>.closeReceivedElements() {
-    try {
-        while (true) poll()?.close() ?: break
-    } catch (e: Throwable) {
-    }
-}

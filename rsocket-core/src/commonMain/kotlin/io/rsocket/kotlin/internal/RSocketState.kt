@@ -68,10 +68,7 @@ internal class RSocketState(
         } finally {
             if (isActive && streamId in receivers) {
                 if (cause != null) send(CancelFrame(streamId))
-                receivers.remove(streamId)?.apply {
-                    closeReceivedElements()
-                    cancelConsumed(cause)
-                }
+                receivers.remove(streamId)?.cancelConsumed(cause)
             }
         }
     }
@@ -142,10 +139,7 @@ internal class RSocketState(
                 is RequestNFrame -> limits[streamId]?.updateRequests(frame.requestN)
                 is CancelFrame   -> senders.remove(streamId)?.cancel()
                 is ErrorFrame    -> {
-                    receivers.remove(streamId)?.apply {
-                        closeReceivedElements()
-                        close(frame.throwable)
-                    }
+                    receivers.remove(streamId)?.close(frame.throwable)
                     frame.release()
                 }
                 is RequestFrame  -> when (frame.type) {
@@ -182,7 +176,6 @@ internal class RSocketState(
             }
             val cancelError = error as? CancellationException ?: CancellationException("Connection closed", error)
             receivers.values().forEach {
-                it.closeReceivedElements()
                 it.cancel(cancelError)
             }
             senders.values().forEach { it.cancel(cancelError) }

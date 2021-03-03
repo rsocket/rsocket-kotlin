@@ -79,7 +79,6 @@ internal class RSocketResponder(
             response.collectLimiting(streamId, initFrame.initialRequest)
         }.invokeOnCompletion {
             initFrame.release()
-            receiver.closeReceivedElements()
             if (it != null) receiver.cancelConsumed(it) //TODO check it
         }
     }
