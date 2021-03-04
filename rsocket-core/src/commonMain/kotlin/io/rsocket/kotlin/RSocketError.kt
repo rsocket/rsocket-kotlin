@@ -16,7 +16,7 @@
 
 package io.rsocket.kotlin
 
-public sealed class RSocketError(internal val errorCode: Int, message: String) : Throwable(message) {
+public sealed class RSocketError(public val errorCode: Int, message: String) : Throwable(message) {
 
     public sealed class Setup(errorCode: Int, message: String) : RSocketError(errorCode, message) {
         public class Invalid(message: String) : Setup(ErrorCode.InvalidSetup, message)
@@ -35,39 +35,16 @@ public sealed class RSocketError(internal val errorCode: Int, message: String) :
     public class Invalid(message: String) : RSocketError(ErrorCode.Invalid, message)
 
     public class Custom(errorCode: Int, message: String) : RSocketError(errorCode, message) {
-        public val customCode: Long
-            get(): Long {
-                return if (errorCode >= 0)
-                    errorCode.toLong() - ErrorCode.CustomMin
-                else
-                    errorCode.toLong() - ErrorCode.CustomMin + ErrorCode.IntegerRange
-            }
 
         init {
             require(inCustomRange(errorCode)) {
                 "Allowed errorCode value should be in range [0x00000301-0xFFFFFFFE]"
             }
         }
-
-        public companion object {
-
-            private const val customCodeUpperBond = ErrorCode.IntegerRange - ErrorCode.CustomMin + ErrorCode.CustomMax // 0xFFFFFCFC
-
-            public fun fromCustomCode(customCode: Long, message: String): Custom {
-                var shifted = customCode + ErrorCode.CustomMin
-                if (shifted > Int.MAX_VALUE) shifted -= ErrorCode.IntegerRange
-                val errorCode = shifted.toInt()
-                require(shifted == errorCode.toLong() && inCustomRange(errorCode)) {
-                    val minBond = "00000000"
-                    val maxBond = customCodeUpperBond.toString(16).toUpperCase()
-                    "Allowed customCode value should be in range [0x$minBond-0x$maxBond]"
-                }
-                return Custom(errorCode, message)
-            }
-        }
     }
 }
 
+@Suppress("FunctionName") // function name intentionally starts with an uppercase letter
 internal fun RSocketError(streamId: Int, errorCode: Int, message: String): Throwable =
     when (streamId) {
         0 -> when (errorCode) {
@@ -115,8 +92,6 @@ public object ErrorCode {
     //custom error codes range
     public const val CustomMin: Int = 0x00000301
     public const val CustomMax: Int = 0xFFFFFFFE.toInt()
-
-    internal const val IntegerRange: Long = Int.MAX_VALUE.toLong() - Int.MIN_VALUE // 0xFFFFFFFF
 }
 
 private inline fun inCustomRange(errorCode: Int) =
