@@ -16,28 +16,53 @@
 
 package io.rsocket.kotlin
 
-sealed class RSocketError(internal val errorCode: Int, message: String) : Throwable(message) {
+public sealed class RSocketError(internal val errorCode: Int, message: String) : Throwable(message) {
 
-    sealed class Setup(errorCode: Int, message: String) : RSocketError(errorCode, message) {
-        class Invalid(message: String) : Setup(ErrorCode.InvalidSetup, message)
-        class Unsupported(message: String) : Setup(ErrorCode.UnsupportedSetup, message)
-        class Rejected(message: String) : Setup(ErrorCode.RejectedSetup, message)
+    public sealed class Setup(errorCode: Int, message: String) : RSocketError(errorCode, message) {
+        public class Invalid(message: String) : Setup(ErrorCode.InvalidSetup, message)
+        public class Unsupported(message: String) : Setup(ErrorCode.UnsupportedSetup, message)
+        public class Rejected(message: String) : Setup(ErrorCode.RejectedSetup, message)
     }
 
-    class RejectedResume(message: String) : RSocketError(ErrorCode.RejectedResume, message)
+    public class RejectedResume(message: String) : RSocketError(ErrorCode.RejectedResume, message)
 
-    class ConnectionError(message: String) : RSocketError(ErrorCode.ConnectionError, message)
-    class ConnectionClose(message: String) : RSocketError(ErrorCode.ConnectionClose, message)
+    public class ConnectionError(message: String) : RSocketError(ErrorCode.ConnectionError, message)
+    public class ConnectionClose(message: String) : RSocketError(ErrorCode.ConnectionClose, message)
 
-    class ApplicationError(message: String) : RSocketError(ErrorCode.ApplicationError, message)
-    class Rejected(message: String) : RSocketError(ErrorCode.Rejected, message)
-    class Canceled(message: String) : RSocketError(ErrorCode.Canceled, message)
-    class Invalid(message: String) : RSocketError(ErrorCode.Invalid, message)
+    public class ApplicationError(message: String) : RSocketError(ErrorCode.ApplicationError, message)
+    public class Rejected(message: String) : RSocketError(ErrorCode.Rejected, message)
+    public class Canceled(message: String) : RSocketError(ErrorCode.Canceled, message)
+    public class Invalid(message: String) : RSocketError(ErrorCode.Invalid, message)
 
-    class Custom(errorCode: Int, message: String) : RSocketError(errorCode, message) {
+    public class Custom(errorCode: Int, message: String) : RSocketError(errorCode, message) {
+        public val customCode: Long
+            get(): Long {
+                return if (errorCode >= 0)
+                    errorCode.toLong() - ErrorCode.CustomMin
+                else
+                    errorCode.toLong() - ErrorCode.CustomMin + ErrorCode.IntegerRange
+            }
+
         init {
-            require(errorCode >= ErrorCode.CustomMin || errorCode <= ErrorCode.CustomMax) {
+            require(inCustomRange(errorCode)) {
                 "Allowed errorCode value should be in range [0x00000301-0xFFFFFFFE]"
+            }
+        }
+
+        public companion object {
+
+            private const val customCodeUpperBond = ErrorCode.IntegerRange - ErrorCode.CustomMin + ErrorCode.CustomMax // 0xFFFFFCFC
+
+            public fun fromCustomCode(customCode: Long, message: String): Custom {
+                var shifted = customCode + ErrorCode.CustomMin
+                if (shifted > Int.MAX_VALUE) shifted -= ErrorCode.IntegerRange
+                val errorCode = shifted.toInt()
+                require(shifted == errorCode.toLong() && inCustomRange(errorCode)) {
+                    val minBond = "00000000"
+                    val maxBond = customCodeUpperBond.toString(16).toUpperCase()
+                    "Allowed customCode value should be in range [0x$minBond-0x$maxBond]"
+                }
+                return Custom(errorCode, message)
             }
         }
     }
@@ -59,35 +84,40 @@ internal fun RSocketError(streamId: Int, errorCode: Int, message: String): Throw
             ErrorCode.Rejected -> RSocketError.Rejected(message)
             ErrorCode.Canceled -> RSocketError.Canceled(message)
             ErrorCode.Invalid -> RSocketError.Invalid(message)
-            else                       -> when (errorCode >= ErrorCode.CustomMin || errorCode <= ErrorCode.CustomMax) {
+            else -> when (inCustomRange(errorCode)) {
                 true -> RSocketError.Custom(errorCode, message)
                 false -> IllegalArgumentException("Invalid Error frame in Stream ID $streamId: $errorCode '$message'")
             }
         }
     }
 
-internal object ErrorCode {
+public object ErrorCode {
 
     //stream id = 0
-    const val InvalidSetup: Int = 0x00000001
-    const val UnsupportedSetup: Int = 0x00000002
-    const val RejectedSetup: Int = 0x00000003
-    const val RejectedResume: Int = 0x00000004
+    internal const val InvalidSetup: Int = 0x00000001
+    internal const val UnsupportedSetup: Int = 0x00000002
+    internal const val RejectedSetup: Int = 0x00000003
+    internal const val RejectedResume: Int = 0x00000004
 
-    const val ConnectionError: Int = 0x00000101
-    const val ConnectionClose: Int = 0x00000102
+    internal const val ConnectionError: Int = 0x00000101
+    internal const val ConnectionClose: Int = 0x00000102
 
     //stream id != 0
-    const val ApplicationError: Int = 0x00000201
-    const val Rejected: Int = 0x00000202
-    const val Canceled: Int = 0x00000203
-    const val Invalid: Int = 0x00000204
+    internal const val ApplicationError: Int = 0x00000201
+    internal const val Rejected: Int = 0x00000202
+    internal const val Canceled: Int = 0x00000203
+    internal const val Invalid: Int = 0x00000204
 
     //reserved
-    const val Reserved: Int = 0x00000000
-    const val ReservedForExtension: Int = 0xFFFFFFFF.toInt()
+    internal const val Reserved: Int = 0x00000000
+    internal const val ReservedForExtension: Int = 0xFFFFFFFF.toInt()
 
     //custom error codes range
-    const val CustomMin: Int = 0x00000301
-    const val CustomMax: Int = 0xFFFFFFFE.toInt()
+    public const val CustomMin: Int = 0x00000301
+    public const val CustomMax: Int = 0xFFFFFFFE.toInt()
+
+    internal const val IntegerRange: Long = Int.MAX_VALUE.toLong() - Int.MIN_VALUE // 0xFFFFFFFF
 }
+
+private inline fun inCustomRange(errorCode: Int) =
+        ErrorCode.CustomMin <= errorCode || errorCode <= ErrorCode.CustomMax
