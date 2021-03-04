@@ -37,9 +37,17 @@ public sealed class RSocketError(public val errorCode: Int, message: String) : T
     public class Custom(errorCode: Int, message: String) : RSocketError(errorCode, message) {
 
         init {
-            require(inCustomRange(errorCode)) {
+            require(checkCodeInAllowedRange(errorCode)) {
                 "Allowed errorCode value should be in range [0x00000301-0xFFFFFFFE]"
             }
+        }
+
+        public companion object {
+            public const val MinAllowedCode: Int = ErrorCode.CustomMin
+            public const val MaxAllowedCode: Int = ErrorCode.CustomMax
+
+            public inline fun checkCodeInAllowedRange(errorCode: Int): Boolean =
+                    MinAllowedCode <= errorCode || errorCode <= MaxAllowedCode
         }
     }
 }
@@ -61,38 +69,35 @@ internal fun RSocketError(streamId: Int, errorCode: Int, message: String): Throw
             ErrorCode.Rejected -> RSocketError.Rejected(message)
             ErrorCode.Canceled -> RSocketError.Canceled(message)
             ErrorCode.Invalid -> RSocketError.Invalid(message)
-            else -> when (inCustomRange(errorCode)) {
+            else -> when (RSocketError.Custom.checkCodeInAllowedRange(errorCode)) {
                 true -> RSocketError.Custom(errorCode, message)
                 false -> IllegalArgumentException("Invalid Error frame in Stream ID $streamId: $errorCode '$message'")
             }
         }
     }
 
-public object ErrorCode {
+internal object ErrorCode {
 
     //stream id = 0
-    internal const val InvalidSetup: Int = 0x00000001
-    internal const val UnsupportedSetup: Int = 0x00000002
-    internal const val RejectedSetup: Int = 0x00000003
-    internal const val RejectedResume: Int = 0x00000004
+    const val InvalidSetup: Int = 0x00000001
+    const val UnsupportedSetup: Int = 0x00000002
+    const val RejectedSetup: Int = 0x00000003
+    const val RejectedResume: Int = 0x00000004
 
-    internal const val ConnectionError: Int = 0x00000101
-    internal const val ConnectionClose: Int = 0x00000102
+    const val ConnectionError: Int = 0x00000101
+    const val ConnectionClose: Int = 0x00000102
 
     //stream id != 0
-    internal const val ApplicationError: Int = 0x00000201
-    internal const val Rejected: Int = 0x00000202
-    internal const val Canceled: Int = 0x00000203
-    internal const val Invalid: Int = 0x00000204
+    const val ApplicationError: Int = 0x00000201
+    const val Rejected: Int = 0x00000202
+    const val Canceled: Int = 0x00000203
+    const val Invalid: Int = 0x00000204
 
     //reserved
-    internal const val Reserved: Int = 0x00000000
-    internal const val ReservedForExtension: Int = 0xFFFFFFFF.toInt()
+    const val Reserved: Int = 0x00000000
+    const val ReservedForExtension: Int = 0xFFFFFFFF.toInt()
 
     //custom error codes range
-    public const val CustomMin: Int = 0x00000301
-    public const val CustomMax: Int = 0xFFFFFFFE.toInt()
+    const val CustomMin: Int = 0x00000301
+    const val CustomMax: Int = 0xFFFFFFFE.toInt()
 }
-
-private inline fun inCustomRange(errorCode: Int) =
-        ErrorCode.CustomMin <= errorCode || errorCode <= ErrorCode.CustomMax
