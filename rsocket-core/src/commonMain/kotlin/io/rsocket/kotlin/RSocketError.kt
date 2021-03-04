@@ -16,33 +16,43 @@
 
 package io.rsocket.kotlin
 
-sealed class RSocketError(internal val errorCode: Int, message: String) : Throwable(message) {
+public sealed class RSocketError(public val errorCode: Int, message: String) : Throwable(message) {
 
-    sealed class Setup(errorCode: Int, message: String) : RSocketError(errorCode, message) {
-        class Invalid(message: String) : Setup(ErrorCode.InvalidSetup, message)
-        class Unsupported(message: String) : Setup(ErrorCode.UnsupportedSetup, message)
-        class Rejected(message: String) : Setup(ErrorCode.RejectedSetup, message)
+    public sealed class Setup(errorCode: Int, message: String) : RSocketError(errorCode, message) {
+        public class Invalid(message: String) : Setup(ErrorCode.InvalidSetup, message)
+        public class Unsupported(message: String) : Setup(ErrorCode.UnsupportedSetup, message)
+        public class Rejected(message: String) : Setup(ErrorCode.RejectedSetup, message)
     }
 
-    class RejectedResume(message: String) : RSocketError(ErrorCode.RejectedResume, message)
+    public class RejectedResume(message: String) : RSocketError(ErrorCode.RejectedResume, message)
 
-    class ConnectionError(message: String) : RSocketError(ErrorCode.ConnectionError, message)
-    class ConnectionClose(message: String) : RSocketError(ErrorCode.ConnectionClose, message)
+    public class ConnectionError(message: String) : RSocketError(ErrorCode.ConnectionError, message)
+    public class ConnectionClose(message: String) : RSocketError(ErrorCode.ConnectionClose, message)
 
-    class ApplicationError(message: String) : RSocketError(ErrorCode.ApplicationError, message)
-    class Rejected(message: String) : RSocketError(ErrorCode.Rejected, message)
-    class Canceled(message: String) : RSocketError(ErrorCode.Canceled, message)
-    class Invalid(message: String) : RSocketError(ErrorCode.Invalid, message)
+    public class ApplicationError(message: String) : RSocketError(ErrorCode.ApplicationError, message)
+    public class Rejected(message: String) : RSocketError(ErrorCode.Rejected, message)
+    public class Canceled(message: String) : RSocketError(ErrorCode.Canceled, message)
+    public class Invalid(message: String) : RSocketError(ErrorCode.Invalid, message)
 
-    class Custom(errorCode: Int, message: String) : RSocketError(errorCode, message) {
+    public class Custom(errorCode: Int, message: String) : RSocketError(errorCode, message) {
+
         init {
-            require(errorCode >= ErrorCode.CustomMin || errorCode <= ErrorCode.CustomMax) {
+            require(checkCodeInAllowedRange(errorCode)) {
                 "Allowed errorCode value should be in range [0x00000301-0xFFFFFFFE]"
             }
+        }
+
+        public companion object {
+            public const val MinAllowedCode: Int = ErrorCode.CustomMin
+            public const val MaxAllowedCode: Int = ErrorCode.CustomMax
+
+            public inline fun checkCodeInAllowedRange(errorCode: Int): Boolean =
+                    MinAllowedCode <= errorCode || errorCode <= MaxAllowedCode
         }
     }
 }
 
+@Suppress("FunctionName") // function name intentionally starts with an uppercase letter
 internal fun RSocketError(streamId: Int, errorCode: Int, message: String): Throwable =
     when (streamId) {
         0 -> when (errorCode) {
@@ -59,7 +69,7 @@ internal fun RSocketError(streamId: Int, errorCode: Int, message: String): Throw
             ErrorCode.Rejected -> RSocketError.Rejected(message)
             ErrorCode.Canceled -> RSocketError.Canceled(message)
             ErrorCode.Invalid -> RSocketError.Invalid(message)
-            else                       -> when (errorCode >= ErrorCode.CustomMin || errorCode <= ErrorCode.CustomMax) {
+            else -> when (RSocketError.Custom.checkCodeInAllowedRange(errorCode)) {
                 true -> RSocketError.Custom(errorCode, message)
                 false -> IllegalArgumentException("Invalid Error frame in Stream ID $streamId: $errorCode '$message'")
             }
