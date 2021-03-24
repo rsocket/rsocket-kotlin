@@ -43,8 +43,6 @@ internal class Prioritizer {
     }
 
     fun cancel(error: CancellationException) {
-        priorityChannel.closeReceivedElements()
-        commonChannel.closeReceivedElements()
         priorityChannel.cancel(error)
         commonChannel.cancel(error)
     }

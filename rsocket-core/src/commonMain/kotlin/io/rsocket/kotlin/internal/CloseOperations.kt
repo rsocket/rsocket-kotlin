@@ -34,27 +34,12 @@ internal fun ReceiveChannel<*>.cancelConsumed(cause: Throwable?) {
     cancel(cause?.let { it as? CancellationException ?: CancellationException("Channel was consumed, consumer had failed", it) })
 }
 
-//TODO Can be removed after fix of https://github.com/Kotlin/kotlinx.coroutines/issues/2435
-internal fun ReceiveChannel<Closeable>.closeReceivedElements() {
-    try {
-        while (true) poll()?.close() ?: break
-    } catch (e: Throwable) {
-    }
-}
-
 @SharedImmutable
 private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
 
 @Suppress("FunctionName")
 internal fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
 
-//TODO check after fix of https://github.com/Kotlin/kotlinx.coroutines/issues/2435
-// and https://github.com/Kotlin/kotlinx.coroutines/issues/974
 internal fun <E : Closeable> SendChannel<E>.safeOffer(element: E) {
-    try {
-        if (!offer(element)) element.close()
-    } catch (cause: Throwable) {
-        element.close()
-        throw cause
-    }
+    element.closeOnError { offer(element) }
 }
