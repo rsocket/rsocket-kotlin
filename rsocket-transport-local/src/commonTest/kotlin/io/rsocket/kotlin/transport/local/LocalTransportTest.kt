@@ -19,7 +19,7 @@ package io.rsocket.kotlin.transport.local
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 
-class LocalTransportTest : TransportTest(), TestWithLeakCheck {
+class LocalTransportTest : TransportTest() {
 
     private val testJob: Job = Job()
 

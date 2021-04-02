@@ -35,12 +35,15 @@ class TestRSocket : RSocket {
     }
 
     override fun requestStream(payload: Payload): Flow<Payload> = flow {
-        repeat(10000) { emit(requestResponse(payload)) }
+        payload.release()
+        repeat(10000) {
+            emitOrClose(Payload(packet(data), packet(metadata)))
+        }
     }
 
     override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> = flow {
         initPayload.release()
-        payloads.collect { emit(it) }
+        payloads.collect { emitOrClose(it) }
     }
 
     companion object {

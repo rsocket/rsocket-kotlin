@@ -26,25 +26,26 @@ import kotlinx.coroutines.*
 import kotlin.random.*
 
 class JvmTcpTransportTest : TransportTest() {
-    private val selector = SelectorManager(Dispatchers.IO)
     private lateinit var server: TcpServer
+    private lateinit var serverJob: Job
 
     override suspend fun before(): Unit = coroutineScope {
         val address = NetworkAddress("0.0.0.0", port.incrementAndGet())
         val tcp = aSocket(selector).tcp()
         server = tcp.serverTransport(address)
+        serverJob = SERVER.bind(server, ACCEPTOR)
         client = CONNECTOR.connect(tcp.clientTransport(address))
-        SERVER.bind(server, ACCEPTOR)
     }
 
     override suspend fun after() {
-        server.socket.socketContext.cancelChildren()
         client.cancelAndJoin()
         server.socket.close()
-        server.socket.awaitClosed()
+        server.socket.socketContext.join()
+        serverJob.join()
     }
 
     companion object {
         private val port = atomic(Random.nextInt(20, 90) * 100)
+        private val selector = SelectorManager(Dispatchers.IO)
     }
 }

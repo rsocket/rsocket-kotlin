@@ -20,6 +20,7 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.internal.*
 
 /**
  * That interface isn't stable for inheritance.
@@ -39,4 +40,7 @@ interface Connection : Cancellable {
 internal suspend fun Connection.receiveFrame(): Frame = receive().readFrame(pool)
 
 @OptIn(DangerousInternalIoApi::class, TransportApi::class)
-internal suspend fun Connection.sendFrame(frame: Frame): Unit = send(frame.toPacket(pool))
+internal suspend fun Connection.sendFrame(frame: Frame) {
+    val packet = frame.toPacket(pool)
+    packet.closeOnError { send(packet) }
+}

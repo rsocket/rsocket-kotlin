@@ -57,7 +57,12 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
                 while (isActive) {
                     val length = readPacket(3).readLength()
                     val packet = readPacket(length)
-                    receiveChannel.send(packet)
+                    try {
+                        receiveChannel.send(packet)
+                    } catch (cause: Throwable) {
+                        packet.close()
+                        throw cause
+                    }
                 }
             }
         }

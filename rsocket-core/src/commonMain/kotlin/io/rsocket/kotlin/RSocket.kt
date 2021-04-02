@@ -49,3 +49,16 @@ interface RSocket : Cancellable {
 }
 
 private fun notImplemented(operation: String): Nothing = throw NotImplementedError("$operation is not implemented.")
+
+/**
+ * Tries to emit [value], if emit failed, f.e. due cancellation, calls [Closeable.close] on [value].
+ * Better to use it instead of [FlowCollector.emit] with [Payload] or [ByteReadPacket] to avoid leaks of dropped elements.
+ */
+public suspend fun <C : Closeable> FlowCollector<C>.emitOrClose(value: C) {
+    try {
+        return emit(value)
+    } catch (e: Throwable) {
+        value.close()
+        throw e
+    }
+}

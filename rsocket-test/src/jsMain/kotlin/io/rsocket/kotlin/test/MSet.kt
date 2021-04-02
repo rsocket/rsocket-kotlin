@@ -14,25 +14,14 @@
  * limitations under the License.
  */
 
-plugins {
-    kotlin("multiplatform")
-}
+package io.rsocket.kotlin.test
 
-val kotlinxNodejsVersion: String by rootProject
+actual fun identityHashCode(instance: Any): Int = instance.hashCode()
 
-kotlin {
-    js(IR) {
-        nodejs {
-            binaries.executable()
-        }
-    }
-
-    sourceSets {
-        val jsMain by getting {
-            dependencies {
-                implementation(project(":rsocket-core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-nodejs:$kotlinxNodejsVersion")
-            }
-        }
-    }
+actual class MSet<T> actual constructor() {
+    private val delegate = mutableSetOf<T>()
+    actual fun add(element: T): Boolean = delegate.add(element)
+    actual fun remove(element: T): Boolean = delegate.remove(element)
+    actual fun clear(): Unit = delegate.clear()
+    actual fun values(): List<T> = delegate.toList()
 }

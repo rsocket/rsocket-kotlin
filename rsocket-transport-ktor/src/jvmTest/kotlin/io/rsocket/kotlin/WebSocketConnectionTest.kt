@@ -38,7 +38,7 @@ import io.ktor.websocket.WebSockets as ServerWebSockets
 import io.rsocket.kotlin.transport.ktor.client.RSocketSupport as ClientRSocketSupport
 import io.rsocket.kotlin.transport.ktor.server.RSocketSupport as ServerRSocketSupport
 
-class WebSocketConnectionTest : SuspendTest {
+class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
     private val port = Random.nextInt(20, 90) * 100
     private val client = HttpClient(ClientCIO) {
         install(ClientWebSockets)
@@ -64,7 +64,7 @@ class WebSocketConnectionTest : SuspendTest {
                         flow {
                             var i = 0
                             while (true) {
-                                emit(buildPayload { data((++i).toString()) })
+                                emitOrClose(buildPayload { data((++i).toString()) })
                                 delay(1000)
                             }
                         }

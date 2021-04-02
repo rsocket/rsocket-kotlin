@@ -60,7 +60,9 @@ abstract class WebSocketTransportTest(
     override suspend fun after() {
         super.after()
 
-        server.stop(0, 0)
+        server.stop(0, 1000)
+        httpClient.close()
+        httpClient.coroutineContext.job.join()
     }
 
     private suspend inline fun <R> trySeveralTimes(block: () -> R): R {

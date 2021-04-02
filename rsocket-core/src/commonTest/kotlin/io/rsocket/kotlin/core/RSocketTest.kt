@@ -48,12 +48,12 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
                 requestResponse { it }
                 requestStream {
                     it.release()
-                    flow { repeat(10) { emit(payload("server got -> [$it]")) } }
+                    flow { repeat(10) { emitOrClose(payload("server got -> [$it]")) } }
                 }
                 requestChannel { init, payloads ->
                     init.release()
                     payloads.onEach { it.release() }.launchIn(CoroutineScope(job))
-                    flow { repeat(10) { emit(payload("server got -> [$it]")) } }
+                    flow { repeat(10) { emitOrClose(payload("server got -> [$it]")) } }
                 }
             }
         }
