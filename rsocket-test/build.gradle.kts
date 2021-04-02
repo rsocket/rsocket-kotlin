@@ -33,10 +33,7 @@ kotlin {
 
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
                 api("io.ktor:ktor-utils:$ktorVersion")
-                api("app.cash.turbine:turbine:$turbineVersion") {
-                    //depends on coroutines without native-mt suffix, so need to exclude it
-                    exclude("org.jetbrains.kotlinx")
-                }
+                api("app.cash.turbine:turbine:$turbineVersion")
             }
         }
         val jvmMain by getting {
