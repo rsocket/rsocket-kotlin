@@ -32,11 +32,7 @@ public class WebSocketConnection(private val session: WebSocketSession) : Connec
 
     override suspend fun receive(): ByteReadPacket {
         val frame = session.incoming.receive()
-        // TODO replace with ByteReadPacket(frame.data) after fix for KTOR-960
-        //  now it's not zero copy
-        return buildPacket {
-            writeFully(frame.data)
-        }
+        return ByteReadPacket(frame.data)
     }
 
 }
