@@ -43,14 +43,16 @@ public class RSocketRequestHandlerBuilder internal constructor() {
         requestResponse = block
     }
 
-    public fun requestStream(block: (RSocket.(payload: Payload) -> Flow<Payload>)) {
+    public fun requestStream(block: suspend (RSocket.(payload: Payload) -> Flow<Payload>)) {
         check(requestStream == null) { "Request Stream handler already configured" }
-        requestStream = block
+        // make non suspending for RSocket interface
+        requestStream = flow { emitAll(block) }
     }
 
-    public fun requestChannel(block: (RSocket.(initPayload: Payload, payloads: Flow<Payload>) -> Flow<Payload>)) {
+    public fun requestChannel(block: suspend (RSocket.(initPayload: Payload, payloads: Flow<Payload>) -> Flow<Payload>)) {
         check(requestChannel == null) { "Request Channel handler already configured" }
-        requestChannel = block
+        // make non suspending for RSocket interface
+        requestChannel = flow { emitAll(block) }
     }
 
     internal fun build(job: CompletableJob): RSocket =
