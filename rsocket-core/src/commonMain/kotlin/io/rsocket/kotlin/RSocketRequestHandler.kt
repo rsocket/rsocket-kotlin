@@ -25,8 +25,8 @@ public class RSocketRequestHandlerBuilder internal constructor() {
     private var metadataPush: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)? = null
     private var fireAndForget: (suspend RSocket.(payload: Payload) -> Unit)? = null
     private var requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null
-    private var requestStream: (RSocket.(payload: Payload) -> Flow<Payload>)? = null
-    private var requestChannel: (RSocket.(initPayload: Payload, payloads: Flow<Payload>) -> Flow<Payload>)? = null
+    private var requestStream: (suspend RSocket.(payload: Payload) -> Flow<Payload>)? = null
+    private var requestChannel: (suspend RSocket.(initPayload: Payload, payloads: Flow<Payload>) -> Flow<Payload>)? = null
 
     public fun metadataPush(block: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)) {
         check(metadataPush == null) { "Metadata Push handler already configured" }
@@ -45,14 +45,12 @@ public class RSocketRequestHandlerBuilder internal constructor() {
 
     public fun requestStream(block: suspend (RSocket.(payload: Payload) -> Flow<Payload>)) {
         check(requestStream == null) { "Request Stream handler already configured" }
-        // make non suspending for RSocket interface
-        requestStream = flow { emitAll(block) }
+        requestStream = block
     }
 
     public fun requestChannel(block: suspend (RSocket.(initPayload: Payload, payloads: Flow<Payload>) -> Flow<Payload>)) {
         check(requestChannel == null) { "Request Channel handler already configured" }
-        // make non suspending for RSocket interface
-        requestChannel = flow { emitAll(block) }
+        requestChannel = block
     }
 
     internal fun build(job: CompletableJob): RSocket =
@@ -71,8 +69,8 @@ private class RSocketRequestHandler(
     private val metadataPush: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)? = null,
     private val fireAndForget: (suspend RSocket.(payload: Payload) -> Unit)? = null,
     private val requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null,
-    private val requestStream: (RSocket.(payload: Payload) -> Flow<Payload>)? = null,
-    private val requestChannel: (RSocket.(initPayload: Payload, payloads: Flow<Payload>) -> Flow<Payload>)? = null,
+    private val requestStream: (suspend RSocket.(payload: Payload) -> Flow<Payload>)? = null,
+    private val requestChannel: (suspend RSocket.(initPayload: Payload, payloads: Flow<Payload>) -> Flow<Payload>)? = null,
 ) : RSocket {
     override suspend fun metadataPush(metadata: ByteReadPacket): Unit =
         metadataPush?.invoke(this, metadata) ?: super.metadataPush(metadata)
@@ -83,10 +81,20 @@ private class RSocketRequestHandler(
     override suspend fun requestResponse(payload: Payload): Payload =
         requestResponse?.invoke(this, payload) ?: super.requestResponse(payload)
 
-    override fun requestStream(payload: Payload): Flow<Payload> =
-        requestStream?.invoke(this, payload) ?: super.requestStream(payload)
+    override fun requestStream(payload: Payload): Flow<Payload> {
+        return if (this.requestStream != null) {
+            flow { emitAll(requestStream.invoke(this@RSocketRequestHandler, payload)) }
+        } else {
+            super.requestStream(payload)
+        }
+    }
 
-    override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> =
-        requestChannel?.invoke(this, initPayload, payloads) ?: super.requestChannel(initPayload, payloads)
+    override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> {
+        return if (this.requestChannel != null) {
+            flow { emitAll(requestChannel.invoke(this@RSocketRequestHandler, initPayload, payloads)) }
+        } else {
+            super.requestChannel(initPayload, payloads)
+        }
+    }
 
 }
