@@ -31,10 +31,14 @@ import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 import kotlin.native.concurrent.*
 
+//TODO is there a better way to ignore K/N exceptions
+@SharedImmutable
+private val ignoreExceptionHandler = CoroutineExceptionHandler { _, _ -> }
+
 @OptIn(KtorExperimentalAPI::class, TransportApi::class, DangerousInternalIoApi::class)
 internal class TcpConnection(private val socket: Socket) : Connection, CoroutineScope {
     override val job: CompletableJob = Job(socket.socketContext)
-    override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined
+    override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined + ignoreExceptionHandler
 
     private val sendChannel = SafeChannel<ByteReadPacket>(8)
     private val receiveChannel = SafeChannel<ByteReadPacket>(8)
@@ -55,8 +59,8 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
         launch {
             socket.openReadChannel().apply {
                 while (isActive) {
-                    val length = readPacket(3).readLength()
-                    val packet = readPacket(length)
+                    val length = readExactPacket(3).readLength()
+                    val packet = readExactPacket(length)
                     try {
                         receiveChannel.send(packet)
                     } catch (cause: Throwable) {
@@ -83,3 +87,9 @@ private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
 
 @Suppress("FunctionName")
 private fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
+
+//TODO workaround for:
+// https://youtrack.jetbrains.com/issue/KTOR-2516 - ByteChannelSequential.readPacket freeze
+// https://youtrack.jetbrains.com/issue/KTOR-2519 - ByteBufferChannel.readRemaining suspend when should not
+// uses readPacket on JVM and readRemaining on Native an JS
+internal expect suspend fun ByteReadChannel.readExactPacket(length: Int): ByteReadPacket
