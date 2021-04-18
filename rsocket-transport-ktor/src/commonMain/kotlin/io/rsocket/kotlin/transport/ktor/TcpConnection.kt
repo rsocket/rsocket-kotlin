@@ -17,7 +17,6 @@
 package io.rsocket.kotlin.transport.ktor
 
 import io.ktor.network.sockets.*
-import io.ktor.util.*
 import io.ktor.util.cio.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
@@ -34,7 +33,7 @@ import kotlin.native.concurrent.*
 @SharedImmutable
 internal val ignoreExceptionHandler = CoroutineExceptionHandler { _, _ -> }
 
-@OptIn(KtorExperimentalAPI::class, TransportApi::class, DangerousInternalIoApi::class)
+@OptIn(TransportApi::class, DangerousInternalIoApi::class)
 internal class TcpConnection(private val socket: Socket) : Connection, CoroutineScope {
     override val job: CompletableJob = Job(socket.socketContext)
     override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined + ignoreExceptionHandler

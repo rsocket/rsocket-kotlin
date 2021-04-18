@@ -37,7 +37,6 @@ public class RSocketSupport(
             return RSocketSupport(connector)
         }
 
-        @OptIn(KtorExperimentalAPI::class)
         override fun install(feature: RSocketSupport, scope: HttpClient) {
             scope.feature(WebSockets) ?: error("RSocket require WebSockets to work. You must install WebSockets feature first.")
         }

@@ -18,10 +18,8 @@ import io.ktor.application.*
 import io.ktor.routing.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
-import io.ktor.util.*
 import io.rsocket.kotlin.transport.ktor.server.*
 
-@OptIn(KtorExperimentalAPI::class)
 fun main() {
     embeddedServer(CIO) {
         install(RSocketSupport)

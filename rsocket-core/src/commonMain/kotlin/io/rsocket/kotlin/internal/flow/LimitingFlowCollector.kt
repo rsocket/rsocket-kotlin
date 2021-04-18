@@ -22,6 +22,7 @@ import io.rsocket.kotlin.payload.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlin.coroutines.*
 
 internal class LimitingFlowCollector(
     private val state: RSocketState,
@@ -33,8 +34,8 @@ internal class LimitingFlowCollector(
 
     fun updateRequests(n: Int) {
         if (n <= 0) return
-        requests.getAndAdd(n)
-        awaiter.getAndSet(null)?.resumeSafely()
+        requests += n
+        awaiter.getAndSet(null)?.takeIf(CancellableContinuation<Unit>::isActive)?.resume(Unit)
     }
 
     override suspend fun emit(value: Payload): Unit = value.closeOnError {
@@ -43,19 +44,13 @@ internal class LimitingFlowCollector(
     }
 
     private suspend fun useRequest() {
-        if (requests.value <= 0) {
+        if (requests.getAndDecrement() > 0) {
+            currentCoroutineContext().ensureActive()
+        } else {
             suspendCancellableCoroutine<Unit> {
                 awaiter.value = it
-                if (requests.value != 0) it.resumeSafely()
+                if (requests.value >= 0 && it.isActive) it.resume(Unit)
             }
         }
-        requests.decrementAndGet()
     }
-
-    @OptIn(InternalCoroutinesApi::class)
-    private fun CancellableContinuation<Unit>.resumeSafely() {
-        val token = tryResume(Unit)
-        if (token != null) completeResume(token)
-    }
-
 }

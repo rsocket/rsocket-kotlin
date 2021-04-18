@@ -30,7 +30,7 @@ internal class RSocketRequester(
 ) : RSocket, Cancellable by state {
 
     override suspend fun metadataPush(metadata: ByteReadPacket): Unit = metadata.closeOnError {
-        checkAvailable()
+        job.ensureActive()
         state.sendPrioritized(MetadataPushFrame(metadata))
     }
 
@@ -56,17 +56,10 @@ internal class RSocketRequester(
         RequestChannelRequesterFlow(initPayload, payloads, this, state)
 
     fun createStream(): Int {
-        checkAvailable()
+        job.ensureActive()
         return nextStreamId()
     }
 
     private fun nextStreamId(): Int = streamId.next(state.receivers)
-
-    @OptIn(InternalCoroutinesApi::class)
-    private fun checkAvailable() {
-        if (isActive) return
-        val error = job.getCancellationException()
-        throw error.cause ?: error
-    }
 
 }

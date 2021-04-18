@@ -18,10 +18,16 @@ package io.rsocket.kotlin.payload
 
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
+import kotlin.native.concurrent.*
 
-data class PayloadMimeType(
-    val data: String = "application/binary",
-    val metadata: String = "application/binary",
+public fun PayloadMimeType(
+    data: MimeTypeWithName,
+    metadata: MimeTypeWithName,
+): PayloadMimeType = PayloadMimeType(data.text, metadata.text)
+
+public class PayloadMimeType(
+    public val data: String,
+    public val metadata: String,
 ) {
     init {
         data.requireAscii()
@@ -29,7 +35,8 @@ data class PayloadMimeType(
     }
 }
 
-public fun PayloadMimeType(
-    data: MimeTypeWithName,
-    metadata: MimeTypeWithName,
-): PayloadMimeType = PayloadMimeType(data.text, metadata.text)
+@SharedImmutable
+internal val DefaultPayloadMimeType = PayloadMimeType(
+    data = WellKnownMimeType.ApplicationOctetStream,
+    metadata = WellKnownMimeType.ApplicationOctetStream
+)

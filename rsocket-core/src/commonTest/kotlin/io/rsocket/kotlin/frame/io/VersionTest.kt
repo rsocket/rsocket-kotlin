@@ -25,7 +25,7 @@ class VersionTest {
         val version = Version(1, 0)
         assertEquals(1, version.major)
         assertEquals(0, version.minor)
-        assertEquals(0x00010000, version.value)
+        assertEquals(0x00010000, version.intValue)
         assertEquals("1.0", version.toString())
     }
 
@@ -34,7 +34,7 @@ class VersionTest {
         val version = Version(0x1234, 0x5678)
         assertEquals(0x1234, version.major)
         assertEquals(0x5678, version.minor)
-        assertEquals(0x12345678, version.value)
+        assertEquals(0x12345678, version.intValue)
         assertEquals("4660.22136", version.toString())
     }
 

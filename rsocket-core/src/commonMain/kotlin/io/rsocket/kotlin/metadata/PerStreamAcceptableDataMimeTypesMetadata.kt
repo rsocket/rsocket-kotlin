@@ -41,10 +41,10 @@ public class PerStreamAcceptableDataMimeTypesMetadata(public val types: List<Mim
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketAcceptMimeTypes
 
         @DangerousInternalIoApi
-        @OptIn(ExperimentalStdlibApi::class)
-        override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): PerStreamAcceptableDataMimeTypesMetadata =
-            PerStreamAcceptableDataMimeTypesMetadata(buildList {
-                while (isNotEmpty) add(readMimeType())
-            })
+        override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): PerStreamAcceptableDataMimeTypesMetadata {
+            val list = mutableListOf<MimeType>()
+            while (isNotEmpty) list.add(readMimeType())
+            return PerStreamAcceptableDataMimeTypesMetadata(list.toList())
+        }
     }
 }

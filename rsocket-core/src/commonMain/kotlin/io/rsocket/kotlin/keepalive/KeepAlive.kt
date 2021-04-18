@@ -16,9 +16,25 @@
 
 package io.rsocket.kotlin.keepalive
 
+import kotlin.native.concurrent.*
 import kotlin.time.*
 
-data class KeepAlive @OptIn(ExperimentalTime::class) constructor(
-    val interval: Duration = 20.seconds,
-    val maxLifetime: Duration = 90.seconds
+@ExperimentalTime
+public fun KeepAlive(
+    interval: Duration = 20.seconds,
+    maxLifetime: Duration = 90.seconds
+): KeepAlive = KeepAlive(
+    intervalMillis = interval.toInt(DurationUnit.MILLISECONDS),
+    maxLifetimeMillis = maxLifetime.toInt(DurationUnit.MILLISECONDS)
+)
+
+public class KeepAlive(
+    public val intervalMillis: Int = 20 * 1000, // 20 seconds
+    public val maxLifetimeMillis: Int = 90 * 1000 // 90 seconds
+)
+
+@SharedImmutable
+internal val DefaultKeepAlive = KeepAlive(
+    intervalMillis = 20 * 1000, // 20 seconds
+    maxLifetimeMillis = 90 * 1000 // 90 seconds
 )

@@ -21,32 +21,28 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
-import kotlin.time.*
-import kotlin.time.TimeSource.*
 
-@OptIn(ExperimentalTime::class)
 internal class KeepAliveHandler(
     private val keepAlive: KeepAlive,
     private val offerFrame: (frame: Frame) -> Unit,
 ) {
 
-    private val lastMark = atomic<TimeMark?>(null)
+    private val lastMark = atomic(currentMillis())
 
     fun receive(frame: KeepAliveFrame) {
-        lastMark.value = Monotonic.markNow()
+        lastMark.value = currentMillis()
         if (frame.respond) {
             offerFrame(KeepAliveFrame(false, 0, frame.data))
         }
     }
 
     fun startIn(scope: CoroutineScope) {
-        lastMark.value = Monotonic.markNow()
         scope.launch {
             while (isActive) {
-                delay(keepAlive.interval)
-                if (lastMark.value!!.elapsedNow() >= keepAlive.maxLifetime) {
+                delay(keepAlive.intervalMillis.toLong())
+                if (currentMillis() - lastMark.value >= keepAlive.maxLifetimeMillis) {
                     //for K/N
-                    scope.cancel("Keep alive failed", RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetime}"))
+                    scope.cancel("Keep alive failed", RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetimeMillis} ms"))
                     break
                 }
                 offerFrame(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
@@ -54,3 +50,5 @@ internal class KeepAliveHandler(
         }
     }
 }
+
+internal expect fun currentMillis(): Long

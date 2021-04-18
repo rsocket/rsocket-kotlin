@@ -20,7 +20,6 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
-import kotlin.time.*
 
 private const val HonorLeaseFlag = 64
 private const val ResumeEnabledFlag = 128
@@ -50,9 +49,11 @@ internal class SetupFrame(
 
     override fun BytePacketBuilder.writeSelf() {
         writeVersion(version)
-        writeKeepAlive(keepAlive)
+        writeInt(keepAlive.intervalMillis)
+        writeInt(keepAlive.maxLifetimeMillis)
         writeResumeToken(resumeToken)
-        writePayloadMimeType(payloadMimeType)
+        writeStringMimeType(payloadMimeType.metadata)
+        writeStringMimeType(payloadMimeType.data)
         writePayload(payload)
     }
 
@@ -64,7 +65,8 @@ internal class SetupFrame(
 
     override fun StringBuilder.appendSelf() {
         append("\nVersion: ").append(version.toString()).append(" Honor lease: ").append(honorLease).append("\n")
-        append("Keep alive: interval=").append(keepAlive.interval).append(", max lifetime=").append(keepAlive.maxLifetime).append("\n")
+        append("Keep alive: interval=").append(keepAlive.intervalMillis).append(" ms,")
+        append("max lifetime=").append(keepAlive.maxLifetimeMillis).append(" ms\n")
         append("Data mime type: ").append(payloadMimeType.data).append("\n")
         append("Metadata mime type: ").append(payloadMimeType.metadata)
         appendPayload(payload)
@@ -73,9 +75,17 @@ internal class SetupFrame(
 
 internal fun ByteReadPacket.readSetup(pool: BufferPool, flags: Int): SetupFrame {
     val version = readVersion()
-    val keepAlive = readKeepAlive()
+    val keepAlive = run {
+        val interval = readInt()
+        val maxLifetime = readInt()
+        KeepAlive(intervalMillis = interval, maxLifetimeMillis = maxLifetime)
+    }
     val resumeToken = if (flags check ResumeEnabledFlag) readResumeToken(pool) else null
-    val payloadMimeType = readPayloadMimeType()
+    val payloadMimeType = run {
+        val metadata = readStringMimeType()
+        val data = readStringMimeType()
+        PayloadMimeType(data = data, metadata = metadata)
+    }
     val payload = readPayload(pool, flags)
     return SetupFrame(
         version = version,
@@ -87,43 +97,13 @@ internal fun ByteReadPacket.readSetup(pool: BufferPool, flags: Int): SetupFrame 
     )
 }
 
-private fun ByteReadPacket.readMimeType(): String {
+private fun ByteReadPacket.readStringMimeType(): String {
     val length = readByte().toInt()
     return readTextExactBytes(length)
 }
 
-private fun BytePacketBuilder.writeMimeType(mimeType: String) {
+private fun BytePacketBuilder.writeStringMimeType(mimeType: String) {
     val bytes = mimeType.encodeToByteArray() //TODO check
     writeByte(bytes.size.toByte())
     writeFully(bytes)
-}
-
-private fun ByteReadPacket.readPayloadMimeType(): PayloadMimeType {
-    val metadata = readMimeType()
-    val data = readMimeType()
-    return PayloadMimeType(data = data, metadata = metadata)
-}
-
-private fun BytePacketBuilder.writePayloadMimeType(payloadMimeType: PayloadMimeType) {
-    writeMimeType(payloadMimeType.metadata)
-    writeMimeType(payloadMimeType.data)
-}
-
-@OptIn(ExperimentalTime::class)
-private fun ByteReadPacket.readMillis(): Duration = readInt().milliseconds
-
-@OptIn(ExperimentalTime::class)
-private fun BytePacketBuilder.writeMillis(duration: Duration) {
-    writeInt(duration.toInt(DurationUnit.MILLISECONDS))
-}
-
-private fun ByteReadPacket.readKeepAlive(): KeepAlive {
-    val interval = readMillis()
-    val maxLifetime = readMillis()
-    return KeepAlive(interval = interval, maxLifetime = maxLifetime)
-}
-
-private fun BytePacketBuilder.writeKeepAlive(keepAlive: KeepAlive) {
-    writeMillis(keepAlive.interval)
-    writeMillis(keepAlive.maxLifetime)
 }

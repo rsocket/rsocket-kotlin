@@ -71,8 +71,8 @@ public class RSocketConnectorBuilder internal constructor() {
     }
 
     public class ConnectionConfigBuilder internal constructor() {
-        public var keepAlive: KeepAlive = KeepAlive()
-        public var payloadMimeType: PayloadMimeType = PayloadMimeType()
+        public var keepAlive: KeepAlive = DefaultKeepAlive
+        public var payloadMimeType: PayloadMimeType = DefaultPayloadMimeType
         private var setupPayload: (() -> Payload)? = null
 
         public fun setupPayload(block: (() -> Payload)?) {

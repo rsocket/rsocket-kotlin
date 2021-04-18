@@ -16,21 +16,18 @@
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
-import io.ktor.util.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.ktor.*
 import kotlin.coroutines.*
 
 
-@OptIn(KtorExperimentalAPI::class, InternalAPI::class)
 suspend fun runTcpClient(dispatcher: CoroutineContext) {
     val transport = TcpClientTransport(SelectorManager(dispatcher), "0.0.0.0", 4444)
     RSocketConnector().connect(transport).doSomething()
 }
 
 //to test nodejs tcp server
-@OptIn(KtorExperimentalAPI::class, InternalAPI::class)
 suspend fun testNodeJsServer(dispatcher: CoroutineContext) {
     val transport = TcpClientTransport(SelectorManager(dispatcher), "127.0.0.1", 9000)
     val client = RSocketConnector().connect(transport)
