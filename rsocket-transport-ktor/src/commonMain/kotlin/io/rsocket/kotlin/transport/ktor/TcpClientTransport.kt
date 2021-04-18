@@ -15,23 +15,32 @@
  */
 
 @file:OptIn(TransportApi::class)
+@file:Suppress("FunctionName")
 
 package io.rsocket.kotlin.transport.ktor
 
+import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
+import io.ktor.util.*
 import io.ktor.util.network.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 
-public fun TcpSocketBuilder.clientTransport(
-    hostname: String,
-    port: Int,
+@InternalAPI //because of selector
+public fun TcpClientTransport(
+    selector: SelectorManager,
+    hostname: String, port: Int,
+    intercept: (Socket) -> Socket = { it }, //f.e. for tls, which is currently supported by ktor only on JVM
     configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {},
-): ClientTransport = clientTransport(NetworkAddress(hostname, port), configure)
+): ClientTransport = TcpClientTransport(selector, NetworkAddress(hostname, port), intercept, configure)
 
-public fun TcpSocketBuilder.clientTransport(
+@InternalAPI //because of selector
+public fun TcpClientTransport(
+    selector: SelectorManager,
     remoteAddress: NetworkAddress,
+    intercept: (Socket) -> Socket = { it }, //f.e. for tls, which is currently supported by ktor only on JVM
     configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {},
 ): ClientTransport = ClientTransport {
-    TcpConnection(connect(remoteAddress, configure))
+    val socket = aSocket(selector).tcp().connect(remoteAddress, configure)
+    TcpConnection(intercept(socket))
 }

@@ -25,14 +25,14 @@ import kotlin.coroutines.*
 
 @OptIn(KtorExperimentalAPI::class, InternalAPI::class)
 suspend fun runTcpClient(dispatcher: CoroutineContext) {
-    val transport = aSocket(SelectorManager(dispatcher)).tcp().clientTransport("0.0.0.0", 4444)
+    val transport = TcpClientTransport(SelectorManager(dispatcher), "0.0.0.0", 4444)
     RSocketConnector().connect(transport).doSomething()
 }
 
 //to test nodejs tcp server
 @OptIn(KtorExperimentalAPI::class, InternalAPI::class)
 suspend fun testNodeJsServer(dispatcher: CoroutineContext) {
-    val transport = aSocket(SelectorManager(dispatcher)).tcp().clientTransport("127.0.0.1", 9000)
+    val transport = TcpClientTransport(SelectorManager(dispatcher), "127.0.0.1", 9000)
     val client = RSocketConnector().connect(transport)
 
     val response = client.requestResponse(buildPayload { data("Hello from JVM") })

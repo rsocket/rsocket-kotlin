@@ -31,9 +31,8 @@ import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 import kotlin.native.concurrent.*
 
-//TODO is there a better way to ignore K/N exceptions
 @SharedImmutable
-private val ignoreExceptionHandler = CoroutineExceptionHandler { _, _ -> }
+internal val ignoreExceptionHandler = CoroutineExceptionHandler { _, _ -> }
 
 @OptIn(KtorExperimentalAPI::class, TransportApi::class, DangerousInternalIoApi::class)
 internal class TcpConnection(private val socket: Socket) : Connection, CoroutineScope {

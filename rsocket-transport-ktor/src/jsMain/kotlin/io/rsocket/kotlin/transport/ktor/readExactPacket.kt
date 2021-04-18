@@ -18,14 +18,15 @@ package io.rsocket.kotlin.transport.ktor
 
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
+import kotlinx.coroutines.channels.*
 
 //TODO not needed for JS
 internal actual suspend fun ByteReadChannel.readExactPacket(length: Int): ByteReadPacket {
     val l = length.toLong()
     val packet = readRemaining(l)
-    require(packet.remaining == l) {
+    if (packet.remaining != l) {
         packet.release()
-        "Unexpected EOF: expected ${l - packet.remaining} more bytes"
+        throw ClosedReceiveChannelException("Unexpected EOF: expected ${l - packet.remaining} more bytes")
     }
     return packet
 }
