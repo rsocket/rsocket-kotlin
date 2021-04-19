@@ -140,7 +140,7 @@ val client = HttpClient(CIO) {
 }
 
 //connect to some url
-val rSocket: RSocket = client.rSocket("wss://rsocket-demo.herokuapp.com/rsocket")
+val rSocket: RSocket = client.rSocket("wss://demo.rsocket.io/rsocket")
 
 //request stream
 val stream: Flow<Payload> = rSocket.requestStream(Payload.Empty)
