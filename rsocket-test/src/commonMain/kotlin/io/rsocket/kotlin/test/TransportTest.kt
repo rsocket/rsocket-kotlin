@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
 
-@OptIn(ExperimentalTime::class)
 abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     override val testTimeout: Duration = TransportTestDefaultDuration
 

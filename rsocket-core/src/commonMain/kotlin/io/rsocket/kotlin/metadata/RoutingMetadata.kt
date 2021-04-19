@@ -47,12 +47,13 @@ public class RoutingMetadata(public val tags: List<String>) : Metadata {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketRouting
 
         @DangerousInternalIoApi
-        @OptIn(ExperimentalStdlibApi::class, ExperimentalUnsignedTypes::class)
-        override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): RoutingMetadata = RoutingMetadata(buildList {
+        override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): RoutingMetadata {
+            val list = mutableListOf<String>()
             while (isNotEmpty) {
-                val length = readUByte().toInt()
-                add(readTextExactBytes(length))
+                val length = readByte().toInt() and 0xFF
+                list.add(readTextExactBytes(length))
             }
-        })
+            return RoutingMetadata(list.toList())
+        }
     }
 }

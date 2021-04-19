@@ -20,7 +20,6 @@ import io.ktor.network.sockets.*
 import io.ktor.routing.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
-import io.ktor.util.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
@@ -32,7 +31,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.*
 
-@OptIn(KtorExperimentalAPI::class, ExperimentalSerializationApi::class, ExperimentalMetadataApi::class, InternalAPI::class)
+@OptIn(ExperimentalSerializationApi::class, ExperimentalMetadataApi::class, InternalAPI::class)
 fun main() {
     val proto = ConfiguredProtoBuf
     val users = Users()

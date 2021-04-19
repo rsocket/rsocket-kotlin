@@ -24,7 +24,7 @@ import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
-@OptIn(ExperimentalStreamsApi::class, ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalStreamsApi::class)
 internal class RequestChannelRequesterFlow(
     private val initPayload: Payload,
     private val payloads: Flow<Payload>,

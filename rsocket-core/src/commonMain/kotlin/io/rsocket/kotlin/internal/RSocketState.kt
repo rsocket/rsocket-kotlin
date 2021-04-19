@@ -26,7 +26,6 @@ import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 
 @OptIn(
-    InternalCoroutinesApi::class,
     TransportApi::class,
     ExperimentalStreamsApi::class
 )
@@ -97,7 +96,7 @@ internal class RSocketState(
         limits[streamId] = limitingCollector
         try {
             onStart()
-            collect(limitingCollector)
+            limitingCollector.emitAll(this@collectLimiting)
             send(CompletePayloadFrame(streamId))
         } catch (e: Throwable) {
             limits.remove(streamId)

@@ -52,15 +52,16 @@ public interface CompositeMetadata : Metadata {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketCompositeMetadata
 
         @DangerousInternalIoApi
-        @OptIn(ExperimentalStdlibApi::class)
-        override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): CompositeMetadata = DefaultCompositeMetadata(buildList {
+        override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): CompositeMetadata {
+            val list = mutableListOf<Entry>()
             while (isNotEmpty) {
                 val type = readMimeType()
                 val length = readLength()
                 val packet = readPacket(pool, length)
-                add(Entry(type, packet))
+                list.add(Entry(type, packet))
             }
-        })
+            return DefaultCompositeMetadata(list.toList())
+        }
     }
 }
 

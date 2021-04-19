@@ -27,7 +27,6 @@ import kotlinx.coroutines.flow.*
 internal typealias ReconnectPredicate = suspend (cause: Throwable, attempt: Long) -> Boolean
 
 @Suppress("FunctionName")
-@OptIn(FlowPreview::class)
 internal suspend fun ReconnectableRSocket(
     logger: Logger,
     connect: suspend () -> RSocket,
@@ -35,7 +34,7 @@ internal suspend fun ReconnectableRSocket(
 ): RSocket {
     val job = Job()
     val state =
-        connect.asFlow()
+        flow { emit(connect()) }
             .map<RSocket, ReconnectState> { ReconnectState.Connected(it) } //if connection established - state = connected
             .onStart { emit(ReconnectState.Connecting) } //init - state = connecting
             .retryWhen { cause, attempt -> //reconnection logic

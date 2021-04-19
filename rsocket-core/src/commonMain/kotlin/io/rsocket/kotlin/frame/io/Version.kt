@@ -18,12 +18,11 @@ package io.rsocket.kotlin.frame.io
 
 import io.ktor.utils.io.core.*
 
-internal fun Version(major: Int, minor: Int): Version = Version((major shl 16) or (minor and 0xFFFF))
+internal class Version(val major: Int, val minor: Int) {
+    val intValue: Int get() = (major shl 16) or (minor and 0xFFFF)
 
-@Suppress("EXPERIMENTAL_FEATURE_WARNING")
-internal inline class Version(val value: Int) {
-    val major: Int get() = value shr 16 and 0xFFFF
-    val minor: Int get() = value and 0xFFFF
+    override fun equals(other: Any?): Boolean = other is Version && intValue == other.intValue
+    override fun hashCode(): Int = intValue
     override fun toString(): String = "$major.$minor"
 
     companion object {
@@ -31,8 +30,14 @@ internal inline class Version(val value: Int) {
     }
 }
 
-internal fun ByteReadPacket.readVersion(): Version = Version(readInt())
+internal fun ByteReadPacket.readVersion(): Version {
+    val value = readInt()
+    return Version(
+        major = value shr 16 and 0xFFFF,
+        minor = value and 0xFFFF
+    )
+}
 
 internal fun BytePacketBuilder.writeVersion(version: Version) {
-    writeInt(version.value)
+    writeInt(version.intValue)
 }

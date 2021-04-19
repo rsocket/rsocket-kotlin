@@ -14,15 +14,8 @@
  * limitations under the License.
  */
 
-import io.ktor.network.selector.*
-import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.transport.ktor.*
-import kotlinx.coroutines.*
-import kotlin.coroutines.*
+package io.rsocket.kotlin.keepalive
 
-suspend fun runTcpServer(dispatcher: CoroutineContext) {
-    val transport = TcpServerTransport(SelectorManager(dispatcher), "0.0.0.0", 4444)
-    RSocketServer().bind(transport, rSocketAcceptor).join()
-}
+import kotlin.system.*
 
-suspend fun main(): Unit = runTcpServer(Dispatchers.IO)
+internal actual fun currentMillis(): Long = getTimeMillis()

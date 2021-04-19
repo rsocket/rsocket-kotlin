@@ -17,10 +17,8 @@
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.features.websocket.*
-import io.ktor.util.*
 import io.rsocket.kotlin.transport.ktor.client.*
 
-@OptIn(KtorExperimentalAPI::class)
 suspend fun runWSClient(engine: HttpClientEngineFactory<*>) {
     val client = HttpClient(engine) {
         install(WebSockets)

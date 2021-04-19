@@ -103,19 +103,21 @@ internal class IntMap<V : Any>(initialCapacity: Int = 8, private val loadFactor:
             store.clearSize()
         }
 
-        @OptIn(ExperimentalStdlibApi::class)
-        fun values(): List<V> = buildList {
+        fun values(): List<V> {
+            val list = mutableListOf<V>()
             repeat(capacity) {
-                store.value(it)?.let(this::add)
+                store.value(it)?.let(list::add)
             }
+            return list.toList()
         }
 
-        @OptIn(ExperimentalStdlibApi::class)
-        fun keys(): Set<Int> = buildSet {
+        fun keys(): Set<Int> {
+            val set = mutableSetOf<Int>()
             repeat(capacity) {
                 val key = store.key(it)
-                if (this@MapState.contains(key)) add(key)
+                if (this@MapState.contains(key)) set.add(key)
             }
+            return set.toSet()
         }
 
         private fun set(index: Int, key: Int, value: V?) {

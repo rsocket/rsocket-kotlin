@@ -43,7 +43,7 @@ class SetupRejectionTest : SuspendTest, TestWithLeakCheck {
             error(errorMessage)
         }
 
-        connection.sendToReceiver(SetupFrame(Version.Current, false, KeepAlive(), null, PayloadMimeType(), Payload.Empty))
+        connection.sendToReceiver(SetupFrame(Version.Current, false, DefaultKeepAlive, null, DefaultPayloadMimeType, Payload.Empty))
 
         assertFailsWith(RSocketError.Setup.Rejected::class, errorMessage) { deferred.await() }
 
