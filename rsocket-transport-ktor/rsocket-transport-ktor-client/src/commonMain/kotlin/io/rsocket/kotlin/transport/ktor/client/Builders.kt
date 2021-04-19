@@ -25,18 +25,18 @@ import io.rsocket.kotlin.transport.*
 
 public suspend fun HttpClient.rSocket(
     request: HttpRequestBuilder.() -> Unit,
-): RSocket = rSocket(clientTransport(request))
+): RSocket = rSocket(WebSocketClientTransport(this, request))
 
 public suspend fun HttpClient.rSocket(
     urlString: String,
     secure: Boolean = false,
     request: HttpRequestBuilder.() -> Unit = {},
-): RSocket = rSocket(clientTransport(urlString, secure, request))
+): RSocket = rSocket(WebSocketClientTransport(this, urlString, secure, request))
 
 public suspend fun HttpClient.rSocket(
     host: String = "localhost", port: Int = DEFAULT_PORT, path: String = "/",
     secure: Boolean = false,
-): RSocket = rSocket(clientTransport(host, port, path, secure))
+): RSocket = rSocket(WebSocketClientTransport(this, host, port, path, secure))
 
 
 private suspend fun HttpClient.rSocket(

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
+package io.rsocket.kotlin.transport.ktor
 
 import io.ktor.application.*
 import io.ktor.client.*

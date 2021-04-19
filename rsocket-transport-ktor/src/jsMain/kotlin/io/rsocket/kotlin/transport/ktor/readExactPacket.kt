@@ -14,11 +14,19 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
+package io.rsocket.kotlin.transport.ktor
 
-import io.ktor.network.selector.*
-import io.rsocket.kotlin.transport.ktor.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.core.*
+import kotlinx.coroutines.channels.*
 
-class NativeTcpTransportTest : TcpTransportTest(SelectorManager(), SelectorManager())
-
-class NativeTcpServerTest : TcpServerTest()
+//TODO not needed for JS
+internal actual suspend fun ByteReadChannel.readExactPacket(length: Int): ByteReadPacket {
+    val l = length.toLong()
+    val packet = readRemaining(l)
+    if (packet.remaining != l) {
+        packet.release()
+        throw ClosedReceiveChannelException("Unexpected EOF: expected ${l - packet.remaining} more bytes")
+    }
+    return packet
+}

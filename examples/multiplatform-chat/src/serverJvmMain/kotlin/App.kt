@@ -32,7 +32,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.*
 
-@OptIn(KtorExperimentalAPI::class, ExperimentalSerializationApi::class, ExperimentalMetadataApi::class)
+@OptIn(KtorExperimentalAPI::class, ExperimentalSerializationApi::class, ExperimentalMetadataApi::class, InternalAPI::class)
 fun main() {
     val proto = ConfiguredProtoBuf
     val users = Users()
@@ -98,8 +98,7 @@ fun main() {
     }
 
     //start TCP server
-    val tcpTransport = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp().serverTransport(port = 8000)
-    rSocketServer.bind(tcpTransport, acceptor)
+    rSocketServer.bind(TcpServerTransport(ActorSelectorManager(Dispatchers.IO), port = 9000), acceptor)
 
     //start WS server
     embeddedServer(CIO, port = 9000) {

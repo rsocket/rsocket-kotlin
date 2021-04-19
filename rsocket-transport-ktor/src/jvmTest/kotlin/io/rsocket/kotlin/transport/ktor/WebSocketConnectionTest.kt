@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
+package io.rsocket.kotlin.transport.ktor
 
 import io.ktor.application.*
 import io.ktor.client.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*

@@ -45,7 +45,7 @@ suspend fun connectToApiUsingWS(name: String): Api {
 
 @OptIn(InternalAPI::class)
 suspend fun connectToApiUsingTCP(name: String): Api {
-    val transport = aSocket(SelectorManager()).tcp().clientTransport("0.0.0.0", 8000)
+    val transport = TcpClientTransport(SelectorManager(), "0.0.0.0", 8000)
     return Api(connector(name).connect(transport))
 }
 

@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+@file:OptIn(TransportApi::class)
+@file:Suppress("FunctionName")
+
 package io.rsocket.kotlin.transport.ktor.client
 
 import io.ktor.client.*
@@ -24,19 +27,20 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.*
 
-@OptIn(TransportApi::class)
-internal fun HttpClient.clientTransport(
+public fun WebSocketClientTransport(
+    httpClient: HttpClient,
     request: HttpRequestBuilder.() -> Unit,
 ): ClientTransport = ClientTransport {
-    val session = webSocketSession(request)
+    val session = httpClient.webSocketSession(request)
     WebSocketConnection(session)
 }
 
-internal fun HttpClient.clientTransport(
+public fun WebSocketClientTransport(
+    httpClient: HttpClient,
     urlString: String,
     secure: Boolean = false,
     request: HttpRequestBuilder.() -> Unit = {},
-): ClientTransport = clientTransport {
+): ClientTransport = WebSocketClientTransport(httpClient) {
     url {
         protocol = if (secure) URLProtocol.WSS else URLProtocol.WS
         port = url.protocol.defaultPort
@@ -45,11 +49,12 @@ internal fun HttpClient.clientTransport(
     request()
 }
 
-internal fun HttpClient.clientTransport(
+public fun WebSocketClientTransport(
+    httpClient: HttpClient,
     host: String = "localhost", port: Int = DEFAULT_PORT, path: String = "/",
     secure: Boolean = false,
     request: HttpRequestBuilder.() -> Unit = {},
-): ClientTransport = clientTransport {
+): ClientTransport = WebSocketClientTransport(httpClient) {
     url {
         this.protocol = if (secure) URLProtocol.WSS else URLProtocol.WS
         this.port = port

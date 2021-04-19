@@ -15,7 +15,6 @@
  */
 
 import io.ktor.network.selector.*
-import io.ktor.network.sockets.*
 import io.ktor.util.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.transport.ktor.*
@@ -24,7 +23,7 @@ import kotlin.coroutines.*
 
 @OptIn(KtorExperimentalAPI::class, InternalAPI::class)
 suspend fun runTcpServer(dispatcher: CoroutineContext) {
-    val transport = aSocket(SelectorManager(dispatcher)).tcp().serverTransport("0.0.0.0", 4444)
+    val transport = TcpServerTransport(SelectorManager(dispatcher), "0.0.0.0", 4444)
     RSocketServer().bind(transport, rSocketAcceptor).join()
 }
 

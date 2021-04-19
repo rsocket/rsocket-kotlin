@@ -14,40 +14,39 @@
  * limitations under the License.
  */
 
+@file:Suppress("FunctionName")
+
 package io.rsocket.kotlin.transport.ktor
 
+import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.util.*
 import io.ktor.util.network.*
-import io.rsocket.kotlin.*
-import io.rsocket.kotlin.Connection
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
-import kotlin.coroutines.*
 
-public fun TcpSocketBuilder.serverTransport(
-    hostname: String = "0.0.0.0",
-    port: Int = 0,
+@InternalAPI //because of selector
+public fun TcpServerTransport(
+    selector: SelectorManager,
+    hostname: String = "0.0.0.0", port: Int = 0,
     configure: SocketOptions.AcceptorOptions.() -> Unit = {},
-): TcpServer = serverTransport(NetworkAddress(hostname, port), configure)
+): ServerTransport<Job> = TcpServerTransport(selector, NetworkAddress(hostname, port), configure)
 
-public fun TcpSocketBuilder.serverTransport(
+@InternalAPI //because of selector
+public fun TcpServerTransport(
+    selector: SelectorManager,
     localAddress: NetworkAddress? = null,
     configure: SocketOptions.AcceptorOptions.() -> Unit = {},
-): TcpServer = TcpServer(bind(localAddress, configure))
-
-@OptIn(KtorExperimentalAPI::class, TransportApi::class)
-public class TcpServer(public val socket: ServerSocket) : ServerTransport<Job>, CoroutineScope {
-    override val coroutineContext: CoroutineContext = socket.socketContext + Dispatchers.Unconfined
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override fun start(accept: suspend (Connection) -> Unit): Job = launch(start = CoroutineStart.UNDISPATCHED) {
+): ServerTransport<Job> = ServerTransport { accept ->
+    val serverSocket = aSocket(selector).tcp().bind(localAddress, configure)
+    GlobalScope.launch(serverSocket.socketContext + Dispatchers.Unconfined + ignoreExceptionHandler, CoroutineStart.UNDISPATCHED) {
         supervisorScope {
             while (isActive) {
-                val clientSocket = socket.accept()
+                val clientSocket = serverSocket.accept()
                 val connection = TcpConnection(clientSocket)
                 launch(start = CoroutineStart.UNDISPATCHED) { accept(connection) }
             }
         }
     }
+    serverSocket.socketContext
 }

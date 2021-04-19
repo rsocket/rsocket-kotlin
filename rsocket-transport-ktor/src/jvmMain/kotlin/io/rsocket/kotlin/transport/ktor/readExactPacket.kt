@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
+package io.rsocket.kotlin.transport.ktor
 
-import io.ktor.network.selector.*
-import io.rsocket.kotlin.transport.ktor.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.core.*
 
-class NativeTcpTransportTest : TcpTransportTest(SelectorManager(), SelectorManager())
-
-class NativeTcpServerTest : TcpServerTest()
+internal actual suspend fun ByteReadChannel.readExactPacket(length: Int): ByteReadPacket = readPacket(length)

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
+package io.rsocket.kotlin.transport.ktor
 
 import io.ktor.network.selector.*
-import io.rsocket.kotlin.transport.ktor.*
+import kotlinx.coroutines.*
 
-class NativeTcpTransportTest : TcpTransportTest(SelectorManager(), SelectorManager())
+class JvmTcpTransportTest : TcpTransportTest(ActorSelectorManager(Dispatchers.IO), ActorSelectorManager(Dispatchers.IO))
 
-class NativeTcpServerTest : TcpServerTest()
+class JvmTcpServerTest : TcpServerTest()
