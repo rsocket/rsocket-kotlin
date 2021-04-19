@@ -41,12 +41,12 @@ public class TcpServer(public val socket: ServerSocket) : ServerTransport<Job>, 
     override val coroutineContext: CoroutineContext = socket.socketContext + Dispatchers.Unconfined
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun start(accept: suspend (Connection) -> Unit): Job = launch {
+    override fun start(accept: suspend (Connection) -> Unit): Job = launch(start = CoroutineStart.UNDISPATCHED) {
         supervisorScope {
             while (isActive) {
                 val clientSocket = socket.accept()
                 val connection = TcpConnection(clientSocket)
-                launch { accept(connection) }
+                launch(start = CoroutineStart.UNDISPATCHED) { accept(connection) }
             }
         }
     }

@@ -24,7 +24,7 @@ kotlin {
     //all targets depends on core and local transport
 
     jvm() //depends on ktor client and server
-    js { //depends on ktor client
+    js(IR) { //depends on ktor client
         browser()
         nodejs()
     }

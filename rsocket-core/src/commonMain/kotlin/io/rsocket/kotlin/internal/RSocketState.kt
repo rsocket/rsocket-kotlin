@@ -82,7 +82,7 @@ internal class RSocketState(
         //TODO fragmentation
         for (frame in receiver) {
             if (frame.complete) return //TODO check next flag
-            collector.emit(frame.payload)
+            collector.emitOrClose(frame.payload)
             val next = strategy.nextRequest()
             if (next > 0) send(RequestNFrame(streamId, next))
         }
@@ -187,7 +187,7 @@ internal class RSocketState(
         scope.launch {
             while (connection.isActive) {
                 val frame = prioritizer.receive()
-                frame.closeOnError { connection.sendFrame(frame) }
+                connection.sendFrame(frame)
             }
         }
         scope.launch {

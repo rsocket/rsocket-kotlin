@@ -27,7 +27,7 @@ import kotlin.test.*
 import kotlin.time.*
 
 @OptIn(ExperimentalTime::class)
-abstract class TransportTest : SuspendTest {
+abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     override val testTimeout: Duration = TransportTestDefaultDuration
 
     lateinit var client: RSocket //should be assigned in `before`
@@ -127,6 +127,23 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
+    fun requestChannel500NoLeak() = test(TransportTestLongDuration) {
+        val request = flow {
+            repeat(10_000) { emitOrClose(payload(3)) }
+        }
+        val list =
+            client
+                .requestChannel(payload(3), request)
+                .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
+                .take(500)
+                .onEach {
+                    assertEquals(MOCK_DATA, it.data.readText())
+                    assertEquals(MOCK_METADATA, it.metadata?.readText())
+                }.toList()
+        assertEquals(500, list.size)
+    }
+
+    @Test
     fun requestResponse1() = test {
         client.requestResponse(payload(1)).let(Companion::checkPayload)
     }
@@ -160,12 +177,26 @@ abstract class TransportTest : SuspendTest {
     fun requestStream5() = test {
         val list = client.requestStream(payload(3)).flowOn(PrefetchStrategy(5, 0)).take(5).onEach { checkPayload(it) }.toList()
         assertEquals(5, list.size)
+        delay(1000) //TODO await releasing of buffers
     }
 
     @Test
     fun requestStream10000() = test {
         val list = client.requestStream(payload(3)).onEach { checkPayload(it) }.toList()
         assertEquals(10000, list.size)
+    }
+
+    @Test
+    fun requestStream500NoLeak() = test {
+        val list =
+            client
+                .requestStream(payload(3))
+                .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
+                .take(500)
+                .onEach { checkPayload(it) }
+                .toList()
+        assertEquals(500, list.size)
+        delay(1000) //TODO await releasing of buffers
     }
 
     companion object {
