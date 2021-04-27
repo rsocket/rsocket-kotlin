@@ -21,4 +21,4 @@ import io.rsocket.kotlin.transport.ktor.*
 
 class NativeTcpTransportTest : TcpTransportTest(SelectorManager(), SelectorManager())
 
-class NativeTcpServerTest : TcpServerTest()
+class NativeTcpServerTest : TcpServerTest(SelectorManager(), SelectorManager())

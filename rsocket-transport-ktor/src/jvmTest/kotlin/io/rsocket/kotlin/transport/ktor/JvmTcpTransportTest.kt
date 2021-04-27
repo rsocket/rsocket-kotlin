@@ -21,4 +21,4 @@ import kotlinx.coroutines.*
 
 class JvmTcpTransportTest : TcpTransportTest(ActorSelectorManager(Dispatchers.IO), ActorSelectorManager(Dispatchers.IO))
 
-class JvmTcpServerTest : TcpServerTest()
+class JvmTcpServerTest : TcpServerTest(ActorSelectorManager(Dispatchers.IO), ActorSelectorManager(Dispatchers.IO))
