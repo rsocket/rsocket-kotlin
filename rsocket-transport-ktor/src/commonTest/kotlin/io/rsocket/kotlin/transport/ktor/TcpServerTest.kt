@@ -25,12 +25,13 @@ import kotlinx.coroutines.*
 import kotlin.random.*
 import kotlin.test.*
 
-abstract class TcpServerTest : SuspendTest, TestWithLeakCheck {
-    private val clientSelector = SelectorManager()
-    private val serverSelector = SelectorManager()
+abstract class TcpServerTest(
+    private val clientSelector: SelectorManager,
+    private val serverSelector: SelectorManager
+) : SuspendTest, TestWithLeakCheck {
     private val currentPort = port.incrementAndGet()
-    private val serverTransport = TcpServerTransport(SelectorManager(), port = currentPort)
-    private val clientTransport = TcpClientTransport(SelectorManager(), "0.0.0.0", port = currentPort)
+    private val serverTransport = TcpServerTransport(serverSelector, port = currentPort)
+    private val clientTransport = TcpClientTransport(clientSelector, "0.0.0.0", port = currentPort)
 
     private lateinit var server: Job
 
@@ -76,6 +77,10 @@ abstract class TcpServerTest : SuspendTest, TestWithLeakCheck {
         assertTrue(client3.isActive)
 
         assertTrue(server.isActive)
+
+        client1.job.cancelAndJoin()
+        client2.job.cancelAndJoin()
+        client3.job.cancelAndJoin()
     }
 
     @Test
@@ -119,6 +124,10 @@ abstract class TcpServerTest : SuspendTest, TestWithLeakCheck {
         assertTrue(client3.isActive)
 
         assertTrue(server.isActive)
+
+        client1.job.cancelAndJoin()
+        client2.job.cancelAndJoin()
+        client3.job.cancelAndJoin()
     }
 
     companion object {
