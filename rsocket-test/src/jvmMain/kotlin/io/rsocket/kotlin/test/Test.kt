@@ -20,7 +20,6 @@ import io.rsocket.kotlin.logging.*
 import kotlinx.coroutines.*
 import java.io.*
 import java.util.logging.*
-import kotlin.time.*
 
 internal actual fun runTest(
     ignoreNative: Boolean,
@@ -38,6 +37,3 @@ actual val TestLoggerFactory: LoggerFactory = run {
 
     JavaLogger
 }
-
-actual val TransportTestLongDuration: Duration = 10.minutes
-actual val TransportTestDefaultDuration: Duration = 5.minutes

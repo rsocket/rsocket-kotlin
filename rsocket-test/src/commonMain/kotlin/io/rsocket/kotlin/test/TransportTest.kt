@@ -27,7 +27,7 @@ import kotlin.test.*
 import kotlin.time.*
 
 abstract class TransportTest : SuspendTest, TestWithLeakCheck {
-    override val testTimeout: Duration = TransportTestDefaultDuration
+    override val testTimeout: Duration = 2.minutes
 
     lateinit var client: RSocket //should be assigned in `before`
 
@@ -77,7 +77,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun largePayloadRequestChannel200() = test(TransportTestLongDuration) {
+    fun largePayloadRequestChannel200() = test {
         val request = flow {
             repeat(200) { emit(LARGE_PAYLOAD) }
         }
@@ -90,7 +90,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun requestChannel20000() = test(TransportTestLongDuration) {
+    fun requestChannel20000() = test {
         val request = flow {
             repeat(20_000) { emit(payload(7)) }
         }
@@ -102,7 +102,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun requestChannel200000() = test(TransportTestLongDuration) {
+    fun requestChannel200000() = test(ignoreNative = true) {
         val request = flow {
             repeat(200_000) { emit(payload(it)) }
         }
@@ -111,7 +111,22 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun requestChannel256x512() = test(TransportTestLongDuration) {
+    fun requestChannel16x256() = test {
+        val request = flow {
+            repeat(256) {
+                emit(payload(it))
+            }
+        }
+        (0..16).map {
+            async(Dispatchers.Default) {
+                val list = client.requestChannel(payload(0), request).onEach { it.release() }.toList()
+                assertEquals(256, list.size)
+            }
+        }.awaitAll()
+    }
+
+    @Test
+    fun requestChannel256x512() = test(ignoreNative = true) {
         val request = flow {
             repeat(512) {
                 emit(payload(it))
@@ -126,7 +141,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun requestChannel500NoLeak() = test(TransportTestLongDuration) {
+    fun requestChannel500NoLeak() = test {
         val request = flow {
             repeat(10_000) { emitOrClose(payload(3)) }
         }
@@ -168,7 +183,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun requestResponse100000() = test(TransportTestLongDuration) {
+    fun requestResponse100000() = test(ignoreNative = true) {
         repeat(100000) { client.requestResponse(payload(3)).let(Companion::checkPayload) }
     }
 

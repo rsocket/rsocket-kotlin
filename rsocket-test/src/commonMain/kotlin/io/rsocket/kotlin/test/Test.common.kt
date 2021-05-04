@@ -18,14 +18,9 @@ package io.rsocket.kotlin.test
 
 import io.rsocket.kotlin.logging.*
 import kotlinx.coroutines.*
-import kotlin.time.*
 
 internal expect fun runTest(ignoreNative: Boolean, block: suspend CoroutineScope.() -> Unit)
 
 expect val anotherDispatcher: CoroutineDispatcher
 
 expect val TestLoggerFactory: LoggerFactory
-
-expect val TransportTestLongDuration: Duration
-
-expect val TransportTestDefaultDuration: Duration

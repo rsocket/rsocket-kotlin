@@ -8,93 +8,152 @@ on:
       - '*' # Push events to matching *, i.e. 1.0, 20.15.10
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  test:
+    name: ${{ matrix.target }} Test Run (JVM ${{ matrix.jvm }})
     strategy:
+      fail-fast: false
       matrix:
         os: [ macos-latest ]
-        macTargetsCompilation: [ macos, ios, watchos, tvos ]
+        target: [ macosX64, iosX64, tvosX64, watchosX86 ]
+        jvm: [ 11 ]
         include:
-          - os: ubuntu-20.04
           - os: windows-latest
-      fail-fast: false
-
+            target: mingwX64
+            jvm: 11
+          - os: ubuntu-latest
+            target: linuxX64
+            jvm: 11
+          - os: ubuntu-latest
+            target: jsIrNode
+            jvm: 11
+          - os: ubuntu-latest
+            target: jsIrBrowser
+            jvm: 11
+          - os: ubuntu-latest
+            target: jsLegacyNode
+            jvm: 11
+          - os: ubuntu-latest
+            target: jsLegacyBrowser
+            jvm: 11
+          - os: ubuntu-latest
+            target: jvm
+            jvm: 8
+          - os: ubuntu-latest
+            target: jvm
+            jvm: 11
+          - os: ubuntu-latest
+            target: jvm
+            jvm: 15
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+      - uses: actions/setup-java@v2
         with:
-          java-version: 11
-      - name: Cache Gradle packages
-        uses: actions/cache@v2
+          distribution: 'adopt'
+          java-version: ${{ matrix.jvm }}
+      - uses: actions/cache@v2
         with:
           path: |
             ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper
             ~/.konan
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.*') }} #hash based on *.gradle.kts and *.gradle.properties
-          restore-keys: ${{ runner.os }}-gradle
-      - name: Build and run tests
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+      - name: Test rsocket-core module
+        if: success() || failure()
+        timeout-minutes: 10
         uses: eskatos/gradle-command-action@v1
         with:
-          arguments: build -PmacTargetsCompilation=${{ matrix.macTargetsCompilation }} --scan --no-daemon
+          arguments: rsocket-core:${{ matrix.target }}Test --scan --info
+          wrapper-cache-enabled: false
+          dependencies-cache-enabled: false
+          configuration-cache-enabled: false
+      - name: Test rsocket-transport-local module
+        if: success() || failure()
+        timeout-minutes: 10
+        uses: eskatos/gradle-command-action@v1
+        with:
+          arguments: rsocket-transport-local:${{ matrix.target }}Test --scan --info
+          wrapper-cache-enabled: false
+          dependencies-cache-enabled: false
+          configuration-cache-enabled: false
+      - name: Test rsocket-transport-ktor module
+        if: matrix.target != 'mingwX64' && matrix.target != 'jsIrNode' && matrix.target != 'jsIrBrowser' && matrix.target != 'jsLegacyNode' && matrix.target != 'jsLegacyBrowser' && (success() || failure())
+        timeout-minutes: 10
+        uses: eskatos/gradle-command-action@v1
+        with:
+          arguments: rsocket-transport-ktor:${{ matrix.target }}Test --scan --info
+          wrapper-cache-enabled: false
+          dependencies-cache-enabled: false
+          configuration-cache-enabled: false
+
+      - name: Publish Test Report
+        if: always()
+        uses: mikepenz/action-junit-report@v2
+        with:
+          fail_on_failure: true
+          check_name: ${{ matrix.target }} Test Report (JVM ${{ matrix.jvm }})
+          report_paths: '**/build/test-results/*Test/TEST-*.xml'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    strategy:
+      matrix:
+        os: [ macos-latest, ubuntu-latest, windows-latest ]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: 8
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper
+            ~/.konan
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+      - name: Check full project builds
+        uses: eskatos/gradle-command-action@v1
+        with:
+          arguments: build -PskipTests --scan --info
+          wrapper-cache-enabled: false
+          dependencies-cache-enabled: false
+          configuration-cache-enabled: false
 
   publish:
-    needs: build
+    needs: [ build, test ]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-latest, windows-latest ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
       fail-fast: false
 
     steps:
       - uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+      - uses: actions/setup-java@v2
         with:
-          java-version: 11
-      - name: Cache Gradle packages
-        uses: actions/cache@v2
+          distribution: 'adopt'
+          java-version: 8
+      - uses: actions/cache@v2
         with:
           path: |
             ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper
             ~/.konan
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.*') }} #hash based on *.gradle.kts and *.gradle.properties
-          restore-keys: ${{ runner.os }}-gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
       - name: Set TAG_NAME for publication
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
         shell: bash
       - name: Publish Packages to Bintray + JCenter (version ${{ env.TAG_NAME }})
         uses: eskatos/gradle-command-action@v1
         with:
-          arguments: bintrayUpload -PbintrayUser=${{ secrets.bintrayUser }} -PbintrayKey=${{ secrets.bintrayKey }} -PsonatypeUsername=${{ secrets.sonatypeUsername }} -PsonatypePassword=${{ secrets.sonatypePassword }} -Pversion=${{ env.TAG_NAME }} -PbuildNumber=${{ github.run_number }} --stacktrace --no-daemon
-
-  check:
-    needs: publish
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ ubuntu-20.04, macos-latest, windows-latest ]
-      fail-fast: false
-
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Cache Gradle packages
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle/caches/modules-2
-            ~/.konan
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.*') }} #hash based on *.gradle.kts and *.gradle.properties
-          restore-keys: ${{ runner.os }}-gradle
-      - name: Set TAG_NAME for publication
-        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-        shell: bash
-      - name: Check that packages are published to JCenter (version ${{ env.TAG_NAME }})
-        uses: eskatos/gradle-command-action@v1
-        with:
-          arguments: publish-check:build -PpublishCheckVersion=${{ env.TAG_NAME }} --info --no-daemon
-
+          arguments: bintrayUpload -PbintrayUser=${{ secrets.bintrayUser }} -PbintrayKey=${{ secrets.bintrayKey }} -PsonatypeUsername=${{ secrets.sonatypeUsername }} -PsonatypePassword=${{ secrets.sonatypePassword }} -Pversion=${{ env.TAG_NAME }} -PbuildNumber=${{ github.run_number }} --info
+          wrapper-cache-enabled: false
+          dependencies-cache-enabled: false
+          configuration-cache-enabled: false

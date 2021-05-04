@@ -26,7 +26,7 @@ interface SuspendTest {
     val beforeTimeout: Duration get() = 10.seconds
     val afterTimeout: Duration get() = 10.seconds
 
-    val debug: Boolean get() = false //change to debug tests for additional logs
+    val debug: Boolean get() = true //change to turn off debug logs locally (useful for CI)
 
     suspend fun before(): Unit = Unit
     suspend fun after(): Unit = Unit
@@ -37,29 +37,43 @@ interface SuspendTest {
         block: suspend CoroutineScope.() -> Unit,
     ) = runTest(ignoreNative = ignoreNative) {
 
-        runCatching {
-            if (debug) println("[TEST] BEFORE started")
-            withTimeout(beforeTimeout) { before() }
-        }.onSuccess {
-            if (debug) println("[TEST] BEFORE completed")
-        }.onFailure {
-            if (debug) println("[TEST] BEFORE failed with error: ${it.stackTraceToString()}")
+        val beforeError = runPhase("BEFORE", beforeTimeout) { before() }
+
+        val testError = when (beforeError) { //don't run test if before failed
+            null -> runPhase("RUN", timeout, block)
+            else -> null
         }
 
-        val result = runCatching {
-            withTimeout(timeout) { block() }
-        }
+        val afterError = runPhase("AFTER", afterTimeout) { after() }
 
-        runCatching {
-            if (debug) println("[TEST] AFTER started")
-            withTimeout(afterTimeout) { after() }
-        }.onSuccess {
-            if (debug) println("[TEST] AFTER completed")
-        }.onFailure {
-            if (debug) println("[TEST] AFTER failed with error: ${it.stackTraceToString()}")
-        }
+        handleErrors(testError, listOf(beforeError, afterError))
+    }
 
-        result.getOrThrow()
+    //suppresses errors if more than one
+    private fun handleErrors(error: Throwable?, other: List<Throwable?>) {
+        when (error) {
+            null -> {
+                if (other.isEmpty()) return
+                handleErrors(other.first(), other.drop(1))
+            }
+            else -> {
+                other.forEach { it?.let(error::addSuppressed) }
+                throw error
+            }
+        }
+    }
+
+    private suspend fun runPhase(tag: String, timeout: Duration, block: suspend CoroutineScope.() -> Unit): Throwable? {
+        if (debug) println("[TEST] $tag started")
+        val error = runCatching {
+            withTimeout(timeout, block)
+        }.exceptionOrNull()
+        if (debug) when (error) {
+            null                            -> println("[TEST] $tag completed")
+            is TimeoutCancellationException -> println("[TEST] $tag failed by timeout: $timeout")
+            else                            -> println("[TEST] $tag failed with error: $error")
+        }
+        return error
     }
 
     suspend fun currentJob(): Job = coroutineContext[Job]!!

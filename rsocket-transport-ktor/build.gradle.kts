@@ -52,7 +52,6 @@ kotlin {
                 implementation("io.ktor:ktor-server-cio:$ktorVersion")
                 implementation("io.ktor:ktor-server-netty:$ktorVersion")
                 implementation("io.ktor:ktor-server-jetty:$ktorVersion")
-                implementation("io.ktor:ktor-server-tomcat:$ktorVersion")
             }
         }
     }
