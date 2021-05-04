@@ -23,7 +23,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 class TestRSocket : RSocket {
-    override val job: CompletableJob = Job()
+    override val job: Job = Job()
 
     override suspend fun metadataPush(metadata: ByteReadPacket): Unit = metadata.release()
 

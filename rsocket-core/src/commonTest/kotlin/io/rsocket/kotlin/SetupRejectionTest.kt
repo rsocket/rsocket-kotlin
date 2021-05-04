@@ -55,11 +55,12 @@ class SetupRejectionTest : SuspendTest, TestWithLeakCheck {
                 assertEquals(errorMessage, frame.data?.readText())
             }
             val sender = sendingRSocket.await()
-            assertFalse(sender.isActive)
-            val error = expectError()
-            assertTrue(error is RSocketError.Setup.Rejected)
-            assertEquals(errorMessage, error.message)
+            assertFalse(sender.job.isActive)
+            expectNoEventsIn(100)
         }
+        val error = connection.job.getCancellationException().cause
+        assertTrue(error is RSocketError.Setup.Rejected)
+        assertEquals(errorMessage, error.message)
     }
 
 //    @Test

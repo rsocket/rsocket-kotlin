@@ -69,7 +69,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
 
         assertEquals(Payload.Empty, rSocket.requestResponse(Payload.Empty))
 
-        assertTrue(rSocket.isActive)
+        assertTrue(rSocket.job.isActive)
         assertEquals(0, fails.value)
 
         firstJob.cancelAndJoin()
@@ -78,7 +78,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
             rSocket.requestResponse(Payload.Empty)
         }
 
-        assertFalse(rSocket.isActive)
+        assertFalse(rSocket.job.isActive)
         assertEquals(6, fails.value)
     }
 
@@ -103,7 +103,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
         assertEquals(Payload.Empty, rSocket.requestResponse(Payload.Empty))
 
         assertTrue(handlerJob.isActive)
-        assertTrue(rSocket.isActive)
+        assertTrue(rSocket.job.isActive)
         assertEquals(1, fails.value)
     }
 
@@ -127,7 +127,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
 
         assertEquals(Payload.Empty, rSocket.requestResponse(Payload.Empty))
 
-        assertTrue(rSocket.isActive)
+        assertTrue(rSocket.job.isActive)
         assertEquals(5, fails.value)
     }
 
@@ -160,7 +160,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
 
         assertEquals(Payload.Empty, rSocket.requestResponse(Payload.Empty))
 
-        assertTrue(rSocket.isActive)
+        assertTrue(rSocket.job.isActive)
         assertEquals(5, fails.value)
     }
 
@@ -203,7 +203,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
             expectComplete()
         }
 
-        assertTrue(rSocket.isActive)
+        assertTrue(rSocket.job.isActive)
         assertEquals(5, fails.value)
     }
 

@@ -28,9 +28,8 @@ internal class LocalConnection(
     private val sender: SendChannel<ByteReadPacket>,
     private val receiver: ReceiveChannel<ByteReadPacket>,
     override val pool: ObjectPool<ChunkBuffer>,
-    parentJob: Job? = null,
-) : Connection, Cancellable {
-    override val job: CompletableJob = Job(parentJob)
+    override val job: Job
+) : Connection {
 
     override suspend fun send(packet: ByteReadPacket) {
         sender.send(packet)

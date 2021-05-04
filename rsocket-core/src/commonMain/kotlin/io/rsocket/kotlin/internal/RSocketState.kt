@@ -32,7 +32,8 @@ import kotlinx.coroutines.flow.*
 internal class RSocketState(
     private val connection: Connection,
     keepAlive: KeepAlive,
-) : Cancellable by connection {
+) {
+    val job get() = connection.job
     private val prioritizer = Prioritizer()
     private val requestScope = CoroutineScope(SupervisorJob(job))
     private val scope = CoroutineScope(job)
@@ -65,7 +66,7 @@ internal class RSocketState(
             cause = e
             throw e
         } finally {
-            if (isActive && streamId in receivers) {
+            if (job.isActive && streamId in receivers) {
                 if (cause != null) send(CancelFrame(streamId))
                 receivers.remove(streamId)?.cancelConsumed(cause)
             }
@@ -110,7 +111,7 @@ internal class RSocketState(
 
     fun launchCancelable(streamId: Int, block: suspend CoroutineScope.() -> Unit): Job {
         val job = launch(block)
-        job.invokeOnCompletion { if (isActive) senders.remove(streamId) }
+        job.invokeOnCompletion { if (job.isActive) senders.remove(streamId) }
         senders[streamId] = job
         return job
     }
@@ -119,7 +120,7 @@ internal class RSocketState(
         when (val streamId = frame.streamId) {
             0    -> when (frame) {
                 is ErrorFrame        -> {
-                    job.completeExceptionally(frame.throwable)
+                    job.cancel("Error frame received on 0 stream", frame.throwable)
                     frame.release() //TODO
                 }
                 is KeepAliveFrame    -> keepAliveHandler.receive(frame)
@@ -161,19 +162,13 @@ internal class RSocketState(
         val responder = RSocketResponder(this, requestHandler)
         keepAliveHandler.startIn(scope)
         requestHandler.job.invokeOnCompletion {
-            when (it) {
-                null                     -> job.complete()
-                is CancellationException -> job.cancel(it)
-                else                     -> job.completeExceptionally(it)
-            }
+            // if request handler is completed successfully, via Job.complete()
+            // we don't need to cancel connection
+            if (it != null) job.cancel("Request handler failed", it)
         }
         job.invokeOnCompletion { error ->
-            when (error) {
-                null                     -> requestHandler.job.complete()
-                is CancellationException -> requestHandler.job.cancel(error)
-                else                     -> requestHandler.job.completeExceptionally(error)
-            }
-            val cancelError = error as? CancellationException ?: CancellationException("Connection closed", error)
+            val cancelError = CancellationException("Connection closed", error)
+            requestHandler.job.cancel(cancelError)
             receivers.values().forEach {
                 it.cancel(cancelError)
             }
@@ -184,13 +179,13 @@ internal class RSocketState(
             prioritizer.cancel(cancelError)
         }
         scope.launch {
-            while (connection.isActive) {
+            while (job.isActive) {
                 val frame = prioritizer.receive()
                 connection.sendFrame(frame)
             }
         }
         scope.launch {
-            while (connection.isActive) {
+            while (job.isActive) {
                 val frame = connection.receiveFrame()
                 frame.closeOnError { handleFrame(responder, frame) }
             }

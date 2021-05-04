@@ -72,9 +72,9 @@ abstract class TcpServerTest(
         client3.requestResponse(payload("ok")).release()
         client1.requestResponse(payload("ok")).release()
 
-        assertTrue(client1.isActive)
-        assertFalse(client2.isActive)
-        assertTrue(client3.isActive)
+        assertTrue(client1.job.isActive)
+        assertFalse(client2.job.isActive)
+        assertTrue(client3.job.isActive)
 
         assertTrue(server.isActive)
 
@@ -103,7 +103,7 @@ abstract class TcpServerTest(
         client2.requestResponse(payload("1")).release()
 
         handlers[1].job.apply {
-            completeExceptionally(IllegalStateException("FAILED"))
+            cancel("FAILED")
             join()
         }
 
@@ -119,9 +119,9 @@ abstract class TcpServerTest(
 
         client1.requestResponse(payload("1")).release()
 
-        assertTrue(client1.isActive)
-        assertFalse(client2.isActive)
-        assertTrue(client3.isActive)
+        assertTrue(client1.job.isActive)
+        assertFalse(client2.job.isActive)
+        assertTrue(client3.job.isActive)
 
         assertTrue(server.isActive)
 

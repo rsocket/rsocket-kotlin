@@ -42,7 +42,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     fun testInvalidFrameOnStream0() = test {
         connection.sendToReceiver(NextPayloadFrame(0, payload("data", "metadata"))) //should be just released
         delay(100)
-        assertTrue(requester.isActive)
+        assertTrue(requester.job.isActive)
     }
 
     @Test
@@ -205,7 +205,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
         val errorMessage = "error"
         connection.sendToReceiver(ErrorFrame(0, RSocketError.Setup.Rejected(errorMessage)))
         delay(100)
-        assertFalse(requester.isActive)
+        assertFalse(requester.job.isActive)
         val error = requester.job.getCancellationException().cause
         assertTrue(error is RSocketError.Setup.Rejected)
         assertEquals(errorMessage, error.message)

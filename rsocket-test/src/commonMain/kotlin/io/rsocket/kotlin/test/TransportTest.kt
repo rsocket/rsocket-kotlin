@@ -32,7 +32,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     lateinit var client: RSocket //should be assigned in `before`
 
     override suspend fun after() {
-        client.cancelAndJoin()
+        client.job.cancelAndJoin()
     }
 
     @Test
