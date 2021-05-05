@@ -74,12 +74,6 @@ subprojects {
             if (!isAutoConfigurable) return@configure
 
             jvm {
-                compilations.all {
-                    kotlinOptions {
-                        jvmTarget = "1.6"
-                        useIR = true
-                    }
-                }
                 testRuns.all {
                     executionTask.configure {
                         // ActiveProcessorCount is used here, to make sure local setup is similar as on CI
@@ -156,8 +150,8 @@ subprojects {
             sourceSets.all {
                 languageSettings.apply {
                     progressiveMode = true
-                    languageVersion = "1.4"
-                    apiVersion = "1.4"
+                    languageVersion = "1.5"
+                    apiVersion = "1.5"
 
                     useExperimentalAnnotation("kotlin.RequiresOptIn")
 
@@ -185,6 +179,7 @@ subprojects {
                 explicitApiWarning() //TODO change to strict before release
                 sourceSets["commonTest"].dependencies {
                     implementation(project(":rsocket-test"))
+//                    implementation(kotlin("test"))
                 }
             }
 
@@ -198,7 +193,7 @@ subprojects {
     }
 
     //workaround for https://youtrack.jetbrains.com/issue/KT-44884
-    configurations.matching { it.name != "kotlinCompilerPluginClasspath" }.all {
+    configurations.matching { !it.name.startsWith("kotlinCompilerPluginClasspath") }.all {
         resolutionStrategy.eachDependency {
             val version = requested.version
             if (requested.group == "org.jetbrains.kotlinx" &&

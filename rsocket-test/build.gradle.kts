@@ -27,9 +27,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                api(kotlin("test"))
                 api(project(":rsocket-core"))
-                api(kotlin("test-common"))
-                api(kotlin("test-annotations-common"))
 
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
                 api("io.ktor:ktor-utils:$ktorVersion")

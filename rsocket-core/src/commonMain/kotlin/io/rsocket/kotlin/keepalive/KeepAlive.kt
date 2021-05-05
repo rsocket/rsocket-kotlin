@@ -21,8 +21,8 @@ import kotlin.time.*
 
 @ExperimentalTime
 public fun KeepAlive(
-    interval: Duration = 20.seconds,
-    maxLifetime: Duration = 90.seconds
+    interval: Duration = Duration.seconds(20),
+    maxLifetime: Duration = Duration.seconds(90)
 ): KeepAlive = KeepAlive(
     intervalMillis = interval.toInt(DurationUnit.MILLISECONDS),
     maxLifetimeMillis = maxLifetime.toInt(DurationUnit.MILLISECONDS)

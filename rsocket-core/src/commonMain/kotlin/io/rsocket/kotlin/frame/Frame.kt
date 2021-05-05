@@ -24,7 +24,7 @@ import io.rsocket.kotlin.frame.io.*
 private const val FlagsMask: Int = 1023
 private const val FrameTypeShift: Int = 10
 
-abstract class Frame internal constructor(open val type: FrameType) : Closeable {
+sealed class Frame(open val type: FrameType) : Closeable {
     abstract val streamId: Int
     abstract val flags: Int
 

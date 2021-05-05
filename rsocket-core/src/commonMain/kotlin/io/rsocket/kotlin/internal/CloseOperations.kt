@@ -41,5 +41,7 @@ private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
 internal fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
 
 internal fun <E : Closeable> SendChannel<E>.safeOffer(element: E) {
-    element.closeOnError { offer(element) }
+    trySend(element)
+        .onFailure { element.close() }
+        .getOrThrow() //TODO
 }
