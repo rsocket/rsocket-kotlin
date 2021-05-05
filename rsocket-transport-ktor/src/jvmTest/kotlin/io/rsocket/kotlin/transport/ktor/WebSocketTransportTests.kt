@@ -19,7 +19,6 @@ package io.rsocket.kotlin.transport.ktor
 import io.ktor.client.engine.okhttp.*
 import io.ktor.server.jetty.*
 import io.ktor.server.netty.*
-import io.ktor.server.tomcat.*
 import io.ktor.client.engine.cio.CIO as ClientCIO
 import io.ktor.server.cio.CIO as ServerCIO
 
@@ -32,5 +31,3 @@ class OkHttpClientWebSocketTransportTest : WebSocketTransportTest(OkHttp, Server
 class NettyServerWebSocketTransportTest : WebSocketTransportTest(ClientCIO, Netty)
 
 class JettyServerWebSocketTransportTest : WebSocketTransportTest(ClientCIO, Jetty)
-
-class TomcatServerWebSocketTransportTest : WebSocketTransportTest(ClientCIO, Tomcat)

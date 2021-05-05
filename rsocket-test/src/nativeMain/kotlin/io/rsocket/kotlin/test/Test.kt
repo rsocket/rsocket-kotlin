@@ -18,7 +18,6 @@ package io.rsocket.kotlin.test
 
 import io.rsocket.kotlin.logging.*
 import kotlinx.coroutines.*
-import kotlin.time.*
 
 internal actual fun runTest(
     ignoreNative: Boolean,
@@ -33,9 +32,3 @@ actual val anotherDispatcher: CoroutineDispatcher get() = newSingleThreadContext
 
 @SharedImmutable
 actual val TestLoggerFactory: LoggerFactory = PrintLogger
-
-@SharedImmutable
-actual val TransportTestLongDuration: Duration = 100.minutes
-
-@SharedImmutable
-actual val TransportTestDefaultDuration: Duration = 10.minutes
