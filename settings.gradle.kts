@@ -43,7 +43,16 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
-        maven("https://dl.bintray.com/kotlin/kotlinx") //kotlinx.nodejs
+        maven("https://oss.sonatype.org/content/repositories/snapshots/") {
+            content {
+                includeModuleByRegex("app.cash.turbine", "turbine.*")
+            }
+        }
+        jcenter {
+            content {
+                includeModule("org.jetbrains.kotlinx", "kotlinx-nodejs")
+            }
+        }
     }
 }
 

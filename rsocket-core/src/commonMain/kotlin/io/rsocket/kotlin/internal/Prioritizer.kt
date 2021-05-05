@@ -34,8 +34,8 @@ internal class Prioritizer {
     }
 
     suspend fun receive(): Frame {
-        priorityChannel.poll()?.let { return it }
-        commonChannel.poll()?.let { return it }
+        priorityChannel.tryReceive().onSuccess { return it }
+        commonChannel.tryReceive().onSuccess { return it }
         return select {
             priorityChannel.onReceive { it }
             commonChannel.onReceive { it }
