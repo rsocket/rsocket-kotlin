@@ -36,16 +36,16 @@ public class LocalServer
 internal constructor(
     parentJob: Job?,
     private val pool: ObjectPool<ChunkBuffer>,
-) : Cancellable, ServerTransport<Job>, ClientTransport {
+) : ServerTransport<Job>, ClientTransport {
+    public val job: Job = SupervisorJob(parentJob)
     private val connections = Channel<Connection>()
-    override val job: CompletableJob = SupervisorJob(parentJob)
 
     override suspend fun connect(): Connection {
         val clientChannel = SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
         val serverChannel = SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
         val connectionJob = Job(job)
-        connectionJob.invokeOnCompletion { cause ->
-            val error = cause?.let { it as? CancellationException ?: CancellationException("Connection failed", it) }
+        connectionJob.invokeOnCompletion {
+            val error = CancellationException("Connection failed", it)
             clientChannel.cancel(error)
             serverChannel.cancel(error)
         }
@@ -55,9 +55,14 @@ internal constructor(
         return clientConnection
     }
 
-    override fun start(accept: suspend (Connection) -> Unit): Job = GlobalScope.launch(job) {
-        connections.consumeEach { launch(job) { accept(it) } }
-    }
+    override fun start(accept: suspend (Connection) -> Unit): Job =
+        GlobalScope.launch(job + Dispatchers.Unconfined, CoroutineStart.UNDISPATCHED) {
+            supervisorScope {
+                connections.consumeEach { connection ->
+                    launch(start = CoroutineStart.UNDISPATCHED) { accept(connection) }
+                }
+            }
+        }
 }
 
 @SharedImmutable

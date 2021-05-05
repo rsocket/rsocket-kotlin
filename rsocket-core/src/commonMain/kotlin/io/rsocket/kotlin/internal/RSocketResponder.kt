@@ -24,7 +24,7 @@ import kotlinx.coroutines.*
 internal class RSocketResponder(
     private val state: RSocketState,
     private val requestHandler: RSocket,
-) : Cancellable by state {
+) {
 
     fun handleMetadataPush(frame: MetadataPushFrame) {
         state.launch {

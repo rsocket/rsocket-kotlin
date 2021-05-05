@@ -16,12 +16,12 @@
 
 package io.rsocket.kotlin.test
 
-import io.rsocket.kotlin.*
+import kotlinx.coroutines.*
 
 abstract class TestWithConnection : SuspendTest {
     val connection: TestConnection = TestConnection()
 
     override suspend fun after() {
-        connection.cancelAndJoin()
+        connection.job.cancelAndJoin()
     }
 }

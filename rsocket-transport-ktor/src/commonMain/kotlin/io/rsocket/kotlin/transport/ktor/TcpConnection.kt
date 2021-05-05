@@ -35,7 +35,7 @@ internal val ignoreExceptionHandler = CoroutineExceptionHandler { _, _ -> }
 
 @OptIn(TransportApi::class, DangerousInternalIoApi::class)
 internal class TcpConnection(private val socket: Socket) : Connection, CoroutineScope {
-    override val job: CompletableJob = Job(socket.socketContext)
+    override val job: Job = socket.socketContext
     override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined + ignoreExceptionHandler
 
     private val sendChannel = SafeChannel<ByteReadPacket>(8)

@@ -57,7 +57,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
             }
         }
         delay(1.5.seconds)
-        assertTrue(rSocket.isActive)
+        assertTrue(rSocket.job.isActive)
         connection.test {
             repeat(50) {
                 expectItem()
@@ -97,7 +97,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
     fun rSocketCanceledOnMissingKeepAliveTicks() = test {
         val rSocket = requester()
         connection.test {
-            while (rSocket.isActive) kotlin.runCatching { expectItem() }
+            while (rSocket.job.isActive) kotlin.runCatching { expectItem() }
         }
         assertTrue(rSocket.job.getCancellationException().cause is RSocketError.ConnectionError)
     }

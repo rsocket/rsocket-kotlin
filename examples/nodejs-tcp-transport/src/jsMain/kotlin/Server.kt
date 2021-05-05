@@ -57,7 +57,7 @@ fun NodeJsTcpServerTransport(port: Int, onStart: () -> Unit = {}): ServerTranspo
 // nodejs TCP transport connection - may not work in all cases, not tested properly
 @OptIn(ExperimentalCoroutinesApi::class, TransportApi::class)
 class NodeJsTcpConnection(private val socket: Socket) : Connection {
-    override val job: CompletableJob = Job()
+    override val job: Job = Job()
 
     private val sendChannel = Channel<ByteReadPacket>(8)
     private val receiveChannel = Channel<ByteReadPacket>(8)

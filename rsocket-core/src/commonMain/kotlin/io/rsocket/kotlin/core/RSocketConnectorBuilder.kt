@@ -107,7 +107,7 @@ public class RSocketConnectorBuilder internal constructor() {
         private val defaultAcceptor: ConnectionAcceptor = ConnectionAcceptor { EmptyRSocket() }
 
         private class EmptyRSocket : RSocket {
-            override val job: CompletableJob = Job()
+            override val job: Job = Job()
         }
     }
 }

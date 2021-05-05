@@ -37,7 +37,7 @@ abstract class TcpTransportTest(
     }
 
     override suspend fun after() {
-        client.cancelAndJoin()
+        super.after()
         server.cancelAndJoin()
         clientSelector.close()
         serverSelector.close()

@@ -21,26 +21,27 @@ import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
+import kotlinx.coroutines.*
 
 @OptIn(TransportApi::class)
-class RSocketServer internal constructor(
+public class RSocketServer internal constructor(
     private val loggerFactory: LoggerFactory,
     private val interceptors: Interceptors,
 ) {
 
-    fun <T> bind(
+    public fun <T> bind(
         transport: ServerTransport<T>,
         block: suspend ConnectionAcceptorContext.() -> RSocket
     ): T = bind(transport, ConnectionAcceptor(block))
 
-    fun <T> bind(
+    public fun <T> bind(
         transport: ServerTransport<T>,
         acceptor: ConnectionAcceptor,
     ): T = transport.start {
         val connection = it.wrapConnection()
         val setupFrame = connection.validateSetup()
         connection.start(setupFrame, acceptor)
-        connection.join()
+        connection.job.join()
     }
 
     private suspend fun Connection.start(setupFrame: SetupFrame, acceptor: ConnectionAcceptor) {
@@ -73,7 +74,7 @@ class RSocketServer internal constructor(
 
     private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
         sendFrame(ErrorFrame(0, error))
-        job.completeExceptionally(error)
+        job.cancel("Connection establishment failed", error)
         throw error
     }
 }

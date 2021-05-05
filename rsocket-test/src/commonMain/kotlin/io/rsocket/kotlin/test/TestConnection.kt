@@ -30,7 +30,7 @@ import kotlin.time.*
 
 class TestConnection : Connection, CoroutineScope {
     override val pool: ObjectPool<ChunkBuffer> = InUseTrackingPool
-    override val job: CompletableJob = Job()
+    override val job: Job = Job()
     override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined
 
     private val sendChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)

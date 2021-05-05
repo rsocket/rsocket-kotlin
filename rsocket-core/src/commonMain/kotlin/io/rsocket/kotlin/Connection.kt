@@ -21,19 +21,21 @@ import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
+import kotlinx.coroutines.*
 
 /**
  * That interface isn't stable for inheritance.
  */
 @TransportApi
-interface Connection : Cancellable {
+public interface Connection {
+    public val job: Job
 
     @DangerousInternalIoApi
-    val pool: ObjectPool<ChunkBuffer>
+    public val pool: ObjectPool<ChunkBuffer>
         get() = ChunkBuffer.Pool
 
-    suspend fun send(packet: ByteReadPacket)
-    suspend fun receive(): ByteReadPacket
+    public suspend fun send(packet: ByteReadPacket)
+    public suspend fun receive(): ByteReadPacket
 }
 
 @OptIn(DangerousInternalIoApi::class, TransportApi::class)
