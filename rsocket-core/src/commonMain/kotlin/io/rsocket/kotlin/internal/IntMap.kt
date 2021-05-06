@@ -222,7 +222,7 @@ internal class IntMap<V : Any>(initialCapacity: Int = 8, private val loadFactor:
                         break
                     }
                     // Conflict, keep probing. Can wrap around, but never reaches startIndex again.
-                    index = probeNext(index)
+                    index = newState.probeNext(index)
                 }
             }
             clear()
