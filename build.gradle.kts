@@ -263,11 +263,11 @@ if (bintrayUser != null && bintrayKey != null) {
     subprojects {
         plugins.withId("com.jfrog.artifactory") {
             configure<ArtifactoryPluginConvention> {
-                setContextUrl("https://srmobile.jfrog.io")
+                setContextUrl("https://srmobile.jfrog.io/artifactory")
 
                 publish(delegateClosureOf<PublisherConfig> {
                     repository(delegateClosureOf<DoubleDelegateWrapper> {
-                        setProperty("repoKey", "oss-snapshot-local")
+                        setProperty("repoKey", "default-maven-local")
                         setProperty("username", bintrayUser)
                         setProperty("password", bintrayKey)
                         setProperty("maven", true)
