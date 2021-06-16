@@ -263,7 +263,7 @@ if (bintrayUser != null && bintrayKey != null) {
     subprojects {
         plugins.withId("com.jfrog.artifactory") {
             configure<ArtifactoryPluginConvention> {
-                setContextUrl("https://oss.jfrog.org")
+                setContextUrl("https://srmobile.jfrog.io")
 
                 publish(delegateClosureOf<PublisherConfig> {
                     repository(delegateClosureOf<DoubleDelegateWrapper> {
