@@ -179,7 +179,6 @@ subprojects {
                 explicitApiWarning() //TODO change to strict before release
                 sourceSets["commonTest"].dependencies {
                     implementation(project(":rsocket-test"))
-//                    implementation(kotlin("test"))
                 }
             }
 
