@@ -191,7 +191,6 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     fun requestStream5() = test {
         val list = client.requestStream(payload(3)).flowOn(PrefetchStrategy(5, 0)).take(5).onEach { checkPayload(it) }.toList()
         assertEquals(5, list.size)
-        delay(1000) //TODO await releasing of buffers
     }
 
     @Test
@@ -210,7 +209,6 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
                 .onEach { checkPayload(it) }
                 .toList()
         assertEquals(500, list.size)
-        delay(1000) //TODO await releasing of buffers
     }
 
     companion object {

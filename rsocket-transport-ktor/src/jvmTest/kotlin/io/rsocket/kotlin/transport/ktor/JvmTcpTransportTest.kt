@@ -17,8 +17,34 @@
 package io.rsocket.kotlin.transport.ktor
 
 import io.ktor.network.selector.*
+import io.ktor.network.sockets.*
+import io.ktor.util.network.*
+import io.rsocket.kotlin.Connection
+import io.rsocket.kotlin.transport.*
+import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 
-class JvmTcpTransportTest : TcpTransportTest(ActorSelectorManager(Dispatchers.IO), ActorSelectorManager(Dispatchers.IO))
+class JvmTcpTransportTest : TcpTransportTest(ActorSelectorManager(Dispatchers.IO), ActorSelectorManager(Dispatchers.IO)) {
+    //hack because of https://youtrack.jetbrains.com/issue/KTOR-2881
+    private var serverConnection: Connection? by atomic(null)
+    override fun serverTransport(address: NetworkAddress): ServerTransport<Job> = ServerTransport { accept ->
+        val serverSocket = aSocket(serverSelector).tcp().bind(address)
+        GlobalScope.launch(
+            serverSocket.socketContext + Dispatchers.Unconfined + ignoreExceptionHandler,
+            CoroutineStart.UNDISPATCHED
+        ) {
+            val clientSocket = serverSocket.accept()
+            serverConnection = TcpConnection(clientSocket)
+            accept(serverConnection!!)
+        }
+        serverSocket.socketContext
+    }
+
+    override suspend fun after() {
+        //we need to cancel server connection job manually on JVM
+        serverConnection?.job?.cancelAndJoin()
+        super.after()
+    }
+}
 
 class JvmTcpServerTest : TcpServerTest(ActorSelectorManager(Dispatchers.IO), ActorSelectorManager(Dispatchers.IO))
