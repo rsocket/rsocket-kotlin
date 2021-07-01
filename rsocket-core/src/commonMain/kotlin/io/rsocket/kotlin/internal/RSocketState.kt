@@ -34,10 +34,11 @@ internal class RSocketState(
     keepAlive: KeepAlive,
 ) {
     val job get() = connection.job
-    private val prioritizer = Prioritizer()
-    private val requestScope = CoroutineScope(SupervisorJob(job))
+    private val requestJob = SupervisorJob(job)
+    private val requestScope = CoroutineScope(requestJob)
     private val scope = CoroutineScope(job)
 
+    private val prioritizer = Prioritizer()
     val receivers: IntMap<Channel<RequestFrame>> = IntMap()
     private val senders: IntMap<Job> = IntMap()
     private val limits: IntMap<LimitingFlowCollector> = IntMap()
@@ -166,7 +167,8 @@ internal class RSocketState(
             // we don't need to cancel connection
             if (it != null) job.cancel("Request handler failed", it)
         }
-        job.invokeOnCompletion { error ->
+
+        requestJob.invokeOnCompletion { error ->
             val cancelError = CancellationException("Connection closed", error)
             requestHandler.job.cancel(cancelError)
             receivers.values().forEach {

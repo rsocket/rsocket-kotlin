@@ -17,8 +17,14 @@
 package io.rsocket.kotlin
 
 import io.ktor.network.selector.*
+import io.ktor.util.network.*
+import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.*
+import kotlinx.coroutines.*
 
-class NativeTcpTransportTest : TcpTransportTest(SelectorManager(), SelectorManager())
+class NativeTcpTransportTest : TcpTransportTest(SelectorManager(), SelectorManager()) {
+    override fun serverTransport(address: NetworkAddress): ServerTransport<Job> =
+        TcpServerTransport(serverSelector, address)
+}
 
 class NativeTcpServerTest : TcpServerTest(SelectorManager(), SelectorManager())
