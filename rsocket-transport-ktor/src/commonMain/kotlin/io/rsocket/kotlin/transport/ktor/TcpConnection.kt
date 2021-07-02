@@ -47,9 +47,14 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
                 while (isActive) {
                     val packet = sendChannel.receive()
                     val length = packet.remaining.toInt()
-                    writePacket {
-                        writeLength(length)
-                        writePacket(packet)
+                    try {
+                        writePacket {
+                            writeLength(length)
+                            writePacket(packet)
+                        }
+                    } catch (e: Throwable) {
+                        packet.close()
+                        throw e
                     }
                 }
             }
@@ -84,4 +89,4 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
 private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
 
 @Suppress("FunctionName")
-private fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
+private fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(0, onUndeliveredElement = onUndeliveredCloseable)
