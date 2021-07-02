@@ -43,7 +43,11 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
-        maven("https://dl.bintray.com/kotlin/kotlinx") //kotlinx.nodejs
+        jcenter {
+            content {
+                includeModule("org.jetbrains.kotlinx", "kotlinx-nodejs")
+            }
+        }
     }
 }
 

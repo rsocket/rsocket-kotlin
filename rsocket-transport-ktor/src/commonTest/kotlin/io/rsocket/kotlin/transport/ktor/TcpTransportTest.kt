@@ -18,21 +18,25 @@ package io.rsocket.kotlin.transport.ktor
 
 import io.ktor.network.selector.*
 import io.ktor.util.network.*
-import io.rsocket.kotlin.*
 import io.rsocket.kotlin.test.*
+import io.rsocket.kotlin.transport.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlin.random.*
 
 abstract class TcpTransportTest(
     private val clientSelector: SelectorManager,
-    private val serverSelector: SelectorManager
+    protected val serverSelector: SelectorManager
 ) : TransportTest() {
     private lateinit var server: Job
 
+    //on Native uses default transport
+    //on JVM uses little different, because of bug in KTOR
+    abstract fun serverTransport(address: NetworkAddress): ServerTransport<Job>
+
     override suspend fun before() {
         val address = NetworkAddress("0.0.0.0", port.incrementAndGet())
-        server = SERVER.bind(TcpServerTransport(serverSelector, address), ACCEPTOR)
+        server = SERVER.bind(serverTransport(address), ACCEPTOR)
         client = CONNECTOR.connect(TcpClientTransport(clientSelector, address))
     }
 

@@ -191,7 +191,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         repeat(18) {
             channel.receive().release()
         }
-        assertTrue(channel.receiveOrClosed().isClosed)
+        assertTrue(channel.receiveCatching().isClosed)
     }
 
     @Test
