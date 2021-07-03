@@ -150,10 +150,21 @@ jobs:
       - name: Set TAG_NAME for publication
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
         shell: bash
-      - name: Publish Packages to Bintray + JCenter (version ${{ env.TAG_NAME }})
+      - name: Sign Packages
         uses: eskatos/gradle-command-action@v1
         with:
-          arguments: bintrayUpload -PbintrayUser=${{ secrets.bintrayUser }} -PbintrayKey=${{ secrets.bintrayKey }} -PsonatypeUsername=${{ secrets.sonatypeUsername }} -PsonatypePassword=${{ secrets.sonatypePassword }} -Pversion=${{ env.TAG_NAME }} -PbuildNumber=${{ github.run_number }} --info
+          arguments: sign --info
           wrapper-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
+          ORG_GRADLE_PROJECT_signingKey: ${{secrets.signingKey}}
+          ORG_GRADLE_PROJECT_signingPassword: ${{secrets.signingPassword}}
+      - name: Publish Packages to Sonotype (version ${{ env.TAG_NAME }})
+        uses: eskatos/gradle-command-action@v1
+        with:
+          arguments: publishMavenPublicationToSonatypeRepository -Pversion=${{ env.TAG_NAME }} --info
+          wrapper-cache-enabled: false
+          dependencies-cache-enabled: false
+          configuration-cache-enabled: false
+          ORG_GRADLE_PROJECT_sonatypeUsername: ${{secrets.sonatypeUsername}}
+          ORG_GRADLE_PROJECT_sonatypePassword: ${{secrets.sonatypePassword}}
