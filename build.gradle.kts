@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-import com.jfrog.bintray.gradle.*
-import com.jfrog.bintray.gradle.tasks.*
-import org.gradle.api.publish.maven.internal.artifact.*
+import org.gradle.api.publish.maven.internal.artifact.FileBasedMavenArtifact
 import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.konan.target.*
@@ -41,7 +39,6 @@ plugins {
     id("com.github.ben-manes.versions")
 
     //needed to add classpath to script
-    id("com.jfrog.bintray") apply false
     id("com.jfrog.artifactory") apply false
 }
 
@@ -291,51 +288,23 @@ if (bintrayUser != null && bintrayKey != null) {
     val sonatypePassword: String? by project
     if (sonatypeUsername != null && sonatypePassword != null) {
         subprojects {
-            plugins.withId("com.jfrog.bintray") {
-                extensions.configure<BintrayExtension> {
-                    user = bintrayUser
-                    key = bintrayKey
-                    println("Bintray: ${publicationNames.contentToString()}")
-                    setPublications(*publicationNames)
-
-                    publish = true
-                    override = true
-                    pkg.apply {
-
-                        repo = "RSocket"
-                        name = "rsocket-kotlinx"
-
-                        setLicenses("Apache-2.0")
-
-                        issueTrackerUrl = "https://github.com/rsocket/rsocket-kotlin/issues"
-                        websiteUrl = "https://github.com/rsocket/rsocket-kotlin"
-                        vcsUrl = "https://github.com/rsocket/rsocket-kotlin.git"
-
-                        githubRepo = "rsocket/rsocket-kotlin"
-                        githubReleaseNotesFile = "README.md"
-
-                        version.apply {
-                            name = project.version.toString()
-                            vcsTag = project.version.toString()
-                            released = java.util.Date().toString()
-
-//                            gpg.sign = true
-
-//                            mavenCentralSync.apply {
-//                                user = sonatypeUsername
-//                                password = sonatypePassword
-//                            }
+            plugins.withType<MavenPublishPlugin> {
+                plugins.withType<SigningPlugin> {
+                    extensions.configure<SigningExtension> {
+                        //requiring signature if there is a publish task that is not to MavenLocal
+                        isRequired = gradle.taskGraph.allTasks.any {
+                            it.name.toLowerCase()
+                                .contains("publish") && !it.name.contains("MavenLocal")
                         }
-                    }
-                }
 
-                //workaround for https://github.com/bintray/gradle-bintray-plugin/issues/229
-                tasks.withType<BintrayUploadTask> {
-                    val names = publicationNames
-                    names.forEach { dependsOn("publish${it.capitalize()}PublicationToMavenLocal") }
-                    doFirst {
+                        val signingKey: String? by project
+                        val signingPassword: String? by project
+
+                        useInMemoryPgpKeys(signingKey, signingPassword)
+                        val names = publicationNames
                         val publishing: PublishingExtension by project.extensions
-                        publishing.publications
+                        afterEvaluate {
+                            publishing.publications
                             .filterIsInstance<MavenPublication>()
                             .filter { it.name in names }
                             .forEach { publication ->
@@ -345,7 +314,23 @@ if (bintrayUser != null && bintrayKey != null) {
                                         override fun getDefaultExtension() = "module"
                                     })
                                 }
+                                sign(publication)
                             }
+
+                        }
+                    }
+
+                    extensions.configure<PublishingExtension> {
+                        repositories {
+                            maven {
+                                name = "sonatype"
+                                url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2")
+                                credentials {
+                                    username = sonatypeUsername
+                                    password = sonatypePassword
+                                }
+                            }
+                        }
                     }
                 }
             }

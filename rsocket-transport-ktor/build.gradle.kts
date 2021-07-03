@@ -17,8 +17,8 @@
 plugins {
     kotlin("multiplatform")
 
+    signing
     id("maven-publish")
-    id("com.jfrog.bintray")
     id("com.jfrog.artifactory")
 }
 
