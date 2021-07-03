@@ -39,7 +39,12 @@ internal class LimitingFlowCollector(
     }
 
     override suspend fun emit(value: Payload): Unit = value.closeOnError {
-        useRequest()
+        try {
+            useRequest()
+        } catch (t: Throwable) {
+            value.release()
+            throw t
+        }
         state.send(NextPayloadFrame(streamId, value))
     }
 
