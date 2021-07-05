@@ -38,7 +38,7 @@ jobs:
           configuration-cache-enabled: false
 
   publish:
-    needs: [ build, test ]
+    needs: [ build ]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
