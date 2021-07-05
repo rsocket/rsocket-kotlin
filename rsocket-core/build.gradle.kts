@@ -19,7 +19,7 @@ plugins {
     id("kotlinx-atomicfu")
 
     signing
-    id("maven-publish")
+    `maven-publish`
     id("com.jfrog.artifactory")
 }
 
@@ -41,3 +41,5 @@ kotlin {
         }
     }
 }
+
+description = "Core functionality for the RSocket library"

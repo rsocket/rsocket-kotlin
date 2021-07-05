@@ -21,7 +21,6 @@ pluginManagement {
     }
 
     val kotlinVersion: String by settings
-    val bintrayVersion: String by settings
     val artifactoryVersion: String by settings
     val versionUpdatesVersion: String by settings
     val gradleEnterpriseVersion: String by settings
@@ -33,7 +32,6 @@ pluginManagement {
 
         id("org.jetbrains.kotlinx.benchmark") version kotlinxBenchmarkVersion
 
-        id("com.jfrog.bintray") version bintrayVersion
         id("com.jfrog.artifactory") version artifactoryVersion
         id("com.github.ben-manes.versions") version versionUpdatesVersion
         id("com.gradle.enterprise") version gradleEnterpriseVersion

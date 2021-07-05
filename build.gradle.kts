@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import groovy.util.Node
+import groovy.util.NodeList
 import org.gradle.api.publish.maven.internal.artifact.FileBasedMavenArtifact
 import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
@@ -202,51 +204,116 @@ subprojects {
     }
 }
 
+fun publishPlatformArtifactsInRootModule(platformPublication:MavenPublication,
+                                         kotlinMultiplatformPublication: MavenPublication) {
+    lateinit var platformXml: XmlProvider
+
+    platformPublication.pom.withXml { platformXml = this }
+
+    kotlinMultiplatformPublication.apply {
+        pom.withXml {
+            val root = asNode()
+            // Remove the original content and add the content from the platform POM:
+            root.children().toList().forEach { root.remove(it as Node) }
+            platformXml.asNode().children()
+                .forEach { root.append(it as Node) }
+
+            // Adjust the self artifact ID, as it should match the root module's coordinates:
+            ((root.get("artifactId") as NodeList)[0] as Node).setValue(artifactId)
+
+            // Set packaging to POM to indicate that there's no artifact:
+            root.appendNode("packaging", "pom")
+
+            // Remove the original platform dependencies and add a single dependency on the platform module:
+            val dependencies = (root.get("dependencies") as NodeList)[0] as Node
+            dependencies.children().toList()
+                .forEach { dependencies.remove(it as Node) }
+            val singleDependency = dependencies.appendNode("dependency")
+            singleDependency.appendNode(
+                "groupId",
+                platformPublication.groupId
+            )
+            singleDependency.appendNode(
+                "artifactId",
+                platformPublication.artifactId
+            )
+            singleDependency.appendNode(
+                "version",
+                platformPublication.version
+            )
+            singleDependency.appendNode("scope", "compile")
+        }
+    }
+
+    tasks.matching { it.name == "generatePomFileForKotlinMultiplatformPublication" }
+        .configureEach {
+            dependsOn(tasks["generatePomFileFor${platformPublication.name.capitalize()}Publication"])
+        }
+
+}
 
 //publication
 subprojects {
+    afterEvaluate {
 
-    val versionSuffix: String? by project
-    if (versionSuffix != null) {
-        project.version = project.version.toString() + versionSuffix
-    }
+        val versionSuffix: String? by project
+        if (versionSuffix != null) {
+            project.version = project.version.toString() + versionSuffix
+        }
 
-    plugins.withId("org.jetbrains.kotlin.multiplatform") {
-        extensions.configure<KotlinMultiplatformExtension> {
-            targets.all {
-                mavenPublication {
-                    pom {
-                        name.set(project.name)
-                        description.set(project.description)
-                        url.set("http://rsocket.io")
+        task<Jar>("javadocJar") {
+            archiveClassifier.set("javadoc")
+        }
 
-                        licenses {
-                            license {
-                                name.set("The Apache Software License, Version 2.0")
-                                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-                                distribution.set("repo")
+        tasks.withType<Sign> {
+            dependsOn("javadocJar")
+        }
+
+        plugins.withId("org.jetbrains.kotlin.multiplatform") {
+            extensions.configure<KotlinMultiplatformExtension> {
+                targets.all {
+                    mavenPublication {
+                        pom {
+                            name.set(project.name)
+                            description.set(project.description)
+                            url.set("http://rsocket.io")
+
+                            licenses {
+                                license {
+                                    name.set("The Apache Software License, Version 2.0")
+                                    url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                                    distribution.set("repo")
+                                }
                             }
-                        }
-                        developers {
-                            developer {
-                                id.set("whyoleg")
-                                name.set("Oleg Yukhnevich")
-                                email.set("whyoleg@gmail.com")
+                            developers {
+                                developer {
+                                    id.set("whyoleg")
+                                    name.set("Oleg Yukhnevich")
+                                    email.set("whyoleg@gmail.com")
+                                }
+                                developer {
+                                    id.set("OlegDokuka")
+                                    name.set("Oleh Dokuka")
+                                    email.set("oleh.dokuka@icloud.com")
+                                }
                             }
-                            developer {
-                                id.set("OlegDokuka")
-                                name.set("Oleh Dokuka")
-                                email.set("oleh.dokuka@icloud.com")
+                            scm {
+                                connection.set("https://github.com/rsocket/rsocket-kotlin.git")
+                                developerConnection.set("https://github.com/rsocket/rsocket-kotlin.git")
+                                url.set("https://github.com/rsocket/rsocket-kotlin")
                             }
-                        }
-                        scm {
-                            connection.set("https://github.com/rsocket/rsocket-kotlin.git")
-                            developerConnection.set("https://github.com/rsocket/rsocket-kotlin.git")
-                            url.set("https://github.com/rsocket/rsocket-kotlin")
                         }
                     }
                 }
             }
+        }
+
+        tasks.withType<PublishToMavenRepository> {
+            dependsOn(tasks.withType<Sign>())
+        }
+
+        tasks.matching { it.name == "generatePomFileForKotlinMultiplatformPublication"}.configureEach {
+            dependsOn(tasks["generatePomFileForJvmPublication"])
         }
     }
 }
@@ -282,14 +349,16 @@ if (bintrayUser != null && bintrayKey != null) {
             }
         }
     }
+}
 
-    //configure bintray / maven central
-    val sonatypeUsername: String? by project
-    val sonatypePassword: String? by project
-    if (sonatypeUsername != null && sonatypePassword != null) {
-        subprojects {
-            plugins.withType<MavenPublishPlugin> {
-                plugins.withType<SigningPlugin> {
+//configure bintray / maven central
+val sonatypeUsername: String? by project
+val sonatypePassword: String? by project
+if (sonatypeUsername != null && sonatypePassword != null) {
+    subprojects {
+        afterEvaluate {
+            plugins.withId("maven-publish") {
+                plugins.withId("signing") {
                     extensions.configure<SigningExtension> {
                         //requiring signature if there is a publish task that is not to MavenLocal
                         isRequired = gradle.taskGraph.allTasks.any {
@@ -303,20 +372,23 @@ if (bintrayUser != null && bintrayKey != null) {
                         useInMemoryPgpKeys(signingKey, signingPassword)
                         val names = publicationNames
                         val publishing: PublishingExtension by project.extensions
-                        afterEvaluate {
+                        beforeEvaluate {
                             publishing.publications
-                            .filterIsInstance<MavenPublication>()
-                            .filter { it.name in names }
-                            .forEach { publication ->
-                                val moduleFile = buildDir.resolve("publications/${publication.name}/module.json")
-                                if (moduleFile.exists()) {
-                                    publication.artifact(object : FileBasedMavenArtifact(moduleFile) {
-                                        override fun getDefaultExtension() = "module"
-                                    })
+                                .filterIsInstance<MavenPublication>()
+                                .filter { it.name in names }
+                                .forEach { publication ->
+                                    val moduleFile =
+                                        buildDir.resolve("publications/${publication.name}/module.json")
+                                    if (moduleFile.exists()) {
+                                        publication.artifact(object :
+                                            FileBasedMavenArtifact(moduleFile) {
+                                            override fun getDefaultExtension() = "module"
+                                        })
+                                    }
                                 }
-                                sign(publication)
-                            }
-
+                        }
+                        afterEvaluate {
+                            sign(*publishing.publications.toTypedArray())
                         }
                     }
 
@@ -329,6 +401,27 @@ if (bintrayUser != null && bintrayKey != null) {
                                     username = sonatypeUsername
                                     password = sonatypePassword
                                 }
+                            }
+                        }
+
+                        publications.filterIsInstance<MavenPublication>().forEach {
+                            // add empty javadocs
+                            if (name != "kotlinMultiplatform") {
+                                it.artifact(tasks["javadocJar"])
+                            }
+
+                            val type = it.name
+                            when (type) {
+                                "kotlinMultiplatform" -> {
+                                    // With Kotlin 1.4 & HMPP, the root module should have no suffix in the ID, but for compatibility with
+                                    // the consumers who can't read Gradle module metadata, we publish the JVM artifacts in it, too
+                                    it.artifactId = project.name
+                                    publishPlatformArtifactsInRootModule(
+                                        publications["jvm"] as MavenPublication,
+                                        it
+                                    )
+                                }
+                                else -> it.artifactId = "${project.name}-$type"
                             }
                         }
                     }

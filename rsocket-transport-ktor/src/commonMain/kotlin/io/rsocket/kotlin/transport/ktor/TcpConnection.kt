@@ -33,7 +33,7 @@ import kotlin.native.concurrent.*
 @SharedImmutable
 internal val ignoreExceptionHandler = CoroutineExceptionHandler { _, _ -> }
 
-@OptIn(TransportApi::class, DangerousInternalIoApi::class)
+@OptIn(TransportApi::class, DangerousInternalIoApi::class, ExperimentalCoroutinesApi::class)
 internal class TcpConnection(private val socket: Socket) : Connection, CoroutineScope {
     override val job: Job = socket.socketContext
     override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined + ignoreExceptionHandler
@@ -98,4 +98,4 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
 private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
 
 @Suppress("FunctionName")
-private fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(0, onUndeliveredElement = onUndeliveredCloseable)
+private fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)

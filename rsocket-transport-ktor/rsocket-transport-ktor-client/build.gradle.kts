@@ -18,7 +18,7 @@ plugins {
     kotlin("multiplatform")
 
     signing
-    id("maven-publish")
+    `maven-publish`
     id("com.jfrog.artifactory")
 }
 
@@ -36,3 +36,5 @@ kotlin {
         }
     }
 }
+
+description = "Ktor installments for RSocket client transport"
