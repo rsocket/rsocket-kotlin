@@ -23,7 +23,7 @@ import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 
-@OptIn(TransportApi::class)
+@OptIn(TransportApi::class, RSocketLoggingApi::class)
 class RSocketConnector internal constructor(
     private val loggerFactory: LoggerFactory,
     private val interceptors: Interceptors,

@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.*
 
 internal typealias ReconnectPredicate = suspend (cause: Throwable, attempt: Long) -> Boolean
 
+@OptIn(RSocketLoggingApi::class)
 @Suppress("FunctionName")
 internal suspend fun ReconnectableRSocket(
     logger: Logger,

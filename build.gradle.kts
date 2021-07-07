@@ -170,12 +170,13 @@ subprojects {
                         useExperimentalAnnotation("io.rsocket.kotlin.TransportApi")
                         useExperimentalAnnotation("io.rsocket.kotlin.ExperimentalMetadataApi")
                         useExperimentalAnnotation("io.rsocket.kotlin.ExperimentalStreamsApi")
+                        useExperimentalAnnotation("io.rsocket.kotlin.RSocketLoggingApi")
                     }
                 }
             }
 
             if (isLibProject && !isTestProject) {
-                explicitApiWarning() //TODO change to strict before release
+                explicitApi()
                 sourceSets["commonTest"].dependencies {
                     implementation(project(":rsocket-test"))
                 }
