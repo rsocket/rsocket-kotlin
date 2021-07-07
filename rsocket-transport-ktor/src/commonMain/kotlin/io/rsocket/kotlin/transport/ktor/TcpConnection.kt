@@ -42,7 +42,6 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
     private val receiveChannel = SafeChannel<ByteReadPacket>(8)
 
     init {
-        val channelCloseJob = Job(job)
         launch {
             socket.openWriteChannel(autoFlush = true).use {
                 while (isActive) {
@@ -78,14 +77,6 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
             val error = cause?.let { it as? CancellationException ?: CancellationException("Connection failed", it) }
             sendChannel.cancel(error)
             receiveChannel.cancel(error)
-            CoroutineScope(job).launch {
-                while (!sendChannel.isClosedForReceive || !sendChannel.isClosedForSend
-                    || !receiveChannel.isClosedForReceive || !receiveChannel.isClosedForSend
-                ) {
-                    delay(1)
-                }
-                channelCloseJob.complete()
-            }
         }
     }
 

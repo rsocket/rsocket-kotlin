@@ -44,19 +44,10 @@ internal constructor(
         val clientChannel = SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
         val serverChannel = SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
         val connectionJob = Job(job)
-        val channelCloseJob = Job(job)
         connectionJob.invokeOnCompletion {
             val error = CancellationException("Connection failed", it)
             clientChannel.cancel(error)
             serverChannel.cancel(error)
-            CoroutineScope(job).launch {
-                while (!clientChannel.isClosedForReceive || !clientChannel.isClosedForSend
-                    || !serverChannel.isClosedForReceive || !serverChannel.isClosedForSend
-                ) {
-                    delay(1)
-                }
-                channelCloseJob.complete()
-            }
         }
         val clientConnection = LocalConnection(serverChannel, clientChannel, pool, connectionJob)
         val serverConnection = LocalConnection(clientChannel, serverChannel, pool, connectionJob)
