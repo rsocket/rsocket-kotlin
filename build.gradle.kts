@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-import groovy.util.Node
-import groovy.util.NodeList
-import org.gradle.api.publish.maven.internal.artifact.FileBasedMavenArtifact
+import groovy.util.*
+import org.gradle.api.publish.maven.internal.artifact.*
 import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.konan.target.*
@@ -205,8 +204,10 @@ subprojects {
     }
 }
 
-fun publishPlatformArtifactsInRootModule(platformPublication:MavenPublication,
-                                         kotlinMultiplatformPublication: MavenPublication) {
+fun publishPlatformArtifactsInRootModule(
+    platformPublication: MavenPublication,
+    kotlinMultiplatformPublication: MavenPublication
+) {
     lateinit var platformXml: XmlProvider
 
     platformPublication.pom.withXml { platformXml = this }
@@ -313,7 +314,7 @@ subprojects {
             dependsOn(tasks.withType<Sign>())
         }
 
-        tasks.matching { it.name == "generatePomFileForKotlinMultiplatformPublication"}.configureEach {
+        tasks.matching { it.name == "generatePomFileForKotlinMultiplatformPublication" }.configureEach {
             dependsOn(tasks["generatePomFileForJvmPublication"])
         }
     }
@@ -422,7 +423,7 @@ if (sonatypeUsername != null && sonatypePassword != null) {
                                         it
                                     )
                                 }
-                                else -> it.artifactId = "${project.name}-$type"
+                                else                  -> it.artifactId = "${project.name}-$type"
                             }
                         }
                     }

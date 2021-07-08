@@ -17,7 +17,6 @@
 import io.ktor.client.*
 import io.ktor.client.features.websocket.*
 import io.ktor.network.selector.*
-import io.ktor.network.sockets.*
 import io.ktor.util.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*

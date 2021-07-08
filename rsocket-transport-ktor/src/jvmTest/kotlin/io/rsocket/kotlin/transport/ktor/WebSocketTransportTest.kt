@@ -24,9 +24,8 @@ import io.ktor.server.engine.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.test.*
-import io.rsocket.kotlin.transport.ServerTransport
+import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.client.*
-import io.rsocket.kotlin.transport.ktor.server.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlin.random.*

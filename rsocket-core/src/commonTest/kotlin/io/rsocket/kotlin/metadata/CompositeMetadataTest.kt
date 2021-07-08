@@ -183,11 +183,13 @@ class CompositeMetadataTest : TestWithLeakCheck {
     fun testCombine() {
         val cm = buildCompositeMetadata {
             add(RoutingMetadata("tag1", "tag2"))
-            add(PerStreamAcceptableDataMimeTypesMetadata(
-                WellKnownMimeType.ApplicationAvro,
-                CustomMimeType("application/custom"),
-                ReservedMimeType(120)
-            ))
+            add(
+                PerStreamAcceptableDataMimeTypesMetadata(
+                    WellKnownMimeType.ApplicationAvro,
+                    CustomMimeType("application/custom"),
+                    ReservedMimeType(120)
+                )
+            )
             add(WellKnownMimeType.ApplicationJson, packet("{}"))
         }
 

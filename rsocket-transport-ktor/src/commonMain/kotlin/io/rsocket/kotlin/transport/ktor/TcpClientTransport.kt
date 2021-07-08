@@ -21,7 +21,6 @@ package io.rsocket.kotlin.transport.ktor
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
-import io.ktor.util.*
 import io.ktor.util.network.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
