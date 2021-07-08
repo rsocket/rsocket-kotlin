@@ -33,7 +33,10 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     override suspend fun before() {
         super.before()
 
-        val state = RSocketState(connection, KeepAlive(Duration.seconds(1000), Duration.seconds(1000)))
+        val state = RSocketState(
+            connection,
+            ConnectionConfig(KeepAlive(Duration.seconds(1000), Duration.seconds(1000)), DefaultPayloadMimeType, Payload.Empty)
+        )
         requester = RSocketRequester(state, StreamId.client())
         state.start(RSocketRequestHandler { })
     }

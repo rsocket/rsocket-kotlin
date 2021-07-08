@@ -27,7 +27,7 @@ internal suspend inline fun Connection.connect(
     acceptor: ConnectionAcceptor,
     beforeStart: () -> Unit = {},
 ): RSocket {
-    val state = RSocketState(this, connectionConfig.keepAlive)
+    val state = RSocketState(this, connectionConfig)
     val requester = RSocketRequester(state, StreamId(isServer)).let(interceptors::wrapRequester)
     val connectionContext = ConnectionAcceptorContext(connectionConfig, requester)
     val requestHandler = with(interceptors.wrapAcceptor(acceptor)) { connectionContext.accept() }.let(interceptors::wrapResponder)
