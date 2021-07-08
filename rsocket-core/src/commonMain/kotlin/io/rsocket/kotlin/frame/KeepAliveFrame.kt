@@ -17,6 +17,8 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.io.*
 
 private const val RespondFlag = 128
@@ -49,7 +51,7 @@ internal class KeepAliveFrame(
     }
 }
 
-internal fun ByteReadPacket.readKeepAlive(pool: BufferPool, flags: Int): KeepAliveFrame {
+internal fun ByteReadPacket.readKeepAlive(pool: ObjectPool<ChunkBuffer>, flags: Int): KeepAliveFrame {
     val respond = flags check RespondFlag
     val lastPosition = readLong()
     val data = readPacket(pool)

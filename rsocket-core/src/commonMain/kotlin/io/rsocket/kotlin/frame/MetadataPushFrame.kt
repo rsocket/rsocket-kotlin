@@ -17,6 +17,8 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.io.*
 
 internal class MetadataPushFrame(
@@ -43,4 +45,4 @@ internal class MetadataPushFrame(
     }
 }
 
-internal fun ByteReadPacket.readMetadataPush(pool: BufferPool): MetadataPushFrame = MetadataPushFrame(readPacket(pool))
+internal fun ByteReadPacket.readMetadataPush(pool: ObjectPool<ChunkBuffer>): MetadataPushFrame = MetadataPushFrame(readPacket(pool))

@@ -17,6 +17,8 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
 
@@ -47,7 +49,7 @@ internal class ExtensionFrame(
     }
 }
 
-internal fun ByteReadPacket.readExtension(pool: BufferPool, streamId: Int, flags: Int): ExtensionFrame {
+internal fun ByteReadPacket.readExtension(pool: ObjectPool<ChunkBuffer>, streamId: Int, flags: Int): ExtensionFrame {
     val extendedType = readInt()
     val payload = readPayload(pool, flags)
     return ExtensionFrame(streamId, extendedType, payload)

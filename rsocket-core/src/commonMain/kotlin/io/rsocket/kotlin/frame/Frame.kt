@@ -35,7 +35,6 @@ public sealed class Frame : Closeable {
     protected abstract fun StringBuilder.appendFlags()
     protected abstract fun StringBuilder.appendSelf()
 
-    @DangerousInternalIoApi
     internal fun toPacket(pool: ObjectPool<ChunkBuffer>): ByteReadPacket {
         check(type.canHaveMetadata || !(flags check Flags.Metadata)) { "bad value for metadata flag" }
         return buildPacket(pool) {
@@ -61,7 +60,6 @@ public sealed class Frame : Closeable {
     }
 }
 
-@DangerousInternalIoApi
 internal fun ByteReadPacket.readFrame(pool: ObjectPool<ChunkBuffer>): Frame = use {
     val streamId = readInt()
     val typeAndFlags = readShort().toInt() and 0xFFFF

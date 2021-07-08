@@ -29,7 +29,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
             add(CustomMimeType("w"), ByteReadPacket.Empty)
         }
 
-        val decoded = cm.toPacket(InUseTrackingPool).read(InUseTrackingPool, CompositeMetadata)
+        val decoded = cm.readLoop(CompositeMetadata)
 
         assertEquals(1, decoded.entries.size)
         val entry = decoded.entries.first()
@@ -44,7 +44,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
             add(ReservedMimeType(120), packet("reserved metadata"))
             add(WellKnownMimeType.ApplicationAvro, packet("avro metadata"))
         }
-        val decoded = cm.toPacket(InUseTrackingPool).read(InUseTrackingPool, CompositeMetadata)
+        val decoded = cm.readLoop(CompositeMetadata)
 
         assertEquals(3, decoded.entries.size)
         decoded.entries[0].let { custom ->
@@ -67,7 +67,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
             writeByte(120)
         }
         assertFails {
-            packet.read(InUseTrackingPool, CompositeMetadata)
+            packet.read(CompositeMetadata, InUseTrackingPool)
         }
     }
 
@@ -78,7 +78,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
             add(ReservedMimeType(120), packet("reserved metadata"))
             add(WellKnownMimeType.ApplicationAvro, packet("avro metadata"))
         }
-        val decoded = cm.toPacket(InUseTrackingPool).read(InUseTrackingPool, CompositeMetadata)
+        val decoded = cm.readLoop(CompositeMetadata)
 
         assertTrue(CustomMimeType("custom") in decoded)
         assertTrue(CustomMimeType("custom2") !in decoded)
@@ -99,7 +99,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
             add(ReservedMimeType(120), packet("reserved metadata"))
             add(WellKnownMimeType.ApplicationAvro, packet("avro metadata"))
         }
-        val decoded = cm.toPacket(InUseTrackingPool).read(InUseTrackingPool, CompositeMetadata)
+        val decoded = cm.readLoop(CompositeMetadata)
 
         assertEquals("custom metadata", decoded[CustomMimeType("custom")].readText())
         assertEquals("reserved metadata", decoded[ReservedMimeType(120)].readText())
@@ -113,7 +113,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
             add(ReservedMimeType(120), packet("reserved metadata"))
             add(WellKnownMimeType.ApplicationAvro, packet("avro metadata"))
         }
-        val decoded = cm.toPacket(InUseTrackingPool).read(InUseTrackingPool, CompositeMetadata)
+        val decoded = cm.readLoop(CompositeMetadata)
 
         assertNull(decoded.getOrNull(ReservedMimeType(121)))
         assertNull(decoded.getOrNull(CustomMimeType("custom2")))
@@ -133,7 +133,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
             add(WellKnownMimeType.MessageRSocketRouting, packet("routing metadata"))
             add(CustomMimeType("custom"), packet("custom metadata - 2"))
         }
-        val decoded = cm.toPacket(InUseTrackingPool).read(InUseTrackingPool, CompositeMetadata)
+        val decoded = cm.readLoop(CompositeMetadata)
 
         assertEquals(5, decoded.entries.size)
 
@@ -193,7 +193,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
             add(WellKnownMimeType.ApplicationJson, packet("{}"))
         }
 
-        val decoded = cm.toPacket(InUseTrackingPool).read(InUseTrackingPool, CompositeMetadata)
+        val decoded = cm.readLoop(CompositeMetadata)
         assertEquals(3, decoded.entries.size)
 
         assertEquals(listOf("tag1", "tag2"), decoded[RoutingMetadata].tags)

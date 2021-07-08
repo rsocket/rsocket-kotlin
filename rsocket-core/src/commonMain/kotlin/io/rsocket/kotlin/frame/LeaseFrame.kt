@@ -17,6 +17,8 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.io.*
 
 internal class LeaseFrame(
@@ -48,7 +50,7 @@ internal class LeaseFrame(
     }
 }
 
-internal fun ByteReadPacket.readLease(pool: BufferPool, flags: Int): LeaseFrame {
+internal fun ByteReadPacket.readLease(pool: ObjectPool<ChunkBuffer>, flags: Int): LeaseFrame {
     val ttl = readInt()
     val numberOfRequests = readInt()
     val metadata = if (flags check Flags.Metadata) readMetadata(pool) else null

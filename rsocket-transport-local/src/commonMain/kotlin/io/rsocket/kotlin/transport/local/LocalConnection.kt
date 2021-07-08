@@ -23,7 +23,7 @@ import io.rsocket.kotlin.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 
-@OptIn(DangerousInternalIoApi::class, TransportApi::class)
+@OptIn(TransportApi::class)
 internal class LocalConnection(
     private val sender: SendChannel<ByteReadPacket>,
     private val receiver: ReceiveChannel<ByteReadPacket>,

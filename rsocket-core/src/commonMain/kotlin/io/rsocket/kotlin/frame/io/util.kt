@@ -17,8 +17,10 @@
 package io.rsocket.kotlin.frame.io
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 
-internal fun ByteReadPacket.readResumeToken(pool: BufferPool): ByteReadPacket {
+internal fun ByteReadPacket.readResumeToken(pool: ObjectPool<ChunkBuffer>): ByteReadPacket {
     val length = readShort().toInt() and 0xFFFF
     return readPacket(pool, length)
 }
@@ -31,14 +33,14 @@ internal fun BytePacketBuilder.writeResumeToken(resumeToken: ByteReadPacket?) {
     }
 }
 
-internal fun ByteReadPacket.readPacket(pool: BufferPool): ByteReadPacket {
+internal fun ByteReadPacket.readPacket(pool: ObjectPool<ChunkBuffer>): ByteReadPacket {
     if (isEmpty) return ByteReadPacket.Empty
     return buildPacket(pool) {
         writePacket(this@readPacket)
     }
 }
 
-internal fun ByteReadPacket.readPacket(pool: BufferPool, length: Int): ByteReadPacket {
+internal fun ByteReadPacket.readPacket(pool: ObjectPool<ChunkBuffer>, length: Int): ByteReadPacket {
     if (length == 0) return ByteReadPacket.Empty
     return buildPacket(pool) {
         writePacket(this@readPacket, length)

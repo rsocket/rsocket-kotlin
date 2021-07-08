@@ -30,18 +30,16 @@ import kotlinx.coroutines.*
 public interface Connection {
     public val job: Job
 
-    @DangerousInternalIoApi
-    public val pool: ObjectPool<ChunkBuffer>
-        get() = ChunkBuffer.Pool
+    public val pool: ObjectPool<ChunkBuffer> get() = ChunkBuffer.Pool
 
     public suspend fun send(packet: ByteReadPacket)
     public suspend fun receive(): ByteReadPacket
 }
 
-@OptIn(DangerousInternalIoApi::class, TransportApi::class)
+@OptIn(TransportApi::class)
 internal suspend fun Connection.receiveFrame(): Frame = receive().readFrame(pool)
 
-@OptIn(DangerousInternalIoApi::class, TransportApi::class)
+@OptIn(TransportApi::class)
 internal suspend fun Connection.sendFrame(frame: Frame) {
     val packet = frame.toPacket(pool)
     packet.closeOnError { send(packet) }

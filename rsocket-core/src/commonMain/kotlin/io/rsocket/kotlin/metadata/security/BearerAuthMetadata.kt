@@ -31,7 +31,6 @@ public class BearerAuthMetadata(
     }
 
     public companion object Reader : AuthMetadataReader<BearerAuthMetadata> {
-        @DangerousInternalIoApi
         override fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): BearerAuthMetadata {
             require(type == WellKnowAuthType.Bearer) { "Metadata auth type should be 'bearer'" }
             val token = readText()

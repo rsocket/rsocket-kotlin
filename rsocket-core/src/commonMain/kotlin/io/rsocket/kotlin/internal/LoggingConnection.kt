@@ -19,7 +19,6 @@
 package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.logging.*
@@ -27,7 +26,6 @@ import io.rsocket.kotlin.logging.*
 internal fun Connection.logging(logger: Logger): Connection =
     if (logger.isLoggable(LoggingLevel.DEBUG)) LoggingConnection(this, logger) else this
 
-@OptIn(DangerousInternalIoApi::class)
 private class LoggingConnection(
     private val delegate: Connection,
     private val logger: Logger,

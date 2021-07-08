@@ -24,7 +24,7 @@ class PerStreamDataMimeTypeMetadataTest : TestWithLeakCheck {
     @Test
     fun encodeReserved() {
         val metadata = PerStreamDataMimeTypeMetadata(ReservedMimeType(110))
-        val decoded = metadata.toPacket(InUseTrackingPool).read(InUseTrackingPool, PerStreamDataMimeTypeMetadata)
+        val decoded = metadata.readLoop(PerStreamDataMimeTypeMetadata)
         assertEquals(WellKnownMimeType.MessageRSocketMimeType, decoded.mimeType)
         assertEquals(ReservedMimeType(110), decoded.type)
     }
@@ -32,7 +32,7 @@ class PerStreamDataMimeTypeMetadataTest : TestWithLeakCheck {
     @Test
     fun encodeCustom() {
         val metadata = PerStreamDataMimeTypeMetadata(CustomMimeType("custom-2"))
-        val decoded = metadata.toPacket(InUseTrackingPool).read(InUseTrackingPool, PerStreamDataMimeTypeMetadata)
+        val decoded = metadata.readLoop(PerStreamDataMimeTypeMetadata)
         assertEquals(WellKnownMimeType.MessageRSocketMimeType, decoded.mimeType)
         assertEquals(CustomMimeType("custom-2"), decoded.type)
     }
@@ -40,7 +40,7 @@ class PerStreamDataMimeTypeMetadataTest : TestWithLeakCheck {
     @Test
     fun encodeWellKnown() {
         val metadata = PerStreamDataMimeTypeMetadata(WellKnownMimeType.ApplicationGraphql)
-        val decoded = metadata.toPacket(InUseTrackingPool).read(InUseTrackingPool, PerStreamDataMimeTypeMetadata)
+        val decoded = metadata.readLoop(PerStreamDataMimeTypeMetadata)
         assertEquals(WellKnownMimeType.MessageRSocketMimeType, decoded.mimeType)
         assertEquals(WellKnownMimeType.ApplicationGraphql, decoded.type)
     }

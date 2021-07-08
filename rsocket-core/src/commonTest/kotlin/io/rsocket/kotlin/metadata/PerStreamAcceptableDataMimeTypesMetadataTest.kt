@@ -31,7 +31,7 @@ class PerStreamAcceptableDataMimeTypesMetadataTest : TestWithLeakCheck {
             ReservedMimeType(120),
             CustomMimeType("custom2"),
         )
-        val decoded = metadata.toPacket(InUseTrackingPool).read(InUseTrackingPool, PerStreamAcceptableDataMimeTypesMetadata)
+        val decoded = metadata.readLoop(PerStreamAcceptableDataMimeTypesMetadata)
         assertEquals(WellKnownMimeType.MessageRSocketAcceptMimeTypes, decoded.mimeType)
         assertEquals(6, decoded.types.size)
         assertEquals(

@@ -33,8 +33,6 @@ public class PerStreamDataMimeTypeMetadata(public val type: MimeType) : Metadata
 
     public companion object Reader : MetadataReader<PerStreamDataMimeTypeMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketMimeType
-
-        @DangerousInternalIoApi
         override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): PerStreamDataMimeTypeMetadata =
             PerStreamDataMimeTypeMetadata(readMimeType())
     }

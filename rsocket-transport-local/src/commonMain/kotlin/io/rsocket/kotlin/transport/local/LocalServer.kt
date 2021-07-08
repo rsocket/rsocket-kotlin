@@ -27,15 +27,9 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 
-@Suppress("FunctionName")
-@OptIn(DangerousInternalIoApi::class)
-public fun LocalServer(parentJob: Job? = null): LocalServer = LocalServer(parentJob, ChunkBuffer.Pool)
-
-public class LocalServer
-@DangerousInternalIoApi
-internal constructor(
+public class LocalServer(
     parentJob: Job?,
-    private val pool: ObjectPool<ChunkBuffer>,
+    private val pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
 ) : ServerTransport<Job>, ClientTransport {
     public val job: Job = SupervisorJob(parentJob)
     private val connections = Channel<Connection>()

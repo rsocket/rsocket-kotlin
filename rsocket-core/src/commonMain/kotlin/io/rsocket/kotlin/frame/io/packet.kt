@@ -20,10 +20,7 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 
-@OptIn(DangerousInternalIoApi::class)
-internal typealias BufferPool = ObjectPool<ChunkBuffer>
-
-internal inline fun buildPacket(pool: BufferPool, block: BytePacketBuilder.() -> Unit): ByteReadPacket {
+internal inline fun buildPacket(pool: ObjectPool<ChunkBuffer>, block: BytePacketBuilder.() -> Unit): ByteReadPacket {
     val builder = BytePacketBuilder(0, pool)
     try {
         block(builder)

@@ -18,4 +18,4 @@ package io.rsocket.kotlin.metadata
 
 import io.rsocket.kotlin.test.*
 
-fun <M : Metadata> Metadata.readLoop(reader: MetadataReader<M>): M = toPacket(InUseTrackingPool).read(InUseTrackingPool, reader)
+fun <M : Metadata> Metadata.readLoop(reader: MetadataReader<M>): M = toPacket(InUseTrackingPool).read(reader, InUseTrackingPool)
