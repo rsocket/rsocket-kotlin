@@ -20,6 +20,7 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 
 @ExperimentalStreamsApi
@@ -29,6 +30,21 @@ internal inline fun requestFlow(
     override suspend fun collect(collector: FlowCollector<Payload>, strategy: RequestStrategy.Element, initialRequest: Int) {
         collector.block(strategy, initialRequest)
     }
+}
+
+@ExperimentalStreamsApi
+internal suspend inline fun FlowCollector<Payload>.emitAllWithRequestN(
+    channel: ReceiveChannel<Payload>,
+    strategy: RequestStrategy.Element,
+    crossinline onRequest: suspend (n: Int) -> Unit,
+) {
+    val collector = object : RequestFlowCollector(this, strategy) {
+        override suspend fun onRequest(n: Int) {
+            @OptIn(ExperimentalCoroutinesApi::class)
+            if (!channel.isClosedForReceive) onRequest(n)
+        }
+    }
+    collector.emitAll(channel)
 }
 
 @ExperimentalStreamsApi
@@ -45,4 +61,18 @@ internal abstract class RequestFlow : Flow<Payload> {
     }
 
     abstract suspend fun collect(collector: FlowCollector<Payload>, strategy: RequestStrategy.Element, initialRequest: Int)
+}
+
+@ExperimentalStreamsApi
+internal abstract class RequestFlowCollector(
+    private val collector: FlowCollector<Payload>,
+    private val strategy: RequestStrategy.Element,
+) : FlowCollector<Payload> {
+    override suspend fun emit(value: Payload): Unit = value.closeOnError {
+        collector.emit(value)
+        val next = strategy.nextRequest()
+        if (next > 0) onRequest(next)
+    }
+
+    abstract suspend fun onRequest(n: Int)
 }

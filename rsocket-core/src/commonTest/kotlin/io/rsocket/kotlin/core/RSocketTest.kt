@@ -42,7 +42,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     private suspend fun start(handler: RSocket? = null): RSocket {
         val localServer = LocalServer(testJob)
         RSocketServer {
-            loggerFactory = NoopLogger
+            loggerFactory = LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("SERVER   |$it") }
         }.bind(localServer) {
             handler ?: RSocketRequestHandler {
                 requestResponse { it }
@@ -59,7 +59,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         }
 
         return RSocketConnector {
-            loggerFactory = NoopLogger
+            loggerFactory = LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("CLIENT   |$it") }
             connectionConfig {
                 keepAlive = KeepAlive(Duration.seconds(1000), Duration.seconds(1000))
             }
@@ -219,7 +219,10 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             }
         })
         val request = flow<Payload> { error("test") }
-        requester.requestChannel(Payload.Empty, request).collect()
+        //TODO
+        kotlin.runCatching {
+            requester.requestChannel(Payload.Empty, request).collect()
+        }.also(::println)
         val e = error.await()
         assertTrue(e is RSocketError.ApplicationError)
         assertEquals("test", e.message)

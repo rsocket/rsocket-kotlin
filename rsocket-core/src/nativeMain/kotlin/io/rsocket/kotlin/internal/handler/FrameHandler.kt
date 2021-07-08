@@ -14,26 +14,14 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.internal
+package io.rsocket.kotlin.internal.handler
 
-import io.rsocket.kotlin.*
-import io.rsocket.kotlin.keepalive.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 
-internal class KeepAliveHandler(private val keepAlive: KeepAlive) {
-    private val lastMark = atomic(currentMillis()) // mark initial timestamp for keepalive
-
-    fun mark() {
-        lastMark.value = currentMillis()
-    }
-
-    // return boolean because of native
-    suspend fun tick() {
-        delay(keepAlive.intervalMillis.toLong())
-        if (currentMillis() - lastMark.value < keepAlive.maxLifetimeMillis) return
-        throw RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetimeMillis} ms")
-    }
+internal actual abstract class ResponderFrameHandler : BaseResponderFrameHandler() {
+    actual override var job: Job? by atomic(null)
 }
 
-internal expect fun currentMillis(): Long
+internal actual abstract class RequesterFrameHandler : BaseRequesterFrameHandler() {
+}

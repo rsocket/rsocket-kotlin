@@ -106,7 +106,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         val request = flow {
             repeat(200_000) { emit(payload(it)) }
         }
-        val list = client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).onEach { it.release() }.toList()
+        val list = client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(10000, 0)).onEach { it.release() }.toList()
         assertEquals(200_000, list.size)
     }
 

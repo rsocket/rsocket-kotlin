@@ -17,7 +17,6 @@
 package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
-import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlin.native.concurrent.*
 
@@ -30,18 +29,17 @@ internal inline fun <T : Closeable, R> T.closeOnError(block: (T) -> R): R {
     }
 }
 
-internal fun ReceiveChannel<*>.cancelConsumed(cause: Throwable?) {
-    cancel(cause?.let { it as? CancellationException ?: CancellationException("Channel was consumed, consumer had failed", it) })
-}
-
 @SharedImmutable
 private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
 
 @Suppress("FunctionName")
 internal fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
 
-internal fun <E : Closeable> SendChannel<E>.safeOffer(element: E) {
-    trySend(element)
-        .onFailure { element.close() }
-        .getOrThrow() //TODO
+internal fun <E : Closeable> SendChannel<E>.safeTrySend(element: E) {
+    trySend(element).onFailure { element.close() }
+}
+
+internal fun Channel<out Closeable>.fullClose(cause: Throwable?) {
+    close(cause) // close channel to provide right cause
+    cancel() // force call of onUndeliveredElement to release buffered elements
 }

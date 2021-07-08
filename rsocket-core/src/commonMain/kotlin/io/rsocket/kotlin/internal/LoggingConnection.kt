@@ -37,7 +37,7 @@ private class LoggingConnection(
     }
 
     override suspend fun send(packet: ByteReadPacket) {
-        logger.debug { "Send: ${packet.dumpFrameToString()}" }
+        logger.debug { "Send:    ${packet.dumpFrameToString()}" }
         delegate.send(packet)
     }
 
