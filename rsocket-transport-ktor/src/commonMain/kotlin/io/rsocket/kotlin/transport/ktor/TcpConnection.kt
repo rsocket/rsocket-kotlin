@@ -24,9 +24,9 @@ import io.ktor.utils.io.core.internal.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.Connection
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 import kotlin.native.concurrent.*
 
@@ -38,7 +38,10 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
     override val job: Job = socket.socketContext
     override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined + ignoreExceptionHandler
 
+    @Suppress("INVISIBLE_MEMBER")
     private val sendChannel = SafeChannel<ByteReadPacket>(8)
+
+    @Suppress("INVISIBLE_MEMBER")
     private val receiveChannel = SafeChannel<ByteReadPacket>(8)
 
     init {
@@ -49,6 +52,7 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
                     val length = packet.remaining.toInt()
                     try {
                         writePacket {
+                            @Suppress("INVISIBLE_MEMBER")
                             writeLength(length)
                             writePacket(packet)
                         }
@@ -62,6 +66,7 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
         launch {
             socket.openReadChannel().apply {
                 while (isActive) {
+                    @Suppress("INVISIBLE_MEMBER")
                     val length = readPacket(3).readLength()
                     val packet = readPacket(length)
                     try {
@@ -84,9 +89,3 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
 
     override suspend fun receive(): ByteReadPacket = receiveChannel.receive()
 }
-
-@SharedImmutable
-private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
-
-@Suppress("FunctionName")
-private fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)

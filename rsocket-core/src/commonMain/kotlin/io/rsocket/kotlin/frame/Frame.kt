@@ -24,18 +24,18 @@ import io.rsocket.kotlin.frame.io.*
 private const val FlagsMask: Int = 1023
 private const val FrameTypeShift: Int = 10
 
-sealed class Frame(open val type: FrameType) : Closeable {
-    abstract val streamId: Int
-    abstract val flags: Int
+public sealed class Frame(public open val type: FrameType) : Closeable {
+    public abstract val streamId: Int
+    public abstract val flags: Int
 
-    abstract fun release()
+    internal abstract fun release()
 
     protected abstract fun BytePacketBuilder.writeSelf()
     protected abstract fun StringBuilder.appendFlags()
     protected abstract fun StringBuilder.appendSelf()
 
     @DangerousInternalIoApi
-    fun toPacket(pool: ObjectPool<ChunkBuffer>): ByteReadPacket {
+    internal fun toPacket(pool: ObjectPool<ChunkBuffer>): ByteReadPacket {
         check(type.canHaveMetadata || !(flags check Flags.Metadata)) { "bad value for metadata flag" }
         return buildPacket(pool) {
             writeInt(streamId)
@@ -61,7 +61,7 @@ sealed class Frame(open val type: FrameType) : Closeable {
 }
 
 @DangerousInternalIoApi
-fun ByteReadPacket.readFrame(pool: ObjectPool<ChunkBuffer>): Frame = use {
+internal fun ByteReadPacket.readFrame(pool: ObjectPool<ChunkBuffer>): Frame = use {
     val streamId = readInt()
     val typeAndFlags = readShort().toInt() and 0xFFFF
     val flags = typeAndFlags and FlagsMask

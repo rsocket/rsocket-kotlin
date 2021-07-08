@@ -22,10 +22,10 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
-import kotlin.native.concurrent.*
 
 @Suppress("FunctionName")
 @OptIn(DangerousInternalIoApi::class)
@@ -41,7 +41,10 @@ internal constructor(
     private val connections = Channel<Connection>()
 
     override suspend fun connect(): Connection {
+        @Suppress("INVISIBLE_MEMBER")
         val clientChannel = SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
+
+        @Suppress("INVISIBLE_MEMBER")
         val serverChannel = SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
         val connectionJob = Job(job)
         connectionJob.invokeOnCompletion {
@@ -65,9 +68,3 @@ internal constructor(
             }
         }
 }
-
-@SharedImmutable
-private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
-
-@Suppress("FunctionName")
-private fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
