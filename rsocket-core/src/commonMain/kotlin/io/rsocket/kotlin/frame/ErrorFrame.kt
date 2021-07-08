@@ -22,7 +22,8 @@ import io.rsocket.kotlin.*
 internal class ErrorFrame(
     override val streamId: Int,
     val throwable: Throwable
-) : Frame(FrameType.Error) {
+) : Frame() {
+    override val type: FrameType get() = FrameType.Error
     override val flags: Int get() = 0
     val errorCode get() = (throwable as? RSocketError)?.errorCode ?: ErrorCode.ApplicationError
 

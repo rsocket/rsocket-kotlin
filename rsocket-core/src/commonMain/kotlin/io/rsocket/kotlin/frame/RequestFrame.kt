@@ -30,7 +30,7 @@ internal class RequestFrame(
     val next: Boolean,
     val initialRequest: Int,
     val payload: Payload,
-) : Frame(type) {
+) : Frame() {
     override val flags: Int
         get() {
             var flags = 0

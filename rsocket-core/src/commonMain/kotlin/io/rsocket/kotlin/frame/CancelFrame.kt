@@ -19,8 +19,9 @@ package io.rsocket.kotlin.frame
 import io.ktor.utils.io.core.*
 
 internal class CancelFrame(
-    override val streamId: Int,
-) : Frame(FrameType.Cancel) {
+    override val streamId: Int
+) : Frame() {
+    override val type: FrameType get() = FrameType.Cancel
     override val flags: Int get() = 0
 
     override fun release(): Unit = Unit

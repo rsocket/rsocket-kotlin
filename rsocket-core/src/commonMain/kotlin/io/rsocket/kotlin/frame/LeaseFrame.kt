@@ -23,7 +23,8 @@ internal class LeaseFrame(
     val ttl: Int,
     val numberOfRequests: Int,
     val metadata: ByteReadPacket?,
-) : Frame(FrameType.Lease) {
+) : Frame() {
+    override val type: FrameType get() = FrameType.Lease
     override val streamId: Int get() = 0
     override val flags: Int get() = if (metadata != null) Flags.Metadata else 0
 

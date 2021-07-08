@@ -20,7 +20,8 @@ import io.ktor.utils.io.core.*
 
 internal class ResumeOkFrame(
     val lastReceivedClientPosition: Long,
-) : Frame(FrameType.ResumeOk) {
+) : Frame() {
+    override val type: FrameType get() = FrameType.ResumeOk
     override val streamId: Int get() = 0
     override val flags: Int get() = 0
 

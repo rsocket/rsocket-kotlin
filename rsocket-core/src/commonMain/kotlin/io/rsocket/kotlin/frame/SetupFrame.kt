@@ -31,7 +31,8 @@ internal class SetupFrame(
     val resumeToken: ByteReadPacket?,
     val payloadMimeType: PayloadMimeType,
     val payload: Payload,
-) : Frame(FrameType.Setup) {
+) : Frame() {
+    override val type: FrameType get() = FrameType.Setup
     override val streamId: Int get() = 0
     override val flags: Int
         get() {

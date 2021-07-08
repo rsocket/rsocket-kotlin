@@ -24,7 +24,8 @@ internal class ResumeFrame(
     val resumeToken: ByteReadPacket,
     val lastReceivedServerPosition: Long,
     val firstAvailableClientPosition: Long,
-) : Frame(FrameType.Resume) {
+) : Frame() {
+    override val type: FrameType get() = FrameType.Resume
     override val streamId: Int get() = 0
     override val flags: Int get() = 0
 

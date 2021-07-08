@@ -24,7 +24,8 @@ internal class ExtensionFrame(
     override val streamId: Int,
     val extendedType: Int,
     val payload: Payload,
-) : Frame(FrameType.Extension) {
+) : Frame() {
+    override val type: FrameType get() = FrameType.Extension
     override val flags: Int get() = if (payload.metadata != null) Flags.Metadata else 0
 
     override fun release() {

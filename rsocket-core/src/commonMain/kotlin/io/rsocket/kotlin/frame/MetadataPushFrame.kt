@@ -21,7 +21,8 @@ import io.rsocket.kotlin.frame.io.*
 
 internal class MetadataPushFrame(
     val metadata: ByteReadPacket,
-) : Frame(FrameType.MetadataPush) {
+) : Frame() {
+    override val type: FrameType get() = FrameType.MetadataPush
     override val streamId: Int get() = 0
     override val flags: Int get() = Flags.Metadata
 

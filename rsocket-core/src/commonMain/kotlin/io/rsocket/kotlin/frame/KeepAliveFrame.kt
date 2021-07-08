@@ -25,7 +25,8 @@ internal class KeepAliveFrame(
     val respond: Boolean,
     val lastPosition: Long,
     val data: ByteReadPacket,
-) : Frame(FrameType.KeepAlive) {
+) : Frame() {
+    override val type: FrameType get() = FrameType.KeepAlive
     override val streamId: Int get() = 0
     override val flags: Int get() = if (respond) RespondFlag else 0
 
