@@ -42,10 +42,6 @@ public class RSocketConnectorBuilder internal constructor() {
         acceptor = block
     }
 
-    public fun acceptor(block: suspend ConnectionAcceptorContext.() -> RSocket) {
-        acceptor(ConnectionAcceptor(block))
-    }
-
     /**
      * When configured, [RSocketConnector.connect] will return custom [RSocket] implementation,
      * which will try to reconnect if connection lost and [retries] are not exhausted with [predicate] returning `true`.

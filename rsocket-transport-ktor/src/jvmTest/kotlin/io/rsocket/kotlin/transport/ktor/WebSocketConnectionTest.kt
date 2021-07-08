@@ -46,7 +46,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
         install(ClientRSocketSupport) {
             connector = RSocketConnector {
                 connectionConfig {
-                    keepAlive = KeepAlive(500.milliseconds)
+                    keepAlive = KeepAlive(500)
                 }
             }
         }

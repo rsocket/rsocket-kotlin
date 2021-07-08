@@ -55,6 +55,7 @@ internal constructor(
         return clientConnection
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     override fun start(accept: suspend (Connection) -> Unit): Job =
         GlobalScope.launch(job + Dispatchers.Unconfined, CoroutineStart.UNDISPATCHED) {
             supervisorScope {

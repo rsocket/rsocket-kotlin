@@ -26,7 +26,6 @@ import io.ktor.util.network.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 
-@InternalAPI //because of selector
 public fun TcpClientTransport(
     selector: SelectorManager,
     hostname: String, port: Int,
@@ -34,7 +33,6 @@ public fun TcpClientTransport(
     configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {},
 ): ClientTransport = TcpClientTransport(selector, NetworkAddress(hostname, port), intercept, configure)
 
-@InternalAPI //because of selector
 public fun TcpClientTransport(
     selector: SelectorManager,
     remoteAddress: NetworkAddress,

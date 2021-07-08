@@ -162,8 +162,8 @@ subprojects {
                         useExperimentalAnnotation("kotlinx.coroutines.InternalCoroutinesApi")
                         useExperimentalAnnotation("kotlinx.coroutines.ObsoleteCoroutinesApi")
                         useExperimentalAnnotation("kotlinx.coroutines.FlowPreview")
+                        useExperimentalAnnotation("kotlinx.coroutines.DelicateCoroutinesApi")
 
-                        useExperimentalAnnotation("io.ktor.util.KtorExperimentalAPI")
                         useExperimentalAnnotation("io.ktor.util.InternalAPI")
                         useExperimentalAnnotation("io.ktor.utils.io.core.internal.DangerousInternalIoApi")
 

@@ -20,19 +20,17 @@ package io.rsocket.kotlin.transport.ktor
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
-import io.ktor.util.*
 import io.ktor.util.network.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 
-@InternalAPI //because of selector
 public fun TcpServerTransport(
     selector: SelectorManager,
     hostname: String = "0.0.0.0", port: Int = 0,
     configure: SocketOptions.AcceptorOptions.() -> Unit = {},
 ): ServerTransport<Job> = TcpServerTransport(selector, NetworkAddress(hostname, port), configure)
 
-@InternalAPI //because of selector
+@OptIn(DelicateCoroutinesApi::class) //TODO ?
 public fun TcpServerTransport(
     selector: SelectorManager,
     localAddress: NetworkAddress? = null,

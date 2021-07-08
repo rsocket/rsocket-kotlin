@@ -27,7 +27,7 @@ import kotlin.time.*
 
 class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
-    private fun requester(keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds)): RSocket = run {
+    private fun requester(keepAlive: KeepAlive = KeepAlive(Duration.milliseconds(100), Duration.seconds(1))): RSocket = run {
         val state = RSocketState(connection, keepAlive)
         val requester = RSocketRequester(state, StreamId.client())
         state.start(RSocketRequestHandler { })
@@ -49,10 +49,10 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun rSocketNotCanceledOnPresentKeepAliveTicks() = test {
-        val rSocket = requester(KeepAlive(100.seconds, 100.seconds))
+        val rSocket = requester(KeepAlive(Duration.seconds(100), Duration.seconds(100)))
         connection.launch {
             repeat(50) {
-                delay(100.milliseconds)
+                delay(Duration.milliseconds(100))
                 connection.sendToReceiver(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
             }
         }
@@ -67,10 +67,10 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun requesterRespondsToKeepAlive() = test {
-        requester(KeepAlive(100.seconds, 100.seconds))
+        requester(KeepAlive(Duration.seconds(100), Duration.seconds(100)))
         connection.launch {
             while (isActive) {
-                delay(100.milliseconds)
+                delay(Duration.milliseconds(100))
                 connection.sendToReceiver(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
             }
         }

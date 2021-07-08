@@ -31,11 +31,6 @@ public class RSocketServer internal constructor(
 
     public fun <T> bind(
         transport: ServerTransport<T>,
-        block: suspend ConnectionAcceptorContext.() -> RSocket
-    ): T = bind(transport, ConnectionAcceptor(block))
-
-    public fun <T> bind(
-        transport: ServerTransport<T>,
         acceptor: ConnectionAcceptor,
     ): T = transport.start {
         val connection = it.wrapConnection()
