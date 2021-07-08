@@ -19,6 +19,7 @@ package io.rsocket.kotlin.core
 import app.cash.turbine.*
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*

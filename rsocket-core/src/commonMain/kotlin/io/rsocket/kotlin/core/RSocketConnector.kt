@@ -19,6 +19,7 @@ package io.rsocket.kotlin.core
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 

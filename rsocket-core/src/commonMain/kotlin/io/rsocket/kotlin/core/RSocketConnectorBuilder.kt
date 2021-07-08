@@ -17,6 +17,7 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*

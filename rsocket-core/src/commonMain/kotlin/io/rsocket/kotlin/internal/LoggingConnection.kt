@@ -16,7 +16,7 @@
 
 @file:OptIn(TransportApi::class)
 
-package io.rsocket.kotlin.core
+package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*

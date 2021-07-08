@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.core
+package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
