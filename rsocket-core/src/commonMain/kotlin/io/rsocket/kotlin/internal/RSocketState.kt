@@ -18,7 +18,6 @@ package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
-import io.rsocket.kotlin.internal.flow.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
@@ -40,7 +39,7 @@ internal class RSocketState(
     private val prioritizer = Prioritizer()
     val receivers: IntMap<Channel<RequestFrame>> = IntMap()
     private val senders: IntMap<Job> = IntMap()
-    private val limits: IntMap<LimitingFlowCollector> = IntMap()
+    private val limits: IntMap<Limiter> = IntMap()
 
     private val keepAliveHandler = KeepAliveHandler(connectionConfig.keepAlive, this::sendPrioritized)
 
@@ -93,11 +92,11 @@ internal class RSocketState(
         initialRequest: Int,
         crossinline onStart: () -> Unit = {},
     ): Unit = coroutineScope {
-        val limitingCollector = LimitingFlowCollector(this@RSocketState, streamId, initialRequest)
-        limits[streamId] = limitingCollector
+        val limiter = Limiter(initialRequest)
+        limits[streamId] = limiter
         try {
             onStart()
-            limitingCollector.emitAll(this@collectLimiting)
+            collectLimiting(limiter) { send(NextPayloadFrame(streamId, it)) }
             send(CompletePayloadFrame(streamId))
         } catch (e: Throwable) {
             limits.remove(streamId)

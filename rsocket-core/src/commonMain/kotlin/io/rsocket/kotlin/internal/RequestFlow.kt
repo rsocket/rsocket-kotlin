@@ -14,35 +14,35 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.internal.flow
+package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.frame.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
-@OptIn(ExperimentalStreamsApi::class)
-internal class RequestStreamRequesterFlow(
-    private val payload: Payload,
-    private val requester: RSocketRequester,
-    private val state: RSocketState,
-) : Flow<Payload> {
+@ExperimentalStreamsApi
+internal inline fun requestFlow(
+    crossinline block: suspend FlowCollector<Payload>.(strategy: RequestStrategy.Element, initialRequest: Int) -> Unit
+): Flow<Payload> = object : RequestFlow() {
+    override suspend fun collect(collector: FlowCollector<Payload>, strategy: RequestStrategy.Element, initialRequest: Int) {
+        collector.block(strategy, initialRequest)
+    }
+}
+
+@ExperimentalStreamsApi
+internal abstract class RequestFlow : Flow<Payload> {
     private val consumed = atomic(false)
 
     @InternalCoroutinesApi
-    override suspend fun collect(collector: FlowCollector<Payload>): Unit = with(state) {
-        check(!consumed.getAndSet(true)) { "RSocket.requestStream can be collected just once" }
+    override suspend fun collect(collector: FlowCollector<Payload>) {
+        check(!consumed.getAndSet(true)) { "RequestFlow can be collected just once" }
 
         val strategy = currentCoroutineContext().requestStrategy()
-        val initialRequest = strategy.firstRequest()
-        payload.closeOnError {
-            val streamId = requester.createStream()
-            val receiver = createReceiverFor(streamId)
-            send(RequestStreamFrame(streamId, initialRequest, payload))
-            collectStream(streamId, receiver, strategy, collector)
-        }
+        val initial = strategy.firstRequest()
+        collect(collector, strategy, initial)
     }
+
+    abstract suspend fun collect(collector: FlowCollector<Payload>, strategy: RequestStrategy.Element, initialRequest: Int)
 }

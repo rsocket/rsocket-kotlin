@@ -18,9 +18,9 @@ package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
-import io.rsocket.kotlin.internal.flow.*
 import kotlinx.coroutines.*
 
+@OptIn(ExperimentalStreamsApi::class)
 internal class RSocketResponder(
     private val state: RSocketState,
     private val requestHandler: RSocket,
@@ -70,7 +70,10 @@ internal class RSocketResponder(
         val streamId = initFrame.streamId
         val receiver = createReceiverFor(streamId)
 
-        val request = RequestChannelResponderFlow(streamId, receiver, state)
+        val request = requestFlow { strategy, initialRequest ->
+            send(RequestNFrame(streamId, initialRequest))
+            collectStream(streamId, receiver, strategy, this)
+        }
 
         launchCancelable(streamId) {
             val response = requestOrCancel(streamId) {
