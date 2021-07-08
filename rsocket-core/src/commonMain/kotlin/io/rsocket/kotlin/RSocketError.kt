@@ -46,8 +46,8 @@ public sealed class RSocketError(public val errorCode: Int, message: String) : T
             public const val MinAllowedCode: Int = ErrorCode.CustomMin
             public const val MaxAllowedCode: Int = ErrorCode.CustomMax
 
-            public inline fun checkCodeInAllowedRange(errorCode: Int): Boolean =
-                    MinAllowedCode <= errorCode || errorCode <= MaxAllowedCode
+            public fun checkCodeInAllowedRange(errorCode: Int): Boolean =
+                MinAllowedCode <= errorCode || errorCode <= MaxAllowedCode
         }
     }
 }

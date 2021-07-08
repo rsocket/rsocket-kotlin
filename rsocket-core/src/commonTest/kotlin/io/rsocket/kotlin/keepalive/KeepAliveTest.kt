@@ -56,7 +56,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
                 connection.sendToReceiver(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
             }
         }
-        delay(1.5.seconds)
+        delay(Duration.seconds(1.5))
         assertTrue(rSocket.job.isActive)
         connection.test {
             repeat(50) {
