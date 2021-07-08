@@ -19,11 +19,11 @@ package io.rsocket.kotlin.internal
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
-import io.rsocket.kotlin.internal.flow.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
+@OptIn(ExperimentalStreamsApi::class)
 internal class RSocketRequester(
     private val state: RSocketState,
     private val streamId: StreamId,
@@ -51,10 +51,41 @@ internal class RSocketRequester(
         }
     }
 
-    override fun requestStream(payload: Payload): Flow<Payload> = RequestStreamRequesterFlow(payload, this, state)
+    override fun requestStream(payload: Payload): Flow<Payload> = with(state) {
+        requestFlow { strategy, initialRequest ->
+            payload.closeOnError {
+                val streamId = createStream()
+                val receiver = createReceiverFor(streamId)
+                send(RequestStreamFrame(streamId, initialRequest, payload))
+                collectStream(streamId, receiver, strategy, this)
+            }
+        }
+    }
 
-    override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> =
-        RequestChannelRequesterFlow(initPayload, payloads, this, state)
+    override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> = with(state) {
+        requestFlow { strategy, initialRequest ->
+            initPayload.closeOnError {
+                val streamId = createStream()
+                val receiver = createReceiverFor(streamId)
+                val request = launchCancelable(streamId) {
+                    payloads.collectLimiting(streamId, 0) {
+                        send(RequestChannelFrame(streamId, initialRequest, initPayload))
+                    }
+                }
+
+                request.invokeOnCompletion {
+                    if (it != null && it !is CancellationException) receiver.cancelConsumed(it)
+                }
+                try {
+                    collectStream(streamId, receiver, strategy, this)
+                } catch (e: Throwable) {
+                    if (e is CancellationException) request.cancel(e)
+                    else request.cancel("Receiver failed", e)
+                    throw e
+                }
+            }
+        }
+    }
 
     fun createStream(): Int {
         job.ensureActive()

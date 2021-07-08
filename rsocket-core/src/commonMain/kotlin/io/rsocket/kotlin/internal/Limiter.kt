@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.internal.flow
+package io.rsocket.kotlin.internal
 
-import io.rsocket.kotlin.frame.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
-internal class LimitingFlowCollector(
-    private val state: RSocketState,
-    private val streamId: Int,
-    initial: Int,
-) : FlowCollector<Payload> {
+internal suspend inline fun Flow<Payload>.collectLimiting(limiter: Limiter, crossinline action: suspend (value: Payload) -> Unit) {
+    collect { payload ->
+        payload.closeOnError {
+            limiter.useRequest()
+            action(it)
+        }
+    }
+}
+
+//TODO revisit 2 atomics
+internal class Limiter(initial: Int) {
     private val requests = atomic(initial)
     private val awaiter = atomic<CancellableContinuation<Unit>?>(null)
 
@@ -38,12 +42,7 @@ internal class LimitingFlowCollector(
         awaiter.getAndSet(null)?.takeIf(CancellableContinuation<Unit>::isActive)?.resume(Unit)
     }
 
-    override suspend fun emit(value: Payload): Unit = value.closeOnError {
-        useRequest()
-        state.send(NextPayloadFrame(streamId, value))
-    }
-
-    private suspend fun useRequest() {
+    suspend fun useRequest() {
         if (requests.getAndDecrement() > 0) {
             currentCoroutineContext().ensureActive()
         } else {
