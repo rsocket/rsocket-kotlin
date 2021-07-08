@@ -103,7 +103,10 @@ public class RSocketConnectorBuilder internal constructor() {
     )
 
     private companion object {
-        private val defaultAcceptor: ConnectionAcceptor = ConnectionAcceptor { EmptyRSocket() }
+        private val defaultAcceptor: ConnectionAcceptor = ConnectionAcceptor {
+            config.setupPayload.release()
+            EmptyRSocket()
+        }
 
         private class EmptyRSocket : RSocket {
             override val job: Job = Job()

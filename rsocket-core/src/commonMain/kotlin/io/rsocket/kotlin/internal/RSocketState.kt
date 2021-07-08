@@ -19,7 +19,6 @@ package io.rsocket.kotlin.internal
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.flow.*
-import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
@@ -31,7 +30,7 @@ import kotlinx.coroutines.flow.*
 )
 internal class RSocketState(
     private val connection: Connection,
-    keepAlive: KeepAlive,
+    private val connectionConfig: ConnectionConfig
 ) {
     val job get() = connection.job
     private val requestJob = SupervisorJob(job)
@@ -43,7 +42,7 @@ internal class RSocketState(
     private val senders: IntMap<Job> = IntMap()
     private val limits: IntMap<LimitingFlowCollector> = IntMap()
 
-    private val keepAliveHandler = KeepAliveHandler(keepAlive, this::sendPrioritized)
+    private val keepAliveHandler = KeepAliveHandler(connectionConfig.keepAlive, this::sendPrioritized)
 
     fun send(frame: Frame) {
         prioritizer.send(frame)
@@ -173,6 +172,7 @@ internal class RSocketState(
             limits.clear()
             senders.clear()
             prioritizer.cancel(cancelError)
+            connectionConfig.setupPayload.release()
         }
         scope.launch {
             while (job.isActive) {

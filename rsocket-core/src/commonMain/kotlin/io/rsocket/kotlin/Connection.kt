@@ -41,6 +41,5 @@ internal suspend fun Connection.receiveFrame(): Frame = receive().readFrame(pool
 
 @OptIn(TransportApi::class)
 internal suspend fun Connection.sendFrame(frame: Frame) {
-    val packet = frame.toPacket(pool)
-    packet.closeOnError { send(packet) }
+    frame.toPacket(pool).closeOnError { send(it) }
 }

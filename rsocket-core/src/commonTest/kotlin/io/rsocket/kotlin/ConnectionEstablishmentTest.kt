@@ -16,6 +16,7 @@
 
 package io.rsocket.kotlin
 
+import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
@@ -26,7 +27,7 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.test.*
 
-class SetupRejectionTest : SuspendTest, TestWithLeakCheck {
+class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun responderRejectSetup() = test {
         val errorMessage = "error"
@@ -43,7 +44,16 @@ class SetupRejectionTest : SuspendTest, TestWithLeakCheck {
             error(errorMessage)
         }
 
-        connection.sendToReceiver(SetupFrame(Version.Current, false, DefaultKeepAlive, null, DefaultPayloadMimeType, Payload.Empty))
+        connection.sendToReceiver(
+            SetupFrame(
+                version = Version.Current,
+                honorLease = false,
+                keepAlive = DefaultKeepAlive,
+                resumeToken = null,
+                payloadMimeType = DefaultPayloadMimeType,
+                payload = payload("setup") //should be released
+            )
+        )
 
         assertFailsWith(RSocketError.Setup.Rejected::class, errorMessage) { deferred.await() }
 
@@ -62,23 +72,24 @@ class SetupRejectionTest : SuspendTest, TestWithLeakCheck {
         assertEquals(errorMessage, error.message)
     }
 
-//    @Test
-//    fun requesterStreamsTerminatedOnZeroErrorFrame() = test {
-//        val errorMessage = "error"
-//        val connection = TestConnection()
-//        val requester = RSocketRequester(connection, StreamId.client(), KeepAlive(), RequestStrategy.Default, {})
-//        val deferred = GlobalScope.async { requester.requestResponse(Payload.Empty) }
-//        delay(100)
-//        connection.sendToReceiver(ErrorFrame(0, RSocketError.ConnectionError(errorMessage)))
-//        assertFailsWith<RSocketError.ConnectionError>(errorMessage) { deferred.await() }
-//    }
-//
-//    @Test
-//    fun requesterNewStreamsTerminatedAfterZeroErrorFrame() = test {
-//        val errorMessage = "error"
-//        val connection = TestConnection()
-//        val requester = RSocketRequester(connection, StreamId.client(), KeepAlive(), RequestStrategy.Default, {})
-//        connection.sendToReceiver(ErrorFrame(0, RSocketError.ConnectionError(errorMessage)))
-//        assertFailsWith<RSocketError.ConnectionError>(errorMessage) { requester.requestResponse(Payload.Empty) }
-//    }
+    @Test
+    fun requesterReleaseSetupPayloadOnFailedAcceptor() = test {
+        val connection = TestConnection()
+        val p = payload("setup")
+        assertFailsWith(IllegalStateException::class, "failed") {
+            RSocketConnector {
+                connectionConfig {
+                    setupPayload { p }
+                }
+                acceptor {
+                    assertTrue(config.setupPayload.data.isNotEmpty)
+                    assertTrue(p.data.isNotEmpty)
+                    error("failed")
+                }
+            }.connect { connection }
+        }
+        println(p.data)
+        assertTrue(p.data.isEmpty)
+    }
+
 }
