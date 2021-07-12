@@ -39,7 +39,7 @@ RSocket interface contains 5 methods:
   `suspend fun metadataPush(metadata: ByteReadPacket)`
 
 ## Using in your projects
-Make sure, that you use Kotlin 1.4.X.
+Make sure, that you use Kotlin 1.5.20
 
 ### Gradle:
 
@@ -49,26 +49,26 @@ repositories {
     jcenter()
 }
 dependencies {
-    implementation 'io.rsocket.kotlin:rsocket-core:0.12.0'
-    implementation 'io.rsocket.kotlin:rsocket-transport-ktor:0.12.0'
+    implementation 'io.rsocket.kotlin:rsocket-core:0.13.1'
+    implementation 'io.rsocket.kotlin:rsocket-transport-ktor:0.13.1'
 
 //  client feature for ktor
-//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-client:0.12.0'
+//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-client:0.13.1'
 
 //  server feature for ktor 
-//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-server:0.12.0' 
+//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-server:0.13.1' 
 
 //  one of ktor engines to work with websockets
 //  client engines
-//    implementation 'io.ktor:ktor-client-js:1.4.3' //js
-//    implementation 'io.ktor:ktor-client-cio:1.4.3' //jvm
-//    implementation 'io.ktor:ktor-client-okhttp:1.4.3' //jvm
+//    implementation 'io.ktor:ktor-client-js:1.6.1' //js
+//    implementation 'io.ktor:ktor-client-cio:1.6.1' //jvm
+//    implementation 'io.ktor:ktor-client-okhttp:1.6.1' //jvm
 
 //  server engines (jvm only)
-//    implementation 'io.ktor:ktor-server-cio:1.4.3'
-//    implementation 'io.ktor:ktor-server-netty:1.4.3'
-//    implementation 'io.ktor:ktor-server-jetty:1.4.3'
-//    implementation 'io.ktor:ktor-server-tomcat:1.4.3'
+//    implementation 'io.ktor:ktor-server-cio:1.6.1'
+//    implementation 'io.ktor:ktor-server-netty:1.6.1'
+//    implementation 'io.ktor:ktor-server-jetty:1.6.1'
+//    implementation 'io.ktor:ktor-server-tomcat:1.6.1'
 }
 ```
 
@@ -79,26 +79,26 @@ repositories {
     jcenter()
 }
 dependencies {
-    implementation("io.rsocket.kotlin:rsocket-core:0.12.0")
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor:0.12.0")
+    implementation("io.rsocket.kotlin:rsocket-core:0.13.1")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor:0.13.1")
 
 //  client feature for ktor
-//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-client:0.12.0")
+//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-client:0.13.1")
 
 //  server feature for ktor 
-//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-server:0.12.0") 
+//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-server:0.13.1") 
 
 //  one of ktor engines to work with websockets
 //  client engines
-//    implementation("io.ktor:ktor-client-js:1.4.3") //js
-//    implementation("io.ktor:ktor-client-cio:1.4.3") //jvm
-//    implementation("io.ktor:ktor-client-okhttp:1.4.3") //jvm
+//    implementation("io.ktor:ktor-client-js:1.6.1") //js
+//    implementation("io.ktor:ktor-client-cio:1.6.1") //jvm
+//    implementation("io.ktor:ktor-client-okhttp:1.6.1") //jvm
 
 //  server engines (jvm only)
-//    implementation("io.ktor:ktor-server-cio:1.4.3")
-//    implementation("io.ktor:ktor-server-netty:1.4.3")
-//    implementation("io.ktor:ktor-server-jetty:1.4.3")
-//    implementation("io.ktor:ktor-server-tomcat:1.4.3")
+//    implementation("io.ktor:ktor-server-cio:1.6.1")
+//    implementation("io.ktor:ktor-server-netty:1.6.1")
+//    implementation("io.ktor:ktor-server-jetty:1.6.1")
+//    implementation("io.ktor:ktor-server-tomcat:1.6.1")
 }
 ```
 
