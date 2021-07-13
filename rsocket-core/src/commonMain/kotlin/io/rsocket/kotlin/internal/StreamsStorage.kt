@@ -16,10 +16,12 @@
 
 package io.rsocket.kotlin.internal
 
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.handler.*
 
-internal class StreamsStorage(private val isServer: Boolean) {
+internal class StreamsStorage(private val isServer: Boolean, private val pool: ObjectPool<ChunkBuffer>) {
     private val streamId: StreamId = StreamId(isServer)
     private val handlers: IntMap<FrameHandler> = IntMap()
 
@@ -57,10 +59,10 @@ internal class StreamsStorage(private val isServer: Boolean) {
                 else                            -> {
                     val initialRequest = frame.initialRequest
                     val handler = when (frame.type) {
-                        FrameType.RequestFnF      -> ResponderFireAndForgetFrameHandler(id, this, responder)
-                        FrameType.RequestResponse -> ResponderRequestResponseFrameHandler(id, this, responder)
-                        FrameType.RequestStream   -> ResponderRequestStreamFrameHandler(id, this, responder, initialRequest)
-                        FrameType.RequestChannel  -> ResponderRequestChannelFrameHandler(id, this, responder, initialRequest)
+                        FrameType.RequestFnF      -> ResponderFireAndForgetFrameHandler(id, this, responder, pool)
+                        FrameType.RequestResponse -> ResponderRequestResponseFrameHandler(id, this, responder, pool)
+                        FrameType.RequestStream   -> ResponderRequestStreamFrameHandler(id, this, responder, initialRequest, pool)
+                        FrameType.RequestChannel  -> ResponderRequestChannelFrameHandler(id, this, responder, initialRequest, pool)
                         else                      -> error("Wrong request frame type") // should never happen
                     }
                     handlers[id] = handler

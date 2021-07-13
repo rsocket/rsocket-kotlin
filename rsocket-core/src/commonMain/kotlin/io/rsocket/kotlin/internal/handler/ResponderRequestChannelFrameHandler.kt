@@ -16,6 +16,8 @@
 
 package io.rsocket.kotlin.internal.handler
 
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
@@ -26,8 +28,9 @@ internal class ResponderRequestChannelFrameHandler(
     private val id: Int,
     private val streamsStorage: StreamsStorage,
     private val responder: RSocketResponder,
-    initialRequest: Int
-) : ResponderFrameHandler(), ReceiveFrameHandler {
+    initialRequest: Int,
+    pool: ObjectPool<ChunkBuffer>
+) : ResponderFrameHandler(pool), ReceiveFrameHandler {
     val limiter = Limiter(initialRequest)
     val channel = SafeChannel<Payload>(Channel.UNLIMITED)
 

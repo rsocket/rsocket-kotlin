@@ -30,7 +30,7 @@ internal class Prioritizer {
     private val commonChannel = SafeChannel<Frame>(Channel.UNLIMITED)
 
     suspend fun send(frame: Frame) {
-        if (frame.type != FrameType.Cancel && frame.type != FrameType.Error) currentCoroutineContext().ensureActive()
+        currentCoroutineContext().ensureActive()
         val channel = if (frame.streamId == 0) priorityChannel else commonChannel
         channel.send(frame)
     }

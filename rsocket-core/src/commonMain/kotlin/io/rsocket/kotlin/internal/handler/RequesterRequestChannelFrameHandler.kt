@@ -16,6 +16,8 @@
 
 package io.rsocket.kotlin.internal.handler
 
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
@@ -27,7 +29,8 @@ internal class RequesterRequestChannelFrameHandler(
     private val limiter: Limiter,
     private val sender: Job,
     private val channel: Channel<Payload>,
-) : RequesterFrameHandler(), SendFrameHandler {
+    pool: ObjectPool<ChunkBuffer>
+) : RequesterFrameHandler(pool), SendFrameHandler {
 
     override fun handleNext(payload: Payload) {
         channel.safeTrySend(payload)

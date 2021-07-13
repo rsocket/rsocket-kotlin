@@ -18,14 +18,13 @@ package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.handler.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 
 @OptIn(ExperimentalStreamsApi::class)
 internal class RSocketResponder(
-    private val prioritizer: Prioritizer,
+    private val sender: FrameSender,
     private val requestHandler: RSocket,
     private val requestScope: CoroutineScope,
 ) {
@@ -52,27 +51,27 @@ internal class RSocketResponder(
     fun handleRequestResponse(payload: Payload, id: Int, handler: ResponderRequestResponseFrameHandler): Job = requestScope.launch {
         handler.sendOrFail(id, payload) {
             val response = requestHandler.requestResponse(payload)
-            prioritizer.send(NextCompletePayloadFrame(id, response))
+            sender.sendNextCompletePayload(id, response)
         }
     }.closeOnCompletion(payload)
 
     fun handleRequestStream(payload: Payload, id: Int, handler: ResponderRequestStreamFrameHandler): Job = requestScope.launch {
         handler.sendOrFail(id, payload) {
-            requestHandler.requestStream(payload).collectLimiting(handler.limiter) { prioritizer.send(NextPayloadFrame(id, it)) }
-            prioritizer.send(CompletePayloadFrame(id))
+            requestHandler.requestStream(payload).collectLimiting(handler.limiter) { sender.sendNextPayload(id, it) }
+            sender.sendCompletePayload(id)
         }
     }.closeOnCompletion(payload)
 
     fun handleRequestChannel(payload: Payload, id: Int, handler: ResponderRequestChannelFrameHandler): Job = requestScope.launch {
         val payloads = requestFlow { strategy, initialRequest ->
             handler.receiveOrCancel(id) {
-                prioritizer.send(RequestNFrame(id, initialRequest))
-                emitAllWithRequestN(handler.channel, strategy) { prioritizer.send(RequestNFrame(id, it)) }
+                sender.sendRequestN(id, initialRequest)
+                emitAllWithRequestN(handler.channel, strategy) { sender.sendRequestN(id, it) }
             }
         }
         handler.sendOrFail(id, payload) {
-            requestHandler.requestChannel(payload, payloads).collectLimiting(handler.limiter) { prioritizer.send(NextPayloadFrame(id, it)) }
-            prioritizer.send(CompletePayloadFrame(id))
+            requestHandler.requestChannel(payload, payloads).collectLimiting(handler.limiter) { sender.sendNextPayload(id, it) }
+            sender.sendCompletePayload(id)
         }
     }.closeOnCompletion(payload)
 
@@ -82,7 +81,7 @@ internal class RSocketResponder(
             onSendComplete()
         } catch (cause: Throwable) {
             val isFailed = onSendFailed(cause)
-            if (currentCoroutineContext().isActive && isFailed) prioritizer.send(ErrorFrame(id, cause))
+            if (currentCoroutineContext().isActive && isFailed) sender.sendError(id, cause)
             throw cause
         } finally {
             payload.release()
@@ -95,7 +94,7 @@ internal class RSocketResponder(
             onReceiveComplete()
         } catch (cause: Throwable) {
             val isCancelled = onReceiveCancelled(cause)
-            if (requestScope.isActive && isCancelled) prioritizer.send(CancelFrame(id))
+            if (requestScope.isActive && isCancelled) sender.sendCancel(id)
             throw cause
         }
     }

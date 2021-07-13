@@ -16,6 +16,8 @@
 
 package io.rsocket.kotlin.internal.handler
 
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
@@ -25,7 +27,8 @@ internal class ResponderRequestStreamFrameHandler(
     private val streamsStorage: StreamsStorage,
     private val responder: RSocketResponder,
     initialRequest: Int,
-) : ResponderFrameHandler() {
+    pool: ObjectPool<ChunkBuffer>
+) : ResponderFrameHandler(pool) {
     val limiter = Limiter(initialRequest)
 
     override fun start(payload: Payload): Job = responder.handleRequestStream(payload, id, this)

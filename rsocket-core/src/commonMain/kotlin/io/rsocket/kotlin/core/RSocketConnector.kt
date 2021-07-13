@@ -27,6 +27,7 @@ import kotlinx.coroutines.*
 @OptIn(TransportApi::class, RSocketLoggingApi::class)
 public class RSocketConnector internal constructor(
     private val loggerFactory: LoggerFactory,
+    private val maxFragmentSize: Int,
     private val interceptors: Interceptors,
     private val connectionConfigProvider: () -> ConnectionConfig,
     private val acceptor: ConnectionAcceptor,
@@ -61,6 +62,7 @@ public class RSocketConnector internal constructor(
         try {
             val requester = connection.connect(
                 isServer = false,
+                maxFragmentSize = maxFragmentSize,
                 interceptors = interceptors,
                 connectionConfig = connectionConfig,
                 acceptor = acceptor

@@ -16,6 +16,8 @@
 
 package io.rsocket.kotlin.internal.handler
 
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
@@ -24,7 +26,8 @@ internal class ResponderFireAndForgetFrameHandler(
     private val id: Int,
     private val streamsStorage: StreamsStorage,
     private val responder: RSocketResponder,
-) : ResponderFrameHandler() {
+    pool: ObjectPool<ChunkBuffer>
+) : ResponderFrameHandler(pool) {
 
     override fun start(payload: Payload): Job = responder.handleFireAndForget(payload, this)
 
