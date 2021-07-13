@@ -16,12 +16,16 @@
 
 package io.rsocket.kotlin.internal.handler
 
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 
-internal actual abstract class ResponderFrameHandler : BaseResponderFrameHandler() {
+internal actual abstract class ResponderFrameHandler actual constructor(pool: ObjectPool<ChunkBuffer>) : BaseResponderFrameHandler(pool) {
     actual override var job: Job? by atomic(null)
+    actual override var hasMetadata: Boolean by atomic(false)
 }
 
-internal actual abstract class RequesterFrameHandler : BaseRequesterFrameHandler() {
+internal actual abstract class RequesterFrameHandler actual constructor(pool: ObjectPool<ChunkBuffer>) : BaseRequesterFrameHandler(pool) {
+    actual override var hasMetadata: Boolean by atomic(false)
 }
