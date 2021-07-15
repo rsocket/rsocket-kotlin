@@ -16,4 +16,8 @@
 
 package io.rsocket.kotlin.logging
 
-actual val DefaultLoggerFactory: LoggerFactory get() = PrintLogger
+import io.rsocket.kotlin.*
+
+@RSocketLoggingApi
+public actual val DefaultLoggerFactory: LoggerFactory
+    get() = PrintLogger

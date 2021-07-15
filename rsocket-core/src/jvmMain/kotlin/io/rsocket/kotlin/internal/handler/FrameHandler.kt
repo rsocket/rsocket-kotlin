@@ -14,8 +14,17 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.keepalive
+package io.rsocket.kotlin.internal.handler
 
-import kotlin.js.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
+import kotlinx.coroutines.*
 
-internal actual fun currentMillis(): Long = Date.now().toLong()
+internal actual abstract class ResponderFrameHandler actual constructor(pool: ObjectPool<ChunkBuffer>) : BaseResponderFrameHandler(pool) {
+    actual override var job: Job? = null
+    actual override var hasMetadata: Boolean = false
+}
+
+internal actual abstract class RequesterFrameHandler actual constructor(pool: ObjectPool<ChunkBuffer>) : BaseRequesterFrameHandler(pool) {
+    actual override var hasMetadata: Boolean = false
+}
