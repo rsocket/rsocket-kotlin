@@ -22,24 +22,25 @@ import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 import kotlin.time.*
 
-class TestConnection : Connection, CoroutineScope {
+class TestConnection : Connection {
     override val pool: ObjectPool<ChunkBuffer> = InUseTrackingPool
-    override val job: Job = Job()
-    override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined
+    override val coroutineContext: CoroutineContext =
+        Job() + Dispatchers.Unconfined + CoroutineExceptionHandler { c, e -> println("$c -> $e") }
 
     private val sendChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
     private val receiveChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
 
     init {
-        job.invokeOnCompletion {
+        coroutineContext.job.invokeOnCompletion {
             sendChannel.close(it)
-            receiveChannel.cancel(it?.let { it as? CancellationException ?: CancellationException("Connection completed") })
+            @Suppress("INVISIBLE_MEMBER") receiveChannel.fullClose(it)
         }
     }
 
@@ -52,13 +53,16 @@ class TestConnection : Connection, CoroutineScope {
     }
 
     suspend fun sendToReceiver(vararg frames: Frame) {
-        frames.forEach { receiveChannel.send(it.toPacket(InUseTrackingPool)) }
+        frames.forEach {
+            val packet = @Suppress("INVISIBLE_MEMBER") it.toPacket(InUseTrackingPool)
+            receiveChannel.send(packet)
+        }
     }
 
-    private fun sentAsFlow(): Flow<Frame> = sendChannel.receiveAsFlow().map { it.readFrame(InUseTrackingPool) }
-
     suspend fun test(validate: suspend FlowTurbine<Frame>.() -> Unit) {
-        sentAsFlow().test(validate = validate)
+        sendChannel.consumeAsFlow().map {
+            @Suppress("INVISIBLE_MEMBER") it.readFrame(InUseTrackingPool)
+        }.test(validate = validate)
     }
 }
 

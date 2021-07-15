@@ -21,9 +21,10 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlin.coroutines.*
 
 class TestRSocket : RSocket {
-    override val job: Job = Job()
+    override val coroutineContext: CoroutineContext = Job()
 
     override suspend fun metadataPush(metadata: ByteReadPacket): Unit = metadata.release()
 

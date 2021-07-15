@@ -41,11 +41,6 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
-        jcenter {
-            content {
-                includeModule("org.jetbrains.kotlinx", "kotlinx-nodejs")
-            }
-        }
     }
 }
 
@@ -80,7 +75,8 @@ fun includeExample(name: String) {
     include("examples:$name")
 }
 
-includeExample("nodejs-tcp-transport")
+//TODO ignore for now, as `kotlinx-nodejs` isn't maintained now
+//includeExample("nodejs-tcp-transport")
 includeExample("interactions")
 includeExample("multiplatform-chat")
 

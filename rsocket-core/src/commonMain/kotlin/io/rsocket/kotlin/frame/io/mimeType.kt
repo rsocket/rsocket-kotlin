@@ -25,7 +25,6 @@ internal fun BytePacketBuilder.writeMimeType(type: MimeType) {
     when (type) {
         is MimeTypeWithId   -> writeIdentifier(type.identifier)
         is MimeTypeWithName -> writeTextWithLength(type.text)
-        else                -> error("Unknown mime type")
     }
 }
 
@@ -38,7 +37,6 @@ internal fun BytePacketBuilder.writeAuthType(type: AuthType) {
     when (type) {
         is AuthTypeWithId   -> writeIdentifier(type.identifier)
         is AuthTypeWithName -> writeTextWithLength(type.text)
-        else                -> error("Unknown mime type")
     }
 }
 
@@ -74,5 +72,5 @@ private inline fun <T> ByteReadPacket.readType(
 }
 
 internal fun String.requireAscii() {
-    require(all { it.toInt() <= 0x7f }) { "String should be an ASCII encodded string" }
+    require(all { it.code <= 0x7f }) { "String should be an ASCII encodded string" }
 }

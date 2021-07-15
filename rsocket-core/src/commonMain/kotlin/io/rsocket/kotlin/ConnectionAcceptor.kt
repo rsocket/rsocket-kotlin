@@ -19,17 +19,9 @@ package io.rsocket.kotlin
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 
-
-//TODO fun interfaces don't support `suspend` functions for now... (seems will work in kotlin 1.5)
-
-public interface ConnectionAcceptor {
+public fun interface ConnectionAcceptor {
     public suspend fun ConnectionAcceptorContext.accept(): RSocket
 }
-
-public inline fun ConnectionAcceptor(crossinline block: suspend ConnectionAcceptorContext.() -> RSocket): ConnectionAcceptor =
-    object : ConnectionAcceptor {
-        override suspend fun ConnectionAcceptorContext.accept(): RSocket = block()
-    }
 
 public class ConnectionAcceptorContext internal constructor(
     public val config: ConnectionConfig,

@@ -16,13 +16,11 @@
 
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
 
 fun main(): Unit = runBlocking {
-    val server = LocalServer()
-    RSocketServer().bind(server) {
+    val server = RSocketServer().bindIn(this, LocalServerTransport()) {
         RSocketRequestHandler {
             requestResponse {
                 val clientRequest = it.data.readText()

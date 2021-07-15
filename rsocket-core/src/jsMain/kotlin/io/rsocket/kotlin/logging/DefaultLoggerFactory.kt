@@ -16,9 +16,14 @@
 
 package io.rsocket.kotlin.logging
 
-actual val DefaultLoggerFactory: LoggerFactory get() = ConsoleLogger
+import io.rsocket.kotlin.*
 
-class ConsoleLogger(
+@RSocketLoggingApi
+internal actual val DefaultLoggerFactory: LoggerFactory
+    get() = ConsoleLogger
+
+@RSocketLoggingApi
+public class ConsoleLogger(
     override val tag: String,
     private val minLevel: LoggingLevel = LoggingLevel.INFO,
 ) : Logger {
@@ -27,16 +32,16 @@ class ConsoleLogger(
         val meta = "[$level] ($tag)"
         when (level) {
             LoggingLevel.ERROR -> throwable?.let { console.error(meta, message, "Error:", it) } ?: console.error(meta, message)
-            LoggingLevel.WARN -> throwable?.let { console.warn(meta, message, "Error:", it) } ?: console.warn(meta, message)
-            LoggingLevel.INFO -> throwable?.let { console.info(meta, message, "Error:", it) } ?: console.info(meta, message)
+            LoggingLevel.WARN  -> throwable?.let { console.warn(meta, message, "Error:", it) } ?: console.warn(meta, message)
+            LoggingLevel.INFO  -> throwable?.let { console.info(meta, message, "Error:", it) } ?: console.info(meta, message)
             LoggingLevel.DEBUG -> throwable?.let { console.log(meta, message, "Error:", it) } ?: console.log(meta, message)
             LoggingLevel.TRACE -> throwable?.let { console.log(meta, message, "Error:", it) } ?: console.log(meta, message)
         }
     }
 
-    companion object : LoggerFactory {
+    public companion object : LoggerFactory {
         override fun logger(tag: String): Logger = ConsoleLogger(tag)
 
-        fun withLevel(minLevel: LoggingLevel): LoggerFactory = LoggerFactory { ConsoleLogger(it, minLevel) }
+        public fun withLevel(minLevel: LoggingLevel): LoggerFactory = LoggerFactory { ConsoleLogger(it, minLevel) }
     }
 }
