@@ -25,12 +25,13 @@ import kotlinx.coroutines.*
 internal suspend inline fun connect(
     connection: Connection,
     isServer: Boolean,
+    connectionBufferCapacity: Int,
     maxFragmentSize: Int,
     interceptors: Interceptors,
     connectionConfig: ConnectionConfig,
     acceptor: ConnectionAcceptor
 ): RSocket {
-    val prioritizer = Prioritizer()
+    val prioritizer = Prioritizer(connectionBufferCapacity)
     val frameSender = FrameSender(prioritizer, connection.pool, maxFragmentSize)
     val streamsStorage = StreamsStorage(isServer, connection.pool)
     val keepAliveHandler = KeepAliveHandler(connectionConfig.keepAlive, frameSender)

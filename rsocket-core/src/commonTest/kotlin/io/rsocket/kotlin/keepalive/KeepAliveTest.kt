@@ -34,6 +34,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
     ): RSocket = connect(
         connection = connection,
         isServer = false,
+        connectionBufferCapacity = 64,
         maxFragmentSize = 0,
         interceptors = InterceptorsBuilder().build(),
         connectionConfig = ConnectionConfig(keepAlive, DefaultPayloadMimeType, Payload.Empty)

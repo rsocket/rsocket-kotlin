@@ -37,6 +37,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
         requester = connect(
             connection = connection,
             isServer = false,
+            connectionBufferCapacity = 64,
             maxFragmentSize = 0,
             interceptors = InterceptorsBuilder().build(),
             connectionConfig = ConnectionConfig(
