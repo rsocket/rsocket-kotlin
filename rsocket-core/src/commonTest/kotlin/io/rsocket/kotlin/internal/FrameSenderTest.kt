@@ -3,11 +3,12 @@ package io.rsocket.kotlin.internal
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
+import kotlinx.coroutines.channels.*
 import kotlin.test.*
 
 class FrameSenderTest : SuspendTest, TestWithLeakCheck {
 
-    private val prioritizer = Prioritizer()
+    private val prioritizer = Prioritizer(Channel.UNLIMITED)
     private fun sender(maxFragmentSize: Int) = FrameSender(prioritizer, InUseTrackingPool, maxFragmentSize)
 
     @Test

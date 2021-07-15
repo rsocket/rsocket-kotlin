@@ -25,9 +25,9 @@ import kotlin.native.concurrent.*
 @SharedImmutable
 private val selectFrame: suspend (Frame) -> Frame = { it }
 
-internal class Prioritizer {
-    private val priorityChannel = SafeChannel<Frame>(Channel.UNLIMITED)
-    private val commonChannel = SafeChannel<Frame>(Channel.UNLIMITED)
+internal class Prioritizer(capacity: Int) {
+    private val priorityChannel = SafeChannel<Frame>(capacity)
+    private val commonChannel = SafeChannel<Frame>(capacity)
 
     suspend fun send(frame: Frame) {
         currentCoroutineContext().ensureActive()

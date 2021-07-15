@@ -20,10 +20,11 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlin.test.*
 
 class PrioritizerTest : SuspendTest, TestWithLeakCheck {
-    private val prioritizer = Prioritizer()
+    private val prioritizer = Prioritizer(Channel.UNLIMITED)
 
     @Test
     fun testOrdering() = test {
