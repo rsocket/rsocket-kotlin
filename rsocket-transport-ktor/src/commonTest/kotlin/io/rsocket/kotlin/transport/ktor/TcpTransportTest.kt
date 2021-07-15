@@ -28,7 +28,7 @@ abstract class TcpTransportTest : TransportTest() {
     override suspend fun before() {
         val address = NetworkAddress("0.0.0.0", port.incrementAndGet())
         val context = testJob + CoroutineExceptionHandler { c, e -> println("$c -> $e") }
-        SERVER.bindIn(CoroutineScope(context), TcpServerTransport(address, InUseTrackingPool), ACCEPTOR)
+        SERVER.bindIn(CoroutineScope(context), TcpServerTransport(address, InUseTrackingPool), ACCEPTOR).serverSocket.await()
         client = CONNECTOR.connect(TcpClientTransport(address, context, InUseTrackingPool))
     }
 

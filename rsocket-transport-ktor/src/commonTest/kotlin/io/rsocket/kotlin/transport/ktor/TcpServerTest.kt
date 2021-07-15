@@ -44,7 +44,7 @@ abstract class TcpServerTest : SuspendTest, TestWithLeakCheck {
                     requestResponse { it }
                 }
             } else error("FAILED")
-        }
+        }.also { it.serverSocket.await() }
 
         suspend fun newClient(text: String) = RSocketConnector {
             connectionConfig {
@@ -86,7 +86,7 @@ abstract class TcpServerTest : SuspendTest, TestWithLeakCheck {
             RSocketRequestHandler {
                 requestResponse { it }
             }.also { handlers += it }
-        }
+        }.also { it.serverSocket.await() }
 
         suspend fun newClient() = RSocketConnector().connect(clientTransport)
 
