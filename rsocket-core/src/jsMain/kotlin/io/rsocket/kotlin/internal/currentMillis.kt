@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.keepalive
+package io.rsocket.kotlin.internal
 
-internal actual fun currentMillis(): Long = System.currentTimeMillis()
+import kotlin.js.*
+
+internal actual fun currentMillis(): Long = Date.now().toLong()

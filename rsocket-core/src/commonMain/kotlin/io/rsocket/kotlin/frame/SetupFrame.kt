@@ -17,6 +17,8 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
@@ -31,7 +33,8 @@ internal class SetupFrame(
     val resumeToken: ByteReadPacket?,
     val payloadMimeType: PayloadMimeType,
     val payload: Payload,
-) : Frame(FrameType.Setup) {
+) : Frame() {
+    override val type: FrameType get() = FrameType.Setup
     override val streamId: Int get() = 0
     override val flags: Int
         get() {
@@ -73,7 +76,7 @@ internal class SetupFrame(
     }
 }
 
-internal fun ByteReadPacket.readSetup(pool: BufferPool, flags: Int): SetupFrame {
+internal fun ByteReadPacket.readSetup(pool: ObjectPool<ChunkBuffer>, flags: Int): SetupFrame {
     val version = readVersion()
     val keepAlive = run {
         val interval = readInt()

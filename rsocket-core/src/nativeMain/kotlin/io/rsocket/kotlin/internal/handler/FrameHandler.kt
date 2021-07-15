@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.keepalive
+package io.rsocket.kotlin.internal.handler
 
-import kotlin.system.*
+import kotlinx.atomicfu.*
+import kotlinx.coroutines.*
 
-internal actual fun currentMillis(): Long = getTimeMillis()
+internal actual abstract class ResponderFrameHandler : BaseResponderFrameHandler() {
+    actual override var job: Job? by atomic(null)
+}
+
+internal actual abstract class RequesterFrameHandler : BaseRequesterFrameHandler() {
+}
