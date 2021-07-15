@@ -18,15 +18,13 @@ package io.rsocket.kotlin.transport.ktor
 
 import io.ktor.util.network.*
 import io.rsocket.kotlin.test.*
-import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
-import kotlin.random.*
 
 abstract class TcpTransportTest : TransportTest() {
     private val testJob = Job()
 
     override suspend fun before() {
-        val address = NetworkAddress("0.0.0.0", port.incrementAndGet())
+        val address = NetworkAddress("0.0.0.0", PortProvider.next())
         val context = testJob + CoroutineExceptionHandler { c, e -> println("$c -> $e") }
         SERVER.bindIn(CoroutineScope(context), TcpServerTransport(address, InUseTrackingPool), ACCEPTOR).serverSocket.await()
         client = CONNECTOR.connect(TcpClientTransport(address, context, InUseTrackingPool))
@@ -35,9 +33,5 @@ abstract class TcpTransportTest : TransportTest() {
     override suspend fun after() {
         super.after()
         testJob.cancelAndJoin()
-    }
-
-    companion object {
-        private val port = atomic(Random.nextInt(20, 90) * 100)
     }
 }

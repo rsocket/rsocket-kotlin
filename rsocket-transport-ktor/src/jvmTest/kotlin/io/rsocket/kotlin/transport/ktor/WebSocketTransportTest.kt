@@ -24,9 +24,7 @@ import io.ktor.server.engine.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.ktor.client.*
 import io.rsocket.kotlin.transport.ktor.server.*
-import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
-import kotlin.random.*
 import io.ktor.client.features.websocket.WebSockets as ClientWebSockets
 import io.ktor.websocket.WebSockets as ServerWebSockets
 import io.rsocket.kotlin.transport.ktor.client.RSocketSupport as ClientRSocketSupport
@@ -36,6 +34,7 @@ abstract class WebSocketTransportTest(
     clientEngine: HttpClientEngineFactory<*>,
     serverEngine: ApplicationEngineFactory<*, *>,
 ) : TransportTest() {
+    private val port = PortProvider.next()
     private val testJob = Job()
 
     private val httpClient = HttpClient(clientEngine) {
@@ -43,9 +42,7 @@ abstract class WebSocketTransportTest(
         install(ClientRSocketSupport) { connector = CONNECTOR }
     }
 
-    private val currentPort = port.incrementAndGet()
-
-    private val server = (GlobalScope + testJob).embeddedServer(serverEngine, currentPort) {
+    private val server = (GlobalScope + testJob).embeddedServer(serverEngine, port) {
         install(ServerWebSockets)
         install(ServerRSocketSupport) { server = SERVER }
         install(Routing) { rSocket(acceptor = ACCEPTOR) }
@@ -55,7 +52,7 @@ abstract class WebSocketTransportTest(
         super.before()
 
         server.start()
-        client = trySeveralTimes { httpClient.rSocket(port = currentPort) }
+        client = trySeveralTimes { httpClient.rSocket(port = port) }
     }
 
     override suspend fun after() {
@@ -78,9 +75,5 @@ abstract class WebSocketTransportTest(
             }
         }
         throw error
-    }
-
-    companion object {
-        private val port = atomic(Random.nextInt(20, 90) * 100)
     }
 }

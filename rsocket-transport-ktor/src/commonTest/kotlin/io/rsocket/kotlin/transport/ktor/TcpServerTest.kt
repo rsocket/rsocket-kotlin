@@ -20,15 +20,13 @@ import io.ktor.util.network.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.test.*
-import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
-import kotlin.random.*
 import kotlin.test.*
 
 abstract class TcpServerTest : SuspendTest, TestWithLeakCheck {
     private val testJob = Job()
     private val testContext = testJob + CoroutineExceptionHandler { c, e -> println("$c -> $e") }
-    private val address = NetworkAddress("0.0.0.0", port.incrementAndGet())
+    private val address = NetworkAddress("0.0.0.0", PortProvider.next())
     private val serverTransport = TcpServerTransport(address, InUseTrackingPool)
     private val clientTransport = TcpClientTransport(address, testContext, InUseTrackingPool)
 
@@ -125,9 +123,5 @@ abstract class TcpServerTest : SuspendTest, TestWithLeakCheck {
         client1.coroutineContext.job.cancelAndJoin()
         client2.coroutineContext.job.cancelAndJoin()
         client3.coroutineContext.job.cancelAndJoin()
-    }
-
-    companion object {
-        private val port = atomic(Random.nextInt(20, 90) * 100)
     }
 }
