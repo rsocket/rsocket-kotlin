@@ -35,12 +35,17 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
     private val first = atomic(true)
     private val logger = DefaultLoggerFactory.logger("io.rsocket.kotlin.connection")
 
+    private suspend fun connectWithReconnect(
+        connect: suspend () -> RSocket,
+        predicate: ReconnectPredicate,
+    ): RSocket = connectWithReconnect(Dispatchers.Unconfined, logger, connect, predicate)
+
     @Test
     fun testConnectFail() = test {
         val connect: suspend () -> RSocket = { error("Failed to connect") }
 
         assertFailsWith(IllegalStateException::class, "Failed to connect") {
-            ReconnectableRSocket(logger, connect) { cause, attempt ->
+            connectWithReconnect(connect) { cause, attempt ->
                 fails.incrementAndGet()
                 assertTrue(cause is IllegalStateException)
                 assertEquals("Failed to connect", cause.message)
@@ -61,7 +66,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
                 error("Failed to connect")
             }
         }
-        val rSocket = ReconnectableRSocket(logger, connect) { cause, attempt ->
+        val rSocket = connectWithReconnect(connect) { cause, attempt ->
             fails.incrementAndGet()
             assertTrue(cause is IllegalStateException)
             assertEquals("Failed to connect", cause.message)
@@ -70,7 +75,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
 
         assertEquals(Payload.Empty, rSocket.requestResponse(Payload.Empty))
 
-        assertTrue(rSocket.job.isActive)
+        assertTrue(rSocket.isActive)
         assertEquals(0, fails.value)
 
         firstJob.cancelAndJoin()
@@ -79,7 +84,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
             rSocket.requestResponse(Payload.Empty)
         }
 
-        assertFalse(rSocket.job.isActive)
+        assertFalse(rSocket.isActive)
         assertEquals(6, fails.value)
     }
 
@@ -94,7 +99,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
                 handler(handlerJob)
             }
         }
-        val rSocket = ReconnectableRSocket(logger, connect) { cause, attempt ->
+        val rSocket = connectWithReconnect(connect) { cause, attempt ->
             fails.incrementAndGet()
             assertTrue(cause is IllegalStateException)
             assertEquals("Failed to connect", cause.message)
@@ -104,7 +109,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
         assertEquals(Payload.Empty, rSocket.requestResponse(Payload.Empty))
 
         assertTrue(handlerJob.isActive)
-        assertTrue(rSocket.job.isActive)
+        assertTrue(rSocket.isActive)
         assertEquals(1, fails.value)
     }
 
@@ -119,7 +124,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
                 handler(Job())
             }
         }
-        val rSocket = ReconnectableRSocket(logger, connect) { cause, attempt ->
+        val rSocket = connectWithReconnect(connect) { cause, attempt ->
             fails.incrementAndGet()
             assertTrue(cause is IllegalStateException)
             assertEquals("Failed to connect", cause.message)
@@ -128,7 +133,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
 
         assertEquals(Payload.Empty, rSocket.requestResponse(Payload.Empty))
 
-        assertTrue(rSocket.job.isActive)
+        assertTrue(rSocket.isActive)
         assertEquals(5, fails.value)
     }
 
@@ -148,7 +153,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
                 else            -> handler(Job())
             }
         }
-        val rSocket = ReconnectableRSocket(logger, connect) { cause, attempt ->
+        val rSocket = connectWithReconnect(connect) { cause, attempt ->
             fails.incrementAndGet()
             assertTrue(cause is IllegalStateException)
             assertEquals("Failed to connect", cause.message)
@@ -161,7 +166,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
 
         assertEquals(Payload.Empty, rSocket.requestResponse(Payload.Empty))
 
-        assertTrue(rSocket.job.isActive)
+        assertTrue(rSocket.isActive)
         assertEquals(5, fails.value)
     }
 
@@ -181,7 +186,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
                 else            -> handler(Job())
             }
         }
-        val rSocket = ReconnectableRSocket(logger, connect) { cause, attempt ->
+        val rSocket = connectWithReconnect(connect) { cause, attempt ->
             fails.incrementAndGet()
             assertTrue(cause is IllegalStateException)
             assertEquals("Failed to connect", cause.message)
@@ -204,7 +209,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
             expectComplete()
         }
 
-        assertTrue(rSocket.job.isActive)
+        assertTrue(rSocket.isActive)
         assertEquals(5, fails.value)
     }
 
@@ -232,7 +237,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
                 error("Failed to connect")
             }
         }
-        val rSocket = ReconnectableRSocket(logger, connect) { _, attempt ->
+        val rSocket = connectWithReconnect(connect) { _, attempt ->
             delay(100)
             attempt < 5
         }

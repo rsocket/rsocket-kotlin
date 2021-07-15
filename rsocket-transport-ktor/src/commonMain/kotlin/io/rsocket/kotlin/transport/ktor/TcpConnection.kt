@@ -20,41 +20,38 @@ import io.ktor.network.sockets.*
 import io.ktor.util.cio.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.Connection
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.CancellationException
 import kotlin.coroutines.*
-import kotlin.native.concurrent.*
-
-@SharedImmutable
-internal val ignoreExceptionHandler = CoroutineExceptionHandler { _, _ -> }
 
 @OptIn(TransportApi::class)
-internal class TcpConnection(private val socket: Socket) : Connection, CoroutineScope {
-    override val job: Job = socket.socketContext
-    override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined + ignoreExceptionHandler
+internal class TcpConnection(
+    socket: Socket,
+    override val coroutineContext: CoroutineContext,
+    override val pool: ObjectPool<ChunkBuffer>
+) : Connection {
+    private val socketConnection = socket.connection()
 
-    @Suppress("INVISIBLE_MEMBER")
-    private val sendChannel = SafeChannel<ByteReadPacket>(8)
-
-    @Suppress("INVISIBLE_MEMBER")
-    private val receiveChannel = SafeChannel<ByteReadPacket>(8)
+    private val sendChannel = @Suppress("INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(8)
+    private val receiveChannel = @Suppress("INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(8)
 
     init {
         launch {
-            socket.openWriteChannel(autoFlush = true).use {
+            socketConnection.output.use {
                 while (isActive) {
                     val packet = sendChannel.receive()
                     val length = packet.remaining.toInt()
                     try {
                         writePacket {
-                            @Suppress("INVISIBLE_MEMBER")
-                            writeLength(length)
+                            @Suppress("INVISIBLE_MEMBER") writeLength(length)
                             writePacket(packet)
                         }
+                        flush()
                     } catch (e: Throwable) {
                         packet.close()
                         throw e
@@ -63,10 +60,9 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
             }
         }
         launch {
-            socket.openReadChannel().apply {
+            socketConnection.input.apply {
                 while (isActive) {
-                    @Suppress("INVISIBLE_MEMBER")
-                    val length = readPacket(3).readLength()
+                    val length = @Suppress("INVISIBLE_MEMBER") readPacket(3).readLength()
                     val packet = readPacket(length)
                     try {
                         receiveChannel.send(packet)
@@ -77,14 +73,15 @@ internal class TcpConnection(private val socket: Socket) : Connection, Coroutine
                 }
             }
         }
-        job.invokeOnCompletion { cause ->
-            val error = cause?.let { it as? CancellationException ?: CancellationException("Connection failed", it) }
-            sendChannel.cancel(error)
-            receiveChannel.cancel(error)
+        coroutineContext.job.invokeOnCompletion {
+            @Suppress("INVISIBLE_MEMBER") sendChannel.fullClose(it)
+            @Suppress("INVISIBLE_MEMBER") receiveChannel.fullClose(it)
+            socketConnection.input.cancel(it)
+            socketConnection.output.close(it)
+            socketConnection.socket.close()
         }
     }
 
     override suspend fun send(packet: ByteReadPacket): Unit = sendChannel.send(packet)
-
     override suspend fun receive(): ByteReadPacket = receiveChannel.receive()
 }

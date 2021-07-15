@@ -22,6 +22,6 @@ abstract class TestWithConnection : SuspendTest {
     val connection: TestConnection = TestConnection()
 
     override suspend fun after() {
-        connection.job.cancelAndJoin()
+        connection.coroutineContext.job.cancelAndJoin()
     }
 }

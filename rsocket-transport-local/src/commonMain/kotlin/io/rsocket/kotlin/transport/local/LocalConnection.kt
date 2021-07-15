@@ -20,15 +20,15 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
-import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlin.coroutines.*
 
 @OptIn(TransportApi::class)
 internal class LocalConnection(
     private val sender: SendChannel<ByteReadPacket>,
     private val receiver: ReceiveChannel<ByteReadPacket>,
     override val pool: ObjectPool<ChunkBuffer>,
-    override val job: Job
+    override val coroutineContext: CoroutineContext
 ) : Connection {
 
     override suspend fun send(packet: ByteReadPacket) {

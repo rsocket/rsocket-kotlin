@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-import io.ktor.network.selector.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.ktor.*
-import kotlin.coroutines.*
 
-
-suspend fun runTcpClient(dispatcher: CoroutineContext) {
-    val transport = TcpClientTransport(SelectorManager(dispatcher), "0.0.0.0", 4444)
+suspend fun runTcpClient() {
+    val transport = TcpClientTransport("0.0.0.0", 4444)
     RSocketConnector().connect(transport).doSomething()
 }
 
 //to test nodejs tcp server
-suspend fun testNodeJsServer(dispatcher: CoroutineContext) {
-    val transport = TcpClientTransport(SelectorManager(dispatcher), "127.0.0.1", 9000)
+suspend fun testNodeJsServer() {
+    val transport = TcpClientTransport("127.0.0.1", 9000)
     val client = RSocketConnector().connect(transport)
 
     val response = client.requestResponse(buildPayload { data("Hello from JVM") })

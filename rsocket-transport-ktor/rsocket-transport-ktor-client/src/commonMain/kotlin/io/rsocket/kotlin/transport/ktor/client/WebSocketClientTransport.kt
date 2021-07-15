@@ -26,14 +26,14 @@ import io.ktor.http.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.*
+import kotlinx.coroutines.*
 
 public fun WebSocketClientTransport(
     httpClient: HttpClient,
     request: HttpRequestBuilder.() -> Unit,
-): ClientTransport = ClientTransport {
+): ClientTransport = ClientTransport(httpClient.coroutineContext + SupervisorJob(httpClient.coroutineContext[Job])) {
     val session = httpClient.webSocketSession(request)
-    @Suppress("INVISIBLE_MEMBER")
-    WebSocketConnection(session)
+    @Suppress("INVISIBLE_MEMBER") WebSocketConnection(session)
 }
 
 public fun WebSocketClientTransport(

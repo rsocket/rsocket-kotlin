@@ -20,8 +20,7 @@ import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
 
 fun main(): Unit = runBlocking {
-    val server = LocalServer()
-    RSocketServer().bind(server) {
+    val server = RSocketServer().bindIn(this, LocalServerTransport()) {
         RSocketRequestHandler {
             requestResponse {
                 val data = it.data.readText()

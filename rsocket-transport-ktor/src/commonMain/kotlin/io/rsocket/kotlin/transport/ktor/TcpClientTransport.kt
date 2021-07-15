@@ -21,23 +21,41 @@ package io.rsocket.kotlin.transport.ktor
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
+import io.ktor.util.*
 import io.ktor.util.network.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
+import kotlinx.coroutines.*
+import kotlin.coroutines.*
+
+//TODO user should close ClientTransport manually if there is no job provided in context
+
+//this dispatcher will be used, if no dispatcher were provided by user in client and server
+internal expect val defaultDispatcher: CoroutineDispatcher
 
 public fun TcpClientTransport(
-    selector: SelectorManager,
     hostname: String, port: Int,
+    context: CoroutineContext = EmptyCoroutineContext,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
     intercept: (Socket) -> Socket = { it }, //f.e. for tls, which is currently supported by ktor only on JVM
-    configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {},
-): ClientTransport = TcpClientTransport(selector, NetworkAddress(hostname, port), intercept, configure)
+    configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {}
+): ClientTransport = TcpClientTransport(NetworkAddress(hostname, port), context, pool, intercept, configure)
 
 public fun TcpClientTransport(
-    selector: SelectorManager,
     remoteAddress: NetworkAddress,
+    context: CoroutineContext = EmptyCoroutineContext,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
     intercept: (Socket) -> Socket = { it }, //f.e. for tls, which is currently supported by ktor only on JVM
-    configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {},
-): ClientTransport = ClientTransport {
-    val socket = aSocket(selector).tcp().connect(remoteAddress, configure)
-    TcpConnection(intercept(socket))
+    configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {}
+): ClientTransport {
+    val transportJob = SupervisorJob(context[Job])
+    val transportContext = defaultDispatcher + context + transportJob + CoroutineName("rSocket-tcp-client")
+    val selector = @OptIn(InternalAPI::class) SelectorManager(transportContext)
+    Job(transportJob).invokeOnCompletion { selector.close() }
+    return ClientTransport(transportContext) {
+        val socket = aSocket(selector).tcp().connect(remoteAddress, configure)
+        TcpConnection(intercept(socket), transportContext + Job(transportJob), pool)
+    }
 }

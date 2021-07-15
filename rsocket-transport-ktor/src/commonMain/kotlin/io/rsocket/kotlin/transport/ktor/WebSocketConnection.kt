@@ -22,10 +22,7 @@ import io.rsocket.kotlin.*
 import kotlinx.coroutines.*
 
 @TransportApi
-internal class WebSocketConnection(private val session: WebSocketSession) : Connection {
-
-    override val job: Job = session.coroutineContext.job
-
+internal class WebSocketConnection(private val session: WebSocketSession) : Connection, CoroutineScope by session {
     override suspend fun send(packet: ByteReadPacket) {
         session.send(packet.readBytes())
     }

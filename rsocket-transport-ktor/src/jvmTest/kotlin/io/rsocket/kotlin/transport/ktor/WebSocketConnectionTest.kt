@@ -69,7 +69,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
                             }
                         }
                     }
-                }.also { responderJob = it.job }
+                }.also { responderJob = it.coroutineContext.job }
             }
         }
     }
@@ -86,7 +86,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testWorks() = test {
         val rSocket = client.rSocket(port = port)
-        val requesterJob = rSocket.job
+        val requesterJob = rSocket.coroutineContext.job
 
         rSocket
             .requestStream(Payload.Empty)

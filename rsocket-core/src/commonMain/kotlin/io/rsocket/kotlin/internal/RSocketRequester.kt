@@ -26,16 +26,16 @@ import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
+import kotlin.coroutines.*
 
+//TODO may be need to move all calls on transport dispatcher
 @OptIn(ExperimentalStreamsApi::class)
 internal class RSocketRequester(
-    connectionJob: Job,
+    override val coroutineContext: CoroutineContext,
     private val sender: FrameSender,
     private val streamsStorage: StreamsStorage,
-    private val requestScope: CoroutineScope,
     private val pool: ObjectPool<ChunkBuffer>
 ) : RSocket {
-    override val job: Job = connectionJob
 
     override suspend fun metadataPush(metadata: ByteReadPacket) {
         ensureActiveOrRelease(metadata)
@@ -52,7 +52,7 @@ internal class RSocketRequester(
             sender.sendRequestPayload(FrameType.RequestFnF, id, payload)
         } catch (cause: Throwable) {
             payload.release()
-            if (job.isActive) sender.sendCancel(id) //if cancelled during fragmentation
+            if (isActive) sender.sendCancel(id) //if cancelled during fragmentation
             throw cause
         }
     }
@@ -94,14 +94,14 @@ internal class RSocketRequester(
 
         val channel = SafeChannel<Payload>(Channel.UNLIMITED)
         val limiter = Limiter(0)
-        val payloadsJob = Job(requestScope.coroutineContext.job)
+        val payloadsJob = Job(this@RSocketRequester.coroutineContext.job)
         val handler = RequesterRequestChannelFrameHandler(id, streamsStorage, limiter, payloadsJob, channel, pool)
         streamsStorage.save(id, handler)
 
         handler.receiveOrCancel(id, initPayload) {
             sender.sendRequestPayload(FrameType.RequestChannel, id, initPayload, initialRequest)
             //TODO lazy?
-            requestScope.launch(payloadsJob) {
+            launch(payloadsJob) {
                 handler.sendOrFail(id) {
                     payloads.collectLimiting(limiter) { sender.sendNextPayload(id, it) }
                     sender.sendCompletePayload(id)
@@ -117,7 +117,7 @@ internal class RSocketRequester(
             onSendComplete()
         } catch (cause: Throwable) {
             val isFailed = onSendFailed(cause)
-            if (job.isActive && isFailed) sender.sendError(id, cause)
+            if (isActive && isFailed) sender.sendError(id, cause)
             throw cause
         }
     }
@@ -130,14 +130,14 @@ internal class RSocketRequester(
         } catch (cause: Throwable) {
             payload.release()
             val isCancelled = onReceiveCancelled(cause)
-            if (job.isActive && isCancelled) sender.sendCancel(id)
+            if (isActive && isCancelled) sender.sendCancel(id)
             throw cause
         }
     }
 
     private fun ensureActiveOrRelease(closeable: Closeable) {
-        if (job.isActive) return
+        if (isActive) return
         closeable.close()
-        job.ensureActive()
+        ensureActive()
     }
 }

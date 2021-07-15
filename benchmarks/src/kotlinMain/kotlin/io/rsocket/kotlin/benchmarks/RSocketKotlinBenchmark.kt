@@ -25,12 +25,12 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.random.*
 
-@OptIn(ExperimentalStreamsApi::class)
+@OptIn(ExperimentalStreamsApi::class, DelicateCoroutinesApi::class)
 class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
     private val requestStrategy = PrefetchStrategy(64, 0)
 
+    private val benchJob = Job()
     lateinit var client: RSocket
-    lateinit var server: Job
 
     lateinit var payload: Payload
     lateinit var payloadsFlow: Flow<Payload>
@@ -40,9 +40,7 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
     override fun setup() {
         payload = createPayload(payloadSize)
         payloadsFlow = flow { repeat(5000) { emit(payloadCopy()) } }
-
-        val localServer = LocalServer()
-        server = RSocketServer().bind(localServer) {
+        val server = RSocketServer().bindIn(CoroutineScope(benchJob + Dispatchers.Unconfined), LocalServerTransport()) {
             RSocketRequestHandler {
                 requestResponse {
                     it.release()
@@ -59,14 +57,14 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
             }
         }
         client = runBlocking {
-            RSocketConnector().connect(localServer)
+            RSocketConnector().connect(server)
         }
     }
 
     override fun cleanup() {
         runBlocking {
-            client.job.runCatching { cancelAndJoin() }
-            server.runCatching { cancelAndJoin() }
+            client.coroutineContext.job.cancelAndJoin()
+            benchJob.cancelAndJoin()
         }
     }
 

@@ -31,13 +31,13 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     private suspend fun requester(
         keepAlive: KeepAlive = KeepAlive(Duration.milliseconds(100), Duration.seconds(1))
-    ): RSocket = connection.connect(
+    ): RSocket = connect(
+        connection = connection,
         isServer = false,
         maxFragmentSize = 0,
         interceptors = InterceptorsBuilder().build(),
-        connectionConfig = ConnectionConfig(keepAlive, DefaultPayloadMimeType, Payload.Empty),
-        acceptor = { RSocketRequestHandler { } }
-    )
+        connectionConfig = ConnectionConfig(keepAlive, DefaultPayloadMimeType, Payload.Empty)
+    ) { RSocketRequestHandler { } }
 
     @Test
     fun requesterSendKeepAlive() = test {
@@ -62,7 +62,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
             }
         }
         delay(Duration.seconds(1.5))
-        assertTrue(rSocket.job.isActive)
+        assertTrue(rSocket.isActive)
         connection.test {
             repeat(50) {
                 expectItem()
@@ -92,7 +92,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun noKeepAliveSentAfterRSocketCanceled() = test {
-        requester().job.cancel()
+        requester().cancel()
         connection.test {
             expectNoEventsIn(500)
         }
@@ -102,9 +102,9 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
     fun rSocketCanceledOnMissingKeepAliveTicks() = test {
         val rSocket = requester()
         connection.test {
-            while (rSocket.job.isActive) kotlin.runCatching { expectItem() }
+            while (rSocket.isActive) kotlin.runCatching { expectItem() }
         }
-        assertTrue(rSocket.job.getCancellationException().cause is RSocketError.ConnectionError)
+        assertTrue(rSocket.coroutineContext.job.getCancellationException().cause is RSocketError.ConnectionError)
     }
 
 }

@@ -40,10 +40,12 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     }
 
     private suspend fun start(handler: RSocket? = null): RSocket {
-        val localServer = LocalServer(testJob)
-        RSocketServer {
+        val localServer = RSocketServer {
             loggerFactory = LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("SERVER   |$it") }
-        }.bind(localServer) {
+        }.bindIn(
+            CoroutineScope(Dispatchers.Unconfined + testJob + CoroutineExceptionHandler { c, e -> println("$c -> $e") }),
+            LocalServerTransport(InUseTrackingPool)
+        ) {
             handler ?: RSocketRequestHandler {
                 requestResponse { it }
                 requestStream {
@@ -52,7 +54,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
                 }
                 requestChannel { init, payloads ->
                     init.release()
-                    payloads.onEach { it.release() }.launchIn(CoroutineScope(job))
+                    payloads.onEach { it.release() }.launchIn(this)
                     flow { repeat(10) { emitOrClose(payload("server got -> [$it]")) } }
                 }
             }
@@ -340,7 +342,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         val responderDeferred = CompletableDeferred<ReceiveChannel<Payload>>()
         val requester = start(RSocketRequestHandler {
             requestChannel { init, payloads ->
-                responderDeferred.complete(payloads.onStart { emit(init) }.produceIn(CoroutineScope(job)))
+                responderDeferred.complete(payloads.onStart { emit(init) }.produceIn(this))
 
                 responderSendChannel.consumeAsFlow()
             }
@@ -348,7 +350,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         val requesterReceiveChannel =
             requester
                 .requestChannel(payload("initData", "initMetadata"), requesterSendChannel.consumeAsFlow())
-                .produceIn(CoroutineScope(requester.job))
+                .produceIn(requester)
 
         val responderReceiveChannel = responderDeferred.await()
 

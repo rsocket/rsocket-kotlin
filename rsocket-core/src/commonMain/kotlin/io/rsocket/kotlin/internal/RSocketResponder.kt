@@ -21,26 +21,20 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.internal.handler.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
 @OptIn(ExperimentalStreamsApi::class)
 internal class RSocketResponder(
+    override val coroutineContext: CoroutineContext,
     private val sender: FrameSender,
-    private val requestHandler: RSocket,
-    private val requestScope: CoroutineScope,
-) {
+    private val requestHandler: RSocket
+) : CoroutineScope {
 
-    private fun Job.closeOnCompletion(closeable: Closeable): Job {
-        invokeOnCompletion {
-            closeable.close()
-        }
-        return this
-    }
-
-    fun handleMetadataPush(metadata: ByteReadPacket): Job = requestScope.launch {
+    fun handleMetadataPush(metadata: ByteReadPacket): Job = launch {
         requestHandler.metadataPush(metadata)
     }.closeOnCompletion(metadata)
 
-    fun handleFireAndForget(payload: Payload, handler: ResponderFireAndForgetFrameHandler): Job = requestScope.launch {
+    fun handleFireAndForget(payload: Payload, handler: ResponderFireAndForgetFrameHandler): Job = launch {
         try {
             requestHandler.fireAndForget(payload)
         } finally {
@@ -48,21 +42,21 @@ internal class RSocketResponder(
         }
     }.closeOnCompletion(payload)
 
-    fun handleRequestResponse(payload: Payload, id: Int, handler: ResponderRequestResponseFrameHandler): Job = requestScope.launch {
+    fun handleRequestResponse(payload: Payload, id: Int, handler: ResponderRequestResponseFrameHandler): Job = launch {
         handler.sendOrFail(id, payload) {
             val response = requestHandler.requestResponse(payload)
             sender.sendNextCompletePayload(id, response)
         }
     }.closeOnCompletion(payload)
 
-    fun handleRequestStream(payload: Payload, id: Int, handler: ResponderRequestStreamFrameHandler): Job = requestScope.launch {
+    fun handleRequestStream(payload: Payload, id: Int, handler: ResponderRequestStreamFrameHandler): Job = launch {
         handler.sendOrFail(id, payload) {
             requestHandler.requestStream(payload).collectLimiting(handler.limiter) { sender.sendNextPayload(id, it) }
             sender.sendCompletePayload(id)
         }
     }.closeOnCompletion(payload)
 
-    fun handleRequestChannel(payload: Payload, id: Int, handler: ResponderRequestChannelFrameHandler): Job = requestScope.launch {
+    fun handleRequestChannel(payload: Payload, id: Int, handler: ResponderRequestChannelFrameHandler): Job = launch {
         val payloads = requestFlow { strategy, initialRequest ->
             handler.receiveOrCancel(id) {
                 sender.sendRequestN(id, initialRequest)
@@ -94,9 +88,16 @@ internal class RSocketResponder(
             onReceiveComplete()
         } catch (cause: Throwable) {
             val isCancelled = onReceiveCancelled(cause)
-            if (requestScope.isActive && isCancelled) sender.sendCancel(id)
+            if (isActive && isCancelled) sender.sendCancel(id)
             throw cause
         }
+    }
+
+    private fun Job.closeOnCompletion(closeable: Closeable): Job {
+        invokeOnCompletion {
+            closeable.close()
+        }
+        return this
     }
 
 }

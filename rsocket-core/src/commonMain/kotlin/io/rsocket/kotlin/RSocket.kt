@@ -21,8 +21,7 @@ import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
-public interface RSocket {
-    public val job: Job
+public interface RSocket : CoroutineScope {
 
     public suspend fun metadataPush(metadata: ByteReadPacket) {
         metadata.release()

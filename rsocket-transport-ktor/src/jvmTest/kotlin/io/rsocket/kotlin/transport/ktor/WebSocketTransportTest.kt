@@ -21,11 +21,9 @@ import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.routing.*
 import io.ktor.server.engine.*
-import io.ktor.websocket.*
-import io.rsocket.kotlin.*
 import io.rsocket.kotlin.test.*
-import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.client.*
+import io.rsocket.kotlin.transport.ktor.server.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlin.random.*
@@ -38,8 +36,7 @@ abstract class WebSocketTransportTest(
     clientEngine: HttpClientEngineFactory<*>,
     serverEngine: ApplicationEngineFactory<*, *>,
 ) : TransportTest() {
-
-    private var serverConnection: Connection? by atomic(null)
+    private val testJob = Job()
 
     private val httpClient = HttpClient(clientEngine) {
         install(ClientWebSockets)
@@ -48,19 +45,10 @@ abstract class WebSocketTransportTest(
 
     private val currentPort = port.incrementAndGet()
 
-    private val server = embeddedServer(serverEngine, currentPort) {
+    private val server = (GlobalScope + testJob).embeddedServer(serverEngine, currentPort) {
         install(ServerWebSockets)
         install(ServerRSocketSupport) { server = SERVER }
-        install(Routing) {
-            //hack to really await completion of server connection and expect no leaks
-            val serverTransport = ServerTransport { acceptor ->
-                webSocket {
-                    serverConnection = WebSocketConnection(this)
-                    acceptor(serverConnection!!)
-                }
-            }
-            SERVER.bind(serverTransport, ACCEPTOR)
-        }
+        install(Routing) { rSocket(acceptor = ACCEPTOR) }
     }
 
     override suspend fun before() {
@@ -74,9 +62,9 @@ abstract class WebSocketTransportTest(
         super.after()
 
         server.stop(0, 1000)
+        testJob.cancelAndJoin()
         httpClient.close()
-        httpClient.coroutineContext.job.join()
-        serverConnection?.job?.cancelAndJoin()
+        httpClient.coroutineContext.job.cancelAndJoin()
     }
 
     private suspend inline fun <R> trySeveralTimes(block: () -> R): R {
