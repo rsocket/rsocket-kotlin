@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-import io.ktor.network.selector.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.transport.ktor.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
 suspend fun runTcpServer(dispatcher: CoroutineContext) {
-    val transport = TcpServerTransport(SelectorManager(dispatcher), "0.0.0.0", 4444)
-    RSocketServer().bind(transport, rSocketAcceptor).join()
+    val transport = TcpServerTransport("0.0.0.0", 4444)
+    RSocketServer().bindIn(CoroutineScope(dispatcher), transport, rSocketAcceptor).handlerJob.join()
 }
 
 suspend fun main(): Unit = runTcpServer(Dispatchers.IO)

@@ -16,13 +16,12 @@
 
 import io.ktor.client.*
 import io.ktor.client.features.websocket.*
-import io.ktor.network.selector.*
-import io.ktor.util.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.ktor.*
 import io.rsocket.kotlin.transport.ktor.client.*
+import kotlinx.coroutines.*
 
 class Api(rSocket: RSocket) {
     private val proto = ConfiguredProtoBuf
@@ -42,9 +41,10 @@ suspend fun connectToApiUsingWS(name: String): Api {
     return Api(client.rSocket(port = 9000))
 }
 
-@OptIn(InternalAPI::class)
 suspend fun connectToApiUsingTCP(name: String): Api {
-    val transport = TcpClientTransport(SelectorManager(), "0.0.0.0", 8000)
+    val transport = TcpClientTransport("0.0.0.0", 8000, CoroutineExceptionHandler { coroutineContext, throwable ->
+        println("FAIL: $coroutineContext, $throwable")
+    })
     return Api(connector(name).connect(transport))
 }
 

@@ -15,11 +15,9 @@
  */
 
 import io.ktor.application.*
-import io.ktor.network.selector.*
 import io.ktor.routing.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
-import io.ktor.util.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
@@ -31,7 +29,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.*
 
-@OptIn(ExperimentalSerializationApi::class, ExperimentalMetadataApi::class, InternalAPI::class)
+@OptIn(ExperimentalSerializationApi::class, ExperimentalMetadataApi::class, DelicateCoroutinesApi::class)
 fun main() {
     val proto = ConfiguredProtoBuf
     val users = Users()
@@ -97,7 +95,7 @@ fun main() {
     }
 
     //start TCP server
-    rSocketServer.bind(TcpServerTransport(ActorSelectorManager(Dispatchers.IO), port = 9000), acceptor)
+    rSocketServer.bind(TcpServerTransport(port = 8000), acceptor)
 
     //start WS server
     embeddedServer(CIO, port = 9000) {

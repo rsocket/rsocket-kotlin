@@ -22,17 +22,19 @@ import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlin.coroutines.*
 
 internal typealias ReconnectPredicate = suspend (cause: Throwable, attempt: Long) -> Boolean
 
 @OptIn(RSocketLoggingApi::class)
-@Suppress("FunctionName")
-internal suspend fun ReconnectableRSocket(
+internal suspend fun connectWithReconnect(
+    coroutineContext: CoroutineContext,
     logger: Logger,
     connect: suspend () -> RSocket,
     predicate: ReconnectPredicate,
 ): RSocket {
-    val job = Job()
+    val child = Job(coroutineContext[Job])
+    val childContext = coroutineContext + child
     val state = flow {
         emit(ReconnectState.Connecting) //init - state = connecting
         val rSocket = connect()
@@ -49,18 +51,23 @@ internal suspend fun ReconnectableRSocket(
         when (value) {
             is ReconnectState.Connected -> {
                 logger.debug { "Connection established" }
-                value.rSocket.job.join() //await for connection completion
+                value.rSocket.coroutineContext.job.join() //await for connection completion
                 logger.debug { "Connection closed. Reconnecting..." }
             }
-            is ReconnectState.Failed    -> job.completeExceptionally(value.error) //reconnect failed, fail job
+            is ReconnectState.Failed    -> child.cancel("Reconnect failed", value.error) //reconnect failed, fail job
             ReconnectState.Connecting   -> Unit //skip, still waiting for new connection
         }
     }.restarting() //reconnect if old connection completed
-        .stateIn(CoroutineScope(Dispatchers.Unconfined + job))
+        .stateIn(CoroutineScope(childContext), SharingStarted.Eagerly, ReconnectState.Connecting)
 
-    return ReconnectableRSocket(job, state).apply {
+    return ReconnectableRSocket(childContext, state).apply {
         //await first connection to fail fast if something
-        currentRSocket()
+        try {
+            currentRSocket()
+        } catch (error: Throwable) {
+            child.cancel() //if during connecting, cancelled from user side
+            throw error
+        }
     }
 }
 
@@ -73,7 +80,7 @@ private sealed class ReconnectState {
 }
 
 private class ReconnectableRSocket(
-    override val job: Job,
+    override val coroutineContext: CoroutineContext,
     private val state: StateFlow<ReconnectState>,
 ) : RSocket {
 
@@ -82,7 +89,7 @@ private class ReconnectableRSocket(
     private suspend fun currentRSocket(closeable: Closeable): RSocket = closeable.closeOnError { currentRSocket() }
 
     private fun ReconnectState.current(): RSocket? = when (this) {
-        is ReconnectState.Connected -> rSocket.takeIf { it.job.isActive } //connection is ready to handle requests
+        is ReconnectState.Connected -> rSocket.takeIf(RSocket::isActive) //connection is ready to handle requests
         is ReconnectState.Failed    -> throw error //connection failed - fail requests
         ReconnectState.Connecting   -> null //reconnection
     }

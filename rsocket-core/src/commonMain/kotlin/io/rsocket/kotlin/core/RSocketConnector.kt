@@ -35,11 +35,13 @@ public class RSocketConnector internal constructor(
 ) {
 
     public suspend fun connect(transport: ClientTransport): RSocket = when (reconnectPredicate) {
-        null -> connectOnce(transport)
-        else -> ReconnectableRSocket(
-            logger = loggerFactory.logger("io.rsocket.kotlin.connection"),
-            connect = { connectOnce(transport) },
-            predicate = reconnectPredicate
+        //TODO current coroutineContext job is overriden by transport coroutineContext jov
+        null -> withContext(transport.coroutineContext) { connectOnce(transport) }
+        else -> connectWithReconnect(
+            transport.coroutineContext,
+            loggerFactory.logger("io.rsocket.kotlin.connection"),
+            { connectOnce(transport) },
+            reconnectPredicate,
         )
     }
 
@@ -48,7 +50,7 @@ public class RSocketConnector internal constructor(
         val connectionConfig = try {
             connectionConfigProvider()
         } catch (cause: Throwable) {
-            connection.job.cancel("Connection config provider failed", cause)
+            connection.cancel("Connection config provider failed", cause)
             throw cause
         }
         val setupFrame = SetupFrame(
@@ -60,7 +62,8 @@ public class RSocketConnector internal constructor(
             payload = connectionConfig.setupPayload.copy() //copy needed, as it can be used in acceptor
         )
         try {
-            val requester = connection.connect(
+            val requester = connect(
+                connection = connection,
                 isServer = false,
                 maxFragmentSize = maxFragmentSize,
                 interceptors = interceptors,
@@ -72,7 +75,7 @@ public class RSocketConnector internal constructor(
         } catch (cause: Throwable) {
             connectionConfig.setupPayload.release()
             setupFrame.release()
-            connection.job.cancel("Connection establishment failed", cause)
+            connection.cancel("Connection establishment failed", cause)
             throw cause
         }
     }

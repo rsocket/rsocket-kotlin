@@ -17,8 +17,20 @@
 package io.rsocket.kotlin.transport
 
 import io.rsocket.kotlin.*
+import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
-public fun interface ClientTransport {
+public fun interface ClientTransport : CoroutineScope {
+    override val coroutineContext: CoroutineContext get() = EmptyCoroutineContext
+
     @TransportApi
     public suspend fun connect(): Connection
+}
+
+@OptIn(TransportApi::class)
+public fun ClientTransport(coroutineContext: CoroutineContext, transport: ClientTransport): ClientTransport = object : ClientTransport {
+    override val coroutineContext: CoroutineContext get() = coroutineContext
+
+    @TransportApi
+    override suspend fun connect(): Connection = transport.connect()
 }

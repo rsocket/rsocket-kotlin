@@ -20,31 +20,49 @@ package io.rsocket.kotlin.transport.ktor
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
+import io.ktor.util.*
 import io.ktor.util.network.*
+import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 
-public fun TcpServerTransport(
-    selector: SelectorManager,
-    hostname: String = "0.0.0.0", port: Int = 0,
-    configure: SocketOptions.AcceptorOptions.() -> Unit = {},
-): ServerTransport<Job> = TcpServerTransport(selector, NetworkAddress(hostname, port), configure)
+public class TcpServer internal constructor(
+    public val handlerJob: Job,
+    public val serverSocket: Deferred<ServerSocket>
+)
 
-@OptIn(DelicateCoroutinesApi::class) //TODO ?
 public fun TcpServerTransport(
-    selector: SelectorManager,
-    localAddress: NetworkAddress? = null,
+    hostname: String = "0.0.0.0", port: Int = 0,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
     configure: SocketOptions.AcceptorOptions.() -> Unit = {},
-): ServerTransport<Job> = ServerTransport { accept ->
-    val serverSocket = aSocket(selector).tcp().bind(localAddress, configure)
-    GlobalScope.launch(serverSocket.socketContext + Dispatchers.Unconfined + ignoreExceptionHandler, CoroutineStart.UNDISPATCHED) {
-        supervisorScope {
-            while (isActive) {
-                val clientSocket = serverSocket.accept()
-                val connection = TcpConnection(clientSocket)
-                launch(start = CoroutineStart.UNDISPATCHED) { accept(connection) }
+): ServerTransport<TcpServer> = TcpServerTransport(NetworkAddress(hostname, port), pool, configure)
+
+public fun TcpServerTransport(
+    localAddress: NetworkAddress? = null,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
+    configure: SocketOptions.AcceptorOptions.() -> Unit = {},
+): ServerTransport<TcpServer> = ServerTransport { accept ->
+    val serverSocketDeferred = CompletableDeferred<ServerSocket>()
+    val handlerJob = launch(defaultDispatcher + coroutineContext) {
+        @OptIn(InternalAPI::class) SelectorManager(coroutineContext).use { selector ->
+            aSocket(selector).tcp().bind(localAddress, configure).use { serverSocket ->
+                serverSocketDeferred.complete(serverSocket)
+                val connectionScope =
+                    CoroutineScope(coroutineContext + SupervisorJob(coroutineContext[Job]) + CoroutineName("rSocket-tcp-server"))
+                while (isActive) {
+                    val clientSocket = serverSocket.accept()
+                    connectionScope.launch {
+                        accept(TcpConnection(clientSocket, coroutineContext, pool))
+                    }.invokeOnCompletion {
+                        clientSocket.close()
+                    }
+                }
             }
         }
     }
-    serverSocket.socketContext
+    handlerJob.invokeOnCompletion { it?.let(serverSocketDeferred::completeExceptionally) }
+    TcpServer(handlerJob, serverSocketDeferred)
 }
+

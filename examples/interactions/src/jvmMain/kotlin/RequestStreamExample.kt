@@ -21,8 +21,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 fun main(): Unit = runBlocking {
-    val server = LocalServer()
-    RSocketServer().bind(server) {
+    val server = RSocketServer().bindIn(this, LocalServerTransport()) {
         RSocketRequestHandler {
             requestStream {
                 val data = it.data.readText()
