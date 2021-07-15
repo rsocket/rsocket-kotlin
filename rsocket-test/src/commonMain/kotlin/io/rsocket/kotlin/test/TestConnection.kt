@@ -51,10 +51,12 @@ class TestConnection : Connection, CoroutineScope {
         return receiveChannel.receive()
     }
 
+    @Suppress("INVISIBLE_MEMBER") //for toPacket
     suspend fun sendToReceiver(vararg frames: Frame) {
         frames.forEach { receiveChannel.send(it.toPacket(InUseTrackingPool)) }
     }
 
+    @Suppress("INVISIBLE_MEMBER") //for readFrame
     private fun sentAsFlow(): Flow<Frame> = sendChannel.receiveAsFlow().map { it.readFrame(InUseTrackingPool) }
 
     suspend fun test(validate: suspend FlowTurbine<Frame>.() -> Unit) {

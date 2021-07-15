@@ -32,6 +32,7 @@ public fun WebSocketClientTransport(
     request: HttpRequestBuilder.() -> Unit,
 ): ClientTransport = ClientTransport {
     val session = httpClient.webSocketSession(request)
+    @Suppress("INVISIBLE_MEMBER")
     WebSocketConnection(session)
 }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.keepalive
+package io.rsocket.kotlin.internal
 
 import kotlin.system.*
 

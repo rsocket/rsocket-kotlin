@@ -19,20 +19,16 @@ package io.rsocket.kotlin.core
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 
-@OptIn(TransportApi::class)
+@OptIn(TransportApi::class, RSocketLoggingApi::class)
 public class RSocketServer internal constructor(
     private val loggerFactory: LoggerFactory,
     private val interceptors: Interceptors,
 ) {
-
-    public fun <T> bind(
-        transport: ServerTransport<T>,
-        block: suspend ConnectionAcceptorContext.() -> RSocket
-    ): T = bind(transport, ConnectionAcceptor(block))
 
     public fun <T> bind(
         transport: ServerTransport<T>,

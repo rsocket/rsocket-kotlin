@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.keepalive
+package io.rsocket.kotlin.internal
 
 internal actual fun currentMillis(): Long = System.currentTimeMillis()

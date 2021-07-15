@@ -17,12 +17,14 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 
 public class RSocketConnectorBuilder internal constructor() {
+    @RSocketLoggingApi
     public var loggerFactory: LoggerFactory = DefaultLoggerFactory
 
     private val connectionConfig: ConnectionConfigBuilder = ConnectionConfigBuilder()
@@ -40,10 +42,6 @@ public class RSocketConnectorBuilder internal constructor() {
 
     public fun acceptor(block: ConnectionAcceptor?) {
         acceptor = block
-    }
-
-    public fun acceptor(block: suspend ConnectionAcceptorContext.() -> RSocket) {
-        acceptor(ConnectionAcceptor(block))
     }
 
     /**
@@ -95,6 +93,7 @@ public class RSocketConnectorBuilder internal constructor() {
         }
     }
 
+    @OptIn(RSocketLoggingApi::class)
     internal fun build(): RSocketConnector = RSocketConnector(
         loggerFactory,
         interceptors.build(),

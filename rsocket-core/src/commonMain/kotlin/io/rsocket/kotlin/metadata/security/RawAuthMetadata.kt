@@ -33,7 +33,6 @@ public class RawAuthMetadata(
     }
 
     public companion object Reader : AuthMetadataReader<RawAuthMetadata> {
-        @DangerousInternalIoApi
         override fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): RawAuthMetadata {
             val content = readPacket(pool)
             return RawAuthMetadata(type, content)
@@ -45,26 +44,19 @@ public class RawAuthMetadata(
 public fun RawAuthMetadata.hasAuthTypeOf(reader: AuthMetadataReader<*>): Boolean = type == reader.mimeType
 
 @ExperimentalMetadataApi
-@OptIn(DangerousInternalIoApi::class)
-public fun <AM : AuthMetadata> RawAuthMetadata.read(reader: AuthMetadataReader<AM>): AM = read(ChunkBuffer.Pool, reader)
-
-@ExperimentalMetadataApi
-@OptIn(DangerousInternalIoApi::class)
-public fun <AM : AuthMetadata> RawAuthMetadata.readOrNull(reader: AuthMetadataReader<AM>): AM? = readOrNull(ChunkBuffer.Pool, reader)
-
-
-@ExperimentalMetadataApi
-@DangerousInternalIoApi
-public fun <AM : AuthMetadata> RawAuthMetadata.read(pool: ObjectPool<ChunkBuffer>, reader: AuthMetadataReader<AM>): AM {
-    return readOrNull(pool, reader) ?: run {
+public fun <AM : AuthMetadata> RawAuthMetadata.read(reader: AuthMetadataReader<AM>, pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool): AM {
+    return readOrNull(reader, pool) ?: run {
         content.release()
         error("Expected auth type '${reader.mimeType}' but was '$mimeType'")
     }
 }
 
 @ExperimentalMetadataApi
-@DangerousInternalIoApi
-public fun <AM : AuthMetadata> RawAuthMetadata.readOrNull(pool: ObjectPool<ChunkBuffer>, reader: AuthMetadataReader<AM>): AM? {
+
+public fun <AM : AuthMetadata> RawAuthMetadata.readOrNull(
+    reader: AuthMetadataReader<AM>,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
+): AM? {
     if (type != reader.mimeType) return null
 
     with(reader) {

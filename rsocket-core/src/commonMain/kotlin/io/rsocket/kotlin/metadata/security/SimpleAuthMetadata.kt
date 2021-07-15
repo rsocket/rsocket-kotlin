@@ -40,7 +40,6 @@ public class SimpleAuthMetadata(
     }
 
     public companion object Reader : AuthMetadataReader<SimpleAuthMetadata> {
-        @DangerousInternalIoApi
         override fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): SimpleAuthMetadata {
             require(type == WellKnowAuthType.Simple) { "Metadata auth type should be 'simple'" }
             val length = readShort().toInt()

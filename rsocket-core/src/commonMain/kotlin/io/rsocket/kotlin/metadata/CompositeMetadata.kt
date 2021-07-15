@@ -50,8 +50,6 @@ public interface CompositeMetadata : Metadata {
 
     public companion object Reader : MetadataReader<CompositeMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketCompositeMetadata
-
-        @DangerousInternalIoApi
         override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): CompositeMetadata {
             val list = mutableListOf<Entry>()
             while (isNotEmpty) {

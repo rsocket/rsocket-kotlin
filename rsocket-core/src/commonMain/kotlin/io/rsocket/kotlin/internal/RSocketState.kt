@@ -120,10 +120,7 @@ internal class RSocketState(
     private fun handleFrame(responder: RSocketResponder, frame: Frame) {
         when (val streamId = frame.streamId) {
             0    -> when (frame) {
-                is ErrorFrame        -> {
-                    job.cancel("Error frame received on 0 stream", frame.throwable)
-                    frame.release() //TODO
-                }
+                is ErrorFrame        -> job.cancel("Error frame received on 0 stream", frame.throwable)
                 is KeepAliveFrame    -> keepAliveHandler.receive(frame)
                 is LeaseFrame        -> {
                     frame.release()
@@ -139,10 +136,7 @@ internal class RSocketState(
             else -> when (frame) {
                 is RequestNFrame -> limits[streamId]?.updateRequests(frame.requestN)
                 is CancelFrame   -> senders.remove(streamId)?.cancel()
-                is ErrorFrame    -> {
-                    receivers.remove(streamId)?.close(frame.throwable)
-                    frame.release()
-                }
+                is ErrorFrame    -> receivers.remove(streamId)?.close(frame.throwable)
                 is RequestFrame  -> when (frame.type) {
                     FrameType.Payload         -> receivers[streamId]?.safeOffer(frame) ?: frame.release()
                     FrameType.RequestFnF      -> responder.handleFireAndForget(frame)

@@ -16,7 +16,10 @@
 
 package io.rsocket.kotlin.logging
 
-class PrintLogger(
+import io.rsocket.kotlin.*
+
+@RSocketLoggingApi
+public class PrintLogger(
     override val tag: String,
     private val minLevel: LoggingLevel = LoggingLevel.INFO,
 ) : Logger {
@@ -26,9 +29,9 @@ class PrintLogger(
         println("[$level] ($tag) $message $error")
     }
 
-    companion object : LoggerFactory {
+    public companion object : LoggerFactory {
         override fun logger(tag: String): Logger = PrintLogger(tag)
 
-        fun withLevel(minLevel: LoggingLevel): LoggerFactory = LoggerFactory { PrintLogger(it, minLevel) }
+        public fun withLevel(minLevel: LoggingLevel): LoggerFactory = LoggerFactory { PrintLogger(it, minLevel) }
     }
 }

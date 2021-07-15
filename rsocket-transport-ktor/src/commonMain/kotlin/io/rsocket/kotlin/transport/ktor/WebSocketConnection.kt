@@ -22,7 +22,7 @@ import io.rsocket.kotlin.*
 import kotlinx.coroutines.*
 
 @TransportApi
-public class WebSocketConnection(private val session: WebSocketSession) : Connection {
+internal class WebSocketConnection(private val session: WebSocketSession) : Connection {
 
     override val job: Job = session.coroutineContext.job
 
