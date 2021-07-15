@@ -63,8 +63,9 @@ subprojects {
         //targets configuration
         extensions.configure<KotlinMultiplatformExtension> {
             val isAutoConfigurable = project.name.startsWith("rsocket") //manual config of others
-            val jvmOnly = project.name == "rsocket-transport-ktor-server" //server is jvm only
-
+            val jvmOnly =
+                project.name == "rsocket-transport-ktor-server" || //server is jvm only
+                        project.name == "rsocket-test-server"
             //windows target isn't supported by ktor-network
             val supportMingw = project.name != "rsocket-transport-ktor" && project.name != "rsocket-transport-ktor-client"
 
@@ -140,7 +141,7 @@ subprojects {
 
         //common configuration
         extensions.configure<KotlinMultiplatformExtension> {
-            val isTestProject = project.name == "rsocket-test"
+            val isTestProject = project.name == "rsocket-test" || project.name == "rsocket-test-server"
             val isLibProject = project.name.startsWith("rsocket")
             val isPlaygroundProject = project.name == "playground"
             val isExampleProject = "examples" in project.path
