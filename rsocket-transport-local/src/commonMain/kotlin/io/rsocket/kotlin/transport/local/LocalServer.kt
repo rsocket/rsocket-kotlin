@@ -28,7 +28,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 
 public class LocalServer(
-    parentJob: Job?,
+    parentJob: Job? = null,
     private val pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
 ) : ServerTransport<Job>, ClientTransport {
     public val job: Job = SupervisorJob(parentJob)
