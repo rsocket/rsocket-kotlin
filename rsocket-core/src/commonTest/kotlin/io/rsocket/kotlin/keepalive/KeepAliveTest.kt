@@ -18,8 +18,10 @@ package io.rsocket.kotlin.keepalive
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlin.test.*
@@ -27,12 +29,16 @@ import kotlin.time.*
 
 class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
-    private fun requester(keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds)): RSocket = run {
-        val state = RSocketState(connection, keepAlive)
-        val requester = RSocketRequester(state, StreamId.client())
-        state.start(RSocketRequestHandler { })
-        requester
-    }
+    private suspend fun requester(
+        keepAlive: KeepAlive = KeepAlive(Duration.milliseconds(100), Duration.seconds(1))
+    ): RSocket = connect(
+        connection = connection,
+        isServer = false,
+        connectionBufferCapacity = 64,
+        maxFragmentSize = 0,
+        interceptors = InterceptorsBuilder().build(),
+        connectionConfig = ConnectionConfig(keepAlive, DefaultPayloadMimeType, Payload.Empty)
+    ) { RSocketRequestHandler { } }
 
     @Test
     fun requesterSendKeepAlive() = test {
@@ -49,15 +55,15 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun rSocketNotCanceledOnPresentKeepAliveTicks() = test {
-        val rSocket = requester(KeepAlive(100.seconds, 100.seconds))
+        val rSocket = requester(KeepAlive(Duration.seconds(100), Duration.seconds(100)))
         connection.launch {
             repeat(50) {
-                delay(100.milliseconds)
+                delay(Duration.milliseconds(100))
                 connection.sendToReceiver(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
             }
         }
-        delay(1.5.seconds)
-        assertTrue(rSocket.job.isActive)
+        delay(Duration.seconds(1.5))
+        assertTrue(rSocket.isActive)
         connection.test {
             repeat(50) {
                 expectItem()
@@ -67,10 +73,10 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun requesterRespondsToKeepAlive() = test {
-        requester(KeepAlive(100.seconds, 100.seconds))
+        requester(KeepAlive(Duration.seconds(100), Duration.seconds(100)))
         connection.launch {
             while (isActive) {
-                delay(100.milliseconds)
+                delay(Duration.milliseconds(100))
                 connection.sendToReceiver(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
             }
         }
@@ -87,7 +93,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun noKeepAliveSentAfterRSocketCanceled() = test {
-        requester().job.cancel()
+        requester().cancel()
         connection.test {
             expectNoEventsIn(500)
         }
@@ -97,9 +103,9 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
     fun rSocketCanceledOnMissingKeepAliveTicks() = test {
         val rSocket = requester()
         connection.test {
-            while (rSocket.job.isActive) kotlin.runCatching { expectItem() }
+            while (rSocket.isActive) kotlin.runCatching { expectItem() }
         }
-        assertTrue(rSocket.job.getCancellationException().cause is RSocketError.ConnectionError)
+        assertTrue(rSocket.coroutineContext.job.getCancellationException().cause is RSocketError.ConnectionError)
     }
 
 }

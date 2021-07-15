@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-import io.ktor.util.*
 import kotlinx.coroutines.*
-import kotlin.coroutines.*
 
-@OptIn(InternalAPI::class)
 fun main() {
     runBlocking {
-        runTcpClient(EmptyCoroutineContext)
+        runTcpClient()
     }
 }
 

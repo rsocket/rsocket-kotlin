@@ -17,15 +17,20 @@
 package io.rsocket.kotlin.transport
 
 import io.rsocket.kotlin.*
+import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
-//TODO fun interfaces don't support `suspend` functions for now... (seems will work in kotlin 1.5)
+public fun interface ClientTransport : CoroutineScope {
+    override val coroutineContext: CoroutineContext get() = EmptyCoroutineContext
 
-public /*fun*/ interface ClientTransport {
     @TransportApi
     public suspend fun connect(): Connection
 }
 
-@TransportApi
-public inline fun ClientTransport(crossinline block: suspend () -> Connection): ClientTransport = object : ClientTransport {
-    override suspend fun connect(): Connection = block()
+@OptIn(TransportApi::class)
+public fun ClientTransport(coroutineContext: CoroutineContext, transport: ClientTransport): ClientTransport = object : ClientTransport {
+    override val coroutineContext: CoroutineContext get() = coroutineContext
+
+    @TransportApi
+    override suspend fun connect(): Connection = transport.connect()
 }

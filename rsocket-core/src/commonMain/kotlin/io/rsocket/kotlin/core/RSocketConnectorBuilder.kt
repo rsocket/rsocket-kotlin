@@ -17,13 +17,28 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
 public class RSocketConnectorBuilder internal constructor() {
+    @RSocketLoggingApi
     public var loggerFactory: LoggerFactory = DefaultLoggerFactory
+    public var maxFragmentSize: Int = 0
+        set(value) {
+            require(value == 0 || value >= 64) {
+                "maxFragmentSize should be zero (no fragmentation) or greater than or equal to 64, but was $value"
+            }
+            field = value
+        }
+    public var connectionBufferCapacity: Int = 64
+        set(value) {
+            require(value >= 0) { "connectionBufferCapacity should be positive or equal to Int.MAX_VALUE" }
+            field = value
+        }
 
     private val connectionConfig: ConnectionConfigBuilder = ConnectionConfigBuilder()
     private val interceptors: InterceptorsBuilder = InterceptorsBuilder()
@@ -40,10 +55,6 @@ public class RSocketConnectorBuilder internal constructor() {
 
     public fun acceptor(block: ConnectionAcceptor?) {
         acceptor = block
-    }
-
-    public fun acceptor(block: suspend ConnectionAcceptorContext.() -> RSocket) {
-        acceptor(ConnectionAcceptor(block))
     }
 
     /**
@@ -95,19 +106,25 @@ public class RSocketConnectorBuilder internal constructor() {
         }
     }
 
+    @OptIn(RSocketLoggingApi::class)
     internal fun build(): RSocketConnector = RSocketConnector(
-        loggerFactory,
-        interceptors.build(),
-        connectionConfig.producer(),
-        acceptor ?: defaultAcceptor,
-        reconnectPredicate
+        loggerFactory = loggerFactory,
+        connectionBufferCapacity = connectionBufferCapacity,
+        maxFragmentSize = maxFragmentSize,
+        interceptors = interceptors.build(),
+        connectionConfigProvider = connectionConfig.producer(),
+        acceptor = acceptor ?: defaultAcceptor,
+        reconnectPredicate = reconnectPredicate
     )
 
     private companion object {
-        private val defaultAcceptor: ConnectionAcceptor = ConnectionAcceptor { EmptyRSocket() }
+        private val defaultAcceptor: ConnectionAcceptor = ConnectionAcceptor {
+            config.setupPayload.release()
+            EmptyRSocket()
+        }
 
         private class EmptyRSocket : RSocket {
-            override val job: Job = Job()
+            override val coroutineContext: CoroutineContext = Job()
         }
     }
 }

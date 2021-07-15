@@ -19,6 +19,8 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
 
@@ -30,7 +32,7 @@ internal class RequestFrame(
     val next: Boolean,
     val initialRequest: Int,
     val payload: Payload,
-) : Frame(type) {
+) : Frame() {
     override val flags: Int
         get() {
             var flags = 0
@@ -63,7 +65,13 @@ internal class RequestFrame(
     }
 }
 
-internal fun ByteReadPacket.readRequest(pool: BufferPool, type: FrameType, streamId: Int, flags: Int, withInitial: Boolean): RequestFrame {
+internal fun ByteReadPacket.readRequest(
+    pool: ObjectPool<ChunkBuffer>,
+    type: FrameType,
+    streamId: Int,
+    flags: Int,
+    withInitial: Boolean
+): RequestFrame {
     val fragmentFollows = flags check Flags.Follows
     val complete = flags check Flags.Complete
     val next = flags check Flags.Next

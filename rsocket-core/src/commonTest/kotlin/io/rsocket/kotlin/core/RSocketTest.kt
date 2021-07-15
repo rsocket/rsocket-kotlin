@@ -40,10 +40,12 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     }
 
     private suspend fun start(handler: RSocket? = null): RSocket {
-        val localServer = LocalServer(testJob)
-        RSocketServer {
-            loggerFactory = NoopLogger
-        }.bind(localServer) {
+        val localServer = RSocketServer {
+            loggerFactory = LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("SERVER   |$it") }
+        }.bindIn(
+            CoroutineScope(Dispatchers.Unconfined + testJob + CoroutineExceptionHandler { c, e -> println("$c -> $e") }),
+            LocalServerTransport(InUseTrackingPool)
+        ) {
             handler ?: RSocketRequestHandler {
                 requestResponse { it }
                 requestStream {
@@ -52,16 +54,16 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
                 }
                 requestChannel { init, payloads ->
                     init.release()
-                    payloads.onEach { it.release() }.launchIn(CoroutineScope(job))
+                    payloads.onEach { it.release() }.launchIn(this)
                     flow { repeat(10) { emitOrClose(payload("server got -> [$it]")) } }
                 }
             }
         }
 
         return RSocketConnector {
-            loggerFactory = NoopLogger
+            loggerFactory = LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("CLIENT   |$it") }
             connectionConfig {
-                keepAlive = KeepAlive(1000.seconds, 1000.seconds)
+                keepAlive = KeepAlive(Duration.seconds(1000), Duration.seconds(1000))
             }
         }.connect(localServer)
     }
@@ -219,7 +221,10 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             }
         })
         val request = flow<Payload> { error("test") }
-        requester.requestChannel(Payload.Empty, request).collect()
+        //TODO
+        kotlin.runCatching {
+            requester.requestChannel(Payload.Empty, request).collect()
+        }.also(::println)
         val e = error.await()
         assertTrue(e is RSocketError.ApplicationError)
         assertEquals("test", e.message)
@@ -337,7 +342,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         val responderDeferred = CompletableDeferred<ReceiveChannel<Payload>>()
         val requester = start(RSocketRequestHandler {
             requestChannel { init, payloads ->
-                responderDeferred.complete(payloads.onStart { emit(init) }.produceIn(CoroutineScope(job)))
+                responderDeferred.complete(payloads.onStart { emit(init) }.produceIn(this))
 
                 responderSendChannel.consumeAsFlow()
             }
@@ -345,7 +350,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         val requesterReceiveChannel =
             requester
                 .requestChannel(payload("initData", "initMetadata"), requesterSendChannel.consumeAsFlow())
-                .produceIn(CoroutineScope(requester.job))
+                .produceIn(requester)
 
         val responderReceiveChannel = responderDeferred.await()
 

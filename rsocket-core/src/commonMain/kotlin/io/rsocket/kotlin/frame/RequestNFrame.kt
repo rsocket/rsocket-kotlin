@@ -21,7 +21,8 @@ import io.ktor.utils.io.core.*
 internal class RequestNFrame(
     override val streamId: Int,
     val requestN: Int,
-) : Frame(FrameType.RequestN) {
+) : Frame() {
+    override val type: FrameType get() = FrameType.RequestN
     override val flags: Int get() = 0
 
     override fun release(): Unit = Unit

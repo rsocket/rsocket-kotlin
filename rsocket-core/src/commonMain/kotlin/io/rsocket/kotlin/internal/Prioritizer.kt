@@ -20,30 +20,32 @@ import io.rsocket.kotlin.frame.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.selects.*
+import kotlin.native.concurrent.*
 
-internal class Prioritizer {
-    private val priorityChannel = SafeChannel<Frame>(Channel.UNLIMITED)
-    private val commonChannel = SafeChannel<Frame>(Channel.UNLIMITED)
+@SharedImmutable
+private val selectFrame: suspend (Frame) -> Frame = { it }
 
-    fun send(frame: Frame) {
-        commonChannel.safeOffer(frame)
-    }
+internal class Prioritizer(capacity: Int) {
+    private val priorityChannel = SafeChannel<Frame>(capacity)
+    private val commonChannel = SafeChannel<Frame>(capacity)
 
-    fun sendPrioritized(frame: Frame) {
-        priorityChannel.safeOffer(frame)
+    suspend fun send(frame: Frame) {
+        currentCoroutineContext().ensureActive()
+        val channel = if (frame.streamId == 0) priorityChannel else commonChannel
+        channel.send(frame)
     }
 
     suspend fun receive(): Frame {
         priorityChannel.tryReceive().onSuccess { return it }
         commonChannel.tryReceive().onSuccess { return it }
         return select {
-            priorityChannel.onReceive { it }
-            commonChannel.onReceive { it }
+            priorityChannel.onReceive(selectFrame)
+            commonChannel.onReceive(selectFrame)
         }
     }
 
-    fun cancel(error: CancellationException) {
-        priorityChannel.cancel(error)
-        commonChannel.cancel(error)
+    fun close(error: Throwable?) {
+        priorityChannel.fullClose(error)
+        commonChannel.fullClose(error)
     }
 }

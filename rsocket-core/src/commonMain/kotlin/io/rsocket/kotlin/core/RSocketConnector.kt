@@ -19,41 +19,66 @@ package io.rsocket.kotlin.core
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
+import kotlinx.coroutines.*
 
-@OptIn(TransportApi::class)
-class RSocketConnector internal constructor(
+@OptIn(TransportApi::class, RSocketLoggingApi::class)
+public class RSocketConnector internal constructor(
     private val loggerFactory: LoggerFactory,
+    private val connectionBufferCapacity: Int,
+    private val maxFragmentSize: Int,
     private val interceptors: Interceptors,
     private val connectionConfigProvider: () -> ConnectionConfig,
     private val acceptor: ConnectionAcceptor,
     private val reconnectPredicate: ReconnectPredicate?,
 ) {
 
-    suspend fun connect(transport: ClientTransport): RSocket = when (reconnectPredicate) {
-        null -> connectOnce(transport)
-        else -> ReconnectableRSocket(
-            logger = loggerFactory.logger("io.rsocket.kotlin.connection"),
-            connect = { connectOnce(transport) },
-            predicate = reconnectPredicate
+    public suspend fun connect(transport: ClientTransport): RSocket = when (reconnectPredicate) {
+        //TODO current coroutineContext job is overriden by transport coroutineContext jov
+        null -> withContext(transport.coroutineContext) { connectOnce(transport) }
+        else -> connectWithReconnect(
+            transport.coroutineContext,
+            loggerFactory.logger("io.rsocket.kotlin.connection"),
+            { connectOnce(transport) },
+            reconnectPredicate,
         )
     }
 
     private suspend fun connectOnce(transport: ClientTransport): RSocket {
         val connection = transport.connect().wrapConnection()
-        val connectionConfig = connectionConfigProvider()
-
-        return connection.connect(isServer = false, interceptors, connectionConfig, acceptor) {
-            val setupFrame = SetupFrame(
-                version = Version.Current,
-                honorLease = false,
-                keepAlive = connectionConfig.keepAlive,
-                resumeToken = null,
-                payloadMimeType = connectionConfig.payloadMimeType,
-                payload = connectionConfig.setupPayload
+        val connectionConfig = try {
+            connectionConfigProvider()
+        } catch (cause: Throwable) {
+            connection.cancel("Connection config provider failed", cause)
+            throw cause
+        }
+        val setupFrame = SetupFrame(
+            version = Version.Current,
+            honorLease = false,
+            keepAlive = connectionConfig.keepAlive,
+            resumeToken = null,
+            payloadMimeType = connectionConfig.payloadMimeType,
+            payload = connectionConfig.setupPayload.copy() //copy needed, as it can be used in acceptor
+        )
+        try {
+            val requester = connect(
+                connection = connection,
+                connectionBufferCapacity = connectionBufferCapacity,
+                isServer = false,
+                maxFragmentSize = maxFragmentSize,
+                interceptors = interceptors,
+                connectionConfig = connectionConfig,
+                acceptor = acceptor
             )
             connection.sendFrame(setupFrame)
+            return requester
+        } catch (cause: Throwable) {
+            connectionConfig.setupPayload.release()
+            setupFrame.release()
+            connection.cancel("Connection establishment failed", cause)
+            throw cause
         }
     }
 

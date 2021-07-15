@@ -19,62 +19,71 @@ package io.rsocket.kotlin.core
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 
-@OptIn(TransportApi::class)
+@OptIn(TransportApi::class, RSocketLoggingApi::class)
 public class RSocketServer internal constructor(
     private val loggerFactory: LoggerFactory,
+    private val connectionBufferCapacity: Int,
+    private val maxFragmentSize: Int,
     private val interceptors: Interceptors,
 ) {
 
-    public fun <T> bind(
-        transport: ServerTransport<T>,
-        block: suspend ConnectionAcceptorContext.() -> RSocket
-    ): T = bind(transport, ConnectionAcceptor(block))
-
+    @DelicateCoroutinesApi
     public fun <T> bind(
         transport: ServerTransport<T>,
         acceptor: ConnectionAcceptor,
-    ): T = transport.start {
-        val connection = it.wrapConnection()
-        val setupFrame = connection.validateSetup()
-        connection.start(setupFrame, acceptor)
-        connection.job.join()
-    }
+    ): T = bindIn(GlobalScope, transport, acceptor)
 
-    private suspend fun Connection.start(setupFrame: SetupFrame, acceptor: ConnectionAcceptor) {
-        val connectionConfig = ConnectionConfig(
-            keepAlive = setupFrame.keepAlive,
-            payloadMimeType = setupFrame.payloadMimeType,
-            setupPayload = setupFrame.payload
-        )
-        try {
-            connect(isServer = true, interceptors, connectionConfig, acceptor)
-        } catch (e: Throwable) {
-            failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
+    public fun <T> bindIn(
+        scope: CoroutineScope,
+        transport: ServerTransport<T>,
+        acceptor: ConnectionAcceptor,
+    ): T = with(transport) {
+        scope.start {
+            it.wrapConnection().bind(acceptor).join()
         }
     }
 
-    private suspend fun Connection.validateSetup(): SetupFrame {
-        val setupFrame = receiveFrame()
-        return when {
+    private suspend fun Connection.bind(acceptor: ConnectionAcceptor): Job = receiveFrame { setupFrame ->
+        when {
             setupFrame !is SetupFrame             -> failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
             setupFrame.version != Version.Current -> failSetup(RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}"))
             setupFrame.honorLease                 -> failSetup(RSocketError.Setup.Unsupported("Lease is not supported"))
             setupFrame.resumeToken != null        -> failSetup(RSocketError.Setup.Unsupported("Resume is not supported"))
-            else                                  -> setupFrame
+            else                                  -> try {
+                connect(
+                    connection = this,
+                    isServer = true,
+                    maxFragmentSize = maxFragmentSize,
+                    connectionBufferCapacity = connectionBufferCapacity,
+                    interceptors = interceptors,
+                    connectionConfig = ConnectionConfig(
+                        keepAlive = setupFrame.keepAlive,
+                        payloadMimeType = setupFrame.payloadMimeType,
+                        setupPayload = setupFrame.payload
+                    ),
+                    acceptor = acceptor
+                )
+                coroutineContext.job
+            } catch (e: Throwable) {
+                failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
+            }
         }
+    }
+
+    @Suppress("SuspendFunctionOnCoroutineScope")
+    private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
+        sendFrame(ErrorFrame(0, error))
+        cancel("Connection establishment failed", error)
+        throw error
     }
 
     private fun Connection.wrapConnection(): Connection =
         interceptors.wrapConnection(this)
             .logging(loggerFactory.logger("io.rsocket.kotlin.frame"))
 
-    private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
-        sendFrame(ErrorFrame(0, error))
-        job.cancel("Connection establishment failed", error)
-        throw error
-    }
 }

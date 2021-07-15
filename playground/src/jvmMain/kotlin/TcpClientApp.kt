@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import kotlinx.coroutines.*
+suspend fun main(): Unit = runTcpClient()
 
-suspend fun main(): Unit = runTcpClient(Dispatchers.IO)
-
-//suspend fun main(): Unit = testNodeJsServer(Dispatchers.IO)
+//suspend fun main(): Unit = testNodeJsServer()

@@ -16,10 +16,24 @@
 
 package io.rsocket.kotlin.core
 
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.logging.*
 
 public class RSocketServerBuilder internal constructor() {
+    @RSocketLoggingApi
     public var loggerFactory: LoggerFactory = DefaultLoggerFactory
+    public var maxFragmentSize: Int = 0
+        set(value) {
+            require(value == 0 || value >= 64) {
+                "maxFragmentSize should be zero (no fragmentation) or greater than or equal to 64, but was $value"
+            }
+            field = value
+        }
+    public var connectionBufferCapacity: Int = 64
+        set(value) {
+            require(value >= 0) { "connectionBufferCapacity should be positive or equal to Int.MAX_VALUE" }
+            field = value
+        }
 
     private val interceptors: InterceptorsBuilder = InterceptorsBuilder()
 
@@ -27,7 +41,13 @@ public class RSocketServerBuilder internal constructor() {
         interceptors.configure()
     }
 
-    internal fun build(): RSocketServer = RSocketServer(loggerFactory, interceptors.build())
+    @OptIn(RSocketLoggingApi::class)
+    internal fun build(): RSocketServer = RSocketServer(
+        loggerFactory = loggerFactory,
+        connectionBufferCapacity = connectionBufferCapacity,
+        maxFragmentSize = maxFragmentSize,
+        interceptors = interceptors.build()
+    )
 }
 
 public fun RSocketServer(configure: RSocketServerBuilder.() -> Unit = {}): RSocketServer {

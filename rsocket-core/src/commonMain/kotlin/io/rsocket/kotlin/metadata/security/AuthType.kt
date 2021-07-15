@@ -18,13 +18,13 @@ package io.rsocket.kotlin.metadata.security
 
 import io.rsocket.kotlin.frame.io.*
 
-public interface AuthType
+public sealed interface AuthType
 
-public interface AuthTypeWithName : AuthType {
+public sealed interface AuthTypeWithName : AuthType {
     public val text: String
 }
 
-public interface AuthTypeWithId : AuthType {
+public sealed interface AuthTypeWithId : AuthType {
     public val identifier: Byte
 }
 

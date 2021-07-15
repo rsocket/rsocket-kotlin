@@ -18,7 +18,7 @@ package io.rsocket.kotlin.payload
 
 import io.ktor.utils.io.core.*
 
-public interface PayloadBuilder {
+public sealed interface PayloadBuilder {
     public fun data(value: ByteReadPacket)
     public fun metadata(value: ByteReadPacket)
 

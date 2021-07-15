@@ -16,40 +16,33 @@
 
 package io.rsocket.kotlin.transport.ktor
 
-import io.ktor.network.selector.*
+import io.ktor.util.network.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.test.*
-import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
-import kotlin.random.*
 import kotlin.test.*
 
-abstract class TcpServerTest(
-    private val clientSelector: SelectorManager,
-    private val serverSelector: SelectorManager
-) : SuspendTest, TestWithLeakCheck {
-    private val currentPort = port.incrementAndGet()
-    private val serverTransport = TcpServerTransport(serverSelector, port = currentPort)
-    private val clientTransport = TcpClientTransport(clientSelector, "0.0.0.0", port = currentPort)
-
-    private lateinit var server: Job
+abstract class TcpServerTest : SuspendTest, TestWithLeakCheck {
+    private val testJob = Job()
+    private val testContext = testJob + CoroutineExceptionHandler { c, e -> println("$c -> $e") }
+    private val address = NetworkAddress("0.0.0.0", PortProvider.next())
+    private val serverTransport = TcpServerTransport(address, InUseTrackingPool)
+    private val clientTransport = TcpClientTransport(address, testContext, InUseTrackingPool)
 
     override suspend fun after() {
-        server.cancelAndJoin()
-        clientSelector.close()
-        serverSelector.close()
+        testJob.cancelAndJoin()
     }
 
     @Test
     fun testFailedConnection() = test {
-        server = RSocketServer().bind(serverTransport) {
+        val server = RSocketServer().bindIn(CoroutineScope(testContext), serverTransport) {
             if (config.setupPayload.data.readText() == "ok") {
                 RSocketRequestHandler {
                     requestResponse { it }
                 }
             } else error("FAILED")
-        }
+        }.also { it.serverSocket.await() }
 
         suspend fun newClient(text: String) = RSocketConnector {
             connectionConfig {
@@ -72,25 +65,26 @@ abstract class TcpServerTest(
         client3.requestResponse(payload("ok")).release()
         client1.requestResponse(payload("ok")).release()
 
-        assertTrue(client1.job.isActive)
-        assertFalse(client2.job.isActive)
-        assertTrue(client3.job.isActive)
+        assertTrue(client1.isActive)
+        assertFalse(client2.isActive)
+        assertTrue(client3.isActive)
 
-        assertTrue(server.isActive)
+        assertTrue(server.serverSocket.await().socketContext.isActive)
+        assertTrue(server.handlerJob.isActive)
 
-        client1.job.cancelAndJoin()
-        client2.job.cancelAndJoin()
-        client3.job.cancelAndJoin()
+        client1.coroutineContext.job.cancelAndJoin()
+        client2.coroutineContext.job.cancelAndJoin()
+        client3.coroutineContext.job.cancelAndJoin()
     }
 
     @Test
     fun testFailedHandler() = test {
         val handlers = mutableListOf<RSocket>()
-        server = RSocketServer().bind(serverTransport) {
+        val server = RSocketServer().bindIn(CoroutineScope(testContext), serverTransport) {
             RSocketRequestHandler {
                 requestResponse { it }
             }.also { handlers += it }
-        }
+        }.also { it.serverSocket.await() }
 
         suspend fun newClient() = RSocketConnector().connect(clientTransport)
 
@@ -102,7 +96,7 @@ abstract class TcpServerTest(
 
         client2.requestResponse(payload("1")).release()
 
-        handlers[1].job.apply {
+        handlers[1].coroutineContext.job.apply {
             cancel("FAILED")
             join()
         }
@@ -119,18 +113,15 @@ abstract class TcpServerTest(
 
         client1.requestResponse(payload("1")).release()
 
-        assertTrue(client1.job.isActive)
-        assertFalse(client2.job.isActive)
-        assertTrue(client3.job.isActive)
+        assertTrue(client1.isActive)
+        assertFalse(client2.isActive)
+        assertTrue(client3.isActive)
 
-        assertTrue(server.isActive)
+        assertTrue(server.serverSocket.await().socketContext.isActive)
+        assertTrue(server.handlerJob.isActive)
 
-        client1.job.cancelAndJoin()
-        client2.job.cancelAndJoin()
-        client3.job.cancelAndJoin()
-    }
-
-    companion object {
-        private val port = atomic(Random.nextInt(20, 90) * 100)
+        client1.coroutineContext.job.cancelAndJoin()
+        client2.coroutineContext.job.cancelAndJoin()
+        client3.coroutineContext.job.cancelAndJoin()
     }
 }
