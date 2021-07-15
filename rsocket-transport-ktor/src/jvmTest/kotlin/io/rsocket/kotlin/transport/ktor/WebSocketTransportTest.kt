@@ -61,7 +61,7 @@ abstract class WebSocketTransportTest(
     override suspend fun after() {
         super.after()
 
-        server.stop(0, 1000)
+        server.stop(200, 1000)
         testJob.cancelAndJoin()
         httpClient.close()
         httpClient.coroutineContext.job.cancelAndJoin()
