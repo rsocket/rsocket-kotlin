@@ -15,6 +15,7 @@
  */
 
 @file:OptIn(TransportApi::class)
+@file:Suppress("FunctionName")
 
 package io.rsocket.kotlin.transport.local
 
@@ -22,60 +23,45 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
-import kotlin.native.concurrent.*
+import kotlin.coroutines.*
 
-@Suppress("FunctionName")
-@OptIn(DangerousInternalIoApi::class)
-public fun LocalServer(parentJob: Job? = null): LocalServer = LocalServer(parentJob, ChunkBuffer.Pool)
-
-public class LocalServer
-@DangerousInternalIoApi
-internal constructor(
-    parentJob: Job?,
-    private val pool: ObjectPool<ChunkBuffer>,
-) : ServerTransport<Job>, ClientTransport {
-    public val job: Job = SupervisorJob(parentJob)
-    private val connections = Channel<Connection>()
-
-    override suspend fun connect(): Connection {
-        val clientChannel = SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
-        val serverChannel = SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
-        val connectionJob = Job(job)
-        val channelCloseJob = Job(job)
-        connectionJob.invokeOnCompletion {
-            val error = CancellationException("Connection failed", it)
-            clientChannel.cancel(error)
-            serverChannel.cancel(error)
-            CoroutineScope(job).launch {
-                while (!clientChannel.isClosedForReceive || !clientChannel.isClosedForSend
-                    || !serverChannel.isClosedForReceive || !serverChannel.isClosedForSend
-                ) {
-                    delay(1)
-                }
-                channelCloseJob.complete()
+public fun LocalServerTransport(
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
+): ServerTransport<LocalServer> = ServerTransport { accept ->
+    val connections = Channel<Connection>()
+    val handlerJob = launch {
+        supervisorScope {
+            connections.consumeEach { connection ->
+                launch { accept(connection) }
             }
         }
-        val clientConnection = LocalConnection(serverChannel, clientChannel, pool, connectionJob)
-        val serverConnection = LocalConnection(clientChannel, serverChannel, pool, connectionJob)
+    }
+    LocalServer(pool, connections, coroutineContext + SupervisorJob(handlerJob))
+}
+
+public class LocalServer internal constructor(
+    private val pool: ObjectPool<ChunkBuffer>,
+    private val connections: Channel<Connection>,
+    override val coroutineContext: CoroutineContext
+) : ClientTransport {
+    override suspend fun connect(): Connection {
+        val clientChannel = @Suppress("INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
+        val serverChannel = @Suppress("INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
+        val connectionJob = Job(coroutineContext[Job])
+        connectionJob.invokeOnCompletion {
+            @Suppress("INVISIBLE_MEMBER") clientChannel.fullClose(it)
+            @Suppress("INVISIBLE_MEMBER") serverChannel.fullClose(it)
+        }
+        val connectionContext = coroutineContext + connectionJob
+        val clientConnection =
+            LocalConnection(serverChannel, clientChannel, pool, connectionContext + CoroutineName("rSocket-local-client"))
+        val serverConnection =
+            LocalConnection(clientChannel, serverChannel, pool, connectionContext + CoroutineName("rSocket-local-server"))
         connections.send(serverConnection)
         return clientConnection
     }
-
-    override fun start(accept: suspend (Connection) -> Unit): Job =
-        GlobalScope.launch(job + Dispatchers.Unconfined, CoroutineStart.UNDISPATCHED) {
-            supervisorScope {
-                connections.consumeEach { connection ->
-                    launch(start = CoroutineStart.UNDISPATCHED) { accept(connection) }
-                }
-            }
-        }
 }
-
-@SharedImmutable
-private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
-
-@Suppress("FunctionName")
-private fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)

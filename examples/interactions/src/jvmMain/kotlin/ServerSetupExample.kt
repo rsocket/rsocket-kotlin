@@ -23,9 +23,7 @@ import kotlinx.coroutines.flow.*
 
 
 fun main(): Unit = runBlocking {
-
-    val server = LocalServer()
-    RSocketServer().bind(server) {
+    val server = RSocketServer().bindIn(this, LocalServerTransport()) {
         val data = config.setupPayload.metadata?.readText() ?: error("Empty metadata")
         RSocketRequestHandler {
             when (data) {
@@ -43,8 +41,8 @@ fun main(): Unit = runBlocking {
 
     suspend fun client1() {
         val rSocketClient = RSocketConnector().connect(server)
-        rSocketClient.job.join()
-        println("Client 1 canceled: ${rSocketClient.job.isCancelled}")
+        rSocketClient.coroutineContext.job.join()
+        println("Client 1 canceled: ${rSocketClient.coroutineContext.job.isCancelled}")
         try {
             rSocketClient.requestResponse(Payload.Empty)
         } catch (e: Throwable) {

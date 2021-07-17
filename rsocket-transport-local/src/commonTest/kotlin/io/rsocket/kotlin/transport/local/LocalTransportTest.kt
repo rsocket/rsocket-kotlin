@@ -20,14 +20,15 @@ import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 
 class LocalTransportTest : TransportTest() {
-
-    private val testJob: Job = Job()
+    private val testJob = Job()
 
     override suspend fun before() {
-        super.before()
-        val localServer = LocalServer(testJob, InUseTrackingPool)
-        SERVER.bind(localServer, ACCEPTOR)
-        client = CONNECTOR.connect(localServer)
+        val server = SERVER.bindIn(
+            CoroutineScope(testJob + CoroutineExceptionHandler { c, e -> println("$c -> $e") }),
+            LocalServerTransport(InUseTrackingPool),
+            ACCEPTOR
+        )
+        client = CONNECTOR.connect(server)
     }
 
     override suspend fun after() {

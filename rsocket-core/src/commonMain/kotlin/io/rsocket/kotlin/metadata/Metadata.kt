@@ -33,8 +33,6 @@ public interface Metadata {
 @ExperimentalMetadataApi
 public interface MetadataReader<M : Metadata> {
     public val mimeType: MimeType
-
-    @DangerousInternalIoApi
     public fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): M
 }
 
@@ -43,19 +41,9 @@ public interface MetadataReader<M : Metadata> {
 public fun PayloadBuilder.metadata(metadata: Metadata): Unit = metadata(metadata.toPacket())
 
 @ExperimentalMetadataApi
-@OptIn(DangerousInternalIoApi::class)
-public fun <M : Metadata> ByteReadPacket.read(reader: MetadataReader<M>): M = read(ChunkBuffer.Pool, reader)
-
-@ExperimentalMetadataApi
-public fun Metadata.toPacket(): ByteReadPacket = buildPacket { writeSelf() }
-
-
-@ExperimentalMetadataApi
-@DangerousInternalIoApi
-public fun <M : Metadata> ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>, reader: MetadataReader<M>): M = use {
+public fun <M : Metadata> ByteReadPacket.read(reader: MetadataReader<M>, pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool): M = use {
     with(reader) { read(pool) }
 }
 
 @ExperimentalMetadataApi
-@DangerousInternalIoApi
-public fun Metadata.toPacket(pool: ObjectPool<ChunkBuffer>): ByteReadPacket = buildPacket(pool) { writeSelf() }
+public fun Metadata.toPacket(pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool): ByteReadPacket = buildPacket(pool) { writeSelf() }

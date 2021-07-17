@@ -27,12 +27,12 @@ import kotlin.test.*
 import kotlin.time.*
 
 abstract class TransportTest : SuspendTest, TestWithLeakCheck {
-    override val testTimeout: Duration = 2.minutes
+    override val testTimeout: Duration = Duration.minutes(2)
 
     lateinit var client: RSocket //should be assigned in `before`
 
     override suspend fun after() {
-        client.job.cancelAndJoin()
+        client.coroutineContext.job.cancelAndJoin()
     }
 
     @Test
@@ -56,13 +56,13 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun requestChannel0() = test(10.seconds) {
+    fun requestChannel0() = test(Duration.seconds(10)) {
         val list = client.requestChannel(payload(0), emptyFlow()).toList()
         assertTrue(list.isEmpty())
     }
 
     @Test
-    fun requestChannel1() = test(10.seconds) {
+    fun requestChannel1() = test(Duration.seconds(10)) {
         val list = client.requestChannel(payload(0), flowOf(payload(0))).onEach { it.release() }.toList()
         assertEquals(1, list.size)
     }
@@ -106,7 +106,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         val request = flow {
             repeat(200_000) { emit(payload(it)) }
         }
-        val list = client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).onEach { it.release() }.toList()
+        val list = client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(10000, 0)).onEach { it.release() }.toList()
         assertEquals(200_000, list.size)
     }
 
@@ -221,7 +221,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
             loggerFactory = NoopLogger
 
             connectionConfig {
-                keepAlive = KeepAlive(10.minutes, 100.minutes)
+                keepAlive = KeepAlive(Duration.minutes(10), Duration.minutes(100))
             }
         }
 

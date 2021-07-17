@@ -16,21 +16,25 @@
 
 package io.rsocket.kotlin.logging
 
+import io.rsocket.kotlin.*
 import java.util.logging.*
 import java.util.logging.Level as JLevel
 import java.util.logging.Logger as JLogger
 
-actual val DefaultLoggerFactory: LoggerFactory get() = JavaLogger
+@RSocketLoggingApi
+internal actual val DefaultLoggerFactory: LoggerFactory
+    get() = JavaLogger
 
-class JavaLogger(override val tag: String) : Logger {
+@RSocketLoggingApi
+public class JavaLogger(override val tag: String) : Logger {
     private val jLogger = JLogger.getLogger(tag)
 
     private val LoggingLevel.jLevel: JLevel
         get() = when (this) {
             LoggingLevel.TRACE -> JLevel.FINEST
             LoggingLevel.DEBUG -> JLevel.FINE
-            LoggingLevel.INFO -> JLevel.INFO
-            LoggingLevel.WARN -> JLevel.WARNING
+            LoggingLevel.INFO  -> JLevel.INFO
+            LoggingLevel.WARN  -> JLevel.WARNING
             LoggingLevel.ERROR -> JLevel.SEVERE
         }
 
@@ -46,7 +50,7 @@ class JavaLogger(override val tag: String) : Logger {
         jLogger.log(record)
     }
 
-    companion object : LoggerFactory {
+    public companion object : LoggerFactory {
         override fun logger(tag: String): Logger = JavaLogger(tag)
     }
 }

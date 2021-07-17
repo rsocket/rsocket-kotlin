@@ -24,7 +24,7 @@ class RoutingMetadataTest : TestWithLeakCheck {
     fun encodeMetadata() {
         val tags = listOf("ws://localhost:8080/rsocket", "x".repeat(200))
         val metadata = RoutingMetadata(tags)
-        val decodedMetadata = metadata.toPacket(InUseTrackingPool).read(InUseTrackingPool, RoutingMetadata)
+        val decodedMetadata = metadata.readLoop(RoutingMetadata)
         assertEquals(tags, decodedMetadata.tags)
     }
 

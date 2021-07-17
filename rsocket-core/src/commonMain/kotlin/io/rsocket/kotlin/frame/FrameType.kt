@@ -18,7 +18,7 @@ package io.rsocket.kotlin.frame
 
 import io.rsocket.kotlin.frame.io.*
 
-internal enum class FrameType(val encodedType: Int, flags: Int = Flags.Empty) {
+public enum class FrameType(public val encodedType: Int, flags: Int = Flags.Empty) {
     Reserved(0x00),
 
     //CONNECTION
@@ -49,11 +49,11 @@ internal enum class FrameType(val encodedType: Int, flags: Int = Flags.Empty) {
 
     Extension(0x3F, Flags.CanHaveData or Flags.CanHaveMetadata);
 
-    val hasInitialRequest: Boolean = flags check Flags.HasInitialRequest
-    val isRequestType: Boolean = flags check Flags.Request
-    val isFragmentable: Boolean = flags check Flags.Fragmentable
-    val canHaveMetadata: Boolean = flags check Flags.CanHaveMetadata
-    val canHaveData: Boolean = flags check Flags.CanHaveData
+    public val hasInitialRequest: Boolean = flags check Flags.HasInitialRequest
+    public val isRequestType: Boolean = flags check Flags.Request
+    public val isFragmentable: Boolean = flags check Flags.Fragmentable
+    public val canHaveMetadata: Boolean = flags check Flags.CanHaveMetadata
+    public val canHaveData: Boolean = flags check Flags.CanHaveData
 
     private object Flags {
         const val Empty = 0
@@ -64,7 +64,7 @@ internal enum class FrameType(val encodedType: Int, flags: Int = Flags.Empty) {
         const val CanHaveData = 16
     }
 
-    companion object {
+    internal companion object {
         private val encodedTypes: Array<FrameType?>
 
         init {
