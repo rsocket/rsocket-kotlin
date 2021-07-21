@@ -28,7 +28,7 @@ import kotlin.time.*
 class SetupFrameTest : TestWithLeakCheck {
 
     private val version = Version.Current
-    private val keepAlive = KeepAlive(10.seconds, 500.seconds)
+    private val keepAlive = KeepAlive(Duration.seconds(10), Duration.seconds(500))
     private val payloadMimeType = PayloadMimeType(WellKnownMimeType.ApplicationOctetStream, CustomMimeType("mime"))
 
     @Test

@@ -20,7 +20,7 @@ import io.ktor.utils.io.core.*
 
 public fun Payload(data: ByteReadPacket, metadata: ByteReadPacket? = null): Payload = DefaultPayload(data, metadata)
 
-public interface Payload : Closeable {
+public sealed interface Payload : Closeable {
     public val data: ByteReadPacket
     public val metadata: ByteReadPacket?
 

@@ -18,13 +18,13 @@ package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.frame.io.*
 
-public interface MimeType
+public sealed interface MimeType
 
-public interface MimeTypeWithName : MimeType {
+public sealed interface MimeTypeWithName : MimeType {
     public val text: String
 }
 
-public interface MimeTypeWithId : MimeType {
+public sealed interface MimeTypeWithId : MimeType {
     public val identifier: Byte
 }
 

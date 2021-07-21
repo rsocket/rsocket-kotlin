@@ -33,7 +33,6 @@ public class RawMetadata(
     }
 
     private class Reader(override val mimeType: MimeType) : MetadataReader<RawMetadata> {
-        @DangerousInternalIoApi
         override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): RawMetadata = RawMetadata(mimeType, readPacket(pool))
     }
 

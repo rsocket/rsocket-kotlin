@@ -39,12 +39,9 @@ public interface AuthMetadata : Metadata {
 
 @ExperimentalMetadataApi
 public interface AuthMetadataReader<AM : AuthMetadata> : MetadataReader<AM> {
-    @DangerousInternalIoApi
     public fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): AM
 
     override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketAuthentication
-
-    @DangerousInternalIoApi
     override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): AM {
         val type = readAuthType()
         return readContent(type, pool)

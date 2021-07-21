@@ -16,9 +16,11 @@
 
 package io.rsocket.kotlin.core
 
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.logging.*
 
 public class RSocketServerBuilder internal constructor() {
+    @RSocketLoggingApi
     public var loggerFactory: LoggerFactory = DefaultLoggerFactory
 
     private val interceptors: InterceptorsBuilder = InterceptorsBuilder()
@@ -27,6 +29,7 @@ public class RSocketServerBuilder internal constructor() {
         interceptors.configure()
     }
 
+    @OptIn(RSocketLoggingApi::class)
     internal fun build(): RSocketServer = RSocketServer(loggerFactory, interceptors.build())
 }
 

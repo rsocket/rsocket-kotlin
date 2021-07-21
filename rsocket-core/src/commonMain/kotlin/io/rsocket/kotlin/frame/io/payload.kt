@@ -17,9 +17,11 @@
 package io.rsocket.kotlin.frame.io
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.payload.*
 
-internal fun ByteReadPacket.readMetadata(pool: BufferPool): ByteReadPacket {
+internal fun ByteReadPacket.readMetadata(pool: ObjectPool<ChunkBuffer>): ByteReadPacket {
     val length = readLength()
     return readPacket(pool, length)
 }
@@ -31,7 +33,7 @@ internal fun BytePacketBuilder.writeMetadata(metadata: ByteReadPacket?) {
     }
 }
 
-internal fun ByteReadPacket.readPayload(pool: BufferPool, flags: Int): Payload {
+internal fun ByteReadPacket.readPayload(pool: ObjectPool<ChunkBuffer>, flags: Int): Payload {
     val metadata = if (flags check Flags.Metadata) readMetadata(pool) else null
     val data = readPacket(pool)
     return Payload(data = data, metadata = metadata)

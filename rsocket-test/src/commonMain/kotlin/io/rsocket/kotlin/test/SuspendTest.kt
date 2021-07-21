@@ -21,10 +21,10 @@ import kotlin.coroutines.*
 import kotlin.time.*
 
 interface SuspendTest {
-    val testTimeout: Duration get() = 1.minutes
+    val testTimeout: Duration get() = Duration.minutes(1)
 
-    val beforeTimeout: Duration get() = 10.seconds
-    val afterTimeout: Duration get() = 10.seconds
+    val beforeTimeout: Duration get() = Duration.seconds(10)
+    val afterTimeout: Duration get() = Duration.seconds(10)
 
     val debug: Boolean get() = true //change to turn off debug logs locally (useful for CI)
 

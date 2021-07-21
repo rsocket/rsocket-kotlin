@@ -46,8 +46,8 @@ public sealed class RSocketError(public val errorCode: Int, message: String) : T
             public const val MinAllowedCode: Int = ErrorCode.CustomMin
             public const val MaxAllowedCode: Int = ErrorCode.CustomMax
 
-            public inline fun checkCodeInAllowedRange(errorCode: Int): Boolean =
-                    MinAllowedCode <= errorCode || errorCode <= MaxAllowedCode
+            public fun checkCodeInAllowedRange(errorCode: Int): Boolean =
+                MinAllowedCode <= errorCode || errorCode <= MaxAllowedCode
         }
     }
 }
@@ -55,7 +55,7 @@ public sealed class RSocketError(public val errorCode: Int, message: String) : T
 @Suppress("FunctionName") // function name intentionally starts with an uppercase letter
 internal fun RSocketError(streamId: Int, errorCode: Int, message: String): Throwable =
     when (streamId) {
-        0 -> when (errorCode) {
+        0    -> when (errorCode) {
             ErrorCode.InvalidSetup     -> RSocketError.Setup.Invalid(message)
             ErrorCode.UnsupportedSetup -> RSocketError.Setup.Unsupported(message)
             ErrorCode.RejectedSetup    -> RSocketError.Setup.Rejected(message)
@@ -66,11 +66,11 @@ internal fun RSocketError(streamId: Int, errorCode: Int, message: String): Throw
         }
         else -> when (errorCode) {
             ErrorCode.ApplicationError -> RSocketError.ApplicationError(message)
-            ErrorCode.Rejected -> RSocketError.Rejected(message)
-            ErrorCode.Canceled -> RSocketError.Canceled(message)
-            ErrorCode.Invalid -> RSocketError.Invalid(message)
-            else -> when (RSocketError.Custom.checkCodeInAllowedRange(errorCode)) {
-                true -> RSocketError.Custom(errorCode, message)
+            ErrorCode.Rejected         -> RSocketError.Rejected(message)
+            ErrorCode.Canceled         -> RSocketError.Canceled(message)
+            ErrorCode.Invalid          -> RSocketError.Invalid(message)
+            else                       -> when (RSocketError.Custom.checkCodeInAllowedRange(errorCode)) {
+                true  -> RSocketError.Custom(errorCode, message)
                 false -> IllegalArgumentException("Invalid Error frame in Stream ID $streamId: $errorCode '$message'")
             }
         }

@@ -61,7 +61,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         return RSocketConnector {
             loggerFactory = NoopLogger
             connectionConfig {
-                keepAlive = KeepAlive(1000.seconds, 1000.seconds)
+                keepAlive = KeepAlive(Duration.seconds(1000), Duration.seconds(1000))
             }
         }.connect(localServer)
     }

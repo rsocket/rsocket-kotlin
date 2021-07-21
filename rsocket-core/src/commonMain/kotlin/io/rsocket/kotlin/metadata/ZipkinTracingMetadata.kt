@@ -69,8 +69,6 @@ public class ZipkinTracingMetadata internal constructor(
 
     public companion object Reader : MetadataReader<ZipkinTracingMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketTracingZipkin
-
-        @DangerousInternalIoApi
         override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): ZipkinTracingMetadata {
             val flags = readByte()
 
