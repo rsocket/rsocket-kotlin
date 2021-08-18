@@ -43,8 +43,8 @@ internal class RequestFrame(
             return flags
         }
 
-    override fun release() {
-        payload.release()
+    override fun close() {
+        payload.close()
     }
 
     override fun BytePacketBuilder.writeSelf() {

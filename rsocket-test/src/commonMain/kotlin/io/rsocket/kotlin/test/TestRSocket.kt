@@ -26,24 +26,24 @@ import kotlin.coroutines.*
 class TestRSocket : RSocket {
     override val coroutineContext: CoroutineContext = Job()
 
-    override suspend fun metadataPush(metadata: ByteReadPacket): Unit = metadata.release()
+    override suspend fun metadataPush(metadata: ByteReadPacket): Unit = metadata.close()
 
-    override suspend fun fireAndForget(payload: Payload): Unit = payload.release()
+    override suspend fun fireAndForget(payload: Payload): Unit = payload.close()
 
     override suspend fun requestResponse(payload: Payload): Payload {
-        payload.release()
+        payload.close()
         return Payload(packet(data), packet(metadata))
     }
 
     override fun requestStream(payload: Payload): Flow<Payload> = flow {
-        payload.release()
+        payload.close()
         repeat(10000) {
             emitOrClose(Payload(packet(data), packet(metadata)))
         }
     }
 
     override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> = flow {
-        initPayload.release()
+        initPayload.close()
         payloads.collect { emitOrClose(it) }
     }
 

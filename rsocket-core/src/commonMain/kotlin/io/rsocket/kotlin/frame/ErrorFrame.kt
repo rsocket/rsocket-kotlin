@@ -27,7 +27,7 @@ internal class ErrorFrame(
     override val flags: Int get() = 0
     val errorCode get() = (throwable as? RSocketError)?.errorCode ?: ErrorCode.ApplicationError
 
-    override fun release(): Unit = Unit
+    override fun close(): Unit = Unit
 
     override fun BytePacketBuilder.writeSelf() {
         writeInt(errorCode)

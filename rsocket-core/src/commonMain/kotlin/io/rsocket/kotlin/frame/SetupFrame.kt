@@ -45,9 +45,9 @@ internal class SetupFrame(
             return flags
         }
 
-    override fun release() {
-        resumeToken?.release()
-        payload.release()
+    override fun close() {
+        resumeToken?.close()
+        payload.close()
     }
 
     override fun BytePacketBuilder.writeSelf() {

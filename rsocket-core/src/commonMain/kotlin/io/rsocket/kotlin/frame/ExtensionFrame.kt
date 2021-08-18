@@ -30,8 +30,8 @@ internal class ExtensionFrame(
     override val type: FrameType get() = FrameType.Extension
     override val flags: Int get() = if (payload.metadata != null) Flags.Metadata else 0
 
-    override fun release() {
-        payload.release()
+    override fun close() {
+        payload.close()
     }
 
     override fun BytePacketBuilder.writeSelf() {

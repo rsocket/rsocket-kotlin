@@ -32,7 +32,7 @@ internal class StreamsStorage(private val isServer: Boolean, private val pool: O
     }
 
     fun remove(id: Int): FrameHandler? {
-        return handlers.remove(id)?.also(FrameHandler::release)
+        return handlers.remove(id)?.also(FrameHandler::close)
     }
 
     fun contains(id: Int): Boolean {
@@ -44,7 +44,7 @@ internal class StreamsStorage(private val isServer: Boolean, private val pool: O
         handlers.clear()
         values.forEach {
             it.cleanup(error)
-            it.release()
+            it.close()
         }
     }
 
@@ -55,8 +55,8 @@ internal class StreamsStorage(private val isServer: Boolean, private val pool: O
             is CancelFrame   -> handlers[id]?.handleCancel()
             is ErrorFrame    -> handlers[id]?.handleError(frame.throwable)
             is RequestFrame  -> when {
-                frame.type == FrameType.Payload -> handlers[id]?.handleRequest(frame) ?: frame.release() // release on unknown stream id
-                isServer.xor(id % 2 != 0)       -> frame.release() // request frame on wrong stream id
+                frame.type == FrameType.Payload -> handlers[id]?.handleRequest(frame) ?: frame.close() // release on unknown stream id
+                isServer.xor(id % 2 != 0)       -> frame.close() // request frame on wrong stream id
                 else                            -> {
                     val initialRequest = frame.initialRequest
                     val handler = when (frame.type) {
@@ -70,7 +70,7 @@ internal class StreamsStorage(private val isServer: Boolean, private val pool: O
                     handler.handleRequest(frame)
                 }
             }
-            else             -> frame.release()
+            else             -> frame.close()
         }
     }
 }

@@ -31,7 +31,7 @@ internal class ResumeFrame(
     override val streamId: Int get() = 0
     override val flags: Int get() = 0
 
-    override fun release(): Unit = Unit
+    override fun close(): Unit = Unit
 
     override fun BytePacketBuilder.writeSelf() {
         writeVersion(version)

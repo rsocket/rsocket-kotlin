@@ -29,7 +29,7 @@ public fun CompositeMetadata.Entry.hasMimeTypeOf(reader: MetadataReader<*>): Boo
 public fun <M : Metadata> CompositeMetadata.Entry.read(reader: MetadataReader<M>, pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool): M {
     if (mimeType == reader.mimeType) return content.read(reader, pool)
 
-    content.release()
+    content.close()
     error("Expected mimeType '${reader.mimeType}' but was '$mimeType'")
 }
 

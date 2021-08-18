@@ -32,6 +32,10 @@ public class RawAuthMetadata(
         writePacket(content)
     }
 
+    override fun close() {
+        content.close()
+    }
+
     public companion object Reader : AuthMetadataReader<RawAuthMetadata> {
         override fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): RawAuthMetadata {
             val content = readPacket(pool)
@@ -46,7 +50,7 @@ public fun RawAuthMetadata.hasAuthTypeOf(reader: AuthMetadataReader<*>): Boolean
 @ExperimentalMetadataApi
 public fun <AM : AuthMetadata> RawAuthMetadata.read(reader: AuthMetadataReader<AM>, pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool): AM {
     return readOrNull(reader, pool) ?: run {
-        content.release()
+        content.close()
         error("Expected auth type '${reader.mimeType}' but was '$mimeType'")
     }
 }

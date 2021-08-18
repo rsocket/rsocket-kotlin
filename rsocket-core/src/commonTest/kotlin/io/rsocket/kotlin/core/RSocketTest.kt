@@ -49,12 +49,12 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             handler ?: RSocketRequestHandler {
                 requestResponse { it }
                 requestStream {
-                    it.release()
+                    it.close()
                     flow { repeat(10) { emitOrClose(payload("server got -> [$it]")) } }
                 }
                 requestChannel { init, payloads ->
-                    init.release()
-                    payloads.onEach { it.release() }.launchIn(this)
+                    init.close()
+                    payloads.onEach { it.close() }.launchIn(this)
                     flow { repeat(10) { emitOrClose(payload("server got -> [$it]")) } }
                 }
             }
@@ -71,7 +71,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testRequestResponseNoError() = test {
         val requester = start()
-        requester.requestResponse(payload("HELLO")).release()
+        requester.requestResponse(payload("HELLO")).close()
     }
 
     @Test
@@ -96,7 +96,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         val requester = start()
         requester.requestStream(payload("HELLO")).test {
             repeat(10) {
-                expectItem().release()
+                expectItem().close()
             }
             expectComplete()
         }
@@ -122,7 +122,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         })
         requester.requestStream(payload("HELLO")).flowOn(PrefetchStrategy(1, 0)).test {
             repeat(3) {
-                expectItem().release()
+                expectItem().close()
             }
             val error = expectError()
             assertTrue(error is RSocketError.ApplicationError)
@@ -148,7 +148,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             .map { it.value }
             .test {
                 repeat(23) {
-                    expectItem().release()
+                    expectItem().close()
                 }
                 val error = expectError()
                 assertTrue(error is IllegalStateException)
@@ -170,7 +170,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             .take(3) //canceled after 3 element
             .test {
                 repeat(3) {
-                    expectItem().release()
+                    expectItem().close()
                 }
                 expectComplete()
             }
@@ -191,7 +191,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             .produceIn(this)
 
         repeat(18) {
-            channel.receive().release()
+            channel.receive().close()
         }
         assertTrue(channel.receiveCatching().isClosed)
     }
@@ -203,7 +203,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         val request = (1..10).asFlow().map { payload(it.toString()) }.onCompletion { awaiter.complete() }
         requester.requestChannel(payload(""), request).test {
             repeat(10) {
-                expectItem().release()
+                expectItem().close()
             }
             expectComplete()
         }
@@ -216,7 +216,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         val error = CompletableDeferred<Throwable>()
         val requester = start(RSocketRequestHandler {
             requestChannel { init, payloads ->
-                init.release()
+                init.close()
                 payloads.catch { error.complete(it) }
             }
         })
@@ -234,14 +234,14 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     fun testRequestPropagatesCorrectlyForRequestChannel() = test {
         val requester = start(RSocketRequestHandler {
             requestChannel { init, payloads ->
-                init.release()
+                init.close()
                 payloads.flowOn(PrefetchStrategy(3, 0)).take(3)
             }
         })
         val request = (1..3).asFlow().map { payload(it.toString()) }
         requester.requestChannel(payload("0"), request).flowOn(PrefetchStrategy(3, 0)).test {
             repeat(3) {
-                expectItem().release()
+                expectItem().close()
             }
             expectComplete()
         }

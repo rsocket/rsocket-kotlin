@@ -113,7 +113,7 @@ public class RSocketConnectorBuilder internal constructor() {
 
     private companion object {
         private val defaultAcceptor: ConnectionAcceptor = ConnectionAcceptor {
-            config.setupPayload.release()
+            config.setupPayload.close()
             EmptyRSocket()
         }
 

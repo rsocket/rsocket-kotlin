@@ -26,7 +26,7 @@ internal inline fun buildPacket(pool: ObjectPool<ChunkBuffer>, block: BytePacket
         block(builder)
         return builder.build()
     } catch (t: Throwable) {
-        builder.release()
+        builder.close()
         throw t
     }
 }

@@ -32,12 +32,15 @@ public class SimpleAuthMetadata(
     }
 
     override val type: AuthType get() = WellKnowAuthType.Simple
+
     override fun BytePacketBuilder.writeContent() {
         val length = username.encodeToByteArray()
         writeShort(length.size.toShort())
         writeText(username)
         writeText(password)
     }
+
+    override fun close(): Unit = Unit
 
     public companion object Reader : AuthMetadataReader<SimpleAuthMetadata> {
         override fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): SimpleAuthMetadata {

@@ -25,7 +25,7 @@ import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.metadata.*
 
 @ExperimentalMetadataApi
-public interface AuthMetadata : Metadata {
+public sealed interface AuthMetadata : Metadata {
     public val type: AuthType
     public fun BytePacketBuilder.writeContent()
 
@@ -38,7 +38,7 @@ public interface AuthMetadata : Metadata {
 }
 
 @ExperimentalMetadataApi
-public interface AuthMetadataReader<AM : AuthMetadata> : MetadataReader<AM> {
+public sealed interface AuthMetadataReader<AM : AuthMetadata> : MetadataReader<AM> {
     public fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): AM
 
     override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketAuthentication

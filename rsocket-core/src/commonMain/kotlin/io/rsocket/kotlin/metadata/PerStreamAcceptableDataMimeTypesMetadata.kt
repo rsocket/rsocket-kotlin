@@ -37,6 +37,8 @@ public class PerStreamAcceptableDataMimeTypesMetadata(public val types: List<Mim
         }
     }
 
+    override fun close(): Unit = Unit
+
     public companion object Reader : MetadataReader<PerStreamAcceptableDataMimeTypesMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketAcceptMimeTypes
         override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): PerStreamAcceptableDataMimeTypesMetadata {

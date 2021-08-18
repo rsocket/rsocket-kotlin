@@ -24,7 +24,7 @@ internal class CancelFrame(
     override val type: FrameType get() = FrameType.Cancel
     override val flags: Int get() = 0
 
-    override fun release(): Unit = Unit
+    override fun close(): Unit = Unit
 
     override fun BytePacketBuilder.writeSelf(): Unit = Unit
 

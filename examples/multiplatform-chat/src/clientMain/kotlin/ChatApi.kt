@@ -34,6 +34,6 @@ actual class ChatApi(private val rSocket: RSocket, private val proto: ProtoBuf) 
     actual suspend fun delete(id: Int) {
         rSocket.requestResponse(
             proto.encodeToPayload(route = "chats.delete", DeleteChat(id))
-        ).release()
+        ).close()
     }
 }

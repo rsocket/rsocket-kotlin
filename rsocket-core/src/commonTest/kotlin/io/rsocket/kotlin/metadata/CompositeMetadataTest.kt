@@ -89,7 +89,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
         assertTrue(WellKnownMimeType.ApplicationAvro in decoded)
         assertTrue(WellKnownMimeType.MessageRSocketRouting !in decoded)
 
-        decoded.entries.forEach { it.content.release() }
+        decoded.entries.forEach { it.content.close() }
     }
 
     @Test

@@ -18,21 +18,18 @@ package io.rsocket.kotlin.payload
 
 import io.ktor.utils.io.core.*
 
-public sealed interface PayloadBuilder {
+public sealed interface PayloadBuilder : Closeable {
     public fun data(value: ByteReadPacket)
     public fun metadata(value: ByteReadPacket)
-
-    public fun clean()
-    public fun build(): Payload
 }
 
 public inline fun buildPayload(block: PayloadBuilder.() -> Unit): Payload {
-    val builder = createPayloadBuilder()
+    val builder = PayloadFromBuilder()
     try {
         builder.block()
         return builder.build()
     } catch (t: Throwable) {
-        builder.clean()
+        builder.close()
         throw t
     }
 }
@@ -47,9 +44,7 @@ public fun PayloadBuilder.metadata(value: ByteArray): Unit = metadata { writeFul
 
 
 @PublishedApi
-internal fun createPayloadBuilder(): PayloadBuilder = PayloadFromBuilder()
-
-private class PayloadFromBuilder : PayloadBuilder, Payload {
+internal class PayloadFromBuilder : PayloadBuilder, Payload {
     private var hasData = false
     private var hasMetadata = false
 
@@ -60,7 +55,7 @@ private class PayloadFromBuilder : PayloadBuilder, Payload {
 
     override fun data(value: ByteReadPacket) {
         if (hasData) {
-            value.release()
+            value.close()
             error("Data already provided")
         }
         data = value
@@ -69,15 +64,14 @@ private class PayloadFromBuilder : PayloadBuilder, Payload {
 
     override fun metadata(value: ByteReadPacket) {
         if (hasMetadata) {
-            value.release()
+            value.close()
             error("Metadata already provided")
         }
         metadata = value
         hasMetadata = true
     }
 
-    override fun clean(): Unit = release()
-    override fun build(): Payload {
+    fun build(): Payload {
         check(hasData) { "Data is required" }
         return this
     }

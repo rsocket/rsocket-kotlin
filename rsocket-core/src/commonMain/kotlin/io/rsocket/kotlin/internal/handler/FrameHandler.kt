@@ -23,7 +23,7 @@ import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 
-internal abstract class FrameHandler(pool: ObjectPool<ChunkBuffer>) {
+internal abstract class FrameHandler(pool: ObjectPool<ChunkBuffer>) : Closeable {
     private val data = BytePacketBuilder(0, pool)
     private val metadata = BytePacketBuilder(0, pool)
     protected abstract var hasMetadata: Boolean
@@ -57,9 +57,9 @@ internal abstract class FrameHandler(pool: ObjectPool<ChunkBuffer>) {
 
     abstract fun cleanup(cause: Throwable?)
 
-    fun release() {
-        data.release()
-        metadata.release()
+    override fun close() {
+        data.close()
+        metadata.close()
     }
 }
 

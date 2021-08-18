@@ -29,8 +29,6 @@ public sealed class Frame : Closeable {
     public abstract val streamId: Int
     public abstract val flags: Int
 
-    internal abstract fun release()
-
     protected abstract fun BytePacketBuilder.writeSelf()
     protected abstract fun StringBuilder.appendFlags()
     protected abstract fun StringBuilder.appendSelf()
@@ -53,10 +51,6 @@ public sealed class Frame : Closeable {
     protected fun StringBuilder.appendFlag(flag: Char, value: Boolean) {
         append(flag)
         if (value) append(1) else append(0)
-    }
-
-    override fun close() {
-        release()
     }
 }
 

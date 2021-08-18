@@ -43,15 +43,15 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
         val server = RSocketServer().bindIn(CoroutineScope(benchJob + Dispatchers.Unconfined), LocalServerTransport()) {
             RSocketRequestHandler {
                 requestResponse {
-                    it.release()
+                    it.close()
                     payloadCopy()
                 }
                 requestStream {
-                    it.release()
+                    it.close()
                     payloadsFlow
                 }
                 requestChannel { init, payloads ->
-                    init.release()
+                    init.close()
                     payloads.flowOn(requestStrategy)
                 }
             }
@@ -74,7 +74,7 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
     )
 
     override fun releasePayload(payload: Payload) {
-        payload.release()
+        payload.close()
     }
 
     override suspend fun doRequestResponse(): Payload = client.requestResponse(payloadCopy())

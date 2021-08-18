@@ -32,7 +32,7 @@ public fun CompositeMetadata(entries: List<Metadata>): CompositeMetadata =
     DefaultCompositeMetadata(entries.map(CompositeMetadata::Entry))
 
 @ExperimentalMetadataApi
-public interface CompositeMetadata : Metadata {
+public sealed interface CompositeMetadata : Metadata {
     public val entries: List<Entry>
     override val mimeType: MimeType get() = Reader.mimeType
 
@@ -42,6 +42,10 @@ public interface CompositeMetadata : Metadata {
             writeLength(it.content.remaining.toInt()) //write metadata length
             writePacket(it.content) //write metadata content
         }
+    }
+
+    override fun close() {
+        entries.forEach { it.content.close() }
     }
 
     public class Entry(public val mimeType: MimeType, public val content: ByteReadPacket) {

@@ -78,7 +78,7 @@ internal class RSocketResponder(
             if (currentCoroutineContext().isActive && isFailed) sender.sendError(id, cause)
             throw cause
         } finally {
-            payload.release()
+            payload.close()
         }
     }
 

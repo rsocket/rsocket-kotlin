@@ -28,8 +28,8 @@ internal class MetadataPushFrame(
     override val streamId: Int get() = 0
     override val flags: Int get() = Flags.Metadata
 
-    override fun release() {
-        metadata.release()
+    override fun close() {
+        metadata.close()
     }
 
     override fun BytePacketBuilder.writeSelf() {
