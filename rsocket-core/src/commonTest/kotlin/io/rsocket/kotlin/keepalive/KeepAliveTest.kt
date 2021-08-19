@@ -18,8 +18,10 @@ package io.rsocket.kotlin.keepalive
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlin.test.*
@@ -27,12 +29,14 @@ import kotlin.time.*
 
 class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
-    private fun requester(keepAlive: KeepAlive = KeepAlive(Duration.milliseconds(100), Duration.seconds(1))): RSocket = run {
-        val state = RSocketState(connection, keepAlive)
-        val requester = RSocketRequester(state, StreamId.client())
-        state.start(RSocketRequestHandler { })
-        requester
-    }
+    private suspend fun requester(
+        keepAlive: KeepAlive = KeepAlive(Duration.milliseconds(100), Duration.seconds(1))
+    ): RSocket = connection.connect(
+        isServer = false,
+        interceptors = InterceptorsBuilder().build(),
+        connectionConfig = ConnectionConfig(keepAlive, DefaultPayloadMimeType, Payload.Empty),
+        acceptor = { RSocketRequestHandler { } }
+    )
 
     @Test
     fun requesterSendKeepAlive() = test {

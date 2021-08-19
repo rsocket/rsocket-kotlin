@@ -33,44 +33,40 @@ public class RSocketServer internal constructor(
     public fun <T> bind(
         transport: ServerTransport<T>,
         acceptor: ConnectionAcceptor,
-    ): T = transport.start {
-        val connection = it.wrapConnection()
-        val setupFrame = connection.validateSetup()
-        connection.start(setupFrame, acceptor)
-        connection.job.join()
-    }
+    ): T = transport.start { it.wrapConnection().bind(acceptor).join() }
 
-    private suspend fun Connection.start(setupFrame: SetupFrame, acceptor: ConnectionAcceptor) {
-        val connectionConfig = ConnectionConfig(
-            keepAlive = setupFrame.keepAlive,
-            payloadMimeType = setupFrame.payloadMimeType,
-            setupPayload = setupFrame.payload
-        )
-        try {
-            connect(isServer = true, interceptors, connectionConfig, acceptor)
-        } catch (e: Throwable) {
-            failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
-        }
-    }
-
-    private suspend fun Connection.validateSetup(): SetupFrame {
-        val setupFrame = receiveFrame()
-        return when {
+    private suspend fun Connection.bind(acceptor: ConnectionAcceptor): Job = receiveFrame().closeOnError { setupFrame ->
+        when {
             setupFrame !is SetupFrame             -> failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
             setupFrame.version != Version.Current -> failSetup(RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}"))
             setupFrame.honorLease                 -> failSetup(RSocketError.Setup.Unsupported("Lease is not supported"))
             setupFrame.resumeToken != null        -> failSetup(RSocketError.Setup.Unsupported("Resume is not supported"))
-            else                                  -> setupFrame
+            else                                  -> try {
+                connect(
+                    isServer = true,
+                    interceptors = interceptors,
+                    connectionConfig = ConnectionConfig(
+                        keepAlive = setupFrame.keepAlive,
+                        payloadMimeType = setupFrame.payloadMimeType,
+                        setupPayload = setupFrame.payload
+                    ),
+                    acceptor = acceptor
+                )
+                job
+            } catch (e: Throwable) {
+                failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
+            }
         }
     }
-
-    private fun Connection.wrapConnection(): Connection =
-        interceptors.wrapConnection(this)
-            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"))
 
     private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
         sendFrame(ErrorFrame(0, error))
         job.cancel("Connection establishment failed", error)
         throw error
     }
+
+    private fun Connection.wrapConnection(): Connection =
+        interceptors.wrapConnection(this)
+            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"))
+
 }
