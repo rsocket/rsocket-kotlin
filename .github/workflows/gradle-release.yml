@@ -30,10 +30,10 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
           restore-keys: ${{ runner.os }}-gradle-
       - name: Check full project builds
-        uses: eskatos/gradle-command-action@v1
+        uses: gradle/gradle-build-action@v1
         with:
           arguments: build -PskipTests --scan --info
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
 
@@ -63,10 +63,10 @@ jobs:
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
         shell: bash
       - name: Publish Packages to Sonotype (version ${{ env.TAG_NAME }})
-        uses: eskatos/gradle-command-action@v1
+        uses: gradle/gradle-build-action@v1
         with:
           arguments: publishAllPublicationsToSonatypeRepository -Pversion=${{ env.TAG_NAME }} --info --no-daemon
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
           ORG_GRADLE_PROJECT_signingKey: ${{secrets.signingKey}}

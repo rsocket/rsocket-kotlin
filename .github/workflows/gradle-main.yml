@@ -62,28 +62,28 @@ jobs:
       - name: Test rsocket-core module
         if: success() || failure()
         timeout-minutes: 10
-        uses: eskatos/gradle-command-action@v1
+        uses: gradle/gradle-build-action@v1
         with:
           arguments: rsocket-core:${{ matrix.target }}Test --scan --info
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
       - name: Test rsocket-transport-local module
         if: success() || failure()
         timeout-minutes: 10
-        uses: eskatos/gradle-command-action@v1
+        uses: gradle/gradle-build-action@v1
         with:
           arguments: rsocket-transport-local:${{ matrix.target }}Test --scan --info
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
       - name: Test rsocket-transport-ktor module
         if: matrix.target != 'mingwX64' && matrix.target != 'jsIrNode' && matrix.target != 'jsIrBrowser' && matrix.target != 'jsLegacyNode' && matrix.target != 'jsLegacyBrowser' && (success() || failure())
         timeout-minutes: 10
-        uses: eskatos/gradle-command-action@v1
+        uses: gradle/gradle-build-action@v1
         with:
           arguments: rsocket-transport-ktor:${{ matrix.target }}Test --scan --info
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
 
@@ -118,10 +118,10 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
           restore-keys: ${{ runner.os }}-gradle-
       - name: Check full project builds
-        uses: eskatos/gradle-command-action@v1
+        uses: gradle/gradle-build-action@v1
         with:
           arguments: build -PskipTests --scan --info
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
 
@@ -151,9 +151,9 @@ jobs:
         run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
         shell: bash
       - name: Publish Packages to Artifactory (version x.y.z-SNAPSHOT)
-        uses: eskatos/gradle-command-action@v1
+        uses: gradle/gradle-build-action@v1
         with:
           arguments: artifactoryPublish -PbintrayUser=${{ secrets.bintrayUser }} -PbintrayKey=${{ secrets.bintrayKey }} -PversionSuffix=-SNAPSHOT -PbuildNumber=${{ github.run_number }} --info
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false

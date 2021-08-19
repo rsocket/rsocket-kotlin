@@ -19,19 +19,19 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
           restore-keys: ${{ runner.os }}-gradle-
 
-      - uses: eskatos/gradle-command-action@v1
+      - uses: gradle/gradle-build-action@v1
         name: Kotlin Benchmarks
         with:
           arguments: kotlinBenchmark
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
 
-      - uses: eskatos/gradle-command-action@v1
+      - uses: gradle/gradle-build-action@v1
         name: Java Benchmarks
         with:
           arguments: javaBenchmark
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
 
