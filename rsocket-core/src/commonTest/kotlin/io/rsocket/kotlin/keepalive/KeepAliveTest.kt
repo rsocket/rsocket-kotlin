@@ -65,7 +65,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
         assertTrue(rSocket.isActive)
         connection.test {
             repeat(50) {
-                expectItem()
+                awaitItem()
             }
         }
     }
@@ -102,7 +102,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
     fun rSocketCanceledOnMissingKeepAliveTicks() = test {
         val rSocket = requester()
         connection.test {
-            while (rSocket.isActive) kotlin.runCatching { expectItem() }
+            while (rSocket.isActive) kotlin.runCatching { awaitItem() }
         }
         assertTrue(rSocket.coroutineContext.job.getCancellationException().cause is RSocketError.ConnectionError)
     }

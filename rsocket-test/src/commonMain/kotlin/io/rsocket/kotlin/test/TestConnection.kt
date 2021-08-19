@@ -77,5 +77,5 @@ suspend fun FlowTurbine<*>.expectNoEventsIn(timeMillis: Long) {
 }
 
 suspend inline fun FlowTurbine<Frame>.expectFrame(block: (frame: Frame) -> Unit) {
-    block(expectItem())
+    block(awaitItem())
 }

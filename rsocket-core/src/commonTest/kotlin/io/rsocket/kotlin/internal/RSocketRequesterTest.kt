@@ -386,7 +386,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
             connection.test {
                 expectFrame { assertTrue(it is RequestFrame) }
                 connection.cancel()
-                expectComplete()
+                awaitComplete()
             }
         }
         assertFailsWith(CancellationException::class) { request() }
