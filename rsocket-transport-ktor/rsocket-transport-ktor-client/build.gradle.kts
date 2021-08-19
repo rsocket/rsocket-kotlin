@@ -15,23 +15,16 @@
  */
 
 plugins {
-    kotlin("multiplatform")
-
-    signing
-    `maven-publish`
-    id("com.jfrog.artifactory")
+    `rsocket-build-library`
+    `rsocket-build-multiplatform`
 }
-
-val ktorVersion: String by rootProject
 
 kotlin {
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
-                api(project(":rsocket-core"))
-                api(project(":rsocket-transport-ktor"))
-
-                api("io.ktor:ktor-client-core:$ktorVersion")
+                api(projects.rsocketTransportKtor)
+                api(libs.ktor.client.core)
             }
         }
     }

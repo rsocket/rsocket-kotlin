@@ -15,18 +15,15 @@
  */
 
 plugins {
-    kotlin("multiplatform")
-
-    signing
-    `maven-publish`
-    id("com.jfrog.artifactory")
+    `rsocket-build-library`
+    `rsocket-build-multiplatform`
 }
 
 kotlin {
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
-                api(project(":rsocket-core"))
+                api(projects.rsocketCore)
             }
         }
     }

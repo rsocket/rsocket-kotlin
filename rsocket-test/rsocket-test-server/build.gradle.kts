@@ -19,19 +19,18 @@ import java.io.*
 import java.net.*
 
 plugins {
-    kotlin("multiplatform")
+    `rsocket-build`
+    `rsocket-build-jvm`
 }
 
-val ktorVersion: String by rootProject
-
 kotlin {
+    testOptIn()
     sourceSets {
-        val jvmMain by getting {
+        jvmMain {
             dependencies {
-                implementation(project(":rsocket-test"))
-                implementation(project(":rsocket-transport-ktor-server"))
-
-                implementation("io.ktor:ktor-server-cio:$ktorVersion")
+                implementation(projects.rsocketTest)
+                implementation(projects.rsocketTransportKtorServer)
+                implementation(libs.ktor.server.cio)
             }
         }
     }

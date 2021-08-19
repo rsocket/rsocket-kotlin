@@ -15,28 +15,22 @@
  */
 
 plugins {
-    kotlin("multiplatform")
-    id("kotlinx-atomicfu")
-
-    signing
-    `maven-publish`
-    id("com.jfrog.artifactory")
+    `rsocket-build-library`
+    `rsocket-build-multiplatform`
+    `kotlinx-atomicfu`
 }
-
-val ktorVersion: String by rootProject
-val kotlinxCoroutinesVersion: String by rootProject
 
 kotlin {
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
-                api("io.ktor:ktor-io:$ktorVersion")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
+                api(libs.ktor.io)
+                api(libs.kotlinx.coroutines.core)
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
-                implementation(project(":rsocket-transport-local"))
+                implementation(projects.rsocketTransportLocal)
             }
         }
     }

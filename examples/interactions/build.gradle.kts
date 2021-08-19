@@ -15,17 +15,18 @@
  */
 
 plugins {
-    kotlin("multiplatform")
+    `kotlin-multiplatform`
+    `kotlinx-atomicfu`
 }
 
 kotlin {
     jvm()
 
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
-                implementation(project(":rsocket-core"))
-                implementation(project(":rsocket-transport-local"))
+                implementation(projects.rsocketCore)
+                implementation(projects.rsocketTransportLocal)
             }
         }
     }

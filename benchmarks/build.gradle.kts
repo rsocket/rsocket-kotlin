@@ -17,14 +17,10 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 
 plugins {
-    kotlin("multiplatform")
-    id("org.jetbrains.kotlinx.benchmark")
-    kotlin("plugin.allopen")
+    `kotlin-multiplatform`
+    alias(libs.plugins.kotlin.allopen)
+    alias(libs.plugins.kotlinx.benchmark)
 }
-
-val rsocketJavaVersion: String by rootProject
-val kotlinxCoroutinesVersion: String by rootProject
-val kotlinxBenchmarkVersion: String by rootProject
 
 kotlin {
     val jvm = jvm() //common jvm source set
@@ -32,10 +28,10 @@ kotlin {
     val javaJvm = jvm("java")
 
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:$kotlinxBenchmarkVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
+                implementation(libs.kotlinx.benchmark)
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
 
@@ -52,9 +48,9 @@ kotlin {
         val javaMain by getting {
             dependsOn(jvmMain)
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$kotlinxCoroutinesVersion")
-                implementation("io.rsocket:rsocket-core:$rsocketJavaVersion")
-                implementation("io.rsocket:rsocket-transport-local:$rsocketJavaVersion")
+                implementation(libs.kotlinx.coroutines.reactor)
+                implementation(libs.rsocket.java.core)
+                implementation(libs.rsocket.java.transport.local)
             }
         }
     }

@@ -15,43 +15,33 @@
  */
 
 plugins {
-    kotlin("multiplatform")
-
-    signing
-    `maven-publish`
-    id("com.jfrog.artifactory")
+    `rsocket-build-library`
+    `rsocket-build-multiplatform`
 }
-
-val ktorVersion: String by rootProject
-val kotlinxAtomicfuVersion: String by rootProject
 
 kotlin {
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
-                api(project(":rsocket-core"))
-
-                api("io.ktor:ktor-network:$ktorVersion")
-                api("io.ktor:ktor-http-cio:$ktorVersion")
+                api(projects.rsocketCore)
+                api(libs.ktor.network)
+                api(libs.ktor.http.cio)
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
-                implementation(project(":rsocket-transport-ktor-client"))
-
-                implementation("org.jetbrains.kotlinx:atomicfu:$kotlinxAtomicfuVersion")
+                implementation(projects.rsocketTransportKtorClient)
+                implementation(libs.kotlinx.atomicfu)
             }
         }
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
-                implementation(project(":rsocket-transport-ktor-server"))
-
-                implementation("io.ktor:ktor-client-cio:$ktorVersion")
-                implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
-
-                implementation("io.ktor:ktor-server-cio:$ktorVersion")
-                implementation("io.ktor:ktor-server-netty:$ktorVersion")
-                implementation("io.ktor:ktor-server-jetty:$ktorVersion")
+                implementation(projects.rsocketTransportKtorServer)
+                implementation(libs.ktor.client.cio)
+                implementation(libs.ktor.client.okhttp)
+                implementation(libs.ktor.server.cio)
+                implementation(libs.ktor.server.netty)
+                implementation(libs.ktor.server.jetty)
             }
         }
     }

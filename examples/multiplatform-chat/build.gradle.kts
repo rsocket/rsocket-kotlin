@@ -17,13 +17,10 @@
 import org.jetbrains.kotlin.konan.target.*
 
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
-    id("kotlinx-atomicfu")
+    `kotlin-multiplatform`
+    `kotlinx-atomicfu`
+    alias(libs.plugins.kotlin.serialization)
 }
-
-val ktorVersion: String by rootProject
-val kotlinxSerializationVersion: String by rootProject
 
 kotlin {
     jvm("serverJvm")
@@ -50,38 +47,34 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":rsocket-core"))
-
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
+                implementation(projects.rsocketCore)
+                implementation(libs.kotlinx.serialization.protobuf)
             }
         }
 
         val clientMain by creating {
             dependsOn(commonMain)
             dependencies {
-                implementation(project(":rsocket-transport-ktor-client"))
+                implementation(projects.rsocketTransportKtorClient)
             }
         }
 
         val serverJvmMain by getting {
             dependencies {
-                implementation(project(":rsocket-transport-ktor-server"))
-                implementation("io.ktor:ktor-server-cio:$ktorVersion")
+                implementation(projects.rsocketTransportKtorServer)
+                implementation(libs.ktor.server.cio)
             }
         }
 
         val clientJvmMain by getting {
             dependsOn(clientMain)
             dependencies {
-                implementation("io.ktor:ktor-client-cio:$ktorVersion")
+                implementation(libs.ktor.client.cio)
             }
         }
 
         val clientJsMain by getting {
             dependsOn(clientMain)
-            dependencies {
-                implementation("io.ktor:ktor-client-core:$ktorVersion")
-            }
         }
 
         if (!HostManager.hostIsMingw) {
