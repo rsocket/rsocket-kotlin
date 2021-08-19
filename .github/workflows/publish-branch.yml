@@ -27,9 +27,9 @@ jobs:
         run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
         shell: bash
       - name: Publish Packages to Artifactory (version x.y.z-${{ env.BRANCH_NAME }}-SNAPSHOT)
-        uses: eskatos/gradle-command-action@v1
+        uses: gradle/gradle-build-action@v1
         with:
           arguments: artifactoryPublish -PbintrayUser=${{ secrets.bintrayUser }} -PbintrayKey=${{ secrets.bintrayKey }} -PversionSuffix=-${{ env.BRANCH_NAME }}-SNAPSHOT -PbuildNumber=${{ github.run_number }} --info
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false

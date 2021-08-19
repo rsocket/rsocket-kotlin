@@ -56,28 +56,28 @@ jobs:
       - name: Test rsocket-core module
         if: success() || failure()
         timeout-minutes: 10
-        uses: eskatos/gradle-command-action@v1
+        uses: gradle/gradle-build-action@v1
         with:
           arguments: rsocket-core:${{ matrix.target }}Test --scan --info
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
       - name: Test rsocket-transport-local module
         if: success() || failure()
         timeout-minutes: 10
-        uses: eskatos/gradle-command-action@v1
+        uses: gradle/gradle-build-action@v1
         with:
           arguments: rsocket-transport-local:${{ matrix.target }}Test --scan --info
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
       - name: Test rsocket-transport-ktor module
         if: matrix.target != 'mingwX64' && matrix.target != 'jsIrNode' && matrix.target != 'jsIrBrowser' && matrix.target != 'jsLegacyNode' && matrix.target != 'jsLegacyBrowser' && (success() || failure())
         timeout-minutes: 10
-        uses: eskatos/gradle-command-action@v1
+        uses: gradle/gradle-build-action@v1
         with:
           arguments: rsocket-transport-ktor:${{ matrix.target }}Test --scan --info
-          wrapper-cache-enabled: false
+          distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
 
