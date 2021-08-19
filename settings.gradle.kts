@@ -58,7 +58,6 @@ gradleEnterprise {
 rootProject.name = "rsocket-kotlin"
 
 include("benchmarks")
-include("playground")
 
 include("rsocket-core")
 include("rsocket-test")
@@ -81,6 +80,3 @@ fun includeExample(name: String) {
 //includeExample("nodejs-tcp-transport")
 includeExample("interactions")
 includeExample("multiplatform-chat")
-
-val publishCheckVersion: String? by settings
-if (publishCheckVersion != null) include("publish-check")
