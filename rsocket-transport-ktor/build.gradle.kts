@@ -49,4 +49,4 @@ kotlin {
 
 description = "Ktor RSocket transport implementations (TCP, Websocket)"
 
-evaluationDependsOn(":rsocket-test-server")
+dependsOnTestServer()

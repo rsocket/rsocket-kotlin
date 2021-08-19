@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.gradle.plugin.mpp.*
-import java.io.*
-import java.net.*
-
 plugins {
     `rsocket-build`
     `rsocket-build-jvm`
@@ -36,51 +32,4 @@ kotlin {
     }
 }
 
-open class RSocketTestServer : DefaultTask() {
-    @Internal
-    var server: Closeable? = null
-        private set
-
-    @Internal
-    lateinit var classpath: FileCollection
-
-    @TaskAction
-    fun exec() {
-        try {
-            println("[TestServer] start")
-            val loader = URLClassLoader(classpath.map { it.toURI().toURL() }.toTypedArray(), ClassLoader.getSystemClassLoader())
-            server = loader.loadClass("io.rsocket.kotlin.test.server.AppKt").getMethod("start").invoke(null) as Closeable
-            println("[TestServer] started")
-        } catch (cause: Throwable) {
-            println("[TestServer] failed: ${cause.message}")
-            cause.printStackTrace()
-        }
-    }
-}
-
-val startTestServer by tasks.registering(RSocketTestServer::class) {
-    dependsOn(tasks["jvmJar"])
-    classpath = (kotlin.targets["jvm"].compilations["test"] as KotlinJvmCompilation).runtimeDependencyFiles
-}
-
-val testTasks = setOf(
-    "jsLegacyNodeTest",
-    "jsIrNodeTest",
-    "jsLegacyBrowserTest",
-    "jsIrBrowserTest",
-)
-
-rootProject.allprojects {
-    if (name == "rsocket-transport-ktor") {
-        tasks.matching { it.name in testTasks }.all {
-            dependsOn(startTestServer)
-        }
-    }
-}
-
-gradle.buildFinished {
-    startTestServer.get().server?.run {
-        close()
-        println("[TestServer] stop")
-    }
-}
+registerTestServer()
