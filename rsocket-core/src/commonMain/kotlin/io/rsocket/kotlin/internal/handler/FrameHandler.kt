@@ -16,11 +16,17 @@
 
 package io.rsocket.kotlin.internal.handler
 
+import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 
-internal abstract class FrameHandler {
+internal abstract class FrameHandler(pool: ObjectPool<ChunkBuffer>) {
+    private val data = BytePacketBuilder(0, pool)
+    private val metadata = BytePacketBuilder(0, pool)
+    protected abstract var hasMetadata: Boolean
 
     fun handleRequest(frame: RequestFrame) {
         if (frame.next || frame.type.isRequestType) handleNextFragment(frame)
@@ -28,8 +34,19 @@ internal abstract class FrameHandler {
     }
 
     private fun handleNextFragment(frame: RequestFrame) {
-        //TODO fragmentation will be here
-        handleNext(frame.payload)
+        data.writePacket(frame.payload.data)
+        when (val meta = frame.payload.metadata) {
+            null -> Unit
+            else -> {
+                hasMetadata = true
+                metadata.writePacket(meta)
+            }
+        }
+        if (frame.follows && !frame.complete) return
+
+        val payload = Payload(data.build(), if (hasMetadata) metadata.build() else null)
+        hasMetadata = false
+        handleNext(payload)
     }
 
     protected abstract fun handleNext(payload: Payload)
@@ -39,6 +56,11 @@ internal abstract class FrameHandler {
     abstract fun handleRequestN(n: Int)
 
     abstract fun cleanup(cause: Throwable?)
+
+    fun release() {
+        data.release()
+        metadata.release()
+    }
 }
 
 internal interface ReceiveFrameHandler {
@@ -51,7 +73,7 @@ internal interface SendFrameHandler {
     fun onSendFailed(cause: Throwable): Boolean // if true, then request is failed
 }
 
-internal abstract class BaseRequesterFrameHandler : FrameHandler(), ReceiveFrameHandler {
+internal abstract class BaseRequesterFrameHandler(pool: ObjectPool<ChunkBuffer>) : FrameHandler(pool), ReceiveFrameHandler {
     override fun handleCancel() {
         //should be called only for RC
     }
@@ -61,7 +83,7 @@ internal abstract class BaseRequesterFrameHandler : FrameHandler(), ReceiveFrame
     }
 }
 
-internal abstract class BaseResponderFrameHandler : FrameHandler(), SendFrameHandler {
+internal abstract class BaseResponderFrameHandler(pool: ObjectPool<ChunkBuffer>) : FrameHandler(pool), SendFrameHandler {
     protected abstract var job: Job?
 
     protected abstract fun start(payload: Payload): Job
@@ -84,11 +106,11 @@ internal abstract class BaseResponderFrameHandler : FrameHandler(), SendFrameHan
     }
 }
 
-internal expect abstract class ResponderFrameHandler() : BaseResponderFrameHandler {
+internal expect abstract class ResponderFrameHandler(pool: ObjectPool<ChunkBuffer>) : BaseResponderFrameHandler {
     override var job: Job?
-    //TODO fragmentation will be here
+    override var hasMetadata: Boolean
 }
 
-internal expect abstract class RequesterFrameHandler() : BaseRequesterFrameHandler {
-    //TODO fragmentation will be here
+internal expect abstract class RequesterFrameHandler(pool: ObjectPool<ChunkBuffer>) : BaseRequesterFrameHandler {
+    override var hasMetadata: Boolean
 }

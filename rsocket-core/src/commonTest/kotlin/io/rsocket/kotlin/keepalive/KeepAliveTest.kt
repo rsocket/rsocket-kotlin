@@ -33,6 +33,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
         keepAlive: KeepAlive = KeepAlive(Duration.milliseconds(100), Duration.seconds(1))
     ): RSocket = connection.connect(
         isServer = false,
+        maxFragmentSize = 0,
         interceptors = InterceptorsBuilder().build(),
         connectionConfig = ConnectionConfig(keepAlive, DefaultPayloadMimeType, Payload.Empty),
         acceptor = { RSocketRequestHandler { } }

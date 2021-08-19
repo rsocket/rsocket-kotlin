@@ -17,6 +17,8 @@
 package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.handler.*
@@ -28,28 +30,29 @@ import kotlinx.coroutines.flow.*
 @OptIn(ExperimentalStreamsApi::class)
 internal class RSocketRequester(
     connectionJob: Job,
-    private val prioritizer: Prioritizer,
+    private val sender: FrameSender,
     private val streamsStorage: StreamsStorage,
-    private val requestScope: CoroutineScope
+    private val requestScope: CoroutineScope,
+    private val pool: ObjectPool<ChunkBuffer>
 ) : RSocket {
     override val job: Job = connectionJob
 
     override suspend fun metadataPush(metadata: ByteReadPacket) {
         ensureActiveOrRelease(metadata)
         metadata.closeOnError {
-            prioritizer.send(MetadataPushFrame(metadata))
+            sender.sendMetadataPush(metadata)
         }
     }
 
     override suspend fun fireAndForget(payload: Payload) {
         ensureActiveOrRelease(payload)
 
-        val streamId = streamsStorage.nextId()
+        val id = streamsStorage.nextId()
         try {
-            prioritizer.send(RequestFireAndForgetFrame(streamId, payload))
+            sender.sendRequestPayload(FrameType.RequestFnF, id, payload)
         } catch (cause: Throwable) {
             payload.release()
-            if (job.isActive) prioritizer.send(CancelFrame(streamId)) //if cancelled during fragmentation
+            if (job.isActive) sender.sendCancel(id) //if cancelled during fragmentation
             throw cause
         }
     }
@@ -57,14 +60,14 @@ internal class RSocketRequester(
     override suspend fun requestResponse(payload: Payload): Payload {
         ensureActiveOrRelease(payload)
 
-        val streamId = streamsStorage.nextId()
+        val id = streamsStorage.nextId()
 
         val deferred = CompletableDeferred<Payload>()
-        val handler = RequesterRequestResponseFrameHandler(streamId, streamsStorage, deferred)
-        streamsStorage.save(streamId, handler)
+        val handler = RequesterRequestResponseFrameHandler(id, streamsStorage, deferred, pool)
+        streamsStorage.save(id, handler)
 
-        return handler.receiveOrCancel(streamId, payload) {
-            prioritizer.send(RequestResponseFrame(streamId, payload))
+        return handler.receiveOrCancel(id, payload) {
+            sender.sendRequestPayload(FrameType.RequestResponse, id, payload)
             deferred.await()
         }
     }
@@ -72,39 +75,39 @@ internal class RSocketRequester(
     override fun requestStream(payload: Payload): Flow<Payload> = requestFlow { strategy, initialRequest ->
         ensureActiveOrRelease(payload)
 
-        val streamId = streamsStorage.nextId()
+        val id = streamsStorage.nextId()
 
         val channel = SafeChannel<Payload>(Channel.UNLIMITED)
-        val handler = RequesterRequestStreamFrameHandler(streamId, streamsStorage, channel)
-        streamsStorage.save(streamId, handler)
+        val handler = RequesterRequestStreamFrameHandler(id, streamsStorage, channel, pool)
+        streamsStorage.save(id, handler)
 
-        handler.receiveOrCancel(streamId, payload) {
-            prioritizer.send(RequestStreamFrame(streamId, initialRequest, payload))
-            emitAllWithRequestN(channel, strategy) { prioritizer.send(RequestNFrame(streamId, it)) }
+        handler.receiveOrCancel(id, payload) {
+            sender.sendRequestPayload(FrameType.RequestStream, id, payload, initialRequest)
+            emitAllWithRequestN(channel, strategy) { sender.sendRequestN(id, it) }
         }
     }
 
     override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> = requestFlow { strategy, initialRequest ->
         ensureActiveOrRelease(initPayload)
 
-        val streamId = streamsStorage.nextId()
+        val id = streamsStorage.nextId()
 
         val channel = SafeChannel<Payload>(Channel.UNLIMITED)
         val limiter = Limiter(0)
-        val sender = Job(requestScope.coroutineContext.job)
-        val handler = RequesterRequestChannelFrameHandler(streamId, streamsStorage, limiter, sender, channel)
-        streamsStorage.save(streamId, handler)
+        val payloadsJob = Job(requestScope.coroutineContext.job)
+        val handler = RequesterRequestChannelFrameHandler(id, streamsStorage, limiter, payloadsJob, channel, pool)
+        streamsStorage.save(id, handler)
 
-        handler.receiveOrCancel(streamId, initPayload) {
-            prioritizer.send(RequestChannelFrame(streamId, initialRequest, initPayload))
+        handler.receiveOrCancel(id, initPayload) {
+            sender.sendRequestPayload(FrameType.RequestChannel, id, initPayload, initialRequest)
             //TODO lazy?
-            requestScope.launch(sender) {
-                handler.sendOrFail(streamId) {
-                    payloads.collectLimiting(limiter) { prioritizer.send(NextPayloadFrame(streamId, it)) }
-                    prioritizer.send(CompletePayloadFrame(streamId))
+            requestScope.launch(payloadsJob) {
+                handler.sendOrFail(id) {
+                    payloads.collectLimiting(limiter) { sender.sendNextPayload(id, it) }
+                    sender.sendCompletePayload(id)
                 }
             }
-            emitAllWithRequestN(channel, strategy) { prioritizer.send(RequestNFrame(streamId, it)) }
+            emitAllWithRequestN(channel, strategy) { sender.sendRequestN(id, it) }
         }
     }
 
@@ -114,7 +117,7 @@ internal class RSocketRequester(
             onSendComplete()
         } catch (cause: Throwable) {
             val isFailed = onSendFailed(cause)
-            if (job.isActive && isFailed) prioritizer.send(ErrorFrame(id, cause))
+            if (job.isActive && isFailed) sender.sendError(id, cause)
             throw cause
         }
     }
@@ -127,7 +130,7 @@ internal class RSocketRequester(
         } catch (cause: Throwable) {
             payload.release()
             val isCancelled = onReceiveCancelled(cause)
-            if (job.isActive && isCancelled) prioritizer.send(CancelFrame(id))
+            if (job.isActive && isCancelled) sender.sendCancel(id)
             throw cause
         }
     }

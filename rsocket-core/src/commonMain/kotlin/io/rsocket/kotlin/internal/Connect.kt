@@ -25,13 +25,15 @@ import kotlinx.coroutines.*
 @OptIn(TransportApi::class)
 internal suspend inline fun Connection.connect(
     isServer: Boolean,
+    maxFragmentSize: Int,
     interceptors: Interceptors,
     connectionConfig: ConnectionConfig,
     acceptor: ConnectionAcceptor
 ): RSocket {
     val keepAliveHandler = KeepAliveHandler(connectionConfig.keepAlive)
     val prioritizer = Prioritizer()
-    val streamsStorage = StreamsStorage(isServer)
+    val frameSender = FrameSender(prioritizer, pool, maxFragmentSize)
+    val streamsStorage = StreamsStorage(isServer, pool)
     val requestJob = SupervisorJob(job)
 
     requestJob.invokeOnCompletion {
@@ -43,7 +45,7 @@ internal suspend inline fun Connection.connect(
     val requestScope = CoroutineScope(requestJob + Dispatchers.Unconfined + CoroutineExceptionHandler { _, _ -> })
     val connectionScope = CoroutineScope(job + Dispatchers.Unconfined + CoroutineExceptionHandler { _, _ -> })
 
-    val requester = interceptors.wrapRequester(RSocketRequester(job, prioritizer, streamsStorage, requestScope))
+    val requester = interceptors.wrapRequester(RSocketRequester(job, frameSender, streamsStorage, requestScope, pool))
     val requestHandler = interceptors.wrapResponder(
         with(interceptors.wrapAcceptor(acceptor)) {
             ConnectionAcceptorContext(connectionConfig, requester).accept()
@@ -71,7 +73,7 @@ internal suspend inline fun Connection.connect(
 
     // start frame handling
     connectionScope.launch {
-        val rSocketResponder = RSocketResponder(prioritizer, requestHandler, requestScope)
+        val rSocketResponder = RSocketResponder(frameSender, requestHandler, requestScope)
         while (isActive) {
             receiveFrame().closeOnError { frame ->
                 when (frame.streamId) {
