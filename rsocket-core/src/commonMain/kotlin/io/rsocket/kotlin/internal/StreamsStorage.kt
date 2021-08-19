@@ -66,7 +66,7 @@ internal class StreamsStorage(private val isServer: Boolean, private val pool: O
                         FrameType.RequestChannel  -> ResponderRequestChannelFrameHandler(id, this, responder, initialRequest, pool)
                         else                      -> error("Wrong request frame type") // should never happen
                     }
-                    handlers[id] = handler
+                    save(id, handler)
                     handler.handleRequest(frame)
                 }
             }

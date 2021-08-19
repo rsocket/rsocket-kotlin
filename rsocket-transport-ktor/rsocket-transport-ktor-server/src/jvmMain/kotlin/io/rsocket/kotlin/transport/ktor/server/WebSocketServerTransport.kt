@@ -29,13 +29,11 @@ internal fun Route.serverTransport(
 ): ServerTransport<Unit> = ServerTransport { acceptor ->
     when (path) {
         null -> webSocket(protocol) {
-            @Suppress("INVISIBLE_MEMBER")
-            val connection = WebSocketConnection(this)
+            val connection = @Suppress("INVISIBLE_MEMBER") WebSocketConnection(this)
             acceptor(connection)
         }
         else -> webSocket(path, protocol) {
-            @Suppress("INVISIBLE_MEMBER")
-            val connection = WebSocketConnection(this)
+            val connection = @Suppress("INVISIBLE_MEMBER") WebSocketConnection(this)
             acceptor(connection)
         }
     }

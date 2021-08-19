@@ -64,10 +64,10 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
                 assertEquals(errorMessage, frame.throwable.message)
             }
             val sender = sendingRSocket.await()
-            assertFalse(sender.job.isActive)
+            assertFalse(sender.isActive)
             expectNoEventsIn(100)
         }
-        val error = connection.job.getCancellationException().cause
+        val error = connection.coroutineContext.job.getCancellationException().cause
         assertTrue(error is RSocketError.Setup.Rejected)
         assertEquals(errorMessage, error.message)
     }
@@ -88,7 +88,6 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
                 }
             }.connect { connection }
         }
-        println(p.data)
         assertTrue(p.data.isEmpty)
     }
 

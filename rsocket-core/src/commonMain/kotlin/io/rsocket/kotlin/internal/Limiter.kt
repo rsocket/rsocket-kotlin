@@ -18,6 +18,7 @@ package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.payload.*
 import kotlinx.atomicfu.*
+import kotlinx.atomicfu.locks.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
@@ -31,15 +32,17 @@ internal suspend inline fun Flow<Payload>.collectLimiting(limiter: Limiter, cros
     }
 }
 
-//TODO revisit 2 atomics
-internal class Limiter(initial: Int) {
+//TODO revisit 2 atomics and sync object
+internal class Limiter(initial: Int) : SynchronizedObject() {
     private val requests = atomic(initial)
     private val awaiter = atomic<CancellableContinuation<Unit>?>(null)
 
     fun updateRequests(n: Int) {
         if (n <= 0) return
-        requests += n
-        awaiter.getAndSet(null)?.takeIf(CancellableContinuation<Unit>::isActive)?.resume(Unit)
+        synchronized(this) {
+            requests += n
+            awaiter.getAndSet(null)?.takeIf(CancellableContinuation<Unit>::isActive)?.resume(Unit)
+        }
     }
 
     suspend fun useRequest() {
@@ -47,8 +50,10 @@ internal class Limiter(initial: Int) {
             currentCoroutineContext().ensureActive()
         } else {
             suspendCancellableCoroutine<Unit> {
-                awaiter.value = it
-                if (requests.value >= 0 && it.isActive) it.resume(Unit)
+                synchronized(this) {
+                    awaiter.value = it
+                    if (requests.value >= 0 && it.isActive) it.resume(Unit)
+                }
             }
         }
     }

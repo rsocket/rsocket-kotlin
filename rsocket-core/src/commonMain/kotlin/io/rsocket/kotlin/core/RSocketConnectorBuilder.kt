@@ -22,6 +22,7 @@ import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
 public class RSocketConnectorBuilder internal constructor() {
     @RSocketLoggingApi
@@ -117,7 +118,7 @@ public class RSocketConnectorBuilder internal constructor() {
         }
 
         private class EmptyRSocket : RSocket {
-            override val job: Job = Job()
+            override val coroutineContext: CoroutineContext = Job()
         }
     }
 }

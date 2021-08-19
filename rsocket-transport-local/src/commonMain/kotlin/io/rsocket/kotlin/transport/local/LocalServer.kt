@@ -15,6 +15,7 @@
  */
 
 @file:OptIn(TransportApi::class)
+@file:Suppress("FunctionName")
 
 package io.rsocket.kotlin.transport.local
 
@@ -26,39 +27,41 @@ import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlin.coroutines.*
 
-public class LocalServer(
-    parentJob: Job? = null,
-    private val pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
-) : ServerTransport<Job>, ClientTransport {
-    public val job: Job = SupervisorJob(parentJob)
-    private val connections = Channel<Connection>()
-
-    override suspend fun connect(): Connection {
-        @Suppress("INVISIBLE_MEMBER")
-        val clientChannel = SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
-
-        @Suppress("INVISIBLE_MEMBER")
-        val serverChannel = SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
-        val connectionJob = Job(job)
-        connectionJob.invokeOnCompletion {
-            val error = CancellationException("Connection failed", it)
-            clientChannel.cancel(error)
-            serverChannel.cancel(error)
+public fun LocalServerTransport(
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
+): ServerTransport<LocalServer> = ServerTransport { accept ->
+    val connections = Channel<Connection>()
+    val handlerJob = launch {
+        supervisorScope {
+            connections.consumeEach { connection ->
+                launch { accept(connection) }
+            }
         }
-        val clientConnection = LocalConnection(serverChannel, clientChannel, pool, connectionJob)
-        val serverConnection = LocalConnection(clientChannel, serverChannel, pool, connectionJob)
+    }
+    LocalServer(pool, connections, coroutineContext + SupervisorJob(handlerJob))
+}
+
+public class LocalServer internal constructor(
+    private val pool: ObjectPool<ChunkBuffer>,
+    private val connections: Channel<Connection>,
+    override val coroutineContext: CoroutineContext
+) : ClientTransport {
+    override suspend fun connect(): Connection {
+        val clientChannel = @Suppress("INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
+        val serverChannel = @Suppress("INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
+        val connectionJob = Job(coroutineContext[Job])
+        connectionJob.invokeOnCompletion {
+            @Suppress("INVISIBLE_MEMBER") clientChannel.fullClose(it)
+            @Suppress("INVISIBLE_MEMBER") serverChannel.fullClose(it)
+        }
+        val connectionContext = coroutineContext + connectionJob
+        val clientConnection =
+            LocalConnection(serverChannel, clientChannel, pool, connectionContext + CoroutineName("rSocket-local-client"))
+        val serverConnection =
+            LocalConnection(clientChannel, serverChannel, pool, connectionContext + CoroutineName("rSocket-local-server"))
         connections.send(serverConnection)
         return clientConnection
     }
-
-    @OptIn(DelicateCoroutinesApi::class)
-    override fun start(accept: suspend (Connection) -> Unit): Job =
-        GlobalScope.launch(job + Dispatchers.Unconfined, CoroutineStart.UNDISPATCHED) {
-            supervisorScope {
-                connections.consumeEach { connection ->
-                    launch(start = CoroutineStart.UNDISPATCHED) { accept(connection) }
-                }
-            }
-        }
 }

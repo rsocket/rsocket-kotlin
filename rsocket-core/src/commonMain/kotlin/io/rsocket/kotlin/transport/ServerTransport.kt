@@ -17,8 +17,9 @@
 package io.rsocket.kotlin.transport
 
 import io.rsocket.kotlin.*
+import kotlinx.coroutines.*
 
 public fun interface ServerTransport<T> {
     @TransportApi
-    public fun start(accept: suspend (Connection) -> Unit): T
+    public fun CoroutineScope.start(accept: suspend CoroutineScope.(Connection) -> Unit): T
 }

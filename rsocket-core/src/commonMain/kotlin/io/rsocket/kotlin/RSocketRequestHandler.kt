@@ -20,6 +20,7 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlin.coroutines.*
 
 public class RSocketRequestHandlerBuilder internal constructor() {
     private var metadataPush: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)? = null
@@ -53,19 +54,29 @@ public class RSocketRequestHandlerBuilder internal constructor() {
         requestChannel = block
     }
 
-    internal fun build(job: Job): RSocket =
-        RSocketRequestHandler(job, metadataPush, fireAndForget, requestResponse, requestStream, requestChannel)
+    internal fun build(parentContext: CoroutineContext): RSocket =
+        RSocketRequestHandler(
+            parentContext + Job(parentContext[Job]),
+            metadataPush,
+            fireAndForget,
+            requestResponse,
+            requestStream,
+            requestChannel
+        )
 }
 
 @Suppress("FunctionName")
-public fun RSocketRequestHandler(parentJob: Job? = null, configure: RSocketRequestHandlerBuilder.() -> Unit): RSocket {
+public fun RSocketRequestHandler(
+    parentContext: CoroutineContext = EmptyCoroutineContext,
+    configure: RSocketRequestHandlerBuilder.() -> Unit
+): RSocket {
     val builder = RSocketRequestHandlerBuilder()
     builder.configure()
-    return builder.build(Job(parentJob))
+    return builder.build(parentContext)
 }
 
 private class RSocketRequestHandler(
-    override val job: Job,
+    override val coroutineContext: CoroutineContext,
     private val metadataPush: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)? = null,
     private val fireAndForget: (suspend RSocket.(payload: Payload) -> Unit)? = null,
     private val requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null,

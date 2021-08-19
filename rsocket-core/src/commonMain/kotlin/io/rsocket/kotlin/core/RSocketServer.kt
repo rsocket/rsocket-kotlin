@@ -31,12 +31,23 @@ public class RSocketServer internal constructor(
     private val interceptors: Interceptors,
 ) {
 
+    @DelicateCoroutinesApi
     public fun <T> bind(
         transport: ServerTransport<T>,
         acceptor: ConnectionAcceptor,
-    ): T = transport.start { it.wrapConnection().bind(acceptor).join() }
+    ): T = bindIn(GlobalScope, transport, acceptor)
 
-    private suspend fun Connection.bind(acceptor: ConnectionAcceptor): Job = receiveFrame().closeOnError { setupFrame ->
+    public fun <T> bindIn(
+        scope: CoroutineScope,
+        transport: ServerTransport<T>,
+        acceptor: ConnectionAcceptor,
+    ): T = with(transport) {
+        scope.start {
+            it.wrapConnection().bind(acceptor).join()
+        }
+    }
+
+    private suspend fun Connection.bind(acceptor: ConnectionAcceptor): Job = receiveFrame { setupFrame ->
         when {
             setupFrame !is SetupFrame             -> failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
             setupFrame.version != Version.Current -> failSetup(RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}"))
@@ -44,6 +55,7 @@ public class RSocketServer internal constructor(
             setupFrame.resumeToken != null        -> failSetup(RSocketError.Setup.Unsupported("Resume is not supported"))
             else                                  -> try {
                 connect(
+                    connection = this,
                     isServer = true,
                     maxFragmentSize = maxFragmentSize,
                     interceptors = interceptors,
@@ -54,16 +66,17 @@ public class RSocketServer internal constructor(
                     ),
                     acceptor = acceptor
                 )
-                job
+                coroutineContext.job
             } catch (e: Throwable) {
                 failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
             }
         }
     }
 
+    @Suppress("SuspendFunctionOnCoroutineScope")
     private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
         sendFrame(ErrorFrame(0, error))
-        job.cancel("Connection establishment failed", error)
+        cancel("Connection establishment failed", error)
         throw error
     }
 

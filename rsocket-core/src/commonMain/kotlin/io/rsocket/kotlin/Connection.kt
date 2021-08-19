@@ -27,9 +27,7 @@ import kotlinx.coroutines.*
  * That interface isn't stable for inheritance.
  */
 @TransportApi
-public interface Connection {
-    public val job: Job
-
+public interface Connection : CoroutineScope {
     public val pool: ObjectPool<ChunkBuffer> get() = ChunkBuffer.Pool
 
     public suspend fun send(packet: ByteReadPacket)
@@ -37,7 +35,7 @@ public interface Connection {
 }
 
 @OptIn(TransportApi::class)
-internal suspend fun Connection.receiveFrame(): Frame = receive().readFrame(pool)
+internal suspend inline fun <T> Connection.receiveFrame(block: (frame: Frame) -> T): T = receive().readFrame(pool).closeOnError(block)
 
 @OptIn(TransportApi::class)
 internal suspend fun Connection.sendFrame(frame: Frame) {

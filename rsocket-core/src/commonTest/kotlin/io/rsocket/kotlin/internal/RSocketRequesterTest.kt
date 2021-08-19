@@ -34,7 +34,8 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     override suspend fun before() {
         super.before()
 
-        requester = connection.connect(
+        requester = connect(
+            connection = connection,
             isServer = false,
             maxFragmentSize = 0,
             interceptors = InterceptorsBuilder().build(),
@@ -42,16 +43,15 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
                 keepAlive = KeepAlive(Duration.seconds(1000), Duration.seconds(1000)),
                 payloadMimeType = DefaultPayloadMimeType,
                 setupPayload = Payload.Empty
-            ),
-            acceptor = { RSocketRequestHandler { } }
-        )
+            )
+        ) { RSocketRequestHandler { } }
     }
 
     @Test
     fun testInvalidFrameOnStream0() = test {
         connection.sendToReceiver(NextPayloadFrame(0, payload("data", "metadata"))) //should be just released
         delay(100)
-        assertTrue(requester.job.isActive)
+        assertTrue(requester.isActive)
     }
 
     @Test
@@ -258,8 +258,8 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
         val errorMessage = "error"
         connection.sendToReceiver(ErrorFrame(0, RSocketError.Setup.Rejected(errorMessage)))
         delay(100)
-        assertFalse(requester.job.isActive)
-        val error = requester.job.getCancellationException().cause
+        assertFalse(requester.isActive)
+        val error = requester.coroutineContext.job.getCancellationException().cause
         assertTrue(error is RSocketError.Setup.Rejected)
         assertEquals(errorMessage, error.message)
     }
@@ -385,7 +385,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
             delay(200)
             connection.test {
                 expectFrame { assertTrue(it is RequestFrame) }
-                connection.job.cancel()
+                connection.cancel()
                 expectComplete()
             }
         }
