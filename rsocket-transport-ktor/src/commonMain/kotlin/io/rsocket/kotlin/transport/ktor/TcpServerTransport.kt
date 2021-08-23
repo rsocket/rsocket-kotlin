@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+@file:OptIn(TransportApi::class)
 @file:Suppress("FunctionName")
 
 package io.rsocket.kotlin.transport.ktor
@@ -25,6 +26,7 @@ import io.ktor.util.network.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 

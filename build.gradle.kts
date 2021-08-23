@@ -152,25 +152,29 @@ subprojects {
                     languageVersion = "1.5"
                     apiVersion = "1.5"
 
-                    useExperimentalAnnotation("kotlin.RequiresOptIn")
+                    optIn("kotlin.RequiresOptIn")
+
+                    //TODO: kludge, this is needed now, as ktor isn't fully supports kotlin 1.5.3x opt-in changes
+                    // will be not needed in future with ktor 2.0.0
+                    optIn("io.ktor.utils.io.core.ExperimentalIoApi")
 
                     if (name.contains("test", ignoreCase = true) || isTestProject || isPlaygroundProject) {
-                        useExperimentalAnnotation("kotlin.time.ExperimentalTime")
-                        useExperimentalAnnotation("kotlin.ExperimentalStdlibApi")
+                        optIn("kotlin.time.ExperimentalTime")
+                        optIn("kotlin.ExperimentalStdlibApi")
 
-                        useExperimentalAnnotation("kotlinx.coroutines.ExperimentalCoroutinesApi")
-                        useExperimentalAnnotation("kotlinx.coroutines.InternalCoroutinesApi")
-                        useExperimentalAnnotation("kotlinx.coroutines.ObsoleteCoroutinesApi")
-                        useExperimentalAnnotation("kotlinx.coroutines.FlowPreview")
-                        useExperimentalAnnotation("kotlinx.coroutines.DelicateCoroutinesApi")
+                        optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+                        optIn("kotlinx.coroutines.InternalCoroutinesApi")
+                        optIn("kotlinx.coroutines.ObsoleteCoroutinesApi")
+                        optIn("kotlinx.coroutines.FlowPreview")
+                        optIn("kotlinx.coroutines.DelicateCoroutinesApi")
 
-                        useExperimentalAnnotation("io.ktor.util.InternalAPI")
-                        useExperimentalAnnotation("io.ktor.utils.io.core.internal.DangerousInternalIoApi")
+                        optIn("io.ktor.util.InternalAPI")
+                        optIn("io.ktor.utils.io.core.internal.DangerousInternalIoApi")
 
-                        useExperimentalAnnotation("io.rsocket.kotlin.TransportApi")
-                        useExperimentalAnnotation("io.rsocket.kotlin.ExperimentalMetadataApi")
-                        useExperimentalAnnotation("io.rsocket.kotlin.ExperimentalStreamsApi")
-                        useExperimentalAnnotation("io.rsocket.kotlin.RSocketLoggingApi")
+                        optIn("io.rsocket.kotlin.TransportApi")
+                        optIn("io.rsocket.kotlin.ExperimentalMetadataApi")
+                        optIn("io.rsocket.kotlin.ExperimentalStreamsApi")
+                        optIn("io.rsocket.kotlin.RSocketLoggingApi")
                     }
                 }
             }

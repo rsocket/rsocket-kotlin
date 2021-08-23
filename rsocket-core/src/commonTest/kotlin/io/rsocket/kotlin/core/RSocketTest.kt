@@ -96,9 +96,9 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         val requester = start()
         requester.requestStream(payload("HELLO")).test {
             repeat(10) {
-                expectItem().close()
+                awaitItem().close()
             }
-            expectComplete()
+            awaitComplete()
         }
     }
 
@@ -122,9 +122,9 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         })
         requester.requestStream(payload("HELLO")).flowOn(PrefetchStrategy(1, 0)).test {
             repeat(3) {
-                expectItem().close()
+                awaitItem().close()
             }
-            val error = expectError()
+            val error = awaitError()
             assertTrue(error is RSocketError.ApplicationError)
             assertEquals("FAIL", error.message)
         }
@@ -148,9 +148,9 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             .map { it.value }
             .test {
                 repeat(23) {
-                    expectItem().close()
+                    awaitItem().close()
                 }
-                val error = expectError()
+                val error = awaitError()
                 assertTrue(error is IllegalStateException)
                 assertEquals("oops", error.message)
             }
@@ -170,9 +170,9 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             .take(3) //canceled after 3 element
             .test {
                 repeat(3) {
-                    expectItem().close()
+                    awaitItem().close()
                 }
-                expectComplete()
+                awaitComplete()
             }
     }
 
@@ -203,9 +203,9 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         val request = (1..10).asFlow().map { payload(it.toString()) }.onCompletion { awaiter.complete() }
         requester.requestChannel(payload(""), request).test {
             repeat(10) {
-                expectItem().close()
+                awaitItem().close()
             }
-            expectComplete()
+            awaitComplete()
         }
         awaiter.join()
         delay(500)
@@ -241,9 +241,9 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         val request = (1..3).asFlow().map { payload(it.toString()) }
         requester.requestChannel(payload("0"), request).flowOn(PrefetchStrategy(3, 0)).test {
             repeat(3) {
-                expectItem().close()
+                awaitItem().close()
             }
-            expectComplete()
+            awaitComplete()
         }
     }
 

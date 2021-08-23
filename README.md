@@ -1,4 +1,5 @@
 # rsocket-kotlin
+
 RSocket Kotlin multi-platform implementation based on [kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines).
 
 RSocket is a binary protocol for use on byte stream transports such as TCP, WebSockets and Aeron.
@@ -13,92 +14,72 @@ It enables the following symmetric interaction models via async message passing 
 Learn more at http://rsocket.io
 
 ## Supported platforms and transports :
-Transports are implemented based on [ktor](https://github.com/ktorio/ktor) to ensure Kotlin multiplatform. 
-So it depends on `ktor` engines for available transports and platforms (JVM, JS, Native):
+
+Transports are implemented based on [ktor](https://github.com/ktorio/ktor) to ensure Kotlin multiplatform. So it depends on `ktor` engines
+for available transports and platforms (JVM, JS, Native):
+
 * JVM - TCP and WebSocket for both client and server
 * JS - WebSocket client only
-* Native - TCP client only (linux x64, macos, ios, watchos, tvos)
+* Native - TCP (linux x64, macos, ios, watchos, tvos) for both client and server
 
 ## Interactions
 
 RSocket interface contains 5 methods:
-* Fire and Forget: 
+
+* Fire and Forget:
 
   `suspend fun fireAndForget(payload: Payload)`
 * Request-Response:
-  
+
   `suspend requestResponse(payload: Payload): Payload`
-* Request-Stream: 
-  
+* Request-Stream:
+
   `fun requestStream(payload: Payload): Flow<Payload>`
 * Request-Channel:
 
   `fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload>`
 * Metadata-Push:
-  
+
   `suspend fun metadataPush(metadata: ByteReadPacket)`
 
 ## Using in your projects
+
 Make sure, that you use Kotlin 1.5.20
 
 ### Gradle:
 
-
-```groovy
+```kotlin
 repositories {
-    jcenter()
+    mavenCentral()
 }
 dependencies {
-    implementation 'io.rsocket.kotlin:rsocket-core:0.13.1'
-    implementation 'io.rsocket.kotlin:rsocket-transport-ktor:0.13.1'
+    implementation("io.rsocket.kotlin:rsocket-core:0.14.0")
 
-//  client feature for ktor
-//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-client:0.13.1'
+    // TCP ktor transport
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor:0.14.0")
 
-//  server feature for ktor 
-//    implementation 'io.rsocket.kotlin:rsocket-transport-ktor-server:0.13.1' 
+    // WS ktor transport client plugin
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-client:0.14.0")
 
-//  one of ktor engines to work with websockets
-//  client engines
-//    implementation 'io.ktor:ktor-client-js:1.6.1' //js
-//    implementation 'io.ktor:ktor-client-cio:1.6.1' //jvm
-//    implementation 'io.ktor:ktor-client-okhttp:1.6.1' //jvm
-
-//  server engines (jvm only)
-//    implementation 'io.ktor:ktor-server-cio:1.6.1'
-//    implementation 'io.ktor:ktor-server-netty:1.6.1'
-//    implementation 'io.ktor:ktor-server-jetty:1.6.1'
-//    implementation 'io.ktor:ktor-server-tomcat:1.6.1'
+    // WS ktor transport server plugin
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-server:0.14.0")
 }
 ```
 
-### Gradle Kotlin DSL:
+For WS ktor transport, available client or server engine should be added:
 
 ```kotlin
-repositories {
-    jcenter()
-}
 dependencies {
-    implementation("io.rsocket.kotlin:rsocket-core:0.13.1")
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor:0.13.1")
+    // client engines for WS transport
+    implementation("io.ktor:ktor-client-js:1.6.2") //js
+    implementation("io.ktor:ktor-client-cio:1.6.2") //jvm
+    implementation("io.ktor:ktor-client-okhttp:1.6.2") //jvm
 
-//  client feature for ktor
-//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-client:0.13.1")
-
-//  server feature for ktor 
-//    implementation("io.rsocket.kotlin:rsocket-transport-ktor-server:0.13.1") 
-
-//  one of ktor engines to work with websockets
-//  client engines
-//    implementation("io.ktor:ktor-client-js:1.6.1") //js
-//    implementation("io.ktor:ktor-client-cio:1.6.1") //jvm
-//    implementation("io.ktor:ktor-client-okhttp:1.6.1") //jvm
-
-//  server engines (jvm only)
-//    implementation("io.ktor:ktor-server-cio:1.6.1")
-//    implementation("io.ktor:ktor-server-netty:1.6.1")
-//    implementation("io.ktor:ktor-server-jetty:1.6.1")
-//    implementation("io.ktor:ktor-server-tomcat:1.6.1")
+    // server engines for WS transport (jvm only)
+    implementation("io.ktor:ktor-server-cio:1.6.2")
+    implementation("io.ktor:ktor-server-netty:1.6.2")
+    implementation("io.ktor:ktor-server-jetty:1.6.2")
+    implementation("io.ktor:ktor-server-tomcat:1.6.2")
 }
 ```
 
@@ -116,7 +97,7 @@ val client = HttpClient(CIO) {
             connectionConfig {
                 keepAlive = KeepAlive(
                     interval = 30.seconds,
-                    maxLifetime = 2.minutes 
+                    maxLifetime = 2.minutes
                 )
 
                 //payload for setup frame
@@ -128,7 +109,7 @@ val client = HttpClient(CIO) {
                     metadata = "application/json"
                 )
             }
-            
+
             //optional acceptor for server requests
             acceptor {
                 RSocketRequestHandler {
@@ -136,7 +117,7 @@ val client = HttpClient(CIO) {
                 }
             }
         }
-    }   
+    }
 }
 
 //connect to some url
@@ -196,9 +177,9 @@ embeddedServer(CIO) {
 ### More examples:
 
 - [interactions](examples/interactions) - contains usages of some supported functions
-- [multiplatform-chat](examples/multiplatform-chat) - chat implementation with JVM server and JS/JVM client with shared classes
-and serializing data using [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization)  
-- [nodejs-tcp-transport](examples/nodejs-tcp-transport) - implementation of TCP transport for nodejs 
+- [multiplatform-chat](examples/multiplatform-chat) - chat implementation with JVM server and JS/JVM client with shared classes and
+  serializing data using [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization)
+- [nodejs-tcp-transport](examples/nodejs-tcp-transport) - implementation of TCP transport for nodejs
 
 ## Reactive Streams Semantics
 

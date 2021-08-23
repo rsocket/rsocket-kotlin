@@ -204,9 +204,9 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
 
         rSocket.requestStream(Payload.Empty).test {
             repeat(5) {
-                assertEquals(Payload.Empty, expectItem())
+                assertEquals(Payload.Empty, awaitItem())
             }
-            expectComplete()
+            awaitComplete()
         }
 
         assertTrue(rSocket.isActive)
