@@ -46,6 +46,8 @@ kotlin {
                 implementation(project(":rsocket-core"))
                 implementation(project(":rsocket-transport-local"))
                 implementation(project(":rsocket-transport-ktor-client"))
+
+                implementation("io.ktor:ktor-client-core:$ktorVersion") //for WS support
             }
         }
         val jvmMain by getting {
@@ -54,11 +56,6 @@ kotlin {
 
                 implementation("io.ktor:ktor-client-cio:$ktorVersion")
                 implementation("io.ktor:ktor-server-cio:$ktorVersion")
-            }
-        }
-        val jsMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-js:$ktorVersion") //for WS support
             }
         }
     }

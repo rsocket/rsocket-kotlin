@@ -62,6 +62,8 @@ include("playground")
 
 include("rsocket-core")
 include("rsocket-test")
+include("rsocket-test-server")
+project(":rsocket-test-server").projectDir = file("rsocket-test/rsocket-test-server")
 
 include("rsocket-transport-local")
 

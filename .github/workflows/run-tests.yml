@@ -72,7 +72,7 @@ jobs:
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
       - name: Test rsocket-transport-ktor module
-        if: matrix.target != 'mingwX64' && matrix.target != 'jsIrNode' && matrix.target != 'jsIrBrowser' && matrix.target != 'jsLegacyNode' && matrix.target != 'jsLegacyBrowser' && (success() || failure())
+        if: matrix.target != 'mingwX64' && (success() || failure())
         timeout-minutes: 10
         uses: gradle/gradle-build-action@v1
         with:

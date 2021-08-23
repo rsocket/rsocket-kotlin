@@ -80,7 +80,7 @@ kotlin {
         val clientJsMain by getting {
             dependsOn(clientMain)
             dependencies {
-                implementation("io.ktor:ktor-client-js:$ktorVersion")
+                implementation("io.ktor:ktor-client-core:$ktorVersion")
             }
         }
 
