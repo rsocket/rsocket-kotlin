@@ -51,7 +51,7 @@ internal class RSocketRequester(
         try {
             sender.sendRequestPayload(FrameType.RequestFnF, id, payload)
         } catch (cause: Throwable) {
-            payload.release()
+            payload.close()
             if (isActive) sender.sendCancel(id) //if cancelled during fragmentation
             throw cause
         }
@@ -128,7 +128,7 @@ internal class RSocketRequester(
             onReceiveComplete()
             return result
         } catch (cause: Throwable) {
-            payload.release()
+            payload.close()
             val isCancelled = onReceiveCancelled(cause)
             if (isActive && isCancelled) sender.sendCancel(id)
             throw cause

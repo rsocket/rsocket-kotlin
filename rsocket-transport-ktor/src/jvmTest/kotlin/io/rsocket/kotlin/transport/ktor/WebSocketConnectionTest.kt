@@ -59,7 +59,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
             rSocket {
                 RSocketRequestHandler {
                     requestStream {
-                        it.release()
+                        it.close()
                         flow {
                             var i = 0
                             while (true) {
@@ -90,7 +90,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
         rSocket
             .requestStream(Payload.Empty)
             .take(2)
-            .onEach { delay(100); it.release() }
+            .onEach { delay(100); it.close() }
             .collect()
 
         assertTrue(requesterJob.isActive)

@@ -41,7 +41,7 @@ internal suspend inline fun connect(
     requestJob.invokeOnCompletion {
         prioritizer.close(it)
         streamsStorage.cleanup(it)
-        connectionConfig.setupPayload.release()
+        connectionConfig.setupPayload.close()
     }
 
     val requester = interceptors.wrapRequester(
@@ -76,8 +76,8 @@ internal suspend inline fun connect(
                     is MetadataPushFrame -> responder.handleMetadataPush(frame.metadata)
                     is ErrorFrame        -> connection.cancel("Error frame received on 0 stream", frame.throwable)
                     is KeepAliveFrame    -> keepAliveHandler.mark(frame)
-                    is LeaseFrame        -> frame.release().also { error("lease isn't implemented") }
-                    else                 -> frame.release()
+                    is LeaseFrame        -> frame.close().also { error("lease isn't implemented") }
+                    else                 -> frame.close()
                 }
                 else -> streamsStorage.handleFrame(frame, responder)
             }

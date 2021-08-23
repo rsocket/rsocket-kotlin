@@ -26,13 +26,9 @@ public sealed interface Payload : Closeable {
 
     public fun copy(): Payload = DefaultPayload(data.copy(), metadata?.copy())
 
-    public fun release() {
-        data.release()
-        metadata?.release()
-    }
-
     override fun close() {
-        release()
+        data.close()
+        metadata?.close()
     }
 
     public companion object {

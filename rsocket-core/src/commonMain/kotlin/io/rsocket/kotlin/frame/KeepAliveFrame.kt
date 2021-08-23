@@ -32,8 +32,8 @@ internal class KeepAliveFrame(
     override val streamId: Int get() = 0
     override val flags: Int get() = if (respond) RespondFlag else 0
 
-    override fun release() {
-        data.release()
+    override fun close() {
+        data.close()
     }
 
     override fun BytePacketBuilder.writeSelf() {

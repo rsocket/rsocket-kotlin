@@ -32,6 +32,10 @@ public class RawMetadata(
         writePacket(content)
     }
 
+    override fun close() {
+        content.close()
+    }
+
     private class Reader(override val mimeType: MimeType) : MetadataReader<RawMetadata> {
         override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): RawMetadata = RawMetadata(mimeType, readPacket(pool))
     }

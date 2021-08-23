@@ -25,7 +25,7 @@ import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
 
 @ExperimentalMetadataApi
-public interface Metadata {
+public interface Metadata : Closeable {
     public val mimeType: MimeType
     public fun BytePacketBuilder.writeSelf()
 }

@@ -67,6 +67,8 @@ public class ZipkinTracingMetadata internal constructor(
         if (hasParentSpanId) writeLong(parentSpanId)
     }
 
+    override fun close(): Unit = Unit
+
     public companion object Reader : MetadataReader<ZipkinTracingMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketTracingZipkin
         override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): ZipkinTracingMetadata {

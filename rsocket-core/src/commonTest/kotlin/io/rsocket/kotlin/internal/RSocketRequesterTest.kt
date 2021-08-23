@@ -346,7 +346,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
                 val streamId = frame.streamId
                 assertTrue(frame is RequestFrame)
                 assertEquals(FrameType.RequestChannel, frame.type)
-                frame.release()
+                frame.close()
                 connection.sendToReceiver(CancelFrame(streamId), CompletePayloadFrame(streamId))
             }
             response.join()

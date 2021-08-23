@@ -22,22 +22,19 @@ import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
 
 @ExperimentalMetadataApi
-public interface CompositeMetadataBuilder {
+public sealed interface CompositeMetadataBuilder : Closeable {
     public fun add(mimeType: MimeType, metadata: ByteReadPacket)
     public fun add(metadata: Metadata)
-
-    public fun clean()
-    public fun build(): CompositeMetadata
 }
 
 @ExperimentalMetadataApi
 public inline fun buildCompositeMetadata(block: CompositeMetadataBuilder.() -> Unit): CompositeMetadata {
-    val builder = createCompositeMetadataBuilder()
+    val builder = CompositeMetadataFromBuilder()
     try {
         builder.block()
-        return builder.build()
+        return builder
     } catch (t: Throwable) {
-        builder.clean()
+        builder.close()
         throw t
     }
 }
@@ -48,10 +45,7 @@ public inline fun PayloadBuilder.compositeMetadata(block: CompositeMetadataBuild
 
 @PublishedApi
 @ExperimentalMetadataApi
-internal fun createCompositeMetadataBuilder(): CompositeMetadataBuilder = CompositeMetadataFromBuilder()
-
-@ExperimentalMetadataApi
-private class CompositeMetadataFromBuilder : CompositeMetadataBuilder, CompositeMetadata {
+internal class CompositeMetadataFromBuilder : CompositeMetadataBuilder, CompositeMetadata {
     private val _entries = mutableListOf<CompositeMetadata.Entry>()
 
     override val entries: List<CompositeMetadata.Entry> get() = _entries
@@ -63,10 +57,4 @@ private class CompositeMetadataFromBuilder : CompositeMetadataBuilder, Composite
     override fun add(metadata: Metadata) {
         _entries += CompositeMetadata.Entry(metadata)
     }
-
-    override fun clean() {
-        _entries.forEach { it.content.release() }
-    }
-
-    override fun build(): CompositeMetadata = this
 }

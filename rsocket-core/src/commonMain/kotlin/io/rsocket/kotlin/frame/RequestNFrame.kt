@@ -25,7 +25,7 @@ internal class RequestNFrame(
     override val type: FrameType get() = FrameType.RequestN
     override val flags: Int get() = 0
 
-    override fun release(): Unit = Unit
+    override fun close(): Unit = Unit
 
     override fun BytePacketBuilder.writeSelf() {
         writeInt(requestN)

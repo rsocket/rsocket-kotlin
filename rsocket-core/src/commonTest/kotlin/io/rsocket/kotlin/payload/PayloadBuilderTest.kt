@@ -37,8 +37,8 @@ class PayloadBuilderTest : TestWithLeakCheck {
     }
 
     @Test
-    fun payloadRelease() {
-        Payload(packet("data"), packet("metadata")).release()
+    fun payloadclose() {
+        Payload(packet("data"), packet("metadata")).close()
     }
 
     @Test

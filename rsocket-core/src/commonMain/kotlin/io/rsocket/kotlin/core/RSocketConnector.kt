@@ -73,8 +73,8 @@ public class RSocketConnector internal constructor(
             connection.sendFrame(setupFrame)
             return requester
         } catch (cause: Throwable) {
-            connectionConfig.setupPayload.release()
-            setupFrame.release()
+            connectionConfig.setupPayload.close()
+            setupFrame.close()
             connection.cancel("Connection establishment failed", cause)
             throw cause
         }

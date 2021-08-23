@@ -43,6 +43,8 @@ public class RoutingMetadata(public val tags: List<String>) : Metadata {
         }
     }
 
+    override fun close(): Unit = Unit
+
     public companion object Reader : MetadataReader<RoutingMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketRouting
         override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): RoutingMetadata {

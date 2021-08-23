@@ -24,27 +24,27 @@ import kotlinx.coroutines.flow.*
 public interface RSocket : CoroutineScope {
 
     public suspend fun metadataPush(metadata: ByteReadPacket) {
-        metadata.release()
+        metadata.close()
         notImplemented("Metadata Push")
     }
 
     public suspend fun fireAndForget(payload: Payload) {
-        payload.release()
+        payload.close()
         notImplemented("Fire and Forget")
     }
 
     public suspend fun requestResponse(payload: Payload): Payload {
-        payload.release()
+        payload.close()
         notImplemented("Request Response")
     }
 
     public fun requestStream(payload: Payload): Flow<Payload> {
-        payload.release()
+        payload.close()
         notImplemented("Request Stream")
     }
 
     public fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> {
-        initPayload.release()
+        initPayload.close()
         notImplemented("Request Channel")
     }
 }

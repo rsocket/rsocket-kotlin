@@ -43,7 +43,7 @@ private inline fun buildPacket(pool: ObjectPool<ChunkBuffer>, block: BytePacketB
         block(builder)
         return builder.build()
     } catch (t: Throwable) {
-        builder.release()
+        builder.close()
         throw t
     }
 }

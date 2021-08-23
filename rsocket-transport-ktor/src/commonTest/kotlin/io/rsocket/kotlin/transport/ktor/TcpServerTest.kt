@@ -53,7 +53,7 @@ abstract class TcpServerTest : SuspendTest, TestWithLeakCheck {
         }.connect(clientTransport)
 
         val client1 = newClient("ok")
-        client1.requestResponse(payload("ok")).release()
+        client1.requestResponse(payload("ok")).close()
 
         val client2 = newClient("not ok")
         assertFails {
@@ -62,8 +62,8 @@ abstract class TcpServerTest : SuspendTest, TestWithLeakCheck {
 
         val client3 = newClient("ok")
 
-        client3.requestResponse(payload("ok")).release()
-        client1.requestResponse(payload("ok")).release()
+        client3.requestResponse(payload("ok")).close()
+        client1.requestResponse(payload("ok")).close()
 
         assertTrue(client1.isActive)
         assertFalse(client2.isActive)
@@ -90,18 +90,18 @@ abstract class TcpServerTest : SuspendTest, TestWithLeakCheck {
 
         val client1 = newClient()
 
-        client1.requestResponse(payload("1")).release()
+        client1.requestResponse(payload("1")).close()
 
         val client2 = newClient()
 
-        client2.requestResponse(payload("1")).release()
+        client2.requestResponse(payload("1")).close()
 
         handlers[1].coroutineContext.job.apply {
             cancel("FAILED")
             join()
         }
 
-        client1.requestResponse(payload("1")).release()
+        client1.requestResponse(payload("1")).close()
 
         assertFails {
             client2.requestResponse(payload("1"))
@@ -109,9 +109,9 @@ abstract class TcpServerTest : SuspendTest, TestWithLeakCheck {
 
         val client3 = newClient()
 
-        client3.requestResponse(payload("1")).release()
+        client3.requestResponse(payload("1")).close()
 
-        client1.requestResponse(payload("1")).release()
+        client1.requestResponse(payload("1")).close()
 
         assertTrue(client1.isActive)
         assertFalse(client2.isActive)
