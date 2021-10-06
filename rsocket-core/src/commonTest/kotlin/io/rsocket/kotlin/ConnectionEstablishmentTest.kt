@@ -58,7 +58,7 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
         assertFailsWith(RSocketError.Setup.Rejected::class, errorMessage) { deferred.await() }
 
         connection.test {
-            expectFrame { frame ->
+            awaitFrame { frame ->
                 assertTrue(frame is ErrorFrame)
                 assertTrue(frame.throwable is RSocketError.Setup.Rejected)
                 assertEquals(errorMessage, frame.throwable.message)

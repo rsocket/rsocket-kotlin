@@ -19,7 +19,9 @@ package io.rsocket.kotlin.transport.ktor.server
 import io.ktor.application.*
 import io.ktor.routing.*
 import io.rsocket.kotlin.*
+import kotlinx.coroutines.*
 
+@OptIn(DelicateCoroutinesApi::class)
 public fun Route.rSocket(
     path: String? = null,
     protocol: String? = null,

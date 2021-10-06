@@ -23,7 +23,7 @@ import io.rsocket.kotlin.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
-@OptIn(TransportApi::class)
+@TransportApi
 internal class LocalConnection(
     private val sender: SendChannel<ByteReadPacket>,
     private val receiver: ReceiveChannel<ByteReadPacket>,

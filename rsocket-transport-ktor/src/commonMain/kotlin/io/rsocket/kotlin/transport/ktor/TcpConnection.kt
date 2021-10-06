@@ -29,7 +29,7 @@ import io.rsocket.kotlin.internal.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
-@OptIn(TransportApi::class)
+@TransportApi
 internal class TcpConnection(
     socket: Socket,
     override val coroutineContext: CoroutineContext,

@@ -27,7 +27,7 @@ public fun interface ClientTransport : CoroutineScope {
     public suspend fun connect(): Connection
 }
 
-@OptIn(TransportApi::class)
+@TransportApi
 public fun ClientTransport(coroutineContext: CoroutineContext, transport: ClientTransport): ClientTransport = object : ClientTransport {
     override val coroutineContext: CoroutineContext get() = coroutineContext
 
