@@ -58,7 +58,6 @@ gradleEnterprise {
 rootProject.name = "rsocket-kotlin"
 
 include("benchmarks")
-include("playground")
 
 include("rsocket-core")
 include("rsocket-test")
@@ -72,15 +71,3 @@ include("rsocket-transport-ktor-client")
 include("rsocket-transport-ktor-server")
 project(":rsocket-transport-ktor-client").projectDir = file("rsocket-transport-ktor/rsocket-transport-ktor-client")
 project(":rsocket-transport-ktor-server").projectDir = file("rsocket-transport-ktor/rsocket-transport-ktor-server")
-
-fun includeExample(name: String) {
-    include("examples:$name")
-}
-
-//TODO ignore for now, as `kotlinx-nodejs` isn't maintained now
-//includeExample("nodejs-tcp-transport")
-includeExample("interactions")
-includeExample("multiplatform-chat")
-
-val publishCheckVersion: String? by settings
-if (publishCheckVersion != null) include("publish-check")
