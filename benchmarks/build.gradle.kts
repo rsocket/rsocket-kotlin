@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import kotlinx.benchmark.gradle.*
+import org.gradle.kotlin.dsl.benchmark
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 
 plugins {
@@ -25,6 +27,8 @@ plugins {
 val rsocketJavaVersion: String by rootProject
 val kotlinxCoroutinesVersion: String by rootProject
 val kotlinxBenchmarkVersion: String by rootProject
+
+val jmhVersionOverride: String by rootProject
 
 kotlin {
     val jvm = jvm() //common jvm source set
@@ -70,6 +74,8 @@ benchmark {
         register("kotlin")
         register("java")
     }
+
+    targets.withType<JvmBenchmarkTarget> { jmhVersion = jmhVersionOverride }
 }
 
 tasks.register<JavaExec>("jmhProfilers") {

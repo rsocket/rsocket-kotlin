@@ -23,12 +23,12 @@ import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import kotlin.test.*
-import kotlin.time.*
+import kotlin.time.Duration.Companion.seconds
 
 class SetupFrameTest : TestWithLeakCheck {
 
     private val version = Version.Current
-    private val keepAlive = KeepAlive(Duration.seconds(10), Duration.seconds(500))
+    private val keepAlive = KeepAlive(10.seconds, 500.seconds)
     private val payloadMimeType = PayloadMimeType(WellKnownMimeType.ApplicationOctetStream, CustomMimeType("mime"))
 
     @Test

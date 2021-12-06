@@ -26,7 +26,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 import kotlin.test.*
-import kotlin.time.*
+import kotlin.time.Duration.Companion.seconds
 
 class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     private lateinit var requester: RSocket
@@ -40,7 +40,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
             maxFragmentSize = 0,
             interceptors = InterceptorsBuilder().build(),
             connectionConfig = ConnectionConfig(
-                keepAlive = KeepAlive(Duration.seconds(1000), Duration.seconds(1000)),
+                keepAlive = KeepAlive(1000.seconds, 1000.seconds),
                 payloadMimeType = DefaultPayloadMimeType,
                 setupPayload = Payload.Empty
             )

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(DelicateCoroutinesApi::class)
+
 package io.rsocket.kotlin.benchmarks
 
 import kotlinx.coroutines.*

@@ -57,6 +57,7 @@ val Project.publicationNames: Array<String>
 subprojects {
     tasks.whenTaskAdded {
         if (name.endsWith("test", ignoreCase = true)) onlyIf { !rootProject.hasProperty("skipTests") }
+        if (name.startsWith("link", ignoreCase = true)) onlyIf { !rootProject.hasProperty("skipLink") }
     }
 
     plugins.withId("org.jetbrains.kotlin.multiplatform") {
@@ -67,7 +68,9 @@ subprojects {
                 project.name == "rsocket-transport-ktor-server" || //server is jvm only
                         project.name == "rsocket-test-server"
             //windows target isn't supported by ktor-network
-            val supportMingw = project.name != "rsocket-transport-ktor" && project.name != "rsocket-transport-ktor-client"
+            val supportMingw =
+                project.name != "rsocket-transport-ktor" &&
+                        project.name != "rsocket-transport-ktor-client"
 
 
             if (!isAutoConfigurable) return@configure
@@ -105,12 +108,15 @@ subprojects {
             }
 
             //native targets configuration
-            val hostTargets = listOfNotNull(linuxX64(), macosX64(), if (supportMingw) mingwX64() else null)
-
-            val iosTargets = listOf(iosArm32(), iosArm64(), iosX64())
-            val tvosTargets = listOf(tvosArm64(), tvosX64())
-            val watchosTargets = listOf(watchosArm32(), watchosArm64(), watchosX86())
-            val nativeTargets = hostTargets + iosTargets + tvosTargets + watchosTargets
+            val linuxTargets = listOf(linuxX64())
+            val mingwTargets = if (supportMingw) listOf(mingwX64()) else emptyList()
+            val macosTargets = listOf(macosX64(), macosArm64())
+            val iosTargets = listOf(iosArm32(), iosArm64(), iosX64(), iosSimulatorArm64())
+            val tvosTargets = listOf(tvosArm64(), tvosX64(), tvosSimulatorArm64())
+            val watchosTargets =
+                listOf(watchosArm32(), watchosArm64(), watchosX86(), watchosX64(), watchosSimulatorArm64())
+            val darwinTargets = macosTargets + iosTargets + tvosTargets + watchosTargets
+            val nativeTargets = darwinTargets + linuxTargets + mingwTargets
 
             val nativeMain by sourceSets.creating {
                 dependsOn(sourceSets["commonMain"])
@@ -149,8 +155,6 @@ subprojects {
             sourceSets.all {
                 languageSettings.apply {
                     progressiveMode = true
-                    languageVersion = "1.5"
-                    apiVersion = "1.5"
 
                     optIn("kotlin.RequiresOptIn")
 

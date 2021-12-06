@@ -19,12 +19,14 @@ package io.rsocket.kotlin.test
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.time.*
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 interface SuspendTest {
-    val testTimeout: Duration get() = Duration.minutes(1)
+    val testTimeout: Duration get() = 1.minutes
 
-    val beforeTimeout: Duration get() = Duration.seconds(10)
-    val afterTimeout: Duration get() = Duration.seconds(10)
+    val beforeTimeout: Duration get() = 10.seconds
+    val afterTimeout: Duration get() = 10.seconds
 
     val debug: Boolean get() = true //change to turn off debug logs locally (useful for CI)
 

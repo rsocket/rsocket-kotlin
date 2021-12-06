@@ -25,12 +25,13 @@ import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlin.test.*
-import kotlin.time.*
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     private suspend fun requester(
-        keepAlive: KeepAlive = KeepAlive(Duration.milliseconds(100), Duration.seconds(1))
+        keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds)
     ): RSocket = connect(
         connection = connection,
         isServer = false,
@@ -54,14 +55,14 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun rSocketNotCanceledOnPresentKeepAliveTicks() = test {
-        val rSocket = requester(KeepAlive(Duration.seconds(100), Duration.seconds(100)))
+        val rSocket = requester(KeepAlive(100.seconds, 100.seconds))
         connection.launch {
             repeat(50) {
-                delay(Duration.milliseconds(100))
+                delay(100.milliseconds)
                 connection.sendToReceiver(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
             }
         }
-        delay(Duration.seconds(1.5))
+        delay(1.5.seconds)
         assertTrue(rSocket.isActive)
         connection.test {
             repeat(50) {
@@ -72,10 +73,10 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun requesterRespondsToKeepAlive() = test {
-        requester(KeepAlive(Duration.seconds(100), Duration.seconds(100)))
+        requester(KeepAlive(100.seconds, 100.seconds))
         connection.launch {
             while (isActive) {
-                delay(Duration.milliseconds(100))
+                delay(100.milliseconds)
                 connection.sendToReceiver(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
             }
         }
