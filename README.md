@@ -174,11 +174,10 @@ embeddedServer(CIO) {
 }.start(true)
 ```
 
-### More examples:
+### More samples:
 
-- [multiplatform-chat](examples/multiplatform-chat) - chat implementation with JVM server and JS/JVM client with shared classes and
+- [multiplatform-chat](samples/chat) - chat implementation with JVM server and JS/JVM client with shared classes and
   serializing data using [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization)
-- [nodejs-tcp-transport](examples/nodejs-tcp-transport) - implementation of TCP transport for nodejs
 
 ## Reactive Streams Semantics
 
