@@ -71,3 +71,5 @@ include("rsocket-transport-ktor-client")
 include("rsocket-transport-ktor-server")
 project(":rsocket-transport-ktor-client").projectDir = file("rsocket-transport-ktor/rsocket-transport-ktor-client")
 project(":rsocket-transport-ktor-server").projectDir = file("rsocket-transport-ktor/rsocket-transport-ktor-server")
+
+include("rsocket-transport-nodejs-tcp")

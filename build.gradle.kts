@@ -65,10 +65,12 @@ subprojects {
                 project.name != "rsocket-transport-ktor" &&
                         project.name != "rsocket-transport-ktor-client"
 
+            val jsOnly = project.name == "rsocket-transport-nodejs-tcp"
+            val nodejsOnly = project.name == "rsocket-transport-nodejs-tcp"
 
             if (!isAutoConfigurable) return@configure
 
-            jvm {
+            if (!jsOnly) jvm {
                 testRuns.all {
                     executionTask.configure {
                         // ActiveProcessorCount is used here, to make sure local setup is similar as on CI
@@ -90,7 +92,7 @@ subprojects {
                         }
                     }
                 }
-                browser {
+                if (!nodejsOnly) browser {
                     testTask {
                         useKarma {
                             useConfigDirectory(rootDir.resolve("js").resolve("karma.config.d"))
@@ -99,6 +101,8 @@ subprojects {
                     }
                 }
             }
+
+            if (jsOnly) return@configure
 
             //native targets configuration
             val linuxTargets = listOf(linuxX64())
@@ -317,7 +321,7 @@ subprojects {
         }
 
         tasks.matching { it.name == "generatePomFileForKotlinMultiplatformPublication" }.configureEach {
-            dependsOn(tasks["generatePomFileForJvmPublication"])
+            tasks.findByName("generatePomFileForJvmPublication")?.let { dependsOn(it) }
         }
     }
 }

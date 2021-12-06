@@ -16,22 +16,18 @@
 
 plugins {
     kotlin("multiplatform")
+    id("kotlinx-atomicfu")
+
+    signing
+    `maven-publish`
+    id("com.jfrog.artifactory")
 }
 
-val kotlinxNodejsVersion: String by rootProject
-
 kotlin {
-    js(IR) {
-        nodejs {
-            binaries.executable()
-        }
-    }
-
     sourceSets {
         val jsMain by getting {
             dependencies {
-                implementation(project(":rsocket-core"))
-                implementation("org.jetbrains.kotlinx:kotlinx-nodejs:$kotlinxNodejsVersion")
+                api(project(":rsocket-core"))
             }
         }
     }
