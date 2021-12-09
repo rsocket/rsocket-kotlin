@@ -31,8 +31,8 @@ kotlin {
             dependencies {
                 api(project(":rsocket-core"))
 
-                api("io.ktor:ktor-network:$ktorVersion")
-                api("io.ktor:ktor-http-cio:$ktorVersion")
+                implementation("io.ktor:ktor-network") { version { strictly(ktorVersion) }}
+                implementation("io.ktor:ktor-http-cio:$ktorVersion")
             }
         }
         val commonTest by getting {
