@@ -194,19 +194,6 @@ subprojects {
             }
         }
     }
-
-    //workaround for https://youtrack.jetbrains.com/issue/KT-44884
-    configurations.matching { !it.name.startsWith("kotlinCompilerPluginClasspath") }.all {
-        resolutionStrategy.eachDependency {
-            val version = requested.version
-            if (requested.group == "org.jetbrains.kotlinx" &&
-                requested.name.startsWith("kotlinx-coroutines") &&
-                version != null && !version.contains("native-mt")
-            ) {
-                useVersion("$version-native-mt")
-            }
-        }
-    }
 }
 
 fun publishPlatformArtifactsInRootModule(
