@@ -31,7 +31,7 @@ kotlin {
             dependencies {
                 api(project(":rsocket-core"))
 
-                implementation("io.ktor:ktor-network") { version { strictly(ktorVersion) }}
+                implementation("io.ktor:ktor-network:$ktorVersion")
                 implementation("io.ktor:ktor-http-cio:$ktorVersion")
             }
         }
