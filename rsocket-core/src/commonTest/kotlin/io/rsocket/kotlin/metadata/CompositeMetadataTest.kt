@@ -173,7 +173,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
         assertFails {
             buildCompositeMetadata {
                 add(WellKnownMimeType.ApplicationAvro, packet)
-                throw error("")
+                error("")
             }
         }
         assertTrue(packet.isEmpty)

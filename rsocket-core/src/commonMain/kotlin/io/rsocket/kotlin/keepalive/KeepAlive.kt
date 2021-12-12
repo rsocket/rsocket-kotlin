@@ -18,11 +18,11 @@ package io.rsocket.kotlin.keepalive
 
 import kotlin.native.concurrent.*
 import kotlin.time.*
+import kotlin.time.Duration.Companion.seconds
 
-@ExperimentalTime
 public fun KeepAlive(
-    interval: Duration = Duration.seconds(20),
-    maxLifetime: Duration = Duration.seconds(90)
+    interval: Duration = 20.seconds,
+    maxLifetime: Duration = 90.seconds
 ): KeepAlive = KeepAlive(
     intervalMillis = interval.toInt(DurationUnit.MILLISECONDS),
     maxLifetimeMillis = maxLifetime.toInt(DurationUnit.MILLISECONDS)

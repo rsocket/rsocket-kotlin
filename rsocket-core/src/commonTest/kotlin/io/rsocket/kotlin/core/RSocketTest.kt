@@ -28,7 +28,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 import kotlin.test.*
-import kotlin.time.*
+import kotlin.time.Duration.Companion.seconds
 
 class RSocketTest : SuspendTest, TestWithLeakCheck {
 
@@ -63,7 +63,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         return RSocketConnector {
             loggerFactory = LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("CLIENT   |$it") }
             connectionConfig {
-                keepAlive = KeepAlive(Duration.seconds(1000), Duration.seconds(1000))
+                keepAlive = KeepAlive(1000.seconds, 1000.seconds)
             }
         }.connect(localServer)
     }
@@ -144,7 +144,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         requester.requestStream(payload("HELLO"))
             .flowOn(PrefetchStrategy(10, 0))
             .withIndex()
-            .onEach { if (it.index == 23) throw error("oops") }
+            .onEach { if (it.index == 23) error("oops") }
             .map { it.value }
             .test {
                 repeat(23) {

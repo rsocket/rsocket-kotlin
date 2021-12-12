@@ -25,9 +25,11 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.*
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 abstract class TransportTest : SuspendTest, TestWithLeakCheck {
-    override val testTimeout: Duration = Duration.minutes(2)
+    override val testTimeout: Duration = 2.minutes
 
     lateinit var client: RSocket //should be assigned in `before`
 
@@ -56,13 +58,13 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun requestChannel0() = test(Duration.seconds(10)) {
+    fun requestChannel0() = test(10.seconds) {
         val list = client.requestChannel(payload(0), emptyFlow()).toList()
         assertTrue(list.isEmpty())
     }
 
     @Test
-    fun requestChannel1() = test(Duration.seconds(10)) {
+    fun requestChannel1() = test(10.seconds) {
         val list = client.requestChannel(payload(0), flowOf(payload(0))).onEach { it.close() }.toList()
         assertEquals(1, list.size)
     }
@@ -72,7 +74,8 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         val request = flow {
             repeat(3) { emit(payload(it)) }
         }
-        val list = client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(3, 0)).onEach { it.close() }.toList()
+        val list =
+            client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(3, 0)).onEach { it.close() }.toList()
         assertEquals(3, list.size)
     }
 
@@ -106,7 +109,8 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         val request = flow {
             repeat(200_000) { emit(payload(it)) }
         }
-        val list = client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(10000, 0)).onEach { it.close() }.toList()
+        val list =
+            client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(10000, 0)).onEach { it.close() }.toList()
         assertEquals(200_000, list.size)
     }
 
@@ -189,7 +193,8 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
 
     @Test
     fun requestStream5() = test {
-        val list = client.requestStream(payload(3)).flowOn(PrefetchStrategy(5, 0)).take(5).onEach { checkPayload(it) }.toList()
+        val list =
+            client.requestStream(payload(3)).flowOn(PrefetchStrategy(5, 0)).take(5).onEach { checkPayload(it) }.toList()
         assertEquals(5, list.size)
     }
 
@@ -221,7 +226,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
             loggerFactory = NoopLogger
 
             connectionConfig {
-                keepAlive = KeepAlive(Duration.minutes(10), Duration.minutes(100))
+                keepAlive = KeepAlive(10.minutes, 100.minutes)
             }
         }
 
