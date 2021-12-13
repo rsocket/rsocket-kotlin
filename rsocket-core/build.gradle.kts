@@ -31,7 +31,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api("io.ktor:ktor-io:$ktorVersion")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core") { version { strictly(kotlinxCoroutinesVersion) }}
             }
         }
         val commonTest by getting {
@@ -39,6 +39,10 @@ kotlin {
                 implementation(project(":rsocket-transport-local"))
             }
         }
+        all {
+            languageSettings.optIn("io.ktor.utils.io.core.internal.DangerousInternalIoApi")
+        }
+
     }
 }
 

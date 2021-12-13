@@ -20,7 +20,7 @@ import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 
 public fun interface ConnectionAcceptor {
-    public suspend fun ConnectionAcceptorContext.accept(): RSocket
+    public fun ConnectionAcceptorContext.accept(): RSocket
 }
 
 public class ConnectionAcceptorContext internal constructor(

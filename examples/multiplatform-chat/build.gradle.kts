@@ -89,5 +89,8 @@ kotlin {
                 dependsOn(clientMain)
             }
         }
+        all {
+            languageSettings.optIn("kotlinx.serialization.ExperimentalSerializationApi")
+        }
     }
 }

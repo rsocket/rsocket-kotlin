@@ -161,6 +161,7 @@ subprojects {
                     //TODO: kludge, this is needed now, as ktor isn't fully supports kotlin 1.5.3x opt-in changes
                     // will be not needed in future with ktor 2.0.0
                     optIn("io.ktor.utils.io.core.ExperimentalIoApi")
+                    optIn("io.ktor.utils.io.core.internal.DangerousInternalIoApi")
 
                     if (name.contains("test", ignoreCase = true) || isTestProject || isPlaygroundProject) {
                         optIn("kotlin.time.ExperimentalTime")
@@ -195,19 +196,6 @@ subprojects {
                 sourceSets["commonMain"].dependencies {
                     implementation("org.jetbrains.kotlinx:atomicfu:$kotlinxAtomicfuVersion")
                 }
-            }
-        }
-    }
-
-    //workaround for https://youtrack.jetbrains.com/issue/KT-44884
-    configurations.matching { !it.name.startsWith("kotlinCompilerPluginClasspath") }.all {
-        resolutionStrategy.eachDependency {
-            val version = requested.version
-            if (requested.group == "org.jetbrains.kotlinx" &&
-                requested.name.startsWith("kotlinx-coroutines") &&
-                version != null && !version.contains("native-mt")
-            ) {
-                useVersion("$version-native-mt")
             }
         }
     }
