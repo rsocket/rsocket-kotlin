@@ -23,6 +23,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
+@OptIn(InternalCoroutinesApi::class)
 internal suspend inline fun Flow<Payload>.collectLimiting(limiter: Limiter, crossinline action: suspend (value: Payload) -> Unit) {
     collect { payload ->
         payload.closeOnError {

@@ -39,7 +39,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:$kotlinxBenchmarkVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core") { version { strictly(kotlinxCoroutinesVersion) } }
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
             }
         }
 
@@ -56,7 +56,7 @@ kotlin {
         val javaMain by getting {
             dependsOn(jvmMain)
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor") { version { strictly(kotlinxCoroutinesVersion) } }
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$kotlinxCoroutinesVersion")
                 implementation("io.rsocket:rsocket-core:$rsocketJavaVersion")
                 implementation("io.rsocket:rsocket-transport-local:$rsocketJavaVersion")
             }

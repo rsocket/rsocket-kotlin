@@ -30,7 +30,7 @@ kotlin {
                 api(kotlin("test"))
                 api(project(":rsocket-core"))
 
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core") { version { strictly(kotlinxCoroutinesVersion) } }
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
                 api("io.ktor:ktor-utils:$ktorVersion")
                 api("app.cash.turbine:turbine:$turbineVersion")
             }

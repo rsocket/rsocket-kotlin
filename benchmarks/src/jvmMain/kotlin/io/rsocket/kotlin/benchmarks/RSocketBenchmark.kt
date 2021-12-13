@@ -93,6 +93,7 @@ abstract class RSocketBenchmark<Payload : Any> {
         }
     }
 
+    @OptIn(InternalCoroutinesApi::class)
     private suspend fun requestStream(bh: Blackhole) {
         doRequestStream().collect {
             releasePayload(it)
@@ -100,6 +101,7 @@ abstract class RSocketBenchmark<Payload : Any> {
         }
     }
 
+    @OptIn(InternalCoroutinesApi::class)
     private suspend fun requestChannel(bh: Blackhole) {
         doRequestChannel().collect {
             releasePayload(it)
