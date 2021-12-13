@@ -99,7 +99,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ macos-11, ubuntu-latest, windows-latest ]
+        os: [ macos-11, ubuntu-latest ]
       fail-fast: false
     runs-on: ${{ matrix.os }}
 
