@@ -39,12 +39,7 @@ jobs:
 
   publish:
     needs: [ build ]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ ubuntu-latest, macos-11, windows-latest ]
-      fail-fast: false
-
+    runs-on: macos-11
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v2
