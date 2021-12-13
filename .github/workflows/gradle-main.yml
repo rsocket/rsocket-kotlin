@@ -99,7 +99,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ macos-11, ubuntu-latest, windows-latest ]
+        os: [ macos-11, ubuntu-latest ]
       fail-fast: false
     runs-on: ${{ matrix.os }}
 
@@ -127,12 +127,7 @@ jobs:
 
   publish:
     needs: [ build, test ]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ ubuntu-latest, macos-11, windows-latest ]
-      fail-fast: false
-
+    runs-on: macos-11
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v2

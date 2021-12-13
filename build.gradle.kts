@@ -18,7 +18,6 @@ import groovy.util.*
 import org.gradle.api.publish.maven.internal.artifact.*
 import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
-import org.jetbrains.kotlin.konan.target.*
 import org.jfrog.gradle.plugin.artifactory.dsl.*
 
 buildscript {
@@ -43,16 +42,10 @@ plugins {
     id("com.jfrog.artifactory") apply false
 }
 
+//on macos it will return all publications supported by rsocket, as linux and mingw can be crosscompiled there for publication
+//on linux and mac it will not contain mac targets
 val Project.publicationNames: Array<String>
-    get() {
-        val publishing: PublishingExtension by extensions
-        val all = publishing.publications.names
-        //publish js, jvm, metadata, linuxX64 and kotlinMultiplatform only once
-        return when {
-            HostManager.hostIsLinux -> all
-            else                    -> all - "js" - "jvm" - "metadata" - "kotlinMultiplatform" - "linuxX64"
-        }.toTypedArray()
-    }
+    get() = extensions.getByType<PublishingExtension>().publications.names.toTypedArray()
 
 subprojects {
     tasks.whenTaskAdded {
