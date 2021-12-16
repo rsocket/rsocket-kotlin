@@ -365,10 +365,11 @@ if (sonatypeUsername != null && sonatypePassword != null) {
                 plugins.withId("signing") {
                     extensions.configure<SigningExtension> {
                         //requiring signature if there is a publish task that is not to MavenLocal
-                        isRequired = gradle.taskGraph.allTasks.any {
-                            it.name.toLowerCase()
-                                .contains("publish") && !it.name.contains("MavenLocal")
-                        }
+//TODO                        
+//                         isRequired = gradle.taskGraph.allTasks.any {
+//                             it.name.toLowerCase()
+//                                 .contains("publish") && !it.name.contains("MavenLocal")
+//                         }
 
                         val signingKey: String? by project
                         val signingPassword: String? by project
