@@ -44,7 +44,7 @@ RSocket interface contains 5 methods:
 
 ## Using in your projects
 
-Make sure, that you use Kotlin 1.5.20
+Make sure, that you use Kotlin 1.6.10
 
 ### Gradle:
 
@@ -71,15 +71,15 @@ For WS ktor transport, available client or server engine should be added:
 ```kotlin
 dependencies {
     // client engines for WS transport
-    implementation("io.ktor:ktor-client-js:1.6.2") //js
-    implementation("io.ktor:ktor-client-cio:1.6.2") //jvm
-    implementation("io.ktor:ktor-client-okhttp:1.6.2") //jvm
+    implementation("io.ktor:ktor-client-js:1.6.7") //js
+    implementation("io.ktor:ktor-client-cio:1.6.7") //jvm
+    implementation("io.ktor:ktor-client-okhttp:1.6.7") //jvm
 
     // server engines for WS transport (jvm only)
-    implementation("io.ktor:ktor-server-cio:1.6.2")
-    implementation("io.ktor:ktor-server-netty:1.6.2")
-    implementation("io.ktor:ktor-server-jetty:1.6.2")
-    implementation("io.ktor:ktor-server-tomcat:1.6.2")
+    implementation("io.ktor:ktor-server-cio:1.6.7")
+    implementation("io.ktor:ktor-server-netty:1.6.7")
+    implementation("io.ktor:ktor-server-jetty:1.6.7")
+    implementation("io.ktor:ktor-server-tomcat:1.6.7")
 }
 ```
 
@@ -176,7 +176,6 @@ embeddedServer(CIO) {
 
 ### More examples:
 
-- [interactions](examples/interactions) - contains usages of some supported functions
 - [multiplatform-chat](examples/multiplatform-chat) - chat implementation with JVM server and JS/JVM client with shared classes and
   serializing data using [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization)
 - [nodejs-tcp-transport](examples/nodejs-tcp-transport) - implementation of TCP transport for nodejs
