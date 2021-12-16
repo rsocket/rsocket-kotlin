@@ -64,6 +64,7 @@ jobs:
           distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
+        env:
           ORG_GRADLE_PROJECT_signingKey: ${{secrets.signingKey}}
           ORG_GRADLE_PROJECT_signingPassword: ${{secrets.signingPassword}}
           ORG_GRADLE_PROJECT_sonatypeUsername: ${{secrets.sonatypeUsername}}
