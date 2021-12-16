@@ -8,34 +8,34 @@ on:
       - '*' # Push events to matching *, i.e. 1.0, 20.15.10
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [ macos-11, ubuntu-latest ]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
+#   build:
+#     strategy:
+#       matrix:
+#         os: [ macos-11, ubuntu-latest ]
+#       fail-fast: false
+#     runs-on: ${{ matrix.os }}
 
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v2
-        with:
-          distribution: 'adopt'
-          java-version: 8
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle/caches/modules-2
-            ~/.gradle/wrapper
-            ~/.konan
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
-          restore-keys: ${{ runner.os }}-gradle-
-      - name: Check full project builds
-        uses: gradle/gradle-build-action@v1
-        with:
-          arguments: build -PskipTests --scan --info
-          distributions-cache-enabled: false
-          dependencies-cache-enabled: false
-          configuration-cache-enabled: false
+#     steps:
+#       - uses: actions/checkout@v2
+#       - uses: actions/setup-java@v2
+#         with:
+#           distribution: 'adopt'
+#           java-version: 8
+#       - uses: actions/cache@v2
+#         with:
+#           path: |
+#             ~/.gradle/caches/modules-2
+#             ~/.gradle/wrapper
+#             ~/.konan
+#           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
+#           restore-keys: ${{ runner.os }}-gradle-
+#       - name: Check full project builds
+#         uses: gradle/gradle-build-action@v1
+#         with:
+#           arguments: build -PskipTests --scan --info
+#           distributions-cache-enabled: false
+#           dependencies-cache-enabled: false
+#           configuration-cache-enabled: false
 
   publish:
 #     needs: [ build ]
@@ -46,21 +46,13 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: 8
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle/caches/modules-2
-            ~/.gradle/wrapper
-            ~/.konan
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
-          restore-keys: ${{ runner.os }}-gradle-
       - name: Set TAG_NAME for publication
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
         shell: bash
       - name: Publish Packages to Sonotype (version ${{ env.TAG_NAME }})
         uses: gradle/gradle-build-action@v1
         with:
-          arguments: publishAllPublicationsToSonatypeRepository -Pversion=${{ env.TAG_NAME }} --info --no-daemon
+          arguments: publishAllPublicationsToSonatypeRepository -Pversion=${{ env.TAG_NAME }} --info
           distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
