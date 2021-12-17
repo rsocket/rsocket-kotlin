@@ -53,16 +53,16 @@ repositories {
     mavenCentral()
 }
 dependencies {
-    implementation("io.rsocket.kotlin:rsocket-core:0.14.0")
+    implementation("io.rsocket.kotlin:rsocket-core:0.14.3")
 
     // TCP ktor transport
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor:0.14.0")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor:0.14.3")
 
     // WS ktor transport client plugin
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-client:0.14.0")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-client:0.14.3")
 
     // WS ktor transport server plugin
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-server:0.14.0")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-server:0.14.3")
 }
 ```
 
