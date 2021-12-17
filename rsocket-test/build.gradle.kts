@@ -19,20 +19,15 @@ plugins {
     id("kotlinx-atomicfu")
 }
 
-val ktorVersion: String by rootProject
-val kotlinxCoroutinesVersion: String by rootProject
-val turbineVersion: String by rootProject
-
 kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
                 api(kotlin("test"))
-                api(project(":rsocket-core"))
+                api(projects.rsocketCore)
 
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
-                api("io.ktor:ktor-utils:$ktorVersion")
-                api("app.cash.turbine:turbine:$turbineVersion")
+                api(libs.ktor.utils)
+                api(libs.turbine)
             }
         }
         val jvmMain by getting {

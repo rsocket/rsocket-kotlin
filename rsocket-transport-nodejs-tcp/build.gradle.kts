@@ -27,7 +27,7 @@ kotlin {
     sourceSets {
         val jsMain by getting {
             dependencies {
-                api(project(":rsocket-core"))
+                api(projects.rsocketCore)
             }
         }
     }

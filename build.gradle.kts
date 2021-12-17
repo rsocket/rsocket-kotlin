@@ -24,22 +24,16 @@ buildscript {
     repositories {
         mavenCentral()
     }
-    val kotlinVersion: String by rootProject
-    val kotlinxAtomicfuVersion: String by rootProject
 
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:$kotlinxAtomicfuVersion")
+        classpath(libs.build.kotlin)
+        classpath(libs.build.kotlinx.atomicfu)
     }
 }
 
-val kotlinxAtomicfuVersion: String by rootProject
-
 plugins {
-    id("com.github.ben-manes.versions")
-
-    //needed to add classpath to script
-    id("com.jfrog.artifactory") apply false
+    alias(libs.plugins.versionUpdates)
+    alias(libs.plugins.jfrog.artifactory) apply false //needed to add classpath to script
 }
 
 //on macos it will return all publications supported by rsocket, as linux and mingw can be crosscompiled there for publication
@@ -146,8 +140,6 @@ subprojects {
         extensions.configure<KotlinMultiplatformExtension> {
             val isTestProject = project.name == "rsocket-test" || project.name == "rsocket-test-server"
             val isLibProject = project.name.startsWith("rsocket")
-            val isPlaygroundProject = project.name == "playground"
-            val isExampleProject = "examples" in project.path
 
             sourceSets.all {
                 languageSettings.apply {
@@ -159,7 +151,7 @@ subprojects {
                     // will be not needed in future with ktor 2.0.0
                     optIn("io.ktor.utils.io.core.ExperimentalIoApi")
 
-                    if (name.contains("test", ignoreCase = true) || isTestProject || isPlaygroundProject) {
+                    if (name.contains("test", ignoreCase = true) || isTestProject) {
                         optIn("kotlin.time.ExperimentalTime")
                         optIn("kotlin.ExperimentalStdlibApi")
 
@@ -183,14 +175,7 @@ subprojects {
             if (isLibProject && !isTestProject) {
                 explicitApi()
                 sourceSets["commonTest"].dependencies {
-                    implementation(project(":rsocket-test"))
-                }
-            }
-
-            //fix atomicfu for examples and playground
-            if (isExampleProject || isPlaygroundProject) {
-                sourceSets["commonMain"].dependencies {
-                    implementation("org.jetbrains.kotlinx:atomicfu:$kotlinxAtomicfuVersion")
+                    implementation(projects.rsocketTest)
                 }
             }
         }

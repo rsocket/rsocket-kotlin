@@ -1,0 +1,53 @@
+[versions]
+kotlin = "1.6.10"
+
+kotlinx-atomicfu = "0.17.0"
+kotlinx-coroutines = "1.5.2-native-mt"
+kotlinx-benchmark = "0.4.0"
+
+ktor = "1.6.7"
+
+turbine = "0.7.0"
+
+jfrog-artifactory = "4.25.1"
+versionUpdates = "0.39.0"
+
+rsocket-java = "1.1.1"
+
+jmh = "1.33"
+
+[libraries]
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
+
+kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "kotlinx-atomicfu" }
+kotlinx-benchmark = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinx-benchmark" }
+
+ktor-io = { module = "io.ktor:ktor-io", version.ref = "ktor" }
+ktor-utils = { module = "io.ktor:ktor-utils", version.ref = "ktor" }
+ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktor" }
+ktor-http-cio = { module = "io.ktor:ktor-http-cio", version.ref = "ktor" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-server-core = { module = "io.ktor:ktor-server", version.ref = "ktor" }
+ktor-server-websockets = { module = "io.ktor:ktor-websockets", version.ref = "ktor" }
+ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktor-server-jetty = { module = "io.ktor:ktor-server-jetty", version.ref = "ktor" }
+
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+
+rsocket-java-core = { module = 'io.rsocket:rsocket-core', version.ref = "rsocket-java" }
+rsocket-java-transport-local = { module = 'io.rsocket:rsocket-transport-local', version.ref = "rsocket-java" }
+
+build-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+build-kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu-gradle-plugin", version.ref = "kotlinx-atomicfu" }
+
+[plugins]
+kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
+
+kotlinx-benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotlinx-benchmark" }
+
+versionUpdates = { id = "com.github.ben-manes.versions", version.ref = "versionUpdates" }
+jfrog-artifactory = { id = "com.jfrog.artifactory", version.ref = "jfrog-artifactory" }

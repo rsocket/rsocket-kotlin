@@ -23,20 +23,17 @@ plugins {
     id("com.jfrog.artifactory")
 }
 
-val ktorVersion: String by rootProject
-val kotlinxCoroutinesVersion: String by rootProject
-
 kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api("io.ktor:ktor-io:$ktorVersion")
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
+                api(libs.kotlinx.coroutines.core)
+                api(libs.ktor.io)
             }
         }
         val commonTest by getting {
             dependencies {
-                implementation(project(":rsocket-transport-local"))
+                implementation(projects.rsocketTransportLocal)
             }
         }
     }

@@ -20,18 +20,17 @@ import java.net.*
 
 plugins {
     kotlin("multiplatform")
+    id("kotlinx-atomicfu")
 }
-
-val ktorVersion: String by rootProject
 
 kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
-                implementation(project(":rsocket-test"))
-                implementation(project(":rsocket-transport-ktor-server"))
+                implementation(projects.rsocketTest)
+                implementation(projects.rsocketTransportKtorServer)
 
-                implementation("io.ktor:ktor-server-cio:$ktorVersion")
+                implementation(libs.ktor.server.cio)
             }
         }
     }

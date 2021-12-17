@@ -20,13 +20,11 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.*
 
 plugins {
     kotlin("multiplatform")
-    id("org.jetbrains.kotlinx.benchmark")
-    kotlin("plugin.allopen")
-}
+    id("kotlinx-atomicfu")
 
-val rsocketJavaVersion: String by rootProject
-val kotlinxCoroutinesVersion: String by rootProject
-val kotlinxBenchmarkVersion: String by rootProject
+    alias(libs.plugins.kotlin.allopen)
+    alias(libs.plugins.kotlinx.benchmark)
+}
 
 val jmhVersionOverride: String by rootProject
 
@@ -38,8 +36,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:$kotlinxBenchmarkVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion")
+                implementation(libs.kotlinx.benchmark)
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
 
@@ -48,17 +46,17 @@ kotlin {
         val kotlinMain by getting {
             dependsOn(jvmMain)
             dependencies {
-                implementation(project(":rsocket-core"))
-                implementation(project(":rsocket-transport-local"))
+                implementation(projects.rsocketCore)
+                implementation(projects.rsocketTransportLocal)
             }
         }
 
         val javaMain by getting {
             dependsOn(jvmMain)
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$kotlinxCoroutinesVersion")
-                implementation("io.rsocket:rsocket-core:$rsocketJavaVersion")
-                implementation("io.rsocket:rsocket-transport-local:$rsocketJavaVersion")
+                implementation(libs.kotlinx.coroutines.reactor)
+                implementation(libs.rsocket.java.core)
+                implementation(libs.rsocket.java.transport.local)
             }
         }
     }
@@ -75,7 +73,7 @@ benchmark {
         register("java")
     }
 
-    targets.withType<JvmBenchmarkTarget> { jmhVersion = jmhVersionOverride }
+    targets.withType<JvmBenchmarkTarget> { jmhVersion = libs.versions.jmh.get() }
 }
 
 tasks.register<JavaExec>("jmhProfilers") {
