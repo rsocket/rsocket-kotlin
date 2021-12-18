@@ -72,7 +72,7 @@ internal class RSocketRequester(
         }
     }
 
-    override fun requestStream(payload: Payload): Flow<Payload> = requestFlow { strategy, initialRequest ->
+    override fun requestStream(payload: Payload): Flow<Payload> = flowWithRequests { requests ->
         ensureActiveOrRelease(payload)
 
         val id = streamsStorage.nextId()
@@ -82,34 +82,46 @@ internal class RSocketRequester(
         streamsStorage.save(id, handler)
 
         handler.receiveOrCancel(id, payload) {
-            sender.sendRequestPayload(FrameType.RequestStream, id, payload, initialRequest)
-            emitAllWithRequestN(channel, strategy) { sender.sendRequestN(id, it) }
+            sender.sendRequestPayload(FrameType.RequestStream, id, payload, requests.receive())
+            val requestsJob = launch { requests.consumeEach { sender.sendRequestN(id, it) } }
+            try {
+                emitAll(channel)
+            } finally {
+                requestsJob.cancel()
+            }
         }
     }
 
-    override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> = requestFlow { strategy, initialRequest ->
-        ensureActiveOrRelease(initPayload)
+    override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> =
+        flowWithRequests { requests ->
+            ensureActiveOrRelease(initPayload)
 
-        val id = streamsStorage.nextId()
+            val id = streamsStorage.nextId()
 
-        val channel = SafeChannel<Payload>(Channel.UNLIMITED)
-        val limiter = Limiter(0)
-        val payloadsJob = Job(this@RSocketRequester.coroutineContext.job)
-        val handler = RequesterRequestChannelFrameHandler(id, streamsStorage, limiter, payloadsJob, channel, pool)
-        streamsStorage.save(id, handler)
+            val channel = SafeChannel<Payload>(Channel.UNLIMITED)
+            val limiter = Limiter(0)
+            val payloadsJob = Job(this@RSocketRequester.coroutineContext.job)
+            val handler = RequesterRequestChannelFrameHandler(id, streamsStorage, limiter, payloadsJob, channel, pool)
+            streamsStorage.save(id, handler)
 
-        handler.receiveOrCancel(id, initPayload) {
-            sender.sendRequestPayload(FrameType.RequestChannel, id, initPayload, initialRequest)
-            //TODO lazy?
-            launch(payloadsJob) {
-                handler.sendOrFail(id) {
-                    payloads.collectLimiting(limiter) { sender.sendNextPayload(id, it) }
-                    sender.sendCompletePayload(id)
+            handler.receiveOrCancel(id, initPayload) {
+                sender.sendRequestPayload(FrameType.RequestChannel, id, initPayload, requests.receive())
+                //TODO lazy?
+                launch(payloadsJob) {
+                    handler.sendOrFail(id) {
+                        payloads.collectLimiting(limiter) { sender.sendNextPayload(id, it) }
+                        sender.sendCompletePayload(id)
+                    }
+                }
+
+                val requestsJob = launch { requests.consumeEach { sender.sendRequestN(id, it) } }
+                try {
+                    emitAll(channel)
+                } finally {
+                    requestsJob.cancel()
                 }
             }
-            emitAllWithRequestN(channel, strategy) { sender.sendRequestN(id, it) }
         }
-    }
 
     private suspend inline fun SendFrameHandler.sendOrFail(id: Int, block: () -> Unit) {
         try {

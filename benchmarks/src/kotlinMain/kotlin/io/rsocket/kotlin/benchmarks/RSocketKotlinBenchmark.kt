@@ -27,8 +27,6 @@ import kotlin.random.*
 
 @OptIn(ExperimentalStreamsApi::class, DelicateCoroutinesApi::class)
 class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
-    private val requestStrategy = PrefetchStrategy(64, 0)
-
     private val benchJob = Job()
     lateinit var client: RSocket
 
@@ -52,7 +50,7 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
                 }
                 requestChannel { init, payloads ->
                     init.close()
-                    payloads.flowOn(requestStrategy)
+                    payloads.requestBy(64, 0)
                 }
             }
         }
@@ -79,8 +77,10 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
 
     override suspend fun doRequestResponse(): Payload = client.requestResponse(payloadCopy())
 
-    override suspend fun doRequestStream(): Flow<Payload> = client.requestStream(payloadCopy()).flowOn(requestStrategy)
+    override suspend fun doRequestStream(): Flow<Payload> =
+        client.requestStream(payloadCopy()).requestBy(64, 0)
 
-    override suspend fun doRequestChannel(): Flow<Payload> = client.requestChannel(payloadCopy(), payloadsFlow).flowOn(requestStrategy)
+    override suspend fun doRequestChannel(): Flow<Payload> =
+        client.requestChannel(payloadCopy(), payloadsFlow).requestBy(64, 0)
 
 }
