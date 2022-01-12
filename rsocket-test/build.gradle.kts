@@ -15,13 +15,15 @@
  */
 
 plugins {
-    kotlin("multiplatform")
-    id("kotlinx-atomicfu")
+    rsocket.multiplatform
 }
 
 kotlin {
-    sourceSets {
-        val commonMain by getting {
+    sourceSets.all {
+        languageSettings.optInForTest()
+    }
+    configureCommon {
+        main {
             dependencies {
                 api(kotlin("test"))
                 api(projects.rsocketCore)
@@ -30,15 +32,20 @@ kotlin {
                 api(libs.turbine)
             }
         }
-        val jvmMain by getting {
+    }
+    configureJvm {
+        main {
             dependencies {
                 api(kotlin("test-junit"))
             }
         }
-        val jsMain by getting {
+    }
+    configureJs {
+        main {
             dependencies {
                 api(kotlin("test-js"))
             }
         }
     }
+    configureNative()
 }

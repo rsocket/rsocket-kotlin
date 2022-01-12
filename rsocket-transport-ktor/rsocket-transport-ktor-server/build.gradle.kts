@@ -15,14 +15,12 @@
  */
 
 plugins {
-    kotlin("multiplatform")
-    id("kotlinx-atomicfu")
-    rsocket.publication
+    rsocket.template.library
 }
 
 kotlin {
-    sourceSets {
-        val commonMain by getting {
+    configureJvm {
+        main {
             dependencies {
                 api(projects.rsocketCore)
                 api(projects.rsocketTransportKtor)

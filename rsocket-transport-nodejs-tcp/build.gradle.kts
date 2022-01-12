@@ -15,14 +15,12 @@
  */
 
 plugins {
-    kotlin("multiplatform")
-    id("kotlinx-atomicfu")
-    rsocket.publication
+    rsocket.template.library
 }
 
 kotlin {
-    sourceSets {
-        val jsMain by getting {
+    configureJs(JsTarget.Nodejs) {
+        main {
             dependencies {
                 api(projects.rsocketCore)
             }

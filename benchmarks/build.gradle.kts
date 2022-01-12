@@ -19,8 +19,7 @@ import org.gradle.kotlin.dsl.benchmark
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 
 plugins {
-    kotlin("multiplatform")
-    id("kotlinx-atomicfu")
+    rsocket.multiplatform
 
     alias(libs.plugins.kotlin.allopen)
     alias(libs.plugins.kotlinx.benchmark)

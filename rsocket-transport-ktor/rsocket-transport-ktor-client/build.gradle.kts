@@ -15,14 +15,12 @@
  */
 
 plugins {
-    kotlin("multiplatform")
-    id("kotlinx-atomicfu")
-    rsocket.publication
+    rsocket.template.library
 }
 
 kotlin {
-    sourceSets {
-        val commonMain by getting {
+    configureCommon {
+        main {
             dependencies {
                 api(projects.rsocketCore)
                 api(projects.rsocketTransportKtor)
@@ -31,6 +29,9 @@ kotlin {
             }
         }
     }
+    configureJvm()
+    configureJs()
+    configureNative(NativeTargets.Nix)
 }
 
 description = "Ktor installments for RSocket client transport"

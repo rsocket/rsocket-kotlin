@@ -15,14 +15,12 @@
  */
 
 plugins {
-    kotlin("multiplatform")
-    id("kotlinx-atomicfu")
-    rsocket.publication
+    rsocket.template.library
 }
 
 kotlin {
-    sourceSets {
-        val commonMain by getting {
+    configureCommon {
+        main {
             dependencies {
                 api(projects.rsocketCore)
 
@@ -30,12 +28,14 @@ kotlin {
                 api(libs.ktor.http.cio)
             }
         }
-        val commonTest by getting {
+        test {
             dependencies {
                 implementation(projects.rsocketTransportKtorClient)
             }
         }
-        val jvmTest by getting {
+    }
+    configureJvm {
+        test {
             dependencies {
                 implementation(projects.rsocketTransportKtorServer)
 
@@ -48,6 +48,8 @@ kotlin {
             }
         }
     }
+    configureJs()
+    configureNative(NativeTargets.Nix)
 }
 
 description = "Ktor RSocket transport implementations (TCP, Websocket)"
