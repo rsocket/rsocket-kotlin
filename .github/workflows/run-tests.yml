@@ -80,6 +80,15 @@ jobs:
           distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
+      - name: Test rsocket-transport-nodejs module
+        if: (matrix.target == 'jsIrNode' || matrix.target == 'jsLegacyNode') && (success() || failure())
+        timeout-minutes: 15
+        uses: gradle/gradle-build-action@v1
+        with:
+          arguments: rsocket-transport-nodejs-tcp:${{ matrix.target }}Test --scan --info
+          distributions-cache-enabled: false
+          dependencies-cache-enabled: false
+          configuration-cache-enabled: false
 
       - name: Publish Test Report
         if: always()
