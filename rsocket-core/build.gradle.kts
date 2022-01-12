@@ -15,25 +15,26 @@
  */
 
 plugins {
-    kotlin("multiplatform")
-    id("kotlinx-atomicfu")
-    rsocket.publication
+    rsocket.template.library
 }
 
 kotlin {
-    sourceSets {
-        val commonMain by getting {
+    configureCommon {
+        main {
             dependencies {
                 api(libs.kotlinx.coroutines.core)
                 api(libs.ktor.io)
             }
         }
-        val commonTest by getting {
+        test {
             dependencies {
                 implementation(projects.rsocketTransportLocal)
             }
         }
     }
+    configureJvm()
+    configureJs()
+    configureNative()
 }
 
 description = "Core functionality for the RSocket library"

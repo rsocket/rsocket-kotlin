@@ -19,13 +19,15 @@ import java.io.*
 import java.net.*
 
 plugins {
-    kotlin("multiplatform")
-    id("kotlinx-atomicfu")
+    rsocket.multiplatform
 }
 
 kotlin {
-    sourceSets {
-        val jvmMain by getting {
+    sourceSets.all {
+        languageSettings.optInForTest()
+    }
+    configureJvm {
+        main {
             dependencies {
                 implementation(projects.rsocketTest)
                 implementation(projects.rsocketTransportKtorServer)

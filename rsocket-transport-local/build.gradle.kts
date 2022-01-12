@@ -15,19 +15,20 @@
  */
 
 plugins {
-    kotlin("multiplatform")
-    id("kotlinx-atomicfu")
-    rsocket.publication
+    rsocket.template.library
 }
 
 kotlin {
-    sourceSets {
-        val commonMain by getting {
+    configureCommon {
+        main {
             dependencies {
                 api(projects.rsocketCore)
             }
         }
     }
+    configureJvm()
+    configureJs()
+    configureNative()
 }
 
 description = "Local RSocket transport implementation"
