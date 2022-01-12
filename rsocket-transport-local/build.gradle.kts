@@ -16,6 +16,7 @@
 
 plugins {
     kotlin("multiplatform")
+    id("kotlinx-atomicfu")
 
     signing
     `maven-publish`
@@ -26,7 +27,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api(project(":rsocket-core"))
+                api(projects.rsocketCore)
             }
         }
     }

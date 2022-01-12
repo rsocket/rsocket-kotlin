@@ -14,27 +14,13 @@
  * limitations under the License.
  */
 
+enableFeaturePreview("VERSION_CATALOGS")
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
-    }
-
-    val kotlinVersion: String by settings
-    val artifactoryVersion: String by settings
-    val versionUpdatesVersion: String by settings
-    val gradleEnterpriseVersion: String by settings
-    val kotlinxBenchmarkVersion: String by settings
-
-    plugins {
-        kotlin("plugin.allopen") version kotlinVersion
-        kotlin("plugin.serialization") version kotlinVersion
-
-        id("org.jetbrains.kotlinx.benchmark") version kotlinxBenchmarkVersion
-
-        id("com.jfrog.artifactory") version artifactoryVersion
-        id("com.github.ben-manes.versions") version versionUpdatesVersion
-        id("com.gradle.enterprise") version gradleEnterpriseVersion
     }
 }
 
@@ -45,7 +31,8 @@ dependencyResolutionManagement {
 }
 
 plugins {
-    id("com.gradle.enterprise")
+    //this version can not be moved to version catalog, because it's in settings.gradle.kts
+    id("com.gradle.enterprise") version "3.7.2"
 }
 
 gradleEnterprise {
