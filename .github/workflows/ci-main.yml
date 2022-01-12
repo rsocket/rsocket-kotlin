@@ -1,0 +1,16 @@
+name: Main CI
+on:
+  push:
+    paths-ignore:
+      - samples/**
+    branches:
+      - master
+
+jobs:
+  test:
+    uses: rsocket/rsocket-kotlin/.github/workflows/run-tests.yml@master
+  publish:
+    needs: [ test ]
+    uses: rsocket/rsocket-kotlin/.github/workflows/publish-snapshot.yml@master
+    with:
+      add-branch-suffix: false

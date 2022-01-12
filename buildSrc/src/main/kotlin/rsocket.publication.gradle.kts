@@ -4,8 +4,11 @@ plugins {
 }
 
 val versionSuffix: String? by project
-if (versionSuffix != null) {
-    project.version = project.version.toString() + versionSuffix
+if (!versionSuffix.isNullOrBlank()) {
+    val versionString = project.version.toString()
+    require(versionString.endsWith("-SNAPSHOT"))
+    project.version = versionString.replace("-", "-$versionSuffix-")
+    println("Current version: ${project.version}")
 }
 
 //empty javadoc for maven central

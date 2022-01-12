@@ -33,6 +33,7 @@ kotlin {
     }?.binaries {
         executable {
             entryPoint = "io.rsocket.kotlin.samples.chat.client.main"
+            freeCompilerArgs += "-Xdisable-phases=EscapeAnalysis" //TODO
         }
     }
 

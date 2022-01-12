@@ -1,0 +1,37 @@
+name: Publish SNAPSHOT to Github Packages
+on:
+  workflow_call:
+    inputs:
+      add-branch-suffix:
+        type: boolean
+        required: true
+
+jobs:
+  publish:
+    runs-on: macos-11
+    steps:
+      - uses: actions/checkout@v2
+      - if: inputs.add-branch-suffix
+        id: set-version
+        run: |
+          ref_name=${{ github.ref_name }}
+          branch_name="${ref_name////-}"
+          echo "::set-output name=version-suffix::$branch_name"
+      - run: echo "KONAN_DATA_DIR=${HOME}/.gradle/konan" >> $GITHUB_ENV
+      - name: Publish to Github Packages (version x.y.z-${{ steps.set-version.outputs.version-suffix }}-SNAPSHOT)
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: |
+            publishAllPublicationsToGithubRepository
+            --scan
+            --info
+            -PversionSuffix=${{ steps.set-version.outputs.version-suffix }}
+            -PgithubUsername=${{ github.actor }}
+            -PgithubPassword=${{ github.token }}
+          cache-read-only: true
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            konan
+            nodejs
+            yarn
