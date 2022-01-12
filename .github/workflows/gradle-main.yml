@@ -133,31 +133,3 @@ jobs:
           distributions-cache-enabled: false
           dependencies-cache-enabled: false
           configuration-cache-enabled: false
-
-  publish:
-    needs: [ build, test ]
-    runs-on: macos-11
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v2
-        with:
-          distribution: 'adopt'
-          java-version: 8
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle/caches/modules-2
-            ~/.gradle/wrapper
-            ~/.konan
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/gradle.properties') }}
-          restore-keys: ${{ runner.os }}-gradle-
-      - name: Set BRANCH_NAME for publication
-        run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
-        shell: bash
-      - name: Publish Packages to Artifactory (version x.y.z-SNAPSHOT)
-        uses: gradle/gradle-build-action@v1
-        with:
-          arguments: artifactoryPublish -PbintrayUser=${{ secrets.bintrayUser }} -PbintrayKey=${{ secrets.bintrayKey }} -PversionSuffix=-SNAPSHOT -PbuildNumber=${{ github.run_number }} --info
-          distributions-cache-enabled: false
-          dependencies-cache-enabled: false
-          configuration-cache-enabled: false

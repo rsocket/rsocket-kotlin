@@ -17,10 +17,7 @@
 plugins {
     kotlin("multiplatform")
     id("kotlinx-atomicfu")
-
-    signing
-    `maven-publish`
-    id("com.jfrog.artifactory")
+    rsocket.publication
 }
 
 kotlin {
