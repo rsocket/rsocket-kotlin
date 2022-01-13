@@ -1,0 +1,9 @@
+name: Pull Request CI
+on:
+  pull_request:
+    paths-ignore:
+      - samples/**
+
+jobs:
+  test:
+    uses: rsocket/rsocket-kotlin/.github/workflows/run-tests.yml@master

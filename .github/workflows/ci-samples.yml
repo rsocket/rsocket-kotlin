@@ -1,0 +1,36 @@
+name: Samples CI
+on:
+  push:
+    paths:
+      - samples/**
+  pull_request:
+    paths:
+      - samples/**
+
+jobs:
+  build:
+    name: Build ${{ matrix.sample }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-11 ]
+        sample: [ chat ]
+    steps:
+      - uses: actions/checkout@v2
+      - if: matrix.os != 'windows-latest'
+        run: echo "KONAN_DATA_DIR=${HOME}/.gradle/konan" >> $GITHUB_ENV
+      - if: matrix.os == 'windows-latest'
+        run: echo "KONAN_DATA_DIR=${USERPROFILE}\.gradle\konan" >> $GITHUB_ENV
+        shell: bash
+      - uses: gradle/gradle-build-action@v2
+        with:
+          arguments: build --continue
+          cache-read-only: true
+          build-root-directory: samples/${{ matrix.sample }}
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            konan
+            nodejs
+            yarn
