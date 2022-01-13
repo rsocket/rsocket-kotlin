@@ -118,6 +118,7 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: test-reports
+          path: test-reports
       - name: Publish Test Report
         uses: EnricoMi/publish-unit-test-result-action@v1
         if: always()
