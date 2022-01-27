@@ -8,9 +8,9 @@ on:
 
 jobs:
   test:
-    uses: rsocket/rsocket-kotlin/.github/workflows/run-tests.yml@master
+    uses: ./.github/workflows/run-tests.yml
   publish:
     needs: [ test ]
-    uses: rsocket/rsocket-kotlin/.github/workflows/publish-snapshot.yml@master
+    uses: ./.github/workflows/publish-snapshot.yml
     with:
       add-branch-suffix: false

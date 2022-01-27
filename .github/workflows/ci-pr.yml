@@ -6,4 +6,4 @@ on:
 
 jobs:
   test:
-    uses: rsocket/rsocket-kotlin/.github/workflows/run-tests.yml@master
+    uses: ./.github/workflows/run-tests.yml
