@@ -20,28 +20,27 @@ import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.handler.*
+import kotlinx.atomicfu.locks.*
 
-internal class StreamsStorage(private val isServer: Boolean, private val pool: ObjectPool<ChunkBuffer>) {
+internal class StreamsStorage(
+    private val isServer: Boolean,
+    private val pool: ObjectPool<ChunkBuffer>
+) : SynchronizedObject() {
     private val streamId: StreamId = StreamId(isServer)
     private val handlers: IntMap<FrameHandler> = IntMap()
 
-    fun nextId(): Int = streamId.next(handlers)
-
-    fun save(id: Int, handler: FrameHandler) {
-        handlers[id] = handler
-    }
-
-    fun remove(id: Int): FrameHandler? {
-        return handlers.remove(id)?.also(FrameHandler::close)
-    }
-
-    fun contains(id: Int): Boolean {
-        return id in handlers
-    }
+    fun nextId(): Int = synchronized(this) { streamId.next(handlers) }
+    fun save(id: Int, handler: FrameHandler) = synchronized(this) { handlers[id] = handler }
+    fun remove(id: Int): FrameHandler? = synchronized(this) { handlers.remove(id) }?.also(FrameHandler::close)
+    fun contains(id: Int): Boolean = synchronized(this) { id in handlers }
+    private fun get(id: Int): FrameHandler? = synchronized(this) { handlers[id] }
 
     fun cleanup(error: Throwable?) {
-        val values = handlers.values()
-        handlers.clear()
+        val values = synchronized(this) {
+            val values = handlers.values()
+            handlers.clear()
+            values
+        }
         values.forEach {
             it.cleanup(error)
             it.close()
@@ -51,19 +50,32 @@ internal class StreamsStorage(private val isServer: Boolean, private val pool: O
     fun handleFrame(frame: Frame, responder: RSocketResponder) {
         val id = frame.streamId
         when (frame) {
-            is RequestNFrame -> handlers[id]?.handleRequestN(frame.requestN)
-            is CancelFrame   -> handlers[id]?.handleCancel()
-            is ErrorFrame    -> handlers[id]?.handleError(frame.throwable)
+            is RequestNFrame -> get(id)?.handleRequestN(frame.requestN)
+            is CancelFrame   -> get(id)?.handleCancel()
+            is ErrorFrame    -> get(id)?.handleError(frame.throwable)
             is RequestFrame  -> when {
-                frame.type == FrameType.Payload -> handlers[id]?.handleRequest(frame) ?: frame.close() // release on unknown stream id
+                frame.type == FrameType.Payload -> get(id)?.handleRequest(frame)
+                    ?: frame.close() // release on unknown stream id
                 isServer.xor(id % 2 != 0)       -> frame.close() // request frame on wrong stream id
                 else                            -> {
                     val initialRequest = frame.initialRequest
                     val handler = when (frame.type) {
                         FrameType.RequestFnF      -> ResponderFireAndForgetFrameHandler(id, this, responder, pool)
                         FrameType.RequestResponse -> ResponderRequestResponseFrameHandler(id, this, responder, pool)
-                        FrameType.RequestStream   -> ResponderRequestStreamFrameHandler(id, this, responder, initialRequest, pool)
-                        FrameType.RequestChannel  -> ResponderRequestChannelFrameHandler(id, this, responder, initialRequest, pool)
+                        FrameType.RequestStream   -> ResponderRequestStreamFrameHandler(
+                            id,
+                            this,
+                            responder,
+                            initialRequest,
+                            pool
+                        )
+                        FrameType.RequestChannel  -> ResponderRequestChannelFrameHandler(
+                            id,
+                            this,
+                            responder,
+                            initialRequest,
+                            pool
+                        )
                         else                      -> error("Wrong request frame type") // should never happen
                     }
                     save(id, handler)

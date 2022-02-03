@@ -20,20 +20,25 @@ import io.ktor.utils.io.bits.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
+import kotlinx.atomicfu.locks.*
 import kotlin.test.*
 
-object InUseTrackingPool : ObjectPool<ChunkBuffer> {
+object InUseTrackingPool : ObjectPool<ChunkBuffer>, SynchronizedObject() {
     override val capacity: Int get() = BufferPool.capacity
-    private val inUse = TrackingSet()
+    private val inUse = mutableSetOf<IdentityWrapper>()
 
     override fun borrow(): ChunkBuffer {
         val instance = BufferPool.borrow()
-        inUse.add(instance)
+        synchronized(this) {
+            check(inUse.add(IdentityWrapper(instance, Throwable())))
+        }
         return instance
     }
 
     override fun recycle(instance: ChunkBuffer) {
-        inUse.remove(instance)
+        synchronized(this) {
+            check(inUse.remove(IdentityWrapper(instance, null)))
+        }
         BufferPool.recycle(instance)
     }
 
@@ -42,11 +47,16 @@ object InUseTrackingPool : ObjectPool<ChunkBuffer> {
     }
 
     fun resetInUse() {
-        inUse.clear()
+        synchronized(this) {
+            inUse.clear()
+        }
     }
 
     fun assertNoInUse() {
-        val traces = inUse.traces() ?: return
+        val traces = synchronized(this) {
+            inUse.mapNotNull(IdentityWrapper::throwable)
+        }
+        if (traces.isEmpty()) return
         fail(traceMessage(traces))
     }
 
@@ -109,6 +119,18 @@ object InUseTrackingPool : ObjectPool<ChunkBuffer> {
             }
         }
     }
+}
+
+private class IdentityWrapper(
+    private val instance: ChunkBuffer,
+    val throwable: Throwable?
+) {
+    override fun equals(other: Any?): Boolean {
+        if (other !is IdentityWrapper) return false
+        return other.instance === this.instance
+    }
+
+    override fun hashCode(): Int = identityHashCode(instance)
 }
 
 //TODO leak tracking don't work on JS in SuspendTest

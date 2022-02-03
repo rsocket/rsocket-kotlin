@@ -19,9 +19,7 @@ package io.rsocket.kotlin
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
-import kotlin.native.concurrent.*
 
-@SharedImmutable
 @ExperimentalStreamsApi
 private val DefaultStrategy: RequestStrategy = PrefetchStrategy(64, 16)
 

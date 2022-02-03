@@ -37,3 +37,5 @@ actual val TestLoggerFactory: LoggerFactory = run {
 
     JavaLogger
 }
+
+actual fun identityHashCode(instance: Any): Int = System.identityHashCode(instance)

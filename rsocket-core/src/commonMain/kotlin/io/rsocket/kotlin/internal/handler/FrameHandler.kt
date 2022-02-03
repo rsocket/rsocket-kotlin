@@ -26,7 +26,7 @@ import kotlinx.coroutines.*
 internal abstract class FrameHandler(pool: ObjectPool<ChunkBuffer>) : Closeable {
     private val data = BytePacketBuilder(pool)
     private val metadata = BytePacketBuilder(pool)
-    protected abstract var hasMetadata: Boolean
+    private var hasMetadata: Boolean = false
 
     fun handleRequest(frame: RequestFrame) {
         if (frame.next || frame.type.isRequestType) handleNextFragment(frame)
@@ -73,7 +73,7 @@ internal interface SendFrameHandler {
     fun onSendFailed(cause: Throwable): Boolean // if true, then request is failed
 }
 
-internal abstract class BaseRequesterFrameHandler(pool: ObjectPool<ChunkBuffer>) : FrameHandler(pool), ReceiveFrameHandler {
+internal abstract class RequesterFrameHandler(pool: ObjectPool<ChunkBuffer>) : FrameHandler(pool), ReceiveFrameHandler {
     override fun handleCancel() {
         //should be called only for RC
     }
@@ -83,8 +83,8 @@ internal abstract class BaseRequesterFrameHandler(pool: ObjectPool<ChunkBuffer>)
     }
 }
 
-internal abstract class BaseResponderFrameHandler(pool: ObjectPool<ChunkBuffer>) : FrameHandler(pool), SendFrameHandler {
-    protected abstract var job: Job?
+internal abstract class ResponderFrameHandler(pool: ObjectPool<ChunkBuffer>) : FrameHandler(pool), SendFrameHandler {
+    protected var job: Job? = null
 
     protected abstract fun start(payload: Payload): Job
 
@@ -104,13 +104,4 @@ internal abstract class BaseResponderFrameHandler(pool: ObjectPool<ChunkBuffer>)
     override fun handleError(cause: Throwable) {
         //should be called only for RC
     }
-}
-
-internal expect abstract class ResponderFrameHandler(pool: ObjectPool<ChunkBuffer>) : BaseResponderFrameHandler {
-    override var job: Job?
-    override var hasMetadata: Boolean
-}
-
-internal expect abstract class RequesterFrameHandler(pool: ObjectPool<ChunkBuffer>) : BaseRequesterFrameHandler {
-    override var hasMetadata: Boolean
 }
