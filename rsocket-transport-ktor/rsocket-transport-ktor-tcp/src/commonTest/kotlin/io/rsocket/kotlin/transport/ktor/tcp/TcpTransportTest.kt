@@ -18,24 +18,12 @@ package io.rsocket.kotlin.transport.ktor.tcp
 
 import io.ktor.network.sockets.*
 import io.rsocket.kotlin.test.*
-import kotlinx.coroutines.*
+import io.rsocket.kotlin.transport.tests.*
 
 class TcpTransportTest : TransportTest() {
-    private val testJob = Job()
-
     override suspend fun before() {
         val address = InetSocketAddress("0.0.0.0", PortProvider.next())
-        val context = testJob + CoroutineExceptionHandler { c, e -> println("$c -> $e") }
-        SERVER.bindIn(
-            CoroutineScope(context),
-            TcpServerTransport(address, InUseTrackingPool),
-            ACCEPTOR
-        ).serverSocket.await()
-        client = CONNECTOR.connect(TcpClientTransport(address, context, InUseTrackingPool))
-    }
-
-    override suspend fun after() {
-        super.after()
-        testJob.cancelAndJoin()
+        startServer(TcpServerTransport(address, InUseTrackingPool)).serverSocket.await()
+        client = connectClient(TcpClientTransport(address, testContext, InUseTrackingPool))
     }
 }

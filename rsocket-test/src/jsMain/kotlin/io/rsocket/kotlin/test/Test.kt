@@ -16,17 +16,16 @@
 
 package io.rsocket.kotlin.test
 
-import io.rsocket.kotlin.logging.*
 import kotlinx.coroutines.*
 
-internal actual fun runTest(
-    ignoreNative: Boolean,
-    block: suspend CoroutineScope.() -> Unit,
-): dynamic = GlobalScope.promise(block = block)
+internal actual fun runTest(block: suspend CoroutineScope.() -> Unit): dynamic = GlobalScope.promise(block = block)
+
+actual typealias IgnoreJs = kotlin.test.Ignore
+
+actual annotation class IgnoreJvm
+actual annotation class IgnoreNative
 
 //JS is single threaded, so it have only one dispatcher backed by one threed
 actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.Default
-
-actual val TestLoggerFactory: LoggerFactory = ConsoleLogger
 
 actual fun identityHashCode(instance: Any): Int = instance.hashCode()

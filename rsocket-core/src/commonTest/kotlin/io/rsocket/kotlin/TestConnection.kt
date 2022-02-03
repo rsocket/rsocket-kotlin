@@ -14,25 +14,28 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.test
+package io.rsocket.kotlin
 
 import app.cash.turbine.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
-import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.test.*
+import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
+import kotlin.test.*
 import kotlin.time.*
+import kotlin.time.Duration.Companion.seconds
 
-class TestConnection : Connection {
+class TestConnection : Connection, ClientTransport {
     override val pool: ObjectPool<ChunkBuffer> = InUseTrackingPool
     override val coroutineContext: CoroutineContext =
-        Job() + Dispatchers.Unconfined + CoroutineExceptionHandler { c, e -> println("$c -> $e") }
+        Job() + Dispatchers.Unconfined + TestExceptionHandler
 
     private val sendChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
     private val receiveChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
@@ -40,9 +43,11 @@ class TestConnection : Connection {
     init {
         coroutineContext.job.invokeOnCompletion {
             sendChannel.close(it)
-            @Suppress("INVISIBLE_MEMBER") receiveChannel.fullClose(it)
+            receiveChannel.fullClose(it)
         }
     }
+
+    override suspend fun connect(): Connection = this
 
     override suspend fun send(packet: ByteReadPacket) {
         sendChannel.send(packet)
@@ -52,17 +57,21 @@ class TestConnection : Connection {
         return receiveChannel.receive()
     }
 
-    suspend fun sendToReceiver(vararg frames: Frame) {
+    suspend fun ignoreSetupFrame() {
+        assertEquals(FrameType.Setup, sendChannel.receive().readFrame(InUseTrackingPool).type)
+    }
+
+    internal suspend fun sendToReceiver(vararg frames: Frame) {
         frames.forEach {
-            val packet = @Suppress("INVISIBLE_MEMBER") it.toPacket(InUseTrackingPool)
+            val packet = it.toPacket(InUseTrackingPool)
             receiveChannel.send(packet)
         }
     }
 
-    suspend fun test(validate: suspend FlowTurbine<Frame>.() -> Unit) {
+    internal suspend fun test(validate: suspend FlowTurbine<Frame>.() -> Unit) {
         sendChannel.consumeAsFlow().map {
-            @Suppress("INVISIBLE_MEMBER") it.readFrame(InUseTrackingPool)
-        }.test(validate = validate)
+            it.readFrame(InUseTrackingPool)
+        }.test(5.seconds, validate = validate)
     }
 }
 
@@ -76,6 +85,6 @@ suspend fun FlowTurbine<*>.expectNoEventsIn(timeMillis: Long) {
     expectNoEvents()
 }
 
-suspend inline fun FlowTurbine<Frame>.awaitFrame(block: (frame: Frame) -> Unit) {
+internal suspend inline fun FlowTurbine<Frame>.awaitFrame(block: (frame: Frame) -> Unit) {
     block(awaitItem())
 }

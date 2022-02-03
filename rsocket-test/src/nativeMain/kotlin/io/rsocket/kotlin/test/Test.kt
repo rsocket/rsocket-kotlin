@@ -16,22 +16,15 @@
 
 package io.rsocket.kotlin.test
 
-import io.rsocket.kotlin.logging.*
 import kotlinx.coroutines.*
 import kotlin.native.*
 
-internal actual fun runTest(
-    ignoreNative: Boolean,
-    block: suspend CoroutineScope.() -> Unit,
-) {
-    if (ignoreNative) return
+internal actual fun runTest(block: suspend CoroutineScope.() -> Unit) = runBlocking(block = block)
 
-    runBlocking(block = block)
-}
+actual annotation class IgnoreJs
+actual annotation class IgnoreJvm
+actual typealias IgnoreNative = kotlin.test.Ignore
 
 actual val anotherDispatcher: CoroutineDispatcher get() = newSingleThreadContext("another")
-
-@SharedImmutable
-actual val TestLoggerFactory: LoggerFactory = PrintLogger
 
 actual fun identityHashCode(instance: Any): Int = instance.identityHashCode()

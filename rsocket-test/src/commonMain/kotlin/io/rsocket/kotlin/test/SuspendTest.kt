@@ -22,6 +22,10 @@ import kotlin.time.*
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
+val TestExceptionHandler = CoroutineExceptionHandler { c, e ->
+    println("Error in $c -> ${e.stackTraceToString()}")
+}
+
 interface SuspendTest {
     val testTimeout: Duration get() = 1.minutes
 
@@ -35,9 +39,8 @@ interface SuspendTest {
 
     fun test(
         timeout: Duration = testTimeout,
-        ignoreNative: Boolean = false,
         block: suspend CoroutineScope.() -> Unit,
-    ) = runTest(ignoreNative = ignoreNative) {
+    ) = runTest {
 
         val beforeError = runPhase("BEFORE", beforeTimeout) { before() }
 
@@ -66,17 +69,47 @@ interface SuspendTest {
     }
 
     private suspend fun runPhase(tag: String, timeout: Duration, block: suspend CoroutineScope.() -> Unit): Throwable? {
-        if (debug) println("[TEST] $tag started")
-        val error = runCatching {
-            withTimeout(timeout, block)
-        }.exceptionOrNull()
-        if (debug) when (error) {
-            null                            -> println("[TEST] $tag completed")
-            is TimeoutCancellationException -> println("[TEST] $tag failed by timeout: $timeout")
-            else                            -> println("[TEST] $tag failed with error: $error")
+        println("[TEST] $tag started")
+        return when (val result = runWithTimeout(timeout, block)) {
+            is TestResult.Success -> {
+                println("[TEST] $tag completed in ${result.duration}")
+                null
+            }
+            is TestResult.Failed  -> {
+                println("[TEST] $tag failed in ${result.duration} with error: ${result.cause.stackTraceToString()}")
+                result.cause
+            }
+            is TestResult.Timeout -> {
+                println("[TEST] $tag failed by timeout: ${result.timeout}")
+                result.cause
+            }
         }
-        return error
     }
+
+    private sealed interface TestResult {
+        class Success(val duration: Duration) : TestResult
+        class Failed(val duration: Duration, val cause: Throwable) : TestResult
+        class Timeout(val timeout: Duration, val cause: Throwable) : TestResult
+    }
+
+    private suspend fun runWithTimeout(timeout: Duration, block: suspend CoroutineScope.() -> Unit): TestResult =
+        runCatching {
+            withTimeout(timeout) {
+                measureTimedValue {
+                    runCatching {
+                        block()
+                    }
+                }
+            }
+        }.fold(
+            onSuccess = { (result, duration) ->
+                result.fold(
+                    onSuccess = { TestResult.Success(duration) },
+                    onFailure = { TestResult.Failed(duration, it) }
+                )
+            },
+            onFailure = { TestResult.Timeout(timeout, it) }
+        )
 
     suspend fun currentJob(): Job = coroutineContext[Job]!!
 }

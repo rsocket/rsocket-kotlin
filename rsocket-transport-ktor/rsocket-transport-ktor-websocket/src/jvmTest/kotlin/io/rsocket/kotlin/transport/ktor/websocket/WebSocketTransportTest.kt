@@ -21,9 +21,9 @@ import io.ktor.client.engine.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.routing.*
-import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.ktor.websocket.client.*
 import io.rsocket.kotlin.transport.ktor.websocket.server.*
+import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
 import io.ktor.client.plugins.websocket.WebSockets as ClientWebSockets
 import io.ktor.server.websocket.WebSockets as ServerWebSockets
@@ -32,43 +32,26 @@ import io.rsocket.kotlin.transport.ktor.websocket.server.RSocketSupport as Serve
 
 abstract class WebSocketTransportTest(
     clientEngine: HttpClientEngineFactory<*>,
-    serverEngine: ApplicationEngineFactory<*, *>,
+    private val serverEngine: ApplicationEngineFactory<*, *>,
 ) : TransportTest() {
     private val port = PortProvider.next()
-    private val testJob = Job()
 
     private val httpClient = HttpClient(clientEngine) {
         install(ClientWebSockets)
         install(ClientRSocketSupport) { connector = CONNECTOR }
     }
 
-    private val server = (GlobalScope + testJob).embeddedServer(serverEngine, port) {
-        install(ServerWebSockets)
-        install(ServerRSocketSupport) { server = SERVER }
-        install(Routing) { rSocket(acceptor = ACCEPTOR) }
-    }.apply { start() }
-
     override suspend fun before() {
-        super.before()
-        client = trySeveralTimes { httpClient.rSocket(port = port) }
+        (GlobalScope + testJob).embeddedServer(serverEngine, port) {
+            install(ServerWebSockets)
+            install(ServerRSocketSupport) { server = SERVER }
+            install(Routing) { rSocket(acceptor = ACCEPTOR) }
+        }.start()
+        client = httpClient.rSocket(port = port)
     }
 
     override suspend fun after() {
         super.after()
-        testJob.cancelAndJoin()
         httpClient.coroutineContext.job.cancelAndJoin()
-    }
-
-    private suspend inline fun <R> trySeveralTimes(block: () -> R): R {
-        lateinit var error: Throwable
-        repeat(10) {
-            try {
-                return block()
-            } catch (e: Throwable) {
-                error = e
-                delay(500) //sometimes address isn't yet available (server isn't started)
-            }
-        }
-        throw error
     }
 }

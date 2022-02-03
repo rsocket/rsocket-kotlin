@@ -18,7 +18,7 @@ package io.rsocket.kotlin.frame
 
 import io.rsocket.kotlin.frame.io.*
 
-public enum class FrameType(public val encodedType: Int, flags: Int = Flags.Empty) {
+internal enum class FrameType(val encodedType: Int, flags: Int = Flags.Empty) {
     Reserved(0x00),
 
     //CONNECTION
@@ -32,8 +32,14 @@ public enum class FrameType(public val encodedType: Int, flags: Int = Flags.Empt
     //REQUEST
     RequestFnF(0x05, Flags.CanHaveData or Flags.CanHaveMetadata or Flags.Fragmentable or Flags.Request),
     RequestResponse(0x04, Flags.CanHaveData or Flags.CanHaveMetadata or Flags.Fragmentable or Flags.Request),
-    RequestStream(0x06, Flags.CanHaveMetadata or Flags.CanHaveData or Flags.HasInitialRequest or Flags.Fragmentable or Flags.Request),
-    RequestChannel(0x07, Flags.CanHaveMetadata or Flags.CanHaveData or Flags.HasInitialRequest or Flags.Fragmentable or Flags.Request),
+    RequestStream(
+        0x06,
+        Flags.CanHaveMetadata or Flags.CanHaveData or Flags.HasInitialRequest or Flags.Fragmentable or Flags.Request
+    ),
+    RequestChannel(
+        0x07,
+        Flags.CanHaveMetadata or Flags.CanHaveData or Flags.HasInitialRequest or Flags.Fragmentable or Flags.Request
+    ),
 
     // DURING REQUEST
     RequestN(0x08),
@@ -49,11 +55,11 @@ public enum class FrameType(public val encodedType: Int, flags: Int = Flags.Empt
 
     Extension(0x3F, Flags.CanHaveData or Flags.CanHaveMetadata);
 
-    public val hasInitialRequest: Boolean = flags check Flags.HasInitialRequest
-    public val isRequestType: Boolean = flags check Flags.Request
-    public val isFragmentable: Boolean = flags check Flags.Fragmentable
-    public val canHaveMetadata: Boolean = flags check Flags.CanHaveMetadata
-    public val canHaveData: Boolean = flags check Flags.CanHaveData
+    val hasInitialRequest: Boolean = flags check Flags.HasInitialRequest
+    val isRequestType: Boolean = flags check Flags.Request
+    val isFragmentable: Boolean = flags check Flags.Fragmentable
+    val canHaveMetadata: Boolean = flags check Flags.CanHaveMetadata
+    val canHaveData: Boolean = flags check Flags.CanHaveData
 
     private object Flags {
         const val Empty = 0

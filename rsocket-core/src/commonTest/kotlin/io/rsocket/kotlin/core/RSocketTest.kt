@@ -20,7 +20,6 @@ import app.cash.turbine.*
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.keepalive.*
-import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.local.*
@@ -40,10 +39,8 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     }
 
     private suspend fun start(handler: RSocket? = null): RSocket {
-        val localServer = RSocketServer {
-            loggerFactory = LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("SERVER   |$it") }
-        }.bindIn(
-            CoroutineScope(Dispatchers.Unconfined + testJob + CoroutineExceptionHandler { c, e -> println("$c -> $e") }),
+        val localServer = TestServer().bindIn(
+            CoroutineScope(Dispatchers.Unconfined + testJob + TestExceptionHandler),
             LocalServerTransport(InUseTrackingPool)
         ) {
             handler ?: RSocketRequestHandler {
@@ -60,8 +57,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             }
         }
 
-        return RSocketConnector {
-            loggerFactory = LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("CLIENT   |$it") }
+        return TestConnector {
             connectionConfig {
                 keepAlive = KeepAlive(1000.seconds, 1000.seconds)
             }
@@ -102,8 +98,8 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         }
     }
 
-    @Test //ignored on native because of bug inside native coroutines
-    fun testStreamResponderError() = test(ignoreNative = true) {
+    @Test
+    fun testStreamResponderError() = test {
         var p: Payload? = null
         val requester = start(RSocketRequestHandler {
             requestStream {
@@ -361,13 +357,13 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     private suspend inline fun complete(sendChannel: SendChannel<Payload>, receiveChannel: ReceiveChannel<Payload>) {
         sendChannel.close()
         delay(100)
-        assertTrue(receiveChannel.isClosedForReceive)
+        assertTrue(receiveChannel.isClosedForReceive, "receiveChannel.isClosedForReceive=true")
     }
 
     private suspend inline fun cancel(requesterChannel: SendChannel<Payload>, responderChannel: ReceiveChannel<Payload>) {
         responderChannel.cancel()
         delay(100)
-        assertTrue(requesterChannel.isClosedForSend)
+        assertTrue(requesterChannel.isClosedForSend, "requesterChannel.isClosedForSend=true")
     }
 
     private suspend fun sendAndCheckReceived(
@@ -376,8 +372,8 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         payloads: List<Payload>,
     ) {
         delay(100)
-        assertFalse(requesterChannel.isClosedForSend)
-        assertFalse(responderChannel.isClosedForReceive)
+        assertFalse(requesterChannel.isClosedForSend, "requesterChannel.isClosedForSend=false")
+        assertFalse(responderChannel.isClosedForReceive, "responderChannel.isClosedForReceive=false")
         payloads.forEach { requesterChannel.send(it.copy()) } //TODO?
         payloads.forEach { responderChannel.checkReceived(it) }
     }

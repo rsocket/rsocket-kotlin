@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.test
+package io.rsocket.kotlin
 
+import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 
 abstract class TestWithConnection : SuspendTest {

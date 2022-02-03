@@ -17,7 +17,6 @@
 package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
@@ -34,17 +33,13 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     override suspend fun before() {
         super.before()
 
-        requester = connect(
-            connection = connection,
-            isServer = false,
-            maxFragmentSize = 0,
-            interceptors = InterceptorsBuilder().build(),
-            connectionConfig = ConnectionConfig(
-                keepAlive = KeepAlive(1000.seconds, 1000.seconds),
-                payloadMimeType = DefaultPayloadMimeType,
-                setupPayload = Payload.Empty
-            )
-        ) { RSocketRequestHandler { } }
+        requester = TestConnector {
+            connectionConfig {
+                keepAlive = KeepAlive(1000.seconds, 1000.seconds)
+            }
+        }.connect(connection)
+
+        connection.ignoreSetupFrame()
     }
 
     @Test
@@ -333,8 +328,8 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
         }
     }
 
-    @Test //ignored on native because of coroutines bug with channels
-    fun testChannelRequestServerSideCancellation() = test(ignoreNative = true) {
+    @Test
+    fun testChannelRequestServerSideCancellation() = test {
         var ch: SendChannel<Payload>? = null
         val request = channelFlow<Payload> {
             ch = this
@@ -366,7 +361,8 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
             }
         }
 
-        requester.requestChannel(payload("INIT"), request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).launchIn(connection)
+        requester.requestChannel(payload("INIT"), request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
+            .launchIn(connection)
         connection.test {
             awaitFrame { frame ->
                 assertTrue(frame is RequestFrame)
@@ -397,10 +393,12 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     }
 
     @Test
-    fun rrTerminatedOnConnectionClose() = streamIsTerminatedOnConnectionClose { requester.requestResponse(Payload.Empty) }
+    fun rrTerminatedOnConnectionClose() =
+        streamIsTerminatedOnConnectionClose { requester.requestResponse(Payload.Empty) }
 
     @Test
-    fun rsTerminatedOnConnectionClose() = streamIsTerminatedOnConnectionClose { requester.requestStream(Payload.Empty).collect() }
+    fun rsTerminatedOnConnectionClose() =
+        streamIsTerminatedOnConnectionClose { requester.requestStream(Payload.Empty).collect() }
 
     @Test
     fun rcTerminatedOnConnectionClose() =
