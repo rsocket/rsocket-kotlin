@@ -24,8 +24,8 @@ import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 
 internal abstract class FrameHandler(pool: ObjectPool<ChunkBuffer>) : Closeable {
-    private val data = BytePacketBuilder(0, pool)
-    private val metadata = BytePacketBuilder(0, pool)
+    private val data = BytePacketBuilder(pool)
+    private val metadata = BytePacketBuilder(pool)
     protected abstract var hasMetadata: Boolean
 
     fun handleRequest(frame: RequestFrame) {

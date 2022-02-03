@@ -23,35 +23,12 @@ kotlin {
         main {
             dependencies {
                 api(projects.rsocketCore)
-
-                api(libs.ktor.network)
-                api(libs.ktor.http.cio)
-            }
-        }
-        test {
-            dependencies {
-                implementation(projects.rsocketTransportKtorClient)
             }
         }
     }
-    configureJvm {
-        test {
-            dependencies {
-                implementation(projects.rsocketTransportKtorServer)
-
-                implementation(libs.ktor.client.cio)
-                implementation(libs.ktor.client.okhttp)
-
-                implementation(libs.ktor.server.cio)
-                implementation(libs.ktor.server.netty)
-                implementation(libs.ktor.server.jetty)
-            }
-        }
-    }
+    configureJvm()
     configureJs()
-    configureNative(NativeTargets.Nix)
+    configureNative()
 }
 
 description = "Ktor RSocket transport implementations (TCP, Websocket)"
-
-evaluationDependsOn(":rsocket-test-server")

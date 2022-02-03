@@ -11,9 +11,6 @@ fun LanguageSettingsBuilder.optInForTest() {
     optIn("kotlinx.coroutines.FlowPreview")
     optIn("kotlinx.coroutines.DelicateCoroutinesApi")
 
-    optIn("io.ktor.util.InternalAPI")
-    optIn("io.ktor.utils.io.core.internal.DangerousInternalIoApi")
-
     optIn("io.rsocket.kotlin.TransportApi")
     optIn("io.rsocket.kotlin.ExperimentalMetadataApi")
     optIn("io.rsocket.kotlin.ExperimentalStreamsApi")

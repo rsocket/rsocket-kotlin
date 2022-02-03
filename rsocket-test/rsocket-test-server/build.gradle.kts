@@ -30,7 +30,8 @@ kotlin {
         main {
             dependencies {
                 implementation(projects.rsocketTest)
-                implementation(projects.rsocketTransportKtorServer)
+                implementation(projects.rsocketTransportKtor.rsocketTransportKtorTcp)
+                implementation(projects.rsocketTransportKtor.rsocketTransportKtorWebsocketServer)
 
                 implementation(libs.ktor.server.cio)
             }
@@ -73,7 +74,7 @@ val testTasks = setOf(
 )
 
 rootProject.allprojects {
-    if (name == "rsocket-transport-ktor") {
+    if (name == "rsocket-transport-ktor-websocket") {
         tasks.matching { it.name in testTasks }.all {
             dependsOn(startTestServer)
         }

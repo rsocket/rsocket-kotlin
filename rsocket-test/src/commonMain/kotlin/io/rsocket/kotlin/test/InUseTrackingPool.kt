@@ -22,7 +22,6 @@ import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import kotlin.test.*
 
-@Suppress("DEPRECATION", "INVISIBLE_MEMBER", "INVISIBLE_REFERENCE", "UNCHECKED_CAST")
 object InUseTrackingPool : ObjectPool<ChunkBuffer> {
     override val capacity: Int get() = BufferPool.capacity
     private val inUse = TrackingSet()
@@ -35,7 +34,7 @@ object InUseTrackingPool : ObjectPool<ChunkBuffer> {
 
     override fun recycle(instance: ChunkBuffer) {
         inUse.remove(instance)
-        BufferPool.recycle(instance as IoBuffer)
+        BufferPool.recycle(instance)
     }
 
     override fun dispose() {
@@ -80,21 +79,21 @@ object InUseTrackingPool : ObjectPool<ChunkBuffer> {
     // that there are no leaked buffers
     // used only on tests, so it's more or less safe
     // copy of io.ktor.utils.io.core.DefaultBufferPool with changed parent pool!!!
-    private object BufferPool : DefaultPool<IoBuffer>(1000) {
-        override fun produceInstance(): IoBuffer {
-            return IoBuffer(DefaultAllocator.alloc(DEFAULT_BUFFER_SIZE), null, InUseTrackingPool as ObjectPool<IoBuffer>)
+    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+    private object BufferPool : DefaultPool<ChunkBuffer>(1000) {
+        override fun produceInstance(): ChunkBuffer {
+            return ChunkBuffer(DefaultAllocator.alloc(DEFAULT_BUFFER_SIZE), null, InUseTrackingPool)
         }
 
-        override fun disposeInstance(instance: IoBuffer) {
+        override fun disposeInstance(instance: ChunkBuffer) {
             DefaultAllocator.free(instance.memory)
             super.disposeInstance(instance)
             instance.unlink()
         }
 
-        override fun validateInstance(instance: IoBuffer) {
+        override fun validateInstance(instance: ChunkBuffer) {
             super.validateInstance(instance)
 
-            check(instance !== IoBuffer.Empty) { "Empty instance couldn't be recycled" }
             check(instance !== Buffer.Empty) { "Empty instance couldn't be recycled" }
             check(instance !== ChunkBuffer.Empty) { "Empty instance couldn't be recycled" }
 
@@ -103,7 +102,7 @@ object InUseTrackingPool : ObjectPool<ChunkBuffer> {
             check(instance.origin == null) { "Recycled instance shouldn't be a view or another buffer." }
         }
 
-        override fun clearInstance(instance: IoBuffer): IoBuffer {
+        override fun clearInstance(instance: ChunkBuffer): ChunkBuffer {
             return super.clearInstance(instance).apply {
                 unpark()
                 reset()

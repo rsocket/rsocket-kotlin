@@ -21,12 +21,15 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
+        maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
     }
 }
 
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        maven("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
+        maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
     }
 }
 
@@ -53,10 +56,13 @@ project(":rsocket-test-server").projectDir = file("rsocket-test/rsocket-test-ser
 
 include("rsocket-transport-local")
 
-include("rsocket-transport-ktor")
-include("rsocket-transport-ktor-client")
-include("rsocket-transport-ktor-server")
-project(":rsocket-transport-ktor-client").projectDir = file("rsocket-transport-ktor/rsocket-transport-ktor-client")
-project(":rsocket-transport-ktor-server").projectDir = file("rsocket-transport-ktor/rsocket-transport-ktor-server")
+//ktor transport modules
+include(
+    "rsocket-transport-ktor",
+    "rsocket-transport-ktor:rsocket-transport-ktor-tcp",
+    "rsocket-transport-ktor:rsocket-transport-ktor-websocket",
+    "rsocket-transport-ktor:rsocket-transport-ktor-websocket-client",
+    "rsocket-transport-ktor:rsocket-transport-ktor-websocket-server",
+)
 
 include("rsocket-transport-nodejs-tcp")

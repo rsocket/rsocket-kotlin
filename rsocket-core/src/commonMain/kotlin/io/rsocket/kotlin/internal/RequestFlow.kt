@@ -51,7 +51,6 @@ internal suspend inline fun FlowCollector<Payload>.emitAllWithRequestN(
 internal abstract class RequestFlow : Flow<Payload> {
     private val consumed = atomic(false)
 
-    @InternalCoroutinesApi
     override suspend fun collect(collector: FlowCollector<Payload>) {
         check(!consumed.getAndSet(true)) { "RequestFlow can be collected just once" }
 
