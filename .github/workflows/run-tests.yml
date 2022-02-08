@@ -6,8 +6,12 @@ env:
 
 jobs:
   jvm-test:
-    name: Run JVM tests
+    name: Run JVM(${{ matrix.target }}) tests
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [ '', '11', '17' ]
     steps:
       - uses: actions/checkout@v2
       - run: echo "KONAN_DATA_DIR=${HOME}/.gradle/konan" >> $GITHUB_ENV
@@ -16,9 +20,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: |
-            jvmTest
-            jvm11Test
-            jvm17Test
+            jvm${{ matrix.target }}Test
             --scan
             --info
             --continue
@@ -36,8 +38,12 @@ jobs:
           retention-days: 1
 
   js-test:
-    name: Run JS tests
+    name: Run JS(${{ matrix.target }}) tests
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [ Ir, Legacy ]
     steps:
       - uses: actions/checkout@v2
       - run: echo "KONAN_DATA_DIR=${HOME}/.gradle/konan" >> $GITHUB_ENV
@@ -46,10 +52,8 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: |
-            jsIrNodeTest
-            jsIrBrowserTest
-            jsLegacyNodeTest
-            jsLegacyBrowserTest
+            js${{ matrix.target }}NodeTest
+            js${{ matrix.target }}BrowserTest
             --scan
             --info
             --continue
