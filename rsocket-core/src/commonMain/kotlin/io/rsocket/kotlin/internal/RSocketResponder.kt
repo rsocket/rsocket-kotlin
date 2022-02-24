@@ -21,6 +21,8 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.internal.handler.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
 @OptIn(ExperimentalStreamsApi::class)
@@ -57,14 +59,25 @@ internal class RSocketResponder(
     }.closeOnCompletion(payload)
 
     fun handleRequestChannel(payload: Payload, id: Int, handler: ResponderRequestChannelFrameHandler): Job = launch {
-        val payloads = requestFlow { strategy, initialRequest ->
+        //this job is needed to be able to send payloads, even if receive is done already
+        val job = Job(coroutineContext.job)
+        val payloads = flowWithRequests<Payload> { requests ->
             handler.receiveOrCancel(id) {
-                sender.sendRequestN(id, initialRequest)
-                emitAllWithRequestN(handler.channel, strategy) { sender.sendRequestN(id, it) }
+                coroutineScope {
+                    launch { requests.consumeEach { sender.sendRequestN(id, it) } }
+                    try {
+                        emitAll(handler.channel)
+                        requests.cancel()
+                    } finally {
+                        job.complete()
+                    }
+                }
             }
         }
         handler.sendOrFail(id, payload) {
-            requestHandler.requestChannel(payload, payloads).collectLimiting(handler.limiter) { sender.sendNextPayload(id, it) }
+            requestHandler
+                .requestChannel(payload, payloads)
+                .collectLimiting(handler.limiter) { sender.sendNextPayload(id, it) }
             sender.sendCompletePayload(id)
         }
     }.closeOnCompletion(payload)

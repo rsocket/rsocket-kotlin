@@ -187,27 +187,109 @@ From [RSocket protocol](https://github.com/rsocket/rsocket/blob/master/Protocol.
     This is a credit-based model where the Requester grants the Responder credit for the number of PAYLOADs it can send. 
     It is sometimes referred to as "request-n" or "request(n)".
 
-`kotlinx.coroutines` doesn't truly support `request(n)` semantic, but it has flexible `CoroutineContext`
-which can be used to achieve something similar. `rsocket-kotlin` contains `RequestStrategy` coroutine context element, which defines,
-strategy for sending of `requestN` frames.
+From [coroutines Flow documentation](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-flow/index.html):
 
-Example:
+    Flow is an asynchronous data stream that sequentially emits values and completes normally or with an exception.
+
+Comparing to other `reactive streams` implementations like [reactor](https://projectreactor.io/), where we
+have `Subscription` object with `request(n)` method using which user can control how much elements to request, `Flow`
+doesn't have such separate object, insted of it new element is requested after previous element was collected, with
+backpressure via `suspend` functions.
+
+`rsocket-kotlin` contains 2 ways to simulate `request(n)` semantic: via reusable strategies and via manual
+calling `request(n)`.
+
+### Reusable strategies
+
+Reusable strategies are implemented
+using [FlowRequestStrategy](rsocket-core/src/commonMain/kotlin/io/rsocket/kotlin/FlowRequestStrategy.kt). On current
+moment there is 2 out-of-the-box request strategies: to request all data (`requestAll`), and request in chunks with
+prefetch (`requestBy`). Api to creating custom request strategies is public, but not stable yet, and can change in
+future. To use custom request strategy, or one of built-in it's also possible to use `requestWith`.
+
+```kotlin
+fun <T> Flow<T>.requestWith(strategy: FlowRequestStrategy): Flow<T>
+
+fun <T> Flow<T>.requestAll(): Flow<T>
+fun <T> Flow<T>.requestBy(requestSize: Int, requestOn: Int = requestSize / 4): Flow<T>
+```
+
+#### Example:
 
 ```kotlin
 //assume we have client
-val client: RSocket = TODO()
+val client: RSocket = ...
 
 //and stream
 val stream: Flow<Payload> = client.requestStream(Payload("data"))
 
-//now we can use `flowOn` to add request strategy to context of flow
-//here we use prefetch strategy which will send requestN for 10 elements, when, there is 5 elements left to collect
-//so on call `collect`, requestStream frame with requestN will be sent, and then, after 5 elements will be collected
-//new requestN with 5 will be sent, so collect will be smooth 
-stream.flowOn(PrefetchStrategy(requestSize = 10, requestOn = 5)).collect { payload: Payload ->
-    println(payload.data.readText())
+// on collect call, RequestStream frame with requestN=10 will be sent
+// then after 5 elements will be collected RequestN frame with n=10 will be sent 
+stream.requestBy(requestSize = 10, requestOn = 5).collect { payload: Payload ->
+  println(payload.data.readText())
 }
 ```
+
+### Manual `request(n)` control
+
+To use manual `request(n)`, you need to use `Flow.withRequester` method:
+
+```kotlin
+interface FlowWithRequester<T> : Flow<T>, FlowRequester
+
+fun <T, R> Flow<T>.withRequester(block: FlowWithRequester<T>.() -> R): R
+```
+
+In `block` `request(n)` can be called at any time.
+
+#### Example:
+
+```kotlin
+//here we create new operator for flow
+// which will request 2 elements and cancel flow after it via `take`
+fun <T> Flow<T>.requestOnly(n: Int): Flow<T> = flow {
+    withRequester {
+      request(n)
+      emitAll(take(n))
+    }
+  }
+```
+
+### Composition
+
+* Reusable strategies can override one another, and latest applied will be used:
+  ```kotlin
+  flow
+    .requestBy(100) //this will be ignored
+    //any other operator can be here
+    .take(20)
+    .requestBy(10) //this will be used as request strategy
+  ```
+* Manual strategy will override reusable
+  ```kotlin
+  flow
+    .requestBy(100) //this will be ignored
+    .withRequester { //this will be used
+        request(1)
+        take(1).collect {
+            println(it)
+        }
+    }
+  ```
+* Manual override by manual - will fail on collect
+  ```kotlin
+  flow
+    .requestOnly(5) //manual operator
+    .requestOnly(2) //manual operator
+    .collect() //this will fail 
+  ```
+* Manual override by strategy - will fail on collect
+  ```kotlin
+  flow
+    .requestOnly(5) //manual operator
+    .requestBy(2) //strategy operator
+    .collect() //this will fail 
+  ```
 
 ## Bugs and Feedback
 

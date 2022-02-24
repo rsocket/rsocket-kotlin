@@ -88,7 +88,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
             repeat(3) { emit(payload(it)) }
         }
         val list =
-            client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(3, 0)).onEach { it.close() }.toList()
+            client.requestChannel(payload(0), request).requestBy(3, 0).onEach { it.close() }.toList()
         assertEquals(3, list.size)
     }
 
@@ -99,7 +99,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         }
         val list =
             client.requestChannel(requesterLargeMetadata, request)
-                .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
+                .requestAll()
                 .onEach { it.close() }
                 .toList()
         assertEquals(200, list.size)
@@ -110,7 +110,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         val request = flow {
             repeat(20_000) { emit(payload(7)) }
         }
-        val list = client.requestChannel(payload(7), request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).onEach {
+        val list = client.requestChannel(payload(7), request).requestAll().onEach {
             assertEquals(requesterData, it.data.readText())
             assertEquals(requesterMetadata, it.metadata?.readText())
         }.toList()
@@ -124,7 +124,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
             repeat(200_000) { emit(payload(it)) }
         }
         val list =
-            client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(10000, 0)).onEach { it.close() }.toList()
+            client.requestChannel(payload(0), request).requestBy(10000, 0).onEach { it.close() }.toList()
         assertEquals(200_000, list.size)
     }
 
@@ -167,7 +167,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         val list =
             client
                 .requestChannel(payload(3), request)
-                .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
+                .requestAll()
                 .take(500)
                 .onEach {
                     assertEquals(requesterData, it.data.readText())
@@ -210,7 +210,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun requestStream5() = test {
         val list =
-            client.requestStream(payload(3)).flowOn(PrefetchStrategy(5, 0)).take(5).onEach { checkPayload(it) }.toList()
+            client.requestStream(payload(3)).requestOnly(5).onEach { checkPayload(it) }.toList()
         assertEquals(5, list.size)
     }
 
@@ -225,7 +225,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         val list =
             client
                 .requestStream(payload(3))
-                .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
+                .requestAll()
                 .take(500)
                 .onEach { checkPayload(it) }
                 .toList()
