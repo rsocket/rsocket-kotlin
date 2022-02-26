@@ -21,16 +21,16 @@ import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-fun Frame.toPacketWithLength(): ByteReadPacket = buildPacket(InUseTrackingPool) {
+internal fun Frame.toPacketWithLength(): ByteReadPacket = buildPacket(InUseTrackingPool) {
     val packet = toPacket(InUseTrackingPool)
     writeLength(packet.remaining.toInt())
     writePacket(packet)
 }
 
-fun ByteReadPacket.toFrameWithLength(): Frame {
+internal fun ByteReadPacket.toFrameWithLength(): Frame {
     val length = readLength()
     assertEquals(length, remaining.toInt())
     return readFrame(InUseTrackingPool)
 }
 
-fun Frame.loopFrame(): Frame = toPacket(InUseTrackingPool).readFrame(InUseTrackingPool)
+internal fun Frame.loopFrame(): Frame = toPacket(InUseTrackingPool).readFrame(InUseTrackingPool)

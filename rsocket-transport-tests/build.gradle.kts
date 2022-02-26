@@ -26,20 +26,27 @@ kotlin {
     sourceSets.all {
         languageSettings.optInForTest()
     }
-    configureJvm {
+    configureCommon {
         main {
             dependencies {
-                implementation(projects.rsocketTest)
+                api(projects.rsocketTest)
+            }
+        }
+    }
+    configureJvm {
+        test {
+            dependencies {
                 implementation(projects.rsocketTransportKtor.rsocketTransportKtorTcp)
                 implementation(projects.rsocketTransportKtor.rsocketTransportKtorWebsocketServer)
-
                 implementation(libs.ktor.server.cio)
             }
         }
     }
+    configureJs()
+    configureNative()
 }
 
-open class RSocketTestServer : DefaultTask() {
+open class StartTransportTestServer : DefaultTask() {
     @Internal
     var server: Closeable? = null
         private set
@@ -50,40 +57,44 @@ open class RSocketTestServer : DefaultTask() {
     @TaskAction
     fun exec() {
         try {
-            println("[TestServer] start")
-            val loader = URLClassLoader(classpath.map { it.toURI().toURL() }.toTypedArray(), ClassLoader.getSystemClassLoader())
-            server = loader.loadClass("io.rsocket.kotlin.test.server.AppKt").getMethod("start").invoke(null) as Closeable
-            println("[TestServer] started")
+            println("[TransportTestServer] start")
+            server = URLClassLoader(
+                classpath.map { it.toURI().toURL() }.toTypedArray(),
+                ClassLoader.getSystemClassLoader()
+            )
+                .loadClass("io.rsocket.kotlin.transport.tests.server.AppKt")
+                .getMethod("start")
+                .invoke(null) as Closeable
+            println("[TransportTestServer] started")
         } catch (cause: Throwable) {
-            println("[TestServer] failed: ${cause.message}")
+            println("[TransportTestServer] failed to start: ${cause.message}")
             cause.printStackTrace()
         }
     }
 }
 
-val startTestServer by tasks.registering(RSocketTestServer::class) {
-    dependsOn(tasks["jvmJar"])
+val startTransportTestServer by tasks.registering(StartTransportTestServer::class) {
+    dependsOn(tasks["jvmTest"]) //TODO?
     classpath = (kotlin.targets["jvm"].compilations["test"] as KotlinJvmCompilation).runtimeDependencyFiles
 }
 
-val testTasks = setOf(
-    "jsLegacyNodeTest",
-    "jsIrNodeTest",
-    "jsLegacyBrowserTest",
-    "jsIrBrowserTest",
-)
-
 rootProject.allprojects {
     if (name == "rsocket-transport-ktor-websocket") {
-        tasks.matching { it.name in testTasks }.all {
-            dependsOn(startTestServer)
+        val names = setOf(
+            "jsLegacyNodeTest",
+            "jsIrNodeTest",
+            "jsLegacyBrowserTest",
+            "jsIrBrowserTest",
+        )
+        tasks.all {
+            if (name in names) dependsOn(startTransportTestServer)
         }
     }
 }
 
 gradle.buildFinished {
-    startTestServer.get().server?.run {
+    startTransportTestServer.get().server?.run {
         close()
-        println("[TestServer] stop")
+        println("[TransportTestServer] stopped")
     }
 }

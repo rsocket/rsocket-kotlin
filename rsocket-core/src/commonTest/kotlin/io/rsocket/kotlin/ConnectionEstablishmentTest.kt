@@ -17,7 +17,6 @@
 package io.rsocket.kotlin
 
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.keepalive.*
@@ -39,7 +38,7 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
             GlobalScope.async { accept(connection) }
         }
 
-        val deferred = RSocketServer().bind(serverTransport) {
+        val deferred = TestServer().bind(serverTransport) {
             sendingRSocket.complete(requester)
             error(errorMessage)
         }
@@ -67,6 +66,7 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
             assertFalse(sender.isActive)
             expectNoEventsIn(100)
         }
+        connection.coroutineContext.job.join()
         val error = connection.coroutineContext.job.getCancellationException().cause
         assertTrue(error is RSocketError.Setup.Rejected)
         assertEquals(errorMessage, error.message)
@@ -77,7 +77,7 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
         val connection = TestConnection()
         val p = payload("setup")
         assertFailsWith(IllegalStateException::class, "failed") {
-            RSocketConnector {
+            TestConnector {
                 connectionConfig {
                     setupPayload { p }
                 }
@@ -86,8 +86,9 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
                     assertTrue(p.data.isNotEmpty)
                     error("failed")
                 }
-            }.connect { connection }
+            }.connect(connection)
         }
+        connection.coroutineContext.job.join()
         assertTrue(p.data.isEmpty)
     }
 

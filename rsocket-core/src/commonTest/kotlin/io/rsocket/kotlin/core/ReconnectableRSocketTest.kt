@@ -27,13 +27,14 @@ import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.test.*
+import kotlin.time.Duration.Companion.seconds
 
 class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
 
     //needed for native
     private val fails = atomic(0)
     private val first = atomic(true)
-    private val logger = DefaultLoggerFactory.logger("io.rsocket.kotlin.connection")
+    private val logger = PrintLogger.withLevel(LoggingLevel.DEBUG).logger("io.rsocket.kotlin.connection")
 
     private suspend fun connectWithReconnect(
         connect: suspend () -> RSocket,
@@ -202,7 +203,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
             rSocket.requestStream(Payload.Empty).collect()
         }
 
-        rSocket.requestStream(Payload.Empty).test {
+        rSocket.requestStream(Payload.Empty).test(5.seconds) {
             repeat(5) {
                 assertEquals(Payload.Empty, awaitItem())
             }

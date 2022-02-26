@@ -14,27 +14,40 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.test
+package io.rsocket.kotlin.transport.tests
 
+import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.keepalive.*
-import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.test.*
+import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.*
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 abstract class TransportTest : SuspendTest, TestWithLeakCheck {
-    override val testTimeout: Duration = 2.minutes
+    override val testTimeout: Duration = 3.minutes
 
-    lateinit var client: RSocket //should be assigned in `before`
+    protected val testJob = Job()
+    protected val testContext = testJob + TestExceptionHandler
+    protected val testScope = CoroutineScope(testContext)
+
+    protected lateinit var client: RSocket
+
+    protected suspend fun connectClient(clientTransport: ClientTransport): RSocket =
+        CONNECTOR.connect(clientTransport)
+
+    protected fun <T> startServer(serverTransport: ServerTransport<T>): T =
+        SERVER.bindIn(testScope, serverTransport, ACCEPTOR)
 
     override suspend fun after() {
         client.coroutineContext.job.cancelAndJoin()
+        testJob.cancelAndJoin()
     }
 
     @Test
@@ -44,17 +57,17 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
 
     @Test
     fun largePayloadFireAndForget10() = test {
-        (1..10).map { async { client.fireAndForget(LARGE_PAYLOAD) } }.awaitAll()
+        (1..10).map { async { client.fireAndForget(requesterLargeMetadata) } }.awaitAll()
     }
 
     @Test
     fun metadataPush10() = test {
-        (1..10).map { async { client.metadataPush(packet(MOCK_DATA)) } }.awaitAll()
+        (1..10).map { async { client.metadataPush(packet(requesterData)) } }.awaitAll()
     }
 
     @Test
     fun largePayloadMetadataPush10() = test {
-        (1..10).map { async { client.metadataPush(packet(LARGE_DATA)) } }.awaitAll()
+        (1..10).map { async { client.metadataPush(packet(requesterLargeData)) } }.awaitAll()
     }
 
     @Test
@@ -82,10 +95,10 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun largePayloadRequestChannel200() = test {
         val request = flow {
-            repeat(200) { emit(LARGE_PAYLOAD) }
+            repeat(200) { emit(requesterLargeMetadata) }
         }
         val list =
-            client.requestChannel(LARGE_PAYLOAD, request)
+            client.requestChannel(requesterLargeMetadata, request)
                 .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
                 .onEach { it.close() }
                 .toList()
@@ -98,14 +111,15 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
             repeat(20_000) { emit(payload(7)) }
         }
         val list = client.requestChannel(payload(7), request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).onEach {
-            assertEquals(MOCK_DATA, it.data.readText())
-            assertEquals(MOCK_METADATA, it.metadata?.readText())
+            assertEquals(requesterData, it.data.readText())
+            assertEquals(requesterMetadata, it.metadata?.readText())
         }.toList()
         assertEquals(20_000, list.size)
     }
 
     @Test
-    fun requestChannel200000() = test(ignoreNative = true) {
+    @IgnoreNative //long test
+    fun requestChannel200000() = test {
         val request = flow {
             repeat(200_000) { emit(payload(it)) }
         }
@@ -130,7 +144,8 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun requestChannel256x512() = test(ignoreNative = true) {
+    @IgnoreNative //long test
+    fun requestChannel256x512() = test {
         val request = flow {
             repeat(512) {
                 emit(payload(it))
@@ -155,8 +170,8 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
                 .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
                 .take(500)
                 .onEach {
-                    assertEquals(MOCK_DATA, it.data.readText())
-                    assertEquals(MOCK_METADATA, it.metadata?.readText())
+                    assertEquals(requesterData, it.data.readText())
+                    assertEquals(requesterMetadata, it.metadata?.readText())
                 }.toList()
         assertEquals(500, list.size)
     }
@@ -178,7 +193,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
 
     @Test
     fun largePayloadRequestResponse100() = test {
-        (1..100).map { async { client.requestResponse(LARGE_PAYLOAD) } }.awaitAll().onEach { it.close() }
+        (1..100).map { async { client.requestResponse(requesterLargeMetadata) } }.awaitAll().onEach { it.close() }
     }
 
     @Test
@@ -187,7 +202,8 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun requestResponse100000() = test(ignoreNative = true) {
+    @IgnoreNative //long test
+    fun requestResponse100000() = test {
         repeat(100000) { client.requestResponse(payload(3)).let(Companion::checkPayload) }
     }
 
@@ -217,40 +233,62 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     companion object {
-
-        val SERVER = RSocketServer {
-            loggerFactory = NoopLogger
-        }
-
-        val CONNECTOR = RSocketConnector {
-            loggerFactory = NoopLogger
-
+        val SERVER = TestServer(logging = false)
+        val CONNECTOR = TestConnector(logging = false) {
             connectionConfig {
                 keepAlive = KeepAlive(10.minutes, 100.minutes)
             }
         }
 
-        val ACCEPTOR = ConnectionAcceptor {
-            TestRSocket()
-        }
+        val ACCEPTOR = ConnectionAcceptor { ResponderRSocket() }
 
-        const val MOCK_DATA: String = "test-data"
-        const val MOCK_METADATA: String = "metadata"
-        val LARGE_DATA = "large.text.12345".repeat(2000)
-        val LARGE_PAYLOAD get() = payload(LARGE_DATA, LARGE_DATA)
+        const val responderData = "hello world"
+        const val responderMetadata = "metadata"
 
-        private fun payload(metadataPresent: Int): Payload {
+        const val requesterData: String = "test-data"
+        const val requesterMetadata: String = "metadata"
+
+        val requesterLargeData = "large.text.12345".repeat(2000)
+        val requesterLargeMetadata get() = payload(requesterLargeData, requesterLargeData)
+
+        fun payload(metadataPresent: Int): Payload {
             val metadata = when (metadataPresent % 5) {
                 0    -> null
                 1    -> ""
-                else -> MOCK_METADATA
+                else -> requesterMetadata
             }
-            return payload(MOCK_DATA, metadata)
+            return payload(requesterData, metadata)
         }
 
         fun checkPayload(payload: Payload) {
-            assertEquals(TestRSocket.data, payload.data.readText())
-            assertEquals(TestRSocket.metadata, payload.metadata?.readText())
+            assertEquals(responderData, payload.data.readText())
+            assertEquals(responderMetadata, payload.metadata?.readText())
         }
     }
+
+    private class ResponderRSocket : RSocket {
+        override val coroutineContext: CoroutineContext = Job()
+
+        override suspend fun metadataPush(metadata: ByteReadPacket): Unit = metadata.close()
+
+        override suspend fun fireAndForget(payload: Payload): Unit = payload.close()
+
+        override suspend fun requestResponse(payload: Payload): Payload {
+            payload.close()
+            return Payload(packet(responderData), packet(responderMetadata))
+        }
+
+        override fun requestStream(payload: Payload): Flow<Payload> = flow {
+            payload.close()
+            repeat(10000) {
+                emitOrClose(Payload(packet(responderData), packet(responderMetadata)))
+            }
+        }
+
+        override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> = flow {
+            initPayload.close()
+            payloads.collect { emitOrClose(it) }
+        }
+    }
+
 }

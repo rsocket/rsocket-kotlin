@@ -21,12 +21,12 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.routing.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.ktor.websocket.client.*
 import io.rsocket.kotlin.transport.ktor.websocket.server.*
+import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.test.*
@@ -42,7 +42,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
     private val client = HttpClient(ClientCIO) {
         install(ClientWebSockets)
         install(ClientRSocketSupport) {
-            connector = RSocketConnector {
+            connector = TestConnector {
                 connectionConfig {
                     keepAlive = KeepAlive(500)
                 }
@@ -54,7 +54,9 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
 
     private val server = embeddedServer(ServerCIO, port) {
         install(ServerWebSockets)
-        install(ServerRSocketSupport)
+        install(ServerRSocketSupport) {
+            server = TestServer()
+        }
         install(Routing) {
             rSocket {
                 RSocketRequestHandler {
@@ -79,7 +81,8 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
     }
 
     override suspend fun after() {
-        server.stop(0, 0)
+        server.stop()
+        client.coroutineContext.job.cancelAndJoin()
     }
 
     @Test

@@ -16,13 +16,14 @@
 
 package io.rsocket.kotlin.test
 
-import io.rsocket.kotlin.logging.*
 import kotlinx.coroutines.*
 
-internal expect fun runTest(ignoreNative: Boolean, block: suspend CoroutineScope.() -> Unit)
+internal expect fun runTest(block: suspend CoroutineScope.() -> Unit)
+
+expect annotation class IgnoreJs()
+expect annotation class IgnoreJvm()
+expect annotation class IgnoreNative()
 
 expect val anotherDispatcher: CoroutineDispatcher
-
-expect val TestLoggerFactory: LoggerFactory
 
 expect fun identityHashCode(instance: Any): Int

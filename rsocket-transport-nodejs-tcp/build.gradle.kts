@@ -15,7 +15,7 @@
  */
 
 plugins {
-    rsocket.template.library
+    rsocket.template.transport
 }
 
 kotlin {

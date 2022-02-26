@@ -16,26 +16,15 @@
 
 package io.rsocket.kotlin.test
 
-import io.rsocket.kotlin.logging.*
 import kotlinx.coroutines.*
-import java.io.*
-import java.util.logging.*
 
-internal actual fun runTest(
-    ignoreNative: Boolean,
-    block: suspend CoroutineScope.() -> Unit,
-) {
-    runBlocking(block = block)
-}
+internal actual fun runTest(block: suspend CoroutineScope.() -> Unit): Unit = runBlocking(block = block)
+
+actual annotation class IgnoreJs
+actual typealias IgnoreJvm = org.junit.Ignore
+
+actual annotation class IgnoreNative
 
 actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.IO
-
-actual val TestLoggerFactory: LoggerFactory = run {
-    //init logger
-    val file = File("src/jvmTest/resources/logging.properties")
-    if (file.exists()) LogManager.getLogManager().readConfiguration(file.inputStream())
-
-    JavaLogger
-}
 
 actual fun identityHashCode(instance: Any): Int = System.identityHashCode(instance)

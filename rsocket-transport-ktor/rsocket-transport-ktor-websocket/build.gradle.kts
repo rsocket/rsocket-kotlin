@@ -15,7 +15,7 @@
  */
 
 plugins {
-    rsocket.template.library
+    rsocket.template.transport
 }
 
 kotlin {
@@ -52,4 +52,4 @@ kotlin {
 
 description = "Ktor WebSocket RSocket transport implementation"
 
-evaluationDependsOn(":rsocket-test-server")
+evaluationDependsOn(":rsocket-transport-tests")

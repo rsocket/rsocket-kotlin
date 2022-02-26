@@ -18,14 +18,14 @@ package io.rsocket.kotlin.transport.ktor.tcp
 
 import io.ktor.network.sockets.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.test.*
+import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
 import kotlin.test.*
 
 class TcpServerTest : SuspendTest, TestWithLeakCheck {
     private val testJob = Job()
-    private val testContext = testJob + CoroutineExceptionHandler { c, e -> println("$c -> $e") }
+    private val testContext = testJob + TestExceptionHandler
     private val address = InetSocketAddress("0.0.0.0", PortProvider.next())
     private val serverTransport = TcpServerTransport(address, InUseTrackingPool)
     private val clientTransport = TcpClientTransport(address, testContext, InUseTrackingPool)
@@ -36,7 +36,7 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
 
     @Test
     fun testFailedConnection() = test {
-        val server = RSocketServer().bindIn(CoroutineScope(testContext), serverTransport) {
+        val server = TestServer().bindIn(CoroutineScope(testContext), serverTransport) {
             if (config.setupPayload.data.readText() == "ok") {
                 RSocketRequestHandler {
                     requestResponse { it }
@@ -44,7 +44,7 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
             } else error("FAILED")
         }.also { it.serverSocket.await() }
 
-        suspend fun newClient(text: String) = RSocketConnector {
+        suspend fun newClient(text: String) = TestConnector {
             connectionConfig {
                 setupPayload {
                     payload(text)
@@ -80,13 +80,13 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testFailedHandler() = test {
         val handlers = mutableListOf<RSocket>()
-        val server = RSocketServer().bindIn(CoroutineScope(testContext), serverTransport) {
+        val server = TestServer().bindIn(CoroutineScope(testContext), serverTransport) {
             RSocketRequestHandler {
                 requestResponse { it }
             }.also { handlers += it }
         }.also { it.serverSocket.await() }
 
-        suspend fun newClient() = RSocketConnector().connect(clientTransport)
+        suspend fun newClient() = TestConnector().connect(clientTransport)
 
         val client1 = newClient()
 
