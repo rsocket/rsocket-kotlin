@@ -20,9 +20,7 @@ import io.rsocket.kotlin.frame.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.selects.*
-import kotlin.native.concurrent.*
 
-@SharedImmutable
 private val selectFrame: suspend (Frame) -> Frame = { it }
 
 internal class Prioritizer {

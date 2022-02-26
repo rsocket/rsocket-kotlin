@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.keepalive
 
-import kotlin.native.concurrent.*
 import kotlin.time.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -33,7 +32,6 @@ public class KeepAlive(
     public val maxLifetimeMillis: Int = 90 * 1000 // 90 seconds
 )
 
-@SharedImmutable
 internal val DefaultKeepAlive = KeepAlive(
     intervalMillis = 20 * 1000, // 20 seconds
     maxLifetimeMillis = 90 * 1000 // 90 seconds

@@ -18,6 +18,7 @@ package io.rsocket.kotlin.test
 
 import io.rsocket.kotlin.logging.*
 import kotlinx.coroutines.*
+import kotlin.native.*
 
 internal actual fun runTest(
     ignoreNative: Boolean,
@@ -32,3 +33,5 @@ actual val anotherDispatcher: CoroutineDispatcher get() = newSingleThreadContext
 
 @SharedImmutable
 actual val TestLoggerFactory: LoggerFactory = PrintLogger
+
+actual fun identityHashCode(instance: Any): Int = instance.identityHashCode()

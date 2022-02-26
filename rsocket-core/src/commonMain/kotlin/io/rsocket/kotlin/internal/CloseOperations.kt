@@ -18,7 +18,6 @@ package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.channels.*
-import kotlin.native.concurrent.*
 
 internal inline fun <T : Closeable, R> T.closeOnError(block: (T) -> R): R {
     try {
@@ -29,7 +28,6 @@ internal inline fun <T : Closeable, R> T.closeOnError(block: (T) -> R): R {
     }
 }
 
-@SharedImmutable
 private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
 
 @Suppress("FunctionName")

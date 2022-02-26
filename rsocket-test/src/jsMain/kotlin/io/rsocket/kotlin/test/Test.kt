@@ -28,3 +28,5 @@ internal actual fun runTest(
 actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.Default
 
 actual val TestLoggerFactory: LoggerFactory = ConsoleLogger
+
+actual fun identityHashCode(instance: Any): Int = instance.hashCode()

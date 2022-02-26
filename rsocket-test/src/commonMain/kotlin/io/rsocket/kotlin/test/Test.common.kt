@@ -24,3 +24,5 @@ internal expect fun runTest(ignoreNative: Boolean, block: suspend CoroutineScope
 expect val anotherDispatcher: CoroutineDispatcher
 
 expect val TestLoggerFactory: LoggerFactory
+
+expect fun identityHashCode(instance: Any): Int

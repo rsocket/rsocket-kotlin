@@ -18,7 +18,6 @@ package io.rsocket.kotlin.payload
 
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
-import kotlin.native.concurrent.*
 
 public fun PayloadMimeType(
     data: MimeTypeWithName,
@@ -35,7 +34,6 @@ public class PayloadMimeType(
     }
 }
 
-@SharedImmutable
 internal val DefaultPayloadMimeType = PayloadMimeType(
     data = WellKnownMimeType.ApplicationOctetStream,
     metadata = WellKnownMimeType.ApplicationOctetStream
