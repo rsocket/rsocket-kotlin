@@ -16,15 +16,15 @@
 
 package io.rsocket.kotlin.test.server
 
-import io.ktor.application.*
-import io.ktor.routing.*
+import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
-import io.ktor.websocket.*
+import io.ktor.server.routing.*
+import io.ktor.server.websocket.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.test.*
-import io.rsocket.kotlin.transport.ktor.*
-import io.rsocket.kotlin.transport.ktor.server.*
+import io.rsocket.kotlin.transport.ktor.tcp.*
+import io.rsocket.kotlin.transport.ktor.websocket.server.*
 import kotlinx.coroutines.*
 import java.io.*
 

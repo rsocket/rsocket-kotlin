@@ -21,7 +21,7 @@ import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 
 internal inline fun buildPacket(pool: ObjectPool<ChunkBuffer>, block: BytePacketBuilder.() -> Unit): ByteReadPacket {
-    val builder = BytePacketBuilder(0, pool)
+    val builder = BytePacketBuilder(pool)
     try {
         block(builder)
         return builder.build()

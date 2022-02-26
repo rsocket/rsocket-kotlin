@@ -38,7 +38,7 @@ fun assertBytesEquals(expected: ByteArray?, actual: ByteArray?) {
 }
 
 private inline fun buildPacket(pool: ObjectPool<ChunkBuffer>, block: BytePacketBuilder.() -> Unit): ByteReadPacket {
-    val builder = BytePacketBuilder(0, pool)
+    val builder = BytePacketBuilder(pool)
     try {
         block(builder)
         return builder.build()

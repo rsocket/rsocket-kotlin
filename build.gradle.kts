@@ -36,17 +36,4 @@ subprojects {
         if (name.endsWith("test", ignoreCase = true)) onlyIf { !rootProject.hasProperty("skipTests") }
         if (name.startsWith("link", ignoreCase = true)) onlyIf { !rootProject.hasProperty("skipLink") }
     }
-
-    //workaround for https://youtrack.jetbrains.com/issue/KT-44884
-    configurations.matching { !it.name.startsWith("kotlinCompilerPluginClasspath") }.all {
-        resolutionStrategy.eachDependency {
-            val version = requested.version
-            if (requested.group == "org.jetbrains.kotlinx" &&
-                requested.name.startsWith("kotlinx-coroutines") &&
-                version != null && !version.contains("native-mt")
-            ) {
-                useVersion("$version-native-mt")
-            }
-        }
-    }
 }
