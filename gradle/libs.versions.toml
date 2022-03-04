@@ -1,15 +1,15 @@
 [versions]
-kotlin = "1.6.20-M1-106"
+kotlin = "1.6.20-RC"
 
-kotlinx-atomicfu = "0.17.0"
+kotlinx-atomicfu = "0.17.1"
 kotlinx-coroutines = "1.6.0"
 kotlinx-benchmark = "0.4.2"
 
-ktor = "2.0.0-eap-317"
+ktor = "2.0.0-eap-337"
 
 turbine = "0.7.0"
 
-versionUpdates = "0.41.0"
+versionUpdates = "0.42.0"
 
 rsocket-java = "1.1.1"
 

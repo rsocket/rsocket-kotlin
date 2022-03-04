@@ -28,7 +28,7 @@ public class RSocketSupport(
         public var server: RSocketServer = RSocketServer()
     }
 
-    public companion object Feature : ApplicationPlugin<Application, Config, RSocketSupport> {
+    public companion object Feature : BaseApplicationPlugin<Application, Config, RSocketSupport> {
         override val key: AttributeKey<RSocketSupport> = AttributeKey("RSocket")
         override fun install(pipeline: Application, configure: Config.() -> Unit): RSocketSupport {
             pipeline.pluginOrNull(WebSockets)
