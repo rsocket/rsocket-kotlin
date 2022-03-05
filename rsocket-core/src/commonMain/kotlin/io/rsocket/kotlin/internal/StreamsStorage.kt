@@ -18,13 +18,14 @@ package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.handler.*
 import kotlinx.atomicfu.locks.*
 
 internal class StreamsStorage(
     private val isServer: Boolean,
-    private val pool: ObjectPool<ChunkBuffer>
+    private val pool: ObjectPool<ChunkBuffer>,
 ) : SynchronizedObject() {
     private val streamId: StreamId = StreamId(isServer)
     private val handlers: IntMap<FrameHandler> = IntMap()
@@ -52,7 +53,7 @@ internal class StreamsStorage(
         when (frame) {
             is RequestNFrame -> get(id)?.handleRequestN(frame.requestN)
             is CancelFrame   -> get(id)?.handleCancel()
-            is ErrorFrame    -> get(id)?.handleError(frame.throwable)
+            is ErrorFrame    -> get(id)?.handleError(RSocketError(frame))
             is RequestFrame  -> when {
                 frame.type == FrameType.Payload -> get(id)?.handleRequest(frame)
                     ?: frame.close() // release on unknown stream id

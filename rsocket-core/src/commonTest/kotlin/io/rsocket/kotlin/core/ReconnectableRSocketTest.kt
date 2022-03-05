@@ -37,13 +37,13 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
     private val logger = PrintLogger.withLevel(LoggingLevel.DEBUG).logger("io.rsocket.kotlin.connection")
 
     private suspend fun connectWithReconnect(
-        connect: suspend () -> RSocket,
+        connect: suspend () -> ConnectedRSocket,
         predicate: ReconnectPredicate,
-    ): RSocket = connectWithReconnect(Dispatchers.Unconfined, logger, connect, predicate)
+    ): ConnectedRSocket = connectWithReconnect(Dispatchers.Unconfined, logger, connect, predicate)
 
     @Test
     fun testConnectFail() = test {
-        val connect: suspend () -> RSocket = { error("Failed to connect") }
+        val connect: suspend () -> ConnectedRSocket = { error("Failed to connect") }
 
         assertFailsWith(IllegalStateException::class, "Failed to connect") {
             connectWithReconnect(connect) { cause, attempt ->
@@ -59,7 +59,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testReconnectFail() = test {
         val firstJob = Job()
-        val connect: suspend () -> RSocket = {
+        val connect: suspend () -> ConnectedRSocket = {
             if (first.value) {
                 first.value = false
                 handler(firstJob)
@@ -76,7 +76,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
 
         assertEquals(Payload.Empty, rSocket.requestResponse(Payload.Empty))
 
-        assertTrue(rSocket.isActive)
+        assertTrue(rSocket.session.isActive)
         assertEquals(0, fails.value)
 
         firstJob.cancelAndJoin()
@@ -85,14 +85,14 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
             rSocket.requestResponse(Payload.Empty)
         }
 
-        assertFalse(rSocket.isActive)
+        assertFalse(rSocket.session.isActive)
         assertEquals(6, fails.value)
     }
 
     @Test
     fun testReconnectSuccess() = test {
         val handlerJob = Job()
-        val connect: suspend () -> RSocket = {
+        val connect: suspend () -> ConnectedRSocket = {
             if (first.value) {
                 first.value = false
                 error("Failed to connect")
@@ -110,13 +110,13 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
         assertEquals(Payload.Empty, rSocket.requestResponse(Payload.Empty))
 
         assertTrue(handlerJob.isActive)
-        assertTrue(rSocket.isActive)
+        assertTrue(rSocket.session.isActive)
         assertEquals(1, fails.value)
     }
 
     @Test
     fun testConnectSuccessAfterTime() = test {
-        val connect: suspend () -> RSocket = {
+        val connect: suspend () -> ConnectedRSocket = {
             if (fails.value < 5) {
                 delay(200)
                 error("Failed to connect")
@@ -134,14 +134,14 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
 
         assertEquals(Payload.Empty, rSocket.requestResponse(Payload.Empty))
 
-        assertTrue(rSocket.isActive)
+        assertTrue(rSocket.session.isActive)
         assertEquals(5, fails.value)
     }
 
     @Test
     fun testReconnectSuccessAfterFail() = test {
         val firstJob = Job()
-        val connect: suspend () -> RSocket = {
+        val connect: suspend () -> ConnectedRSocket = {
             when {
                 first.value     -> {
                     first.value = false
@@ -167,14 +167,14 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
 
         assertEquals(Payload.Empty, rSocket.requestResponse(Payload.Empty))
 
-        assertTrue(rSocket.isActive)
+        assertTrue(rSocket.session.isActive)
         assertEquals(5, fails.value)
     }
 
     @Test
     fun testReconnectSuccessAfterFaiStream() = test {
         val firstJob = Job()
-        val connect: suspend () -> RSocket = {
+        val connect: suspend () -> ConnectedRSocket = {
             when {
                 first.value     -> {
                     first.value = false
@@ -210,7 +210,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
             awaitComplete()
         }
 
-        assertTrue(rSocket.isActive)
+        assertTrue(rSocket.session.isActive)
         assertEquals(5, fails.value)
     }
 
@@ -231,7 +231,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
 
     private inline fun testNoLeaksInteraction(crossinline interaction: suspend RSocket.(payload: Payload) -> Unit) = test {
         val firstJob = Job()
-        val connect: suspend () -> RSocket = {
+        val connect: suspend () -> ConnectedRSocket = {
             if (first.compareAndSet(true, false)) {
                 handler(firstJob)
             } else {
@@ -259,11 +259,11 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
         assertTrue(p2.data.isEmpty)
     }
 
-    private fun handler(job: Job): RSocket = RSocketRequestHandler(job) {
-        requestResponse { payload ->
+    private fun handler(job: Job): ConnectedRSocket = ConnectedRSocketWrapper(job, RSocket {
+        onRequestResponse { payload ->
             payload
         }
-        requestStream {
+        onRequestStream {
             flow {
                 repeat(5) {
                     job.ensureActive()
@@ -272,5 +272,5 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
                 }
             }
         }
-    }
+    })
 }

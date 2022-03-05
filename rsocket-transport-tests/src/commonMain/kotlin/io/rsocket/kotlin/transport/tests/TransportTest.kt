@@ -24,7 +24,6 @@ import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.*
 import kotlin.time.Duration.Companion.minutes
@@ -37,16 +36,16 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     protected val testContext = testJob + TestExceptionHandler
     protected val testScope = CoroutineScope(testContext)
 
-    protected lateinit var client: RSocket
+    protected lateinit var client: ConnectedRSocket
 
-    protected suspend fun connectClient(clientTransport: ClientTransport): RSocket =
+    protected suspend fun connectClient(clientTransport: ClientTransport): ConnectedRSocket =
         CONNECTOR.connect(clientTransport)
 
     protected fun <T> startServer(serverTransport: ServerTransport<T>): T =
         SERVER.bindIn(testScope, serverTransport, ACCEPTOR)
 
     override suspend fun after() {
-        client.coroutineContext.job.cancelAndJoin()
+        client.session.coroutineContext.job.cancelAndJoin()
         testJob.cancelAndJoin()
     }
 
@@ -240,7 +239,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
             }
         }
 
-        val ACCEPTOR = ConnectionAcceptor { ResponderRSocket() }
+        val ACCEPTOR = ConnectionAcceptor { ResponderRSocket }
 
         const val responderData = "hello world"
         const val responderMetadata = "metadata"
@@ -266,8 +265,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         }
     }
 
-    private class ResponderRSocket : RSocket {
-        override val coroutineContext: CoroutineContext = Job()
+    private object ResponderRSocket : RSocket {
 
         override suspend fun metadataPush(metadata: ByteReadPacket): Unit = metadata.close()
 

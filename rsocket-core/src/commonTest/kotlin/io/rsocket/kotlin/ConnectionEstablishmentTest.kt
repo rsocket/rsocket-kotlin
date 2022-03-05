@@ -30,7 +30,7 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun responderRejectSetup() = test {
         val errorMessage = "error"
-        val sendingRSocket = CompletableDeferred<RSocket>()
+        val sendingRSocket = CompletableDeferred<ConnectedRSocket>()
 
         val connection = TestConnection()
 
@@ -59,11 +59,12 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
         connection.test {
             awaitFrame { frame ->
                 assertTrue(frame is ErrorFrame)
-                assertTrue(frame.throwable is RSocketError.Setup.Rejected)
-                assertEquals(errorMessage, frame.throwable.message)
+                val throwable = RSocketError(frame)
+                assertTrue(throwable is RSocketError.Setup.Rejected)
+                assertEquals(errorMessage, throwable.message)
             }
             val sender = sendingRSocket.await()
-            assertFalse(sender.isActive)
+            assertFalse(sender.session.isActive)
             expectNoEventsIn(100)
         }
         connection.coroutineContext.job.join()

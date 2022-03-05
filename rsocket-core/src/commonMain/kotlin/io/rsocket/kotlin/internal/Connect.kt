@@ -20,6 +20,7 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.*
 import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
 @OptIn(TransportApi::class)
 internal suspend inline fun connect(
@@ -28,8 +29,8 @@ internal suspend inline fun connect(
     maxFragmentSize: Int,
     interceptors: Interceptors,
     connectionConfig: ConnectionConfig,
-    acceptor: ConnectionAcceptor
-): RSocket {
+    acceptor: ConnectionAcceptor,
+): ConnectedRSocket {
     val prioritizer = Prioritizer()
     val frameSender = FrameSender(prioritizer, connection.pool, maxFragmentSize)
     val streamsStorage = StreamsStorage(isServer, connection.pool)
@@ -44,8 +45,11 @@ internal suspend inline fun connect(
         connectionConfig.setupPayload.close()
     }
 
-    val requester = interceptors.wrapRequester(
-        RSocketRequester(requestContext + CoroutineName("rSocket-requester"), frameSender, streamsStorage, connection.pool)
+    val requester = ConnectedRSocketWrapper(
+        connection.coroutineContext,
+        interceptors.wrapRequester(
+            RSocketRequester(requestContext + CoroutineName("rSocket-requester"), frameSender, streamsStorage, connection.pool)
+        )
     )
     val requestHandler = interceptors.wrapResponder(
         with(interceptors.wrapAcceptor(acceptor)) {
@@ -53,10 +57,6 @@ internal suspend inline fun connect(
         }
     )
     val responder = RSocketResponder(requestContext + CoroutineName("rSocket-responder"), frameSender, requestHandler)
-
-    // link completing of connection and requestHandler
-    connection.coroutineContext[Job]?.invokeOnCompletion { requestHandler.cancel("Connection closed", it) }
-    requestHandler.coroutineContext[Job]?.invokeOnCompletion { if (it != null) connection.cancel("Request handler failed", it) }
 
     // start keepalive ticks
     (connection + CoroutineName("rSocket-connection-keep-alive")).launch {
@@ -72,9 +72,9 @@ internal suspend inline fun connect(
     (connection + CoroutineName("rSocket-connection-receive")).launch {
         while (isActive) connection.receiveFrame { frame ->
             when (frame.streamId) {
-                0 -> when (frame) {
+                0    -> when (frame) {
                     is MetadataPushFrame -> responder.handleMetadataPush(frame.metadata)
-                    is ErrorFrame        -> connection.cancel("Error frame received on 0 stream", frame.throwable)
+                    is ErrorFrame        -> connection.cancel("Error frame received on 0 stream", RSocketError(frame))
                     is KeepAliveFrame    -> keepAliveHandler.mark(frame)
                     is LeaseFrame        -> frame.close().also { error("lease isn't implemented") }
                     else                 -> frame.close()
@@ -86,3 +86,8 @@ internal suspend inline fun connect(
 
     return requester
 }
+
+internal class ConnectedRSocketWrapper(
+    coroutineContext: CoroutineContext,
+    rSocket: RSocket,
+) : ConnectedRSocketImpl(coroutineContext), RSocket by rSocket

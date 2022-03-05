@@ -28,7 +28,7 @@ import kotlin.test.*
 import kotlin.time.Duration.Companion.seconds
 
 class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
-    private lateinit var requester: RSocket
+    private lateinit var requester: ConnectedRSocket
 
     override suspend fun before() {
         super.before()
@@ -46,7 +46,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     fun testInvalidFrameOnStream0() = test {
         connection.sendToReceiver(NextPayloadFrame(0, payload("data", "metadata"))) //should be just released
         delay(100)
-        assertTrue(requester.isActive)
+        assertTrue(requester.session.isActive)
     }
 
     @Test
@@ -265,8 +265,8 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
         val errorMessage = "error"
         connection.sendToReceiver(ErrorFrame(0, RSocketError.Setup.Rejected(errorMessage)))
         delay(100)
-        assertFalse(requester.isActive)
-        val error = requester.coroutineContext.job.getCancellationException().cause
+        assertFalse(requester.session.isActive)
+        val error = requester.session.coroutineContext.job.getCancellationException().cause
         assertTrue(error is RSocketError.Setup.Rejected)
         assertEquals(errorMessage, error.message)
     }

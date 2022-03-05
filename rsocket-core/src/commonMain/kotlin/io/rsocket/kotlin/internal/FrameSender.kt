@@ -33,7 +33,7 @@ private const val fragmentOffsetWithMetadata = fragmentOffset + lengthSize
 internal class FrameSender(
     private val prioritizer: Prioritizer,
     private val pool: ObjectPool<ChunkBuffer>,
-    private val maxFragmentSize: Int
+    private val maxFragmentSize: Int,
 ) {
 
     suspend fun sendKeepAlive(respond: Boolean, lastPosition: Long, data: ByteReadPacket): Unit =
@@ -67,7 +67,7 @@ internal class FrameSender(
         payload: Payload,
         complete: Boolean,
         next: Boolean,
-        initialRequest: Int
+        initialRequest: Int,
     ) {
         //TODO release on fail ?
         if (!payload.isFragmentable(type.hasInitialRequest)) {

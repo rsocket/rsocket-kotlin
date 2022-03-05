@@ -28,8 +28,8 @@ import kotlin.time.Duration.Companion.seconds
 class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     private suspend fun requester(
-        keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds)
-    ): RSocket = TestConnector {
+        keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds),
+    ): ConnectedRSocket = TestConnector {
         connectionConfig {
             this.keepAlive = keepAlive
         }
@@ -60,7 +60,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
             }
         }
         delay(1.5.seconds)
-        assertTrue(rSocket.isActive)
+        assertTrue(rSocket.session.isActive)
         connection.test {
             repeat(50) {
                 awaitItem()
@@ -90,7 +90,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun noKeepAliveSentAfterRSocketCanceled() = test {
-        requester().cancel()
+        requester().session.cancel()
         connection.test {
             expectNoEventsIn(500)
         }
@@ -100,9 +100,9 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
     fun rSocketCanceledOnMissingKeepAliveTicks() = test {
         val rSocket = requester()
         connection.test {
-            while (rSocket.isActive) kotlin.runCatching { awaitItem() }
+            while (rSocket.session.isActive) kotlin.runCatching { awaitItem() }
         }
-        assertTrue(rSocket.coroutineContext.job.getCancellationException().cause is RSocketError.ConnectionError)
+        assertTrue(rSocket.session.coroutineContext.job.getCancellationException().cause is RSocketError.ConnectionError)
     }
 
 }

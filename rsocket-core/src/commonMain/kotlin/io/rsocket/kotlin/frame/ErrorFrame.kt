@@ -17,32 +17,49 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.frame.io.*
+
+internal fun ErrorFrame(
+    streamId: Int,
+    throwable: Throwable,
+): ErrorFrame = ErrorFrame(
+    streamId,
+    (throwable as? RSocketError)?.errorCode ?: when (streamId) {
+        0    -> ErrorCode.ConnectionError
+        else -> ErrorCode.ApplicationError
+    },
+    throwable.message?.encodeToByteArray()?.let(::ByteReadPacket) ?: ByteReadPacket.Empty
+)
 
 internal class ErrorFrame(
     override val streamId: Int,
-    val throwable: Throwable
+    val errorCode: Int,
+    val data: ByteReadPacket,
 ) : Frame() {
     override val type: FrameType get() = FrameType.Error
     override val flags: Int get() = 0
-    val errorCode get() = (throwable as? RSocketError)?.errorCode ?: ErrorCode.ApplicationError
 
-    override fun close(): Unit = Unit
+    override fun close() {
+        data.close()
+    }
 
     override fun BytePacketBuilder.writeSelf() {
         writeInt(errorCode)
-        writeText(throwable.message ?: "")
+        writePacket(data)
     }
 
     override fun StringBuilder.appendFlags(): Unit = Unit
     override fun StringBuilder.appendSelf() {
-        append("\nError code: ").append(errorCode).append("[").append(throwable::class.simpleName).append("]")
-        if (throwable.message != null) append(" Message: ").append(throwable.message)
+        append("\nError code: ").append(errorCode)
+        appendPacket("Data", data)
     }
 }
 
-internal fun ByteReadPacket.readError(streamId: Int): ErrorFrame {
+internal fun ByteReadPacket.readError(pool: ObjectPool<ChunkBuffer>, streamId: Int): ErrorFrame {
     val errorCode = readInt()
-    val message = readText()
-    return ErrorFrame(streamId, RSocketError(streamId, errorCode, message))
+    val data = readPacket(pool)
+    return ErrorFrame(streamId, errorCode, data)
 }

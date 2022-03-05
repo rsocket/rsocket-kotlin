@@ -112,8 +112,8 @@ val client = HttpClient(CIO) {
 
             //optional acceptor for server requests
             acceptor {
-                RSocketRequestHandler {
-                    requestResponse { it } //echo request payload
+                RSocket {
+                    onRequestResponse { it } //echo request payload
                 }
             }
         }
@@ -150,9 +150,9 @@ embeddedServer(CIO) {
     routing {
         //configure route `url:port/rsocket`
         rSocket("rsocket") {
-            RSocketRequestHandler {
+            RSocket {
                 //handler for request/response
-                requestResponse { request: Payload ->
+                onRequestResponse { request: Payload ->
                     //... some work here
                     delay(500) // work emulation
                     buildPayload {
@@ -161,7 +161,7 @@ embeddedServer(CIO) {
                     }
                 }
                 //handler for request/stream      
-                requestStream { request: Payload ->
+                onRequestStream { request: Payload ->
                     flow {
                         repeat(1000) { i ->
                             emit(buildPayload { data("data: $i") })

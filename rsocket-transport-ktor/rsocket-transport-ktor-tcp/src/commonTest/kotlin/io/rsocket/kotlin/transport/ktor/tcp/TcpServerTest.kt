@@ -38,8 +38,8 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
     fun testFailedConnection() = test {
         val server = TestServer().bindIn(CoroutineScope(testContext), serverTransport) {
             if (config.setupPayload.data.readText() == "ok") {
-                RSocketRequestHandler {
-                    requestResponse { it }
+                RSocket {
+                    onRequestResponse { it }
                 }
             } else error("FAILED")
         }.also { it.serverSocket.await() }
@@ -65,25 +65,26 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
         client3.requestResponse(payload("ok")).close()
         client1.requestResponse(payload("ok")).close()
 
-        assertTrue(client1.isActive)
-        assertFalse(client2.isActive)
-        assertTrue(client3.isActive)
+        assertTrue(client1.session.isActive)
+        assertFalse(client2.session.isActive)
+        assertTrue(client3.session.isActive)
 
         assertTrue(server.serverSocket.await().socketContext.isActive)
         assertTrue(server.handlerJob.isActive)
 
-        client1.coroutineContext.job.cancelAndJoin()
-        client2.coroutineContext.job.cancelAndJoin()
-        client3.coroutineContext.job.cancelAndJoin()
+        client1.session.coroutineContext.job.cancelAndJoin()
+        client2.session.coroutineContext.job.cancelAndJoin()
+        client3.session.coroutineContext.job.cancelAndJoin()
     }
 
     @Test
     fun testFailedHandler() = test {
-        val handlers = mutableListOf<RSocket>()
+        val serverSessions = mutableListOf<CoroutineScope>()
         val server = TestServer().bindIn(CoroutineScope(testContext), serverTransport) {
-            RSocketRequestHandler {
-                requestResponse { it }
-            }.also { handlers += it }
+            serverSessions += requester.session
+            RSocket {
+                onRequestResponse { it }
+            }
         }.also { it.serverSocket.await() }
 
         suspend fun newClient() = TestConnector().connect(clientTransport)
@@ -96,7 +97,7 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
 
         client2.requestResponse(payload("1")).close()
 
-        handlers[1].coroutineContext.job.apply {
+        serverSessions[1].coroutineContext.job.apply {
             cancel("FAILED")
             join()
         }
@@ -113,15 +114,15 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
 
         client1.requestResponse(payload("1")).close()
 
-        assertTrue(client1.isActive)
-        assertFalse(client2.isActive)
-        assertTrue(client3.isActive)
+        assertTrue(client1.session.isActive)
+        assertFalse(client2.session.isActive)
+        assertTrue(client3.session.isActive)
 
         assertTrue(server.serverSocket.await().socketContext.isActive)
         assertTrue(server.handlerJob.isActive)
 
-        client1.coroutineContext.job.cancelAndJoin()
-        client2.coroutineContext.job.cancelAndJoin()
-        client3.coroutineContext.job.cancelAndJoin()
+        client1.session.coroutineContext.job.cancelAndJoin()
+        client2.session.coroutineContext.job.cancelAndJoin()
+        client3.session.coroutineContext.job.cancelAndJoin()
     }
 }

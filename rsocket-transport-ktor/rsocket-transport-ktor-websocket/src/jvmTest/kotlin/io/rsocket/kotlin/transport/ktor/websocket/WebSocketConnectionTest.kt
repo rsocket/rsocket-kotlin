@@ -50,7 +50,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
         }
     }
 
-    private var responderJob: Job? = null
+    private lateinit var serverPeerSessionJob: Job
 
     private val server = embeddedServer(ServerCIO, port) {
         install(ServerWebSockets)
@@ -59,8 +59,9 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
         }
         install(Routing) {
             rSocket {
-                RSocketRequestHandler {
-                    requestStream {
+                serverPeerSessionJob = requester.session.coroutineContext.job
+                RSocket {
+                    onRequestStream {
                         it.close()
                         flow {
                             var i = 0
@@ -70,7 +71,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
                             }
                         }
                     }
-                }.also { responderJob = it.coroutineContext.job }
+                }
             }
         }
     }
@@ -88,7 +89,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testWorks() = test {
         val rSocket = client.rSocket(port = port)
-        val requesterJob = rSocket.coroutineContext.job
+        val clientPeerSessionJob = rSocket.session.coroutineContext.job
 
         rSocket
             .requestStream(Payload.Empty)
@@ -96,7 +97,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
             .onEach { delay(100); it.close() }
             .collect()
 
-        assertTrue(requesterJob.isActive)
-        assertTrue(responderJob?.isActive!!)
+        assertTrue(clientPeerSessionJob.isActive)
+        assertTrue(serverPeerSessionJob.isActive)
     }
 }

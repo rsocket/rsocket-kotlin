@@ -21,8 +21,6 @@ import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
-import kotlinx.coroutines.*
-import kotlin.coroutines.*
 
 public class RSocketConnectorBuilder internal constructor() {
     @RSocketLoggingApi
@@ -114,11 +112,7 @@ public class RSocketConnectorBuilder internal constructor() {
     private companion object {
         private val defaultAcceptor: ConnectionAcceptor = ConnectionAcceptor {
             config.setupPayload.close()
-            EmptyRSocket()
-        }
-
-        private class EmptyRSocket : RSocket {
-            override val coroutineContext: CoroutineContext = Job()
+            EmptyRSocket
         }
     }
 }

@@ -25,7 +25,7 @@ public fun interface ConnectionAcceptor {
 
 public class ConnectionAcceptorContext internal constructor(
     public val config: ConnectionConfig,
-    public val requester: RSocket,
+    public val requester: ConnectedRSocket,
 )
 
 public class ConnectionConfig internal constructor(

@@ -25,7 +25,6 @@ import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
-@OptIn(ExperimentalStreamsApi::class)
 internal class RSocketResponder(
     override val coroutineContext: CoroutineContext,
     private val sender: FrameSender,

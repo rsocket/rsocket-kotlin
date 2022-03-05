@@ -30,9 +30,9 @@ internal typealias ReconnectPredicate = suspend (cause: Throwable, attempt: Long
 internal suspend fun connectWithReconnect(
     coroutineContext: CoroutineContext,
     logger: Logger,
-    connect: suspend () -> RSocket,
+    connect: suspend () -> ConnectedRSocket,
     predicate: ReconnectPredicate,
-): RSocket {
+): ConnectedRSocket {
     val child = Job(coroutineContext[Job])
     val childContext = coroutineContext + child
     val state = flow {
@@ -51,7 +51,7 @@ internal suspend fun connectWithReconnect(
         when (value) {
             is ReconnectState.Connected -> {
                 logger.debug { "Connection established" }
-                value.rSocket.coroutineContext.job.join() //await for connection completion
+                value.rSocket.session.coroutineContext.job.join() //await for connection completion
                 logger.debug { "Connection closed. Reconnecting..." }
             }
             is ReconnectState.Failed    -> child.cancel("Reconnect failed", value.error) //reconnect failed, fail job
@@ -76,20 +76,20 @@ private fun Flow<ReconnectState>.restarting(): Flow<ReconnectState> = flow { whi
 private sealed class ReconnectState {
     object Connecting : ReconnectState()
     data class Failed(val error: Throwable) : ReconnectState()
-    data class Connected(val rSocket: RSocket) : ReconnectState()
+    data class Connected(val rSocket: ConnectedRSocket) : ReconnectState()
 }
 
 private class ReconnectableRSocket(
-    override val coroutineContext: CoroutineContext,
+    coroutineContext: CoroutineContext,
     private val state: StateFlow<ReconnectState>,
-) : RSocket {
+) : ConnectedRSocketImpl(coroutineContext) {
 
     suspend fun currentRSocket(): RSocket = state.value.current() ?: state.mapNotNull { it.current() }.first()
 
     private suspend fun currentRSocket(closeable: Closeable): RSocket = closeable.closeOnError { currentRSocket() }
 
     private fun ReconnectState.current(): RSocket? = when (this) {
-        is ReconnectState.Connected -> rSocket.takeIf(RSocket::isActive) //connection is ready to handle requests
+        is ReconnectState.Connected -> rSocket.takeIf { it.session.isActive } //connection is ready to handle requests
         is ReconnectState.Failed    -> throw error //connection failed - fail requests
         ReconnectState.Connecting   -> null //reconnection
     }

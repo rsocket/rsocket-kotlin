@@ -66,9 +66,10 @@ internal fun ByteReadPacket.readFrame(pool: ObjectPool<ChunkBuffer>): Frame = us
         FrameType.MetadataPush -> readMetadataPush(pool)
         FrameType.Lease        -> readLease(pool, flags)
         FrameType.KeepAlive    -> readKeepAlive(pool, flags)
+        //stream id != 0 or id = 0
+        FrameType.Error        -> readError(pool, streamId)
         //stream id != 0
         FrameType.Cancel       -> CancelFrame(streamId)
-        FrameType.Error        -> readError(streamId)
         FrameType.RequestN     -> readRequestN(streamId)
         FrameType.Extension    -> readExtension(pool, streamId, flags)
         FrameType.Payload,

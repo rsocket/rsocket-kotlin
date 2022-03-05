@@ -42,8 +42,9 @@ class ErrorFrameTest : TestWithLeakCheck {
         assertTrue(frame is ErrorFrame)
         assertEquals(1, frame.streamId)
         assertEquals(ErrorCode.ApplicationError, frame.errorCode)
-        assertTrue(frame.throwable is RSocketError.ApplicationError)
-        assertEquals("d", frame.throwable.message)
+        val throwable = RSocketError(frame)
+        assertTrue(throwable is RSocketError.ApplicationError)
+        assertEquals("d", throwable.message)
     }
 
 }

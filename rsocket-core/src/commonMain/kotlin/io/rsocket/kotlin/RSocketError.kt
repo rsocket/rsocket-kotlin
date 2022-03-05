@@ -16,6 +16,8 @@
 
 package io.rsocket.kotlin
 
+import io.rsocket.kotlin.frame.*
+
 public sealed class RSocketError(public val errorCode: Int, message: String) : Throwable(message) {
 
     public sealed class Setup(errorCode: Int, message: String) : RSocketError(errorCode, message) {
@@ -53,8 +55,13 @@ public sealed class RSocketError(public val errorCode: Int, message: String) : T
 }
 
 @Suppress("FunctionName") // function name intentionally starts with an uppercase letter
-internal fun RSocketError(streamId: Int, errorCode: Int, message: String): Throwable =
-    when (streamId) {
+internal fun RSocketError(
+    frame: ErrorFrame,
+): Throwable {
+    val streamId = frame.streamId
+    val errorCode = frame.errorCode
+    val message = frame.data.readText()
+    return when (streamId) {
         0    -> when (errorCode) {
             ErrorCode.InvalidSetup     -> RSocketError.Setup.Invalid(message)
             ErrorCode.UnsupportedSetup -> RSocketError.Setup.Unsupported(message)
@@ -75,6 +82,7 @@ internal fun RSocketError(streamId: Int, errorCode: Int, message: String): Throw
             }
         }
     }
+}
 
 internal object ErrorCode {
 

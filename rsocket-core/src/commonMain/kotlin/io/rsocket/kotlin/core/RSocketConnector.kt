@@ -34,7 +34,7 @@ public class RSocketConnector internal constructor(
     private val reconnectPredicate: ReconnectPredicate?,
 ) {
 
-    public suspend fun connect(transport: ClientTransport): RSocket = when (reconnectPredicate) {
+    public suspend fun connect(transport: ClientTransport): ConnectedRSocket = when (reconnectPredicate) {
         //TODO current coroutineContext job is overriden by transport coroutineContext jov
         null -> withContext(transport.coroutineContext) { connectOnce(transport) }
         else -> connectWithReconnect(
@@ -45,7 +45,7 @@ public class RSocketConnector internal constructor(
         )
     }
 
-    private suspend fun connectOnce(transport: ClientTransport): RSocket {
+    private suspend fun connectOnce(transport: ClientTransport): ConnectedRSocket {
         val connection = transport.connect().wrapConnection()
         val connectionConfig = try {
             connectionConfigProvider()
