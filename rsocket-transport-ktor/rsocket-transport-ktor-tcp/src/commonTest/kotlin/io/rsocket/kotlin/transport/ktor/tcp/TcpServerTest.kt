@@ -18,6 +18,7 @@ package io.rsocket.kotlin.transport.ktor.tcp
 
 import io.ktor.network.sockets.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.connect.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
@@ -37,20 +38,20 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testFailedConnection() = test {
         val server = TestServer().bindIn(CoroutineScope(testContext), serverTransport) {
-            if (config.setupPayload.data.readText() == "ok") {
-                RSocket {
+            if (configuration.setup.payload.data.readText() == "ok") {
+                responder(RSocket {
                     onRequestResponse { it }
-                }
+                })
             } else error("FAILED")
         }.also { it.serverSocket.await() }
 
-        suspend fun newClient(text: String) = TestConnector {
-            connectionConfig {
-                setupPayload {
-                    payload(text)
+        suspend fun newClient(text: String) = TestConnector().connect(clientTransport) {
+            configuration {
+                setup {
+                    payload(payload(text))
                 }
             }
-        }.connect(clientTransport)
+        }
 
         val client1 = newClient("ok")
         client1.requestResponse(payload("ok")).close()
@@ -81,10 +82,10 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
     fun testFailedHandler() = test {
         val serverSessions = mutableListOf<CoroutineScope>()
         val server = TestServer().bindIn(CoroutineScope(testContext), serverTransport) {
-            serverSessions += requester.session
-            RSocket {
+            serverSessions += session
+            responder(RSocket {
                 onRequestResponse { it }
-            }
+            })
         }.also { it.serverSocket.await() }
 
         suspend fun newClient() = TestConnector().connect(clientTransport)

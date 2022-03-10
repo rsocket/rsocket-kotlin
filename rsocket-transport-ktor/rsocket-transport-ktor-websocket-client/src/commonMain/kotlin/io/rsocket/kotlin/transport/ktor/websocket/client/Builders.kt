@@ -20,24 +20,28 @@ import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.rsocket.kotlin.*
+import io.rsocket.kotlin.connect.*
 import io.rsocket.kotlin.transport.*
 
 public suspend fun HttpClient.rSocket(
     request: HttpRequestBuilder.() -> Unit,
-): ConnectedRSocket = rSocket(WebSocketClientTransport(this, request))
+    configurator: RSocketClientConnectConfigurator? = null,
+): ConnectedRSocket = rSocket(WebSocketClientTransport(this, request), configurator)
 
 public suspend fun HttpClient.rSocket(
     urlString: String,
     secure: Boolean = false,
     request: HttpRequestBuilder.() -> Unit = {},
-): ConnectedRSocket = rSocket(WebSocketClientTransport(this, urlString, secure, request))
+    configurator: RSocketClientConnectConfigurator? = null,
+): ConnectedRSocket = rSocket(WebSocketClientTransport(this, urlString, secure, request), configurator)
 
 public suspend fun HttpClient.rSocket(
     host: String = "localhost", port: Int = DEFAULT_PORT, path: String = "/",
     secure: Boolean = false,
-): ConnectedRSocket = rSocket(WebSocketClientTransport(this, host, port, path, secure))
+    configurator: RSocketClientConnectConfigurator? = null,
+): ConnectedRSocket = rSocket(WebSocketClientTransport(this, host, port, path, secure), configurator)
 
 private suspend fun HttpClient.rSocket(
     transport: ClientTransport,
-): ConnectedRSocket = plugin(RSocketSupport).connector.connect(transport)
+    configurator: RSocketClientConnectConfigurator?,
+): ConnectedRSocket = plugin(RSocketSupport).connector.connect(transport, configurator)

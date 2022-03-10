@@ -19,11 +19,6 @@ package io.rsocket.kotlin
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.flow.*
-import kotlin.coroutines.*
-
-public sealed interface ConnectedRSocket : RSocket {
-    public val session: RSocketSession
-}
 
 public interface RSocket {
 
@@ -43,6 +38,8 @@ public interface RSocket {
         notImplementedRequestChannel(initPayload, payloads)
 
 }
+
+public object EmptyRSocket : RSocket
 
 public sealed interface RSocketBuilder {
     public fun onMetadataPush(block: suspend RSocket.(metadata: ByteReadPacket) -> Unit)
@@ -81,14 +78,6 @@ public suspend fun <C : Closeable> FlowCollector<C>.emitOrClose(value: C) {
         throw e
     }
 }
-
-internal abstract class ConnectedRSocketImpl(
-    final override val coroutineContext: CoroutineContext,
-) : ConnectedRSocket, RSocketSession {
-    final override val session: RSocketSession get() = this
-}
-
-internal object EmptyRSocket : RSocket
 
 @PublishedApi
 internal class RSocketImpl : RSocketBuilder, RSocket {

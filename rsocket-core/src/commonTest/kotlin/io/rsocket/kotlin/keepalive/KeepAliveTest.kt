@@ -18,28 +18,34 @@ package io.rsocket.kotlin.keepalive
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.connect.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlin.test.*
+import kotlin.time.*
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     private suspend fun requester(
-        keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds),
-    ): ConnectedRSocket = TestConnector {
-        connectionConfig {
-            this.keepAlive = keepAlive
+        interval: Duration = 100.milliseconds,
+        maxLifetime: Duration = 1.seconds,
+    ): ConnectedRSocket = TestConnector().connect(connection) {
+        configuration {
+            keepAlive {
+                interval(interval)
+                maxLifetime(maxLifetime)
+            }
         }
-    }.connect(connection).also {
+    }.also {
         connection.ignoreSetupFrame()
     }
 
     @Test
     fun requesterSendKeepAlive() = test {
-        requester(KeepAlive(1.seconds, 10.seconds))
+        requester(1.seconds, 10.seconds)
         connection.test {
             repeat(5) {
                 awaitFrame { frame ->
@@ -52,7 +58,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun rSocketNotCanceledOnPresentKeepAliveTicks() = test {
-        val rSocket = requester(KeepAlive(100.seconds, 100.seconds))
+        val rSocket = requester(100.seconds, 100.seconds)
         connection.launch {
             repeat(50) {
                 delay(100.milliseconds)
@@ -70,7 +76,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
 
     @Test
     fun requesterRespondsToKeepAlive() = test {
-        requester(KeepAlive(100.seconds, 100.seconds))
+        requester(100.seconds, 100.seconds)
         connection.launch {
             while (isActive) {
                 delay(100.milliseconds)

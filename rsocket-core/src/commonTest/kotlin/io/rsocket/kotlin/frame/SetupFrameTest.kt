@@ -19,32 +19,43 @@ package io.rsocket.kotlin.frame
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import kotlin.test.*
+import kotlin.time.*
 import kotlin.time.Duration.Companion.seconds
 
 class SetupFrameTest : TestWithLeakCheck {
 
     private val version = Version.Current
-    private val keepAlive = KeepAlive(10.seconds, 500.seconds)
-    private val payloadMimeType = PayloadMimeType(WellKnownMimeType.ApplicationOctetStream, CustomMimeType("mime"))
+    private val keepAliveIntervalMillis = 10.seconds.toInt(DurationUnit.MILLISECONDS)
+    private val keepAliveMaxLifetimeMillis = 500.seconds.toInt(DurationUnit.MILLISECONDS)
+    private val metadataMimeTypeText = "mime"
+    private val dataMimeTypeText = WellKnownMimeType.ApplicationOctetStream.text
 
     @Test
     fun testNoResumeEmptyPayload() {
-        val frame = SetupFrame(version, true, keepAlive, null, payloadMimeType, Payload.Empty)
+        val frame = SetupFrame(
+            version = version,
+            honorLease = true,
+            keepAliveIntervalMillis = keepAliveIntervalMillis,
+            keepAliveMaxLifetimeMillis = keepAliveMaxLifetimeMillis,
+            resumeToken = null,
+            metadataMimeTypeText = metadataMimeTypeText,
+            dataMimeTypeText = dataMimeTypeText,
+            payload = Payload.Empty,
+        )
         val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is SetupFrame)
         assertEquals(0, decodedFrame.streamId)
         assertEquals(version, decodedFrame.version)
         assertTrue(decodedFrame.honorLease)
-        assertEquals(keepAlive.intervalMillis, decodedFrame.keepAlive.intervalMillis)
-        assertEquals(keepAlive.maxLifetimeMillis, decodedFrame.keepAlive.maxLifetimeMillis)
+        assertEquals(keepAliveIntervalMillis, decodedFrame.keepAliveIntervalMillis)
+        assertEquals(keepAliveMaxLifetimeMillis, decodedFrame.keepAliveMaxLifetimeMillis)
         assertNull(decodedFrame.resumeToken)
-        assertEquals(payloadMimeType.data, decodedFrame.payloadMimeType.data)
-        assertEquals(payloadMimeType.metadata, decodedFrame.payloadMimeType.metadata)
+        assertEquals(dataMimeTypeText, decodedFrame.dataMimeTypeText)
+        assertEquals(metadataMimeTypeText, decodedFrame.metadataMimeTypeText)
         assertEquals(0, decodedFrame.payload.data.remaining)
         assertNull(decodedFrame.payload.metadata)
     }
@@ -52,18 +63,27 @@ class SetupFrameTest : TestWithLeakCheck {
     @Test
     fun testNoResumeBigPayload() {
         val payload = payload(ByteArray(30000) { 1 }, ByteArray(20000) { 5 })
-        val frame = SetupFrame(version, true, keepAlive, null, payloadMimeType, payload)
+        val frame = SetupFrame(
+            version = version,
+            honorLease = true,
+            keepAliveIntervalMillis = keepAliveIntervalMillis,
+            keepAliveMaxLifetimeMillis = keepAliveMaxLifetimeMillis,
+            resumeToken = null,
+            metadataMimeTypeText = metadataMimeTypeText,
+            dataMimeTypeText = dataMimeTypeText,
+            payload = payload
+        )
         val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is SetupFrame)
         assertEquals(0, decodedFrame.streamId)
         assertEquals(version, decodedFrame.version)
         assertTrue(decodedFrame.honorLease)
-        assertEquals(keepAlive.intervalMillis, decodedFrame.keepAlive.intervalMillis)
-        assertEquals(keepAlive.maxLifetimeMillis, decodedFrame.keepAlive.maxLifetimeMillis)
+        assertEquals(keepAliveIntervalMillis, decodedFrame.keepAliveIntervalMillis)
+        assertEquals(keepAliveMaxLifetimeMillis, decodedFrame.keepAliveMaxLifetimeMillis)
         assertNull(decodedFrame.resumeToken)
-        assertEquals(payloadMimeType.data, decodedFrame.payloadMimeType.data)
-        assertEquals(payloadMimeType.metadata, decodedFrame.payloadMimeType.metadata)
+        assertEquals(dataMimeTypeText, decodedFrame.dataMimeTypeText)
+        assertEquals(metadataMimeTypeText, decodedFrame.metadataMimeTypeText)
         assertBytesEquals(ByteArray(30000) { 1 }, decodedFrame.payload.data.readBytes())
         assertBytesEquals(ByteArray(20000) { 5 }, decodedFrame.payload.metadata?.readBytes())
     }
@@ -71,18 +91,27 @@ class SetupFrameTest : TestWithLeakCheck {
     @Test
     fun testResumeBigTokenEmptyPayload() {
         val resumeToken = packet(ByteArray(65000) { 5 })
-        val frame = SetupFrame(version, true, keepAlive, resumeToken, payloadMimeType, Payload.Empty)
+        val frame = SetupFrame(
+            version = version,
+            honorLease = true,
+            keepAliveIntervalMillis = keepAliveIntervalMillis,
+            keepAliveMaxLifetimeMillis = keepAliveMaxLifetimeMillis,
+            resumeToken = resumeToken,
+            metadataMimeTypeText = metadataMimeTypeText,
+            dataMimeTypeText = dataMimeTypeText,
+            payload = Payload.Empty
+        )
         val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is SetupFrame)
         assertEquals(0, decodedFrame.streamId)
         assertEquals(version, decodedFrame.version)
         assertTrue(decodedFrame.honorLease)
-        assertEquals(keepAlive.intervalMillis, decodedFrame.keepAlive.intervalMillis)
-        assertEquals(keepAlive.maxLifetimeMillis, decodedFrame.keepAlive.maxLifetimeMillis)
+        assertEquals(keepAliveIntervalMillis, decodedFrame.keepAliveIntervalMillis)
+        assertEquals(keepAliveMaxLifetimeMillis, decodedFrame.keepAliveMaxLifetimeMillis)
         assertBytesEquals(ByteArray(65000) { 5 }, decodedFrame.resumeToken?.readBytes())
-        assertEquals(payloadMimeType.data, decodedFrame.payloadMimeType.data)
-        assertEquals(payloadMimeType.metadata, decodedFrame.payloadMimeType.metadata)
+        assertEquals(dataMimeTypeText, decodedFrame.dataMimeTypeText)
+        assertEquals(metadataMimeTypeText, decodedFrame.metadataMimeTypeText)
         assertEquals(0, decodedFrame.payload.data.remaining)
         assertNull(decodedFrame.payload.metadata)
     }
@@ -91,18 +120,27 @@ class SetupFrameTest : TestWithLeakCheck {
     fun testResumeBigTokenBigPayload() {
         val resumeToken = packet(ByteArray(65000) { 5 })
         val payload = payload(ByteArray(30000) { 1 }, ByteArray(20000) { 5 })
-        val frame = SetupFrame(version, true, keepAlive, resumeToken, payloadMimeType, payload)
+        val frame = SetupFrame(
+            version = version,
+            honorLease = true,
+            keepAliveIntervalMillis = keepAliveIntervalMillis,
+            keepAliveMaxLifetimeMillis = keepAliveMaxLifetimeMillis,
+            resumeToken = resumeToken,
+            metadataMimeTypeText = metadataMimeTypeText,
+            dataMimeTypeText = dataMimeTypeText,
+            payload = payload
+        )
         val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is SetupFrame)
         assertEquals(0, decodedFrame.streamId)
         assertEquals(version, decodedFrame.version)
         assertTrue(decodedFrame.honorLease)
-        assertEquals(keepAlive.intervalMillis, decodedFrame.keepAlive.intervalMillis)
-        assertEquals(keepAlive.maxLifetimeMillis, decodedFrame.keepAlive.maxLifetimeMillis)
+        assertEquals(keepAliveIntervalMillis, decodedFrame.keepAliveIntervalMillis)
+        assertEquals(keepAliveMaxLifetimeMillis, decodedFrame.keepAliveMaxLifetimeMillis)
         assertBytesEquals(ByteArray(65000) { 5 }, decodedFrame.resumeToken?.readBytes())
-        assertEquals(payloadMimeType.data, decodedFrame.payloadMimeType.data)
-        assertEquals(payloadMimeType.metadata, decodedFrame.payloadMimeType.metadata)
+        assertEquals(dataMimeTypeText, decodedFrame.dataMimeTypeText)
+        assertEquals(metadataMimeTypeText, decodedFrame.metadataMimeTypeText)
         assertBytesEquals(ByteArray(30000) { 1 }, decodedFrame.payload.data.readBytes())
         assertBytesEquals(ByteArray(20000) { 5 }, decodedFrame.payload.metadata?.readBytes())
     }

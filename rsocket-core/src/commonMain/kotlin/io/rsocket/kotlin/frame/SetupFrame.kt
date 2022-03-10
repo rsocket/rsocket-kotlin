@@ -20,7 +20,6 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 
 private const val HonorLeaseFlag = 64
@@ -29,9 +28,11 @@ private const val ResumeEnabledFlag = 128
 internal class SetupFrame(
     val version: Version, //TODO check
     val honorLease: Boolean,
-    val keepAlive: KeepAlive,
+    val keepAliveIntervalMillis: Int,
+    val keepAliveMaxLifetimeMillis: Int,
     val resumeToken: ByteReadPacket?,
-    val payloadMimeType: PayloadMimeType,
+    val metadataMimeTypeText: String,
+    val dataMimeTypeText: String,
     val payload: Payload,
 ) : Frame() {
     override val type: FrameType get() = FrameType.Setup
@@ -52,11 +53,11 @@ internal class SetupFrame(
 
     override fun BytePacketBuilder.writeSelf() {
         writeVersion(version)
-        writeInt(keepAlive.intervalMillis)
-        writeInt(keepAlive.maxLifetimeMillis)
+        writeInt(keepAliveIntervalMillis)
+        writeInt(keepAliveMaxLifetimeMillis)
         writeResumeToken(resumeToken)
-        writeStringMimeType(payloadMimeType.metadata)
-        writeStringMimeType(payloadMimeType.data)
+        writeStringMimeType(metadataMimeTypeText)
+        writeStringMimeType(dataMimeTypeText)
         writePayload(payload)
     }
 
@@ -68,34 +69,30 @@ internal class SetupFrame(
 
     override fun StringBuilder.appendSelf() {
         append("\nVersion: ").append(version.toString()).append(" Honor lease: ").append(honorLease).append("\n")
-        append("Keep alive: interval=").append(keepAlive.intervalMillis).append(" ms,")
-        append("max lifetime=").append(keepAlive.maxLifetimeMillis).append(" ms\n")
-        append("Data mime type: ").append(payloadMimeType.data).append("\n")
-        append("Metadata mime type: ").append(payloadMimeType.metadata)
+        append("Keep alive: interval=").append(keepAliveIntervalMillis).append(" ms,")
+        append("max lifetime=").append(keepAliveMaxLifetimeMillis).append(" ms\n")
+        append("Metadata mime type: ").append(metadataMimeTypeText).append("\n")
+        append("Data mime type: ").append(dataMimeTypeText)
         appendPayload(payload)
     }
 }
 
 internal fun ByteReadPacket.readSetup(pool: ObjectPool<ChunkBuffer>, flags: Int): SetupFrame {
     val version = readVersion()
-    val keepAlive = run {
-        val interval = readInt()
-        val maxLifetime = readInt()
-        KeepAlive(intervalMillis = interval, maxLifetimeMillis = maxLifetime)
-    }
+    val keepAliveIntervalMillis = readInt()
+    val keepAliveMaxLifetimeMillis = readInt()
     val resumeToken = if (flags check ResumeEnabledFlag) readResumeToken(pool) else null
-    val payloadMimeType = run {
-        val metadata = readStringMimeType()
-        val data = readStringMimeType()
-        PayloadMimeType(data = data, metadata = metadata)
-    }
+    val metadataMimeTypeText = readStringMimeType()
+    val dataMimeTypeText = readStringMimeType()
     val payload = readPayload(pool, flags)
     return SetupFrame(
         version = version,
         honorLease = flags check HonorLeaseFlag,
-        keepAlive = keepAlive,
+        keepAliveIntervalMillis = keepAliveIntervalMillis,
+        keepAliveMaxLifetimeMillis = keepAliveMaxLifetimeMillis,
         resumeToken = resumeToken,
-        payloadMimeType = payloadMimeType,
+        metadataMimeTypeText = metadataMimeTypeText,
+        dataMimeTypeText = dataMimeTypeText,
         payload = payload
     )
 }

@@ -20,7 +20,7 @@ import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.util.*
-import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.connect.*
 
 public class RSocketSupport(
     internal val connector: RSocketConnector,

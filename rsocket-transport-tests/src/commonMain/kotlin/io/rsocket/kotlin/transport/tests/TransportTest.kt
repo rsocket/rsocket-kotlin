@@ -18,7 +18,7 @@ package io.rsocket.kotlin.transport.tests
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.keepalive.*
+import io.rsocket.kotlin.connect.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.*
@@ -42,7 +42,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         CONNECTOR.connect(clientTransport)
 
     protected fun <T> startServer(serverTransport: ServerTransport<T>): T =
-        SERVER.bindIn(testScope, serverTransport, ACCEPTOR)
+        SERVER.bindIn(testScope, serverTransport)
 
     override suspend fun after() {
         client.session.coroutineContext.job.cancelAndJoin()
@@ -232,14 +232,21 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     companion object {
-        val SERVER = TestServer(logging = false)
-        val CONNECTOR = TestConnector(logging = false) {
-            connectionConfig {
-                keepAlive = KeepAlive(10.minutes, 100.minutes)
+        val SERVER = TestServer(logging = false) {
+            defaultConfiguration {
+                responder(ResponderRSocket)
             }
         }
-
-        val ACCEPTOR = ConnectionAcceptor { ResponderRSocket }
+        val CONNECTOR = TestConnector(logging = false) {
+            defaultConfiguration {
+                configuration {
+                    keepAlive {
+                        interval(10.minutes)
+                        maxLifetime(100.minutes)
+                    }
+                }
+            }
+        }
 
         const val responderData = "hello world"
         const val responderMetadata = "metadata"

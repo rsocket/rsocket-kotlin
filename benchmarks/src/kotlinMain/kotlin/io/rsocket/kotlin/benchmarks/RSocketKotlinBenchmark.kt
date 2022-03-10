@@ -18,7 +18,7 @@ package io.rsocket.kotlin.benchmarks
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.connect.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
@@ -40,7 +40,7 @@ class RSocketKotlinBenchmark : RSocketBenchmark<Payload>() {
         payload = createPayload(payloadSize)
         payloadsFlow = flow { repeat(5000) { emit(payloadCopy()) } }
         val server = RSocketServer().bindIn(CoroutineScope(benchJob + Dispatchers.Unconfined), LocalServerTransport()) {
-            RSocket {
+            responder {
                 onRequestResponse {
                     it.close()
                     payloadCopy()

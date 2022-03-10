@@ -34,15 +34,14 @@ fun start(): Closeable {
     runBlocking {
         TransportTest.SERVER.bindIn(
             scope,
-            TcpServerTransport(port = PortProvider.testServerTcp),
-            TransportTest.ACCEPTOR
+            TcpServerTransport(port = PortProvider.testServerTcp)
         ).serverSocket.await() //await server start
     }
 
     scope.embeddedServer(CIO, port = PortProvider.testServerWebSocket) {
         install(WebSockets)
         install(RSocketSupport) { server = TransportTest.SERVER }
-        install(Routing) { rSocket(acceptor = TransportTest.ACCEPTOR) }
+        install(Routing) { rSocket() }
     }.start()
 
     Thread.sleep(1000) //await start

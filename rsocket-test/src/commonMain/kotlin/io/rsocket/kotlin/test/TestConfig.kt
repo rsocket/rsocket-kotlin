@@ -18,29 +18,29 @@
 
 package io.rsocket.kotlin.test
 
-import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.connect.*
 import io.rsocket.kotlin.logging.*
 
 fun TestServer(
     logging: Boolean = true,
-    block: RSocketServerBuilder.() -> Unit = {}
+    block: RSocketServerBuilder.() -> Unit = {},
 ): RSocketServer = RSocketServer {
-    loggerFactory = if (logging) {
-        LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("SERVER   |$it") }
+    if (logging) {
+        loggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("SERVER   |$it") }
     } else {
-        NoopLogger
+        loggerFactory(NoopLogger)
     }
     block()
 }
 
 fun TestConnector(
     logging: Boolean = true,
-    block: RSocketConnectorBuilder.() -> Unit = {}
+    block: RSocketConnectorBuilder.() -> Unit = {},
 ): RSocketConnector = RSocketConnector {
-    loggerFactory = if (logging) {
-        LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("CLIENT   |$it") }
+    if (logging) {
+        loggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("CLIENT   |$it") }
     } else {
-        NoopLogger
+        loggerFactory(NoopLogger)
     }
     block()
 }

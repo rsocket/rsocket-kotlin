@@ -45,7 +45,7 @@ abstract class WebSocketTransportTest(
         (GlobalScope + testJob).embeddedServer(serverEngine, port) {
             install(ServerWebSockets)
             install(ServerRSocketSupport) { server = SERVER }
-            install(Routing) { rSocket(acceptor = ACCEPTOR) }
+            install(Routing) { rSocket() }
         }.start()
         client = httpClient.rSocket(port = port)
     }

@@ -17,8 +17,8 @@
 package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.connect.*
 import io.rsocket.kotlin.frame.*
-import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
@@ -33,11 +33,14 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     override suspend fun before() {
         super.before()
 
-        requester = TestConnector {
-            connectionConfig {
-                keepAlive = KeepAlive(1000.seconds, 1000.seconds)
+        requester = TestConnector().connect(connection) {
+            configuration {
+                keepAlive {
+                    interval(1000.seconds)
+                    maxLifetime(1000.seconds)
+                }
             }
-        }.connect(connection)
+        }
 
         connection.ignoreSetupFrame()
     }

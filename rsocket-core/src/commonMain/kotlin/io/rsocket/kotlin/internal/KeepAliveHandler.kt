@@ -19,13 +19,13 @@ package io.rsocket.kotlin.internal
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
-import io.rsocket.kotlin.keepalive.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 
 internal class KeepAliveHandler(
-    private val keepAlive: KeepAlive,
-    private val sender: FrameSender
+    private val keepAliveIntervalMillis: Int,
+    private val keepAliveMaxLifetimeMillis: Int,
+    private val sender: FrameSender,
 ) {
     private val lastMark = atomic(currentMillis()) // mark initial timestamp for keepalive
 
@@ -35,9 +35,9 @@ internal class KeepAliveHandler(
     }
 
     suspend fun tick() {
-        delay(keepAlive.intervalMillis.toLong())
-        if (currentMillis() - lastMark.value >= keepAlive.maxLifetimeMillis)
-            throw RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetimeMillis} ms")
+        delay(keepAliveIntervalMillis.toLong())
+        if (currentMillis() - lastMark.value >= keepAliveMaxLifetimeMillis)
+            throw RSocketError.ConnectionError("No keep-alive for ${keepAliveMaxLifetimeMillis} ms")
 
         sender.sendKeepAlive(true, 0, ByteReadPacket.Empty)
     }

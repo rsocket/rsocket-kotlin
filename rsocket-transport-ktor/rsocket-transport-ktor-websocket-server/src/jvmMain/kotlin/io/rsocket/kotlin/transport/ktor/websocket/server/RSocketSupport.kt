@@ -19,7 +19,7 @@ package io.rsocket.kotlin.transport.ktor.websocket.server
 import io.ktor.server.application.*
 import io.ktor.server.websocket.*
 import io.ktor.util.*
-import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.connect.*
 
 public class RSocketSupport(
     internal val server: RSocketServer,

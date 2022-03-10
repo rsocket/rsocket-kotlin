@@ -19,7 +19,7 @@ package io.rsocket.kotlin.core
 import app.cash.turbine.*
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.keepalive.*
+import io.rsocket.kotlin.connect.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.local.*
@@ -38,22 +38,25 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         testJob.cancelAndJoin()
     }
 
-    private suspend fun start(acceptor: ConnectionAcceptor): ConnectedRSocket {
+    private suspend fun start(configurator: RSocketServerConnectConfigurator): ConnectedRSocket {
         val localServer = TestServer().bindIn(
             CoroutineScope(Dispatchers.Unconfined + testJob + TestExceptionHandler),
             LocalServerTransport(InUseTrackingPool),
-            acceptor
+            configurator
         )
 
-        return TestConnector {
-            connectionConfig {
-                keepAlive = KeepAlive(1000.seconds, 1000.seconds)
+        return TestConnector().connect(localServer) {
+            configuration {
+                keepAlive {
+                    interval(1000.seconds)
+                    maxLifetime(1000.seconds)
+                }
             }
-        }.connect(localServer)
+        }
     }
 
     private suspend fun start(handler: RSocket? = null): ConnectedRSocket = start {
-        handler ?: RSocket {
+        responder(handler ?: RSocket {
             onRequestResponse { it }
             onRequestStream {
                 it.close()
@@ -61,10 +64,10 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             }
             onRequestChannel { init, payloads ->
                 init.close()
-                payloads.onEach { it.close() }.launchIn(requester.session)
+                payloads.onEach { it.close() }.launchIn(session)
                 flow { repeat(10) { emitOrClose(payload("server got -> [$it]")) } }
             }
-        }
+        })
     }
 
     @Test
@@ -362,9 +365,9 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     ): Pair<ReceiveChannel<Payload>, ReceiveChannel<Payload>> {
         val responderDeferred = CompletableDeferred<ReceiveChannel<Payload>>()
         val requester = start {
-            RSocket {
+            responder {
                 onRequestChannel { init, payloads ->
-                    responderDeferred.complete(payloads.onStart { emit(init) }.produceIn(requester.session))
+                    responderDeferred.complete(payloads.onStart { emit(init) }.produceIn(session))
 
                     responderSendChannel.consumeAsFlow()
                 }

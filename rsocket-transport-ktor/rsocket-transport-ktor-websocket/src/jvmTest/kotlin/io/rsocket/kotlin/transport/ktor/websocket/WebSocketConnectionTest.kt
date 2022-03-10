@@ -21,7 +21,7 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.routing.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.keepalive.*
+import io.rsocket.kotlin.connect.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.ktor.websocket.client.*
@@ -30,6 +30,7 @@ import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.test.*
+import kotlin.time.Duration.Companion.milliseconds
 import io.ktor.client.engine.cio.CIO as ClientCIO
 import io.ktor.client.plugins.websocket.WebSockets as ClientWebSockets
 import io.ktor.server.cio.CIO as ServerCIO
@@ -42,11 +43,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
     private val client = HttpClient(ClientCIO) {
         install(ClientWebSockets)
         install(ClientRSocketSupport) {
-            connector = TestConnector {
-                connectionConfig {
-                    keepAlive = KeepAlive(500)
-                }
-            }
+            connector = TestConnector()
         }
     }
 
@@ -59,8 +56,8 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
         }
         install(Routing) {
             rSocket {
-                serverPeerSessionJob = requester.session.coroutineContext.job
-                RSocket {
+                serverPeerSessionJob = session.coroutineContext.job
+                responder(RSocket {
                     onRequestStream {
                         it.close()
                         flow {
@@ -71,7 +68,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
                             }
                         }
                     }
-                }
+                })
             }
         }
     }
@@ -88,7 +85,13 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
 
     @Test
     fun testWorks() = test {
-        val rSocket = client.rSocket(port = port)
+        val rSocket = client.rSocket(port = port) {
+            configuration {
+                keepAlive {
+                    interval(500.milliseconds)
+                }
+            }
+        }
         val clientPeerSessionJob = rSocket.session.coroutineContext.job
 
         rSocket

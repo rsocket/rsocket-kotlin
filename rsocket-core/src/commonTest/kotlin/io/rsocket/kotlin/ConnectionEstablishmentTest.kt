@@ -17,10 +17,9 @@
 package io.rsocket.kotlin
 
 import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.connect.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.keepalive.*
-import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
@@ -30,7 +29,7 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun responderRejectSetup() = test {
         val errorMessage = "error"
-        val sendingRSocket = CompletableDeferred<ConnectedRSocket>()
+        val serverSession = CompletableDeferred<RSocketSession>()
 
         val connection = TestConnection()
 
@@ -39,7 +38,7 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
         }
 
         val deferred = TestServer().bind(serverTransport) {
-            sendingRSocket.complete(requester)
+            serverSession.complete(session)
             error(errorMessage)
         }
 
@@ -47,9 +46,11 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
             SetupFrame(
                 version = Version.Current,
                 honorLease = false,
-                keepAlive = DefaultKeepAlive,
+                keepAliveIntervalMillis = 100000,
+                keepAliveMaxLifetimeMillis = 100000,
                 resumeToken = null,
-                payloadMimeType = DefaultPayloadMimeType,
+                metadataMimeTypeText = "mime",
+                dataMimeTypeText = "mime",
                 payload = payload("setup") //should be released
             )
         )
@@ -63,8 +64,8 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
                 assertTrue(throwable is RSocketError.Setup.Rejected)
                 assertEquals(errorMessage, throwable.message)
             }
-            val sender = sendingRSocket.await()
-            assertFalse(sender.session.isActive)
+            val session = serverSession.await()
+            assertFalse(session.isActive)
             expectNoEventsIn(100)
         }
         connection.coroutineContext.job.join()
@@ -78,18 +79,17 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
         val connection = TestConnection()
         val p = payload("setup")
         assertFailsWith(IllegalStateException::class, "failed") {
-            TestConnector {
-                connectionConfig {
-                    setupPayload { p }
+            TestConnector().connect(connection) {
+                configuration {
+                    setup {
+                        payload(p)
+                    }
                 }
-                acceptor {
-                    assertTrue(config.setupPayload.data.isNotEmpty)
-                    assertTrue(p.data.isNotEmpty)
-                    error("failed")
-                }
-            }.connect(connection)
+                configuration.setup.payload.use { assertTrue(it.data.isNotEmpty) }
+                assertTrue(p.data.isNotEmpty)
+                error("failed")
+            }
         }
-        connection.coroutineContext.job.join()
         assertTrue(p.data.isEmpty)
     }
 
