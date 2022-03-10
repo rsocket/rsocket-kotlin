@@ -16,7 +16,7 @@
 
 package io.rsocket.kotlin.metadata
 
-import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
@@ -24,24 +24,24 @@ class PerStreamAcceptableDataMimeTypesMetadataTest : TestWithLeakCheck {
     @Test
     fun encodeMetadata() {
         val metadata = PerStreamAcceptableDataMimeTypesMetadata(
-            ReservedMimeType(110),
-            WellKnownMimeType.ApplicationAvro,
-            CustomMimeType("custom"),
-            WellKnownMimeType.ApplicationCbor,
-            ReservedMimeType(120),
-            CustomMimeType("custom2"),
+            MimeType(110),
+            MimeType.WellKnown.ApplicationAvro,
+            MimeType("custom"),
+            MimeType.WellKnown.ApplicationCbor,
+            MimeType(120),
+            MimeType("custom2"),
         )
         val decoded = metadata.readLoop(PerStreamAcceptableDataMimeTypesMetadata)
-        assertEquals(WellKnownMimeType.MessageRSocketAcceptMimeTypes, decoded.mimeType)
+        assertEquals(MimeType.WellKnown.MessageRSocketAcceptMimeTypes, decoded.mimeType)
         assertEquals(6, decoded.types.size)
         assertEquals(
             listOf(
-                ReservedMimeType(110),
-                WellKnownMimeType.ApplicationAvro,
-                CustomMimeType("custom"),
-                WellKnownMimeType.ApplicationCbor,
-                ReservedMimeType(120),
-                CustomMimeType("custom2"),
+                MimeType(110),
+                MimeType.WellKnown.ApplicationAvro,
+                MimeType("custom"),
+                MimeType.WellKnown.ApplicationCbor,
+                MimeType(120),
+                MimeType("custom2"),
             ),
             decoded.types
         )

@@ -16,31 +16,28 @@
 
 package io.rsocket.kotlin.metadata.security
 
-import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.*
 
-public sealed interface AuthType
+public sealed interface AuthType : CompactType {
+    public companion object : CompactTypeFactory<AuthType, WithId, WithName, WellKnown>(::WithIdImpl, ::WithNameImpl, enumValues())
 
-public sealed interface AuthTypeWithName : AuthType {
-    public val text: String
-}
+    public sealed interface WithId : AuthType, CompactType.WithId
+    public sealed interface WithName : AuthType, CompactType.WithName
+    public enum class WellKnown(
+        public override val text: String,
+        public override val identifier: Byte,
+    ) : AuthType, CompactType.WellKnown, WithId, WithName {
+        Simple("simple", 0x00),
+        Bearer("bearer", 0x01);
 
-public sealed interface AuthTypeWithId : AuthType {
-    public val identifier: Byte
-}
-
-public data class CustomAuthType(override val text: String) : AuthTypeWithName {
-    init {
-        text.requireAscii()
-        require(text.length in 1..128) { "Mime-type length must be in range 1..128 but was '${text.length}'" }
+        override fun toString(): String = toString("AuthType")
     }
 
-    override fun toString(): String = text
-}
-
-public data class ReservedAuthType(override val identifier: Byte) : AuthTypeWithId {
-    init {
-        require(identifier in 1..128) { "Mime-type identifier must be in range 1..128 but was '${identifier}'" }
+    private class WithIdImpl(identifier: Byte) : WithId, AbstractCompactTypeWithId(identifier) {
+        override fun toString(): String = toString("AuthType")
     }
 
-    override fun toString(): String = "ID: $identifier"
+    private class WithNameImpl(text: String) : WithName, AbstractCompactTypeWithName(text) {
+        override fun toString(): String = toString("AuthType")
+    }
 }

@@ -18,7 +18,6 @@ package io.rsocket.kotlin.metadata
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
 
 @ExperimentalMetadataApi

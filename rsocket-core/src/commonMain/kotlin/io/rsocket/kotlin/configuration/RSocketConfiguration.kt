@@ -1,7 +1,7 @@
 package io.rsocket.kotlin.configuration
 
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.payload.*
 import kotlin.time.*
 
@@ -52,8 +52,8 @@ internal class RSocketServerConnectConfigurationImpl(
     configurationState: ConfigurationState,
     keepAliveInterval: Duration,
     keepAliveMaxLifetime: Duration,
-    metadataMimeType: MimeTypeWithName,
-    dataMimeType: MimeTypeWithName,
+    metadataMimeType: MimeType.WithName,
+    dataMimeType: MimeType.WithName,
     setupPayload: Payload,
 ) : RSocketServerConnectConfiguration, RSocketConnectConfigurationImpl() {
     override val setup: SetupServerConnectConfigurationImpl =

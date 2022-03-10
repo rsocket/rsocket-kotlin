@@ -16,32 +16,36 @@
 
 package io.rsocket.kotlin.metadata
 
-import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
 class PerStreamDataMimeTypeMetadataTest : TestWithLeakCheck {
     @Test
     fun encodeReserved() {
-        val metadata = PerStreamDataMimeTypeMetadata(ReservedMimeType(110))
+        val metadata = PerStreamDataMimeTypeMetadata(MimeType(110))
         val decoded = metadata.readLoop(PerStreamDataMimeTypeMetadata)
-        assertEquals(WellKnownMimeType.MessageRSocketMimeType, decoded.mimeType)
-        assertEquals(ReservedMimeType(110), decoded.type)
+        assertEquals(MimeType.WellKnown.MessageRSocketMimeType, decoded.mimeType)
+        assertEquals(MimeType(110), decoded.type)
+        val type = assertIs<MimeType.WithId>(decoded.type)
+        assertEquals(110, type.identifier)
     }
 
     @Test
     fun encodeCustom() {
-        val metadata = PerStreamDataMimeTypeMetadata(CustomMimeType("custom-2"))
+        val metadata = PerStreamDataMimeTypeMetadata(MimeType("custom-2"))
         val decoded = metadata.readLoop(PerStreamDataMimeTypeMetadata)
-        assertEquals(WellKnownMimeType.MessageRSocketMimeType, decoded.mimeType)
-        assertEquals(CustomMimeType("custom-2"), decoded.type)
+        assertEquals(MimeType.WellKnown.MessageRSocketMimeType, decoded.mimeType)
+        assertEquals(MimeType("custom-2"), decoded.type)
+        val type = assertIs<MimeType.WithName>(decoded.type)
+        assertEquals("custom-2", type.text)
     }
 
     @Test
     fun encodeWellKnown() {
-        val metadata = PerStreamDataMimeTypeMetadata(WellKnownMimeType.ApplicationGraphql)
+        val metadata = PerStreamDataMimeTypeMetadata(MimeType.WellKnown.ApplicationGraphql)
         val decoded = metadata.readLoop(PerStreamDataMimeTypeMetadata)
-        assertEquals(WellKnownMimeType.MessageRSocketMimeType, decoded.mimeType)
-        assertEquals(WellKnownMimeType.ApplicationGraphql, decoded.type)
+        assertEquals(MimeType.WellKnown.MessageRSocketMimeType, decoded.mimeType)
+        assertEquals(MimeType.WellKnown.ApplicationGraphql, decoded.type)
     }
 }

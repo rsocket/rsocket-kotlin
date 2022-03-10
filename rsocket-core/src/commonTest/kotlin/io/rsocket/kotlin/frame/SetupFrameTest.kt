@@ -17,7 +17,7 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
@@ -31,7 +31,7 @@ class SetupFrameTest : TestWithLeakCheck {
     private val keepAliveIntervalMillis = 10.seconds.toInt(DurationUnit.MILLISECONDS)
     private val keepAliveMaxLifetimeMillis = 500.seconds.toInt(DurationUnit.MILLISECONDS)
     private val metadataMimeTypeText = "mime"
-    private val dataMimeTypeText = WellKnownMimeType.ApplicationOctetStream.text
+    private val dataMimeTypeText = MimeType.WellKnown.ApplicationOctetStream.text
 
     @Test
     fun testNoResumeEmptyPayload() {

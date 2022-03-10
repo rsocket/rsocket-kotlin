@@ -1,6 +1,6 @@
 package io.rsocket.kotlin.configuration
 
-import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.*
 
 public sealed interface PayloadConfiguration {
     //TODO: Long?
@@ -55,8 +55,8 @@ internal class PayloadClientConnectConfigurationImpl(
 
 internal class PayloadServerConnectConfigurationImpl(
     configurationState: ConfigurationState,
-    metadataMimeType: MimeTypeWithName,
-    dataMimeType: MimeTypeWithName,
+    metadataMimeType: MimeType.WithName,
+    dataMimeType: MimeType.WithName,
 ) : PayloadServerConnectConfiguration, PayloadConnectConfigurationImpl(configurationState) {
     override val mimeType: MimeTypeServerConnectConfigurationImpl =
         MimeTypeServerConnectConfigurationImpl(metadataMimeType, dataMimeType)

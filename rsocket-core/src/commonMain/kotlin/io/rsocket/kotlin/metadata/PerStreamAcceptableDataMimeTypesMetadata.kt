@@ -20,8 +20,6 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.frame.io.*
 
 @ExperimentalMetadataApi
 public fun PerStreamAcceptableDataMimeTypesMetadata(vararg tags: MimeType): PerStreamAcceptableDataMimeTypesMetadata =
@@ -33,17 +31,17 @@ public class PerStreamAcceptableDataMimeTypesMetadata(public val types: List<Mim
 
     override fun BytePacketBuilder.writeSelf() {
         types.forEach {
-            writeMimeType(it)
+            writeCompactType(it)
         }
     }
 
     override fun close(): Unit = Unit
 
     public companion object Reader : MetadataReader<PerStreamAcceptableDataMimeTypesMetadata> {
-        override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketAcceptMimeTypes
+        override val mimeType: MimeType get() = MimeType.WellKnown.MessageRSocketAcceptMimeTypes
         override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): PerStreamAcceptableDataMimeTypesMetadata {
             val list = mutableListOf<MimeType>()
-            while (isNotEmpty) list.add(readMimeType())
+            while (isNotEmpty) list.add(readCompactType(MimeType))
             return PerStreamAcceptableDataMimeTypesMetadata(list.toList())
         }
     }

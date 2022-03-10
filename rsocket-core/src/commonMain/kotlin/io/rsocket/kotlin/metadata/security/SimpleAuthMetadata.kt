@@ -31,7 +31,7 @@ public class SimpleAuthMetadata(
         require(username.length < 65535) { "Username length must be in range 1..65535 but was '${username.length}'" }
     }
 
-    override val type: AuthType get() = WellKnowAuthType.Simple
+    override val type: AuthType get() = AuthType.WellKnown.Simple
 
     override fun BytePacketBuilder.writeContent() {
         val length = username.encodeToByteArray()
@@ -44,7 +44,7 @@ public class SimpleAuthMetadata(
 
     public companion object Reader : AuthMetadataReader<SimpleAuthMetadata> {
         override fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): SimpleAuthMetadata {
-            require(type == WellKnowAuthType.Simple) { "Metadata auth type should be 'simple'" }
+            require(type == AuthType.WellKnown.Simple) { "Metadata auth type should be 'simple'" }
             val length = readShort().toInt()
             val username = readTextExactBytes(length)
             val password = readText()

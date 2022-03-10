@@ -17,7 +17,7 @@
 package io.rsocket.kotlin.metadata
 
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
@@ -26,37 +26,37 @@ class CompositeMetadataTest : TestWithLeakCheck {
     @Test
     fun decodeEntryHasNoContent() {
         val cm = buildCompositeMetadata {
-            add(CustomMimeType("w"), ByteReadPacket.Empty)
+            add(MimeType("w"), ByteReadPacket.Empty)
         }
 
         val decoded = cm.readLoop(CompositeMetadata)
 
         assertEquals(1, decoded.entries.size)
         val entry = decoded.entries.first()
-        assertEquals(CustomMimeType("w"), entry.mimeType)
+        assertEquals(MimeType("w"), entry.mimeType)
         assertEquals(0, entry.content.remaining)
     }
 
     @Test
     fun decodeMultiple() {
         val cm = buildCompositeMetadata {
-            add(CustomMimeType("custom"), packet("custom metadata"))
-            add(ReservedMimeType(120), packet("reserved metadata"))
-            add(WellKnownMimeType.ApplicationAvro, packet("avro metadata"))
+            add(MimeType("custom"), packet("custom metadata"))
+            add(MimeType(120), packet("reserved metadata"))
+            add(MimeType.WellKnown.ApplicationAvro, packet("avro metadata"))
         }
         val decoded = cm.readLoop(CompositeMetadata)
 
         assertEquals(3, decoded.entries.size)
         decoded.entries[0].let { custom ->
-            assertEquals(CustomMimeType("custom"), custom.mimeType)
+            assertEquals(MimeType("custom"), custom.mimeType)
             assertEquals("custom metadata", custom.content.readText())
         }
         decoded.entries[1].let { reserved ->
-            assertEquals(ReservedMimeType(120), reserved.mimeType)
+            assertEquals(MimeType(120), reserved.mimeType)
             assertEquals("reserved metadata", reserved.content.readText())
         }
         decoded.entries[2].let { known ->
-            assertEquals(WellKnownMimeType.ApplicationAvro, known.mimeType)
+            assertEquals(MimeType.WellKnown.ApplicationAvro, known.mimeType)
             assertEquals("avro metadata", known.content.readText())
         }
     }
@@ -74,20 +74,20 @@ class CompositeMetadataTest : TestWithLeakCheck {
     @Test
     fun testContains() {
         val cm = buildCompositeMetadata {
-            add(CustomMimeType("custom"), packet("custom metadata"))
-            add(ReservedMimeType(120), packet("reserved metadata"))
-            add(WellKnownMimeType.ApplicationAvro, packet("avro metadata"))
+            add(MimeType("custom"), packet("custom metadata"))
+            add(MimeType(120), packet("reserved metadata"))
+            add(MimeType.WellKnown.ApplicationAvro, packet("avro metadata"))
         }
         val decoded = cm.readLoop(CompositeMetadata)
 
-        assertTrue(CustomMimeType("custom") in decoded)
-        assertTrue(CustomMimeType("custom2") !in decoded)
+        assertTrue(MimeType("custom") in decoded)
+        assertTrue(MimeType("custom2") !in decoded)
 
-        assertTrue(ReservedMimeType(120) in decoded)
-        assertTrue(ReservedMimeType(110) !in decoded)
+        assertTrue(MimeType(120) in decoded)
+        assertTrue(MimeType(110) !in decoded)
 
-        assertTrue(WellKnownMimeType.ApplicationAvro in decoded)
-        assertTrue(WellKnownMimeType.MessageRSocketRouting !in decoded)
+        assertTrue(MimeType.WellKnown.ApplicationAvro in decoded)
+        assertTrue(MimeType.WellKnown.MessageRSocketRouting !in decoded)
 
         decoded.entries.forEach { it.content.close() }
     }
@@ -95,72 +95,72 @@ class CompositeMetadataTest : TestWithLeakCheck {
     @Test
     fun testGet() {
         val cm = buildCompositeMetadata {
-            add(CustomMimeType("custom"), packet("custom metadata"))
-            add(ReservedMimeType(120), packet("reserved metadata"))
-            add(WellKnownMimeType.ApplicationAvro, packet("avro metadata"))
+            add(MimeType("custom"), packet("custom metadata"))
+            add(MimeType(120), packet("reserved metadata"))
+            add(MimeType.WellKnown.ApplicationAvro, packet("avro metadata"))
         }
         val decoded = cm.readLoop(CompositeMetadata)
 
-        assertEquals("custom metadata", decoded[CustomMimeType("custom")].readText())
-        assertEquals("reserved metadata", decoded[ReservedMimeType(120)].readText())
-        assertEquals("avro metadata", decoded[WellKnownMimeType.ApplicationAvro].readText())
+        assertEquals("custom metadata", decoded[MimeType("custom")].readText())
+        assertEquals("reserved metadata", decoded[MimeType(120)].readText())
+        assertEquals("avro metadata", decoded[MimeType.WellKnown.ApplicationAvro].readText())
     }
 
     @Test
     fun testGetOrNull() {
         val cm = buildCompositeMetadata {
-            add(CustomMimeType("custom"), packet("custom metadata"))
-            add(ReservedMimeType(120), packet("reserved metadata"))
-            add(WellKnownMimeType.ApplicationAvro, packet("avro metadata"))
+            add(MimeType("custom"), packet("custom metadata"))
+            add(MimeType(120), packet("reserved metadata"))
+            add(MimeType.WellKnown.ApplicationAvro, packet("avro metadata"))
         }
         val decoded = cm.readLoop(CompositeMetadata)
 
-        assertNull(decoded.getOrNull(ReservedMimeType(121)))
-        assertNull(decoded.getOrNull(CustomMimeType("custom2")))
-        assertNull(decoded.getOrNull(WellKnownMimeType.MessageRSocketRouting))
+        assertNull(decoded.getOrNull(MimeType(121)))
+        assertNull(decoded.getOrNull(MimeType("custom2")))
+        assertNull(decoded.getOrNull(MimeType.WellKnown.MessageRSocketRouting))
 
-        assertEquals("custom metadata", decoded.getOrNull(CustomMimeType("custom"))?.readText())
-        assertEquals("reserved metadata", decoded.getOrNull(ReservedMimeType(120))?.readText())
-        assertEquals("avro metadata", decoded.getOrNull(WellKnownMimeType.ApplicationAvro)?.readText())
+        assertEquals("custom metadata", decoded.getOrNull(MimeType("custom"))?.readText())
+        assertEquals("reserved metadata", decoded.getOrNull(MimeType(120))?.readText())
+        assertEquals("avro metadata", decoded.getOrNull(MimeType.WellKnown.ApplicationAvro)?.readText())
     }
 
     @Test
     fun testList() {
         val cm = buildCompositeMetadata {
-            add(CustomMimeType("custom"), packet("custom metadata - 1"))
-            add(ReservedMimeType(120), packet("reserved metadata - 1"))
-            add(ReservedMimeType(120), packet("reserved metadata - 2"))
-            add(WellKnownMimeType.MessageRSocketRouting, packet("routing metadata"))
-            add(CustomMimeType("custom"), packet("custom metadata - 2"))
+            add(MimeType("custom"), packet("custom metadata - 1"))
+            add(MimeType(120), packet("reserved metadata - 1"))
+            add(MimeType(120), packet("reserved metadata - 2"))
+            add(MimeType.WellKnown.MessageRSocketRouting, packet("routing metadata"))
+            add(MimeType("custom"), packet("custom metadata - 2"))
         }
         val decoded = cm.readLoop(CompositeMetadata)
 
         assertEquals(5, decoded.entries.size)
 
-        decoded.list(WellKnownMimeType.ApplicationAvro).let {
+        decoded.list(MimeType.WellKnown.ApplicationAvro).let {
             assertEquals(0, it.size)
         }
 
-        decoded.list(CustomMimeType("custom2")).let {
+        decoded.list(MimeType("custom2")).let {
             assertEquals(0, it.size)
         }
 
-        decoded.list(ReservedMimeType(110)).let {
+        decoded.list(MimeType(110)).let {
             assertEquals(0, it.size)
         }
 
-        decoded.list(WellKnownMimeType.MessageRSocketRouting).let {
+        decoded.list(MimeType.WellKnown.MessageRSocketRouting).let {
             assertEquals(1, it.size)
             assertEquals("routing metadata", it[0].readText())
         }
 
-        decoded.list(CustomMimeType("custom")).let {
+        decoded.list(MimeType("custom")).let {
             assertEquals(2, it.size)
             assertEquals("custom metadata - 1", it[0].readText())
             assertEquals("custom metadata - 2", it[1].readText())
         }
 
-        decoded.list(ReservedMimeType(120)).let {
+        decoded.list(MimeType(120)).let {
             assertEquals(2, it.size)
             assertEquals("reserved metadata - 1", it[0].readText())
             assertEquals("reserved metadata - 2", it[1].readText())
@@ -172,7 +172,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
         val packet = packet("string")
         assertFails {
             buildCompositeMetadata {
-                add(WellKnownMimeType.ApplicationAvro, packet)
+                add(MimeType.WellKnown.ApplicationAvro, packet)
                 error("")
             }
         }
@@ -185,12 +185,12 @@ class CompositeMetadataTest : TestWithLeakCheck {
             add(RoutingMetadata("tag1", "tag2"))
             add(
                 PerStreamAcceptableDataMimeTypesMetadata(
-                    WellKnownMimeType.ApplicationAvro,
-                    CustomMimeType("application/custom"),
-                    ReservedMimeType(120)
+                    MimeType.WellKnown.ApplicationAvro,
+                    MimeType("application/custom"),
+                    MimeType(120)
                 )
             )
-            add(WellKnownMimeType.ApplicationJson, packet("{}"))
+            add(MimeType.WellKnown.ApplicationJson, packet("{}"))
         }
 
         val decoded = cm.readLoop(CompositeMetadata)
@@ -199,19 +199,19 @@ class CompositeMetadataTest : TestWithLeakCheck {
         assertEquals(listOf("tag1", "tag2"), decoded[RoutingMetadata].tags)
         assertEquals(
             listOf(
-                WellKnownMimeType.ApplicationAvro,
-                CustomMimeType("application/custom"),
-                ReservedMimeType(120)
+                MimeType.WellKnown.ApplicationAvro,
+                MimeType("application/custom"),
+                MimeType(120)
             ),
             decoded[PerStreamAcceptableDataMimeTypesMetadata].types
         )
-        assertEquals("{}", decoded[WellKnownMimeType.ApplicationJson].readText())
+        assertEquals("{}", decoded[MimeType.WellKnown.ApplicationJson].readText())
     }
 
     @Test
     fun failOnNonAscii() {
         assertFailsWith(IllegalArgumentException::class) {
-            CustomMimeType("1234567#4? 𠜎𠜱𠝹𠱓𠱸𠲖𠳏𠳕𠴕𠵼𠵿𠸎")
+            MimeType("1234567#4? 𠜎𠜱𠝹𠱓𠱸𠲖𠳏𠳕𠴕𠵼𠵿𠸎")
         }
     }
 

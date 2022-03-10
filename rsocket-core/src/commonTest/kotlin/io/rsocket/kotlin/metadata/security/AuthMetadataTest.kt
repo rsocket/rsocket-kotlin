@@ -69,31 +69,31 @@ class AuthMetadataTest : TestWithLeakCheck {
 
     @Test
     fun encodeCustomAuth() {
-        val metadata = RawAuthMetadata(CustomAuthType("custom/auth"), packet("hello world auth data"))
+        val metadata = RawAuthMetadata(AuthType("custom/auth"), packet("hello world auth data"))
         val decoded = metadata.readLoop(RawAuthMetadata)
 
-        assertEquals(CustomAuthType("custom/auth"), decoded.type)
+        assertEquals(AuthType("custom/auth"), decoded.type)
         assertEquals("hello world auth data", decoded.content.readText())
     }
 
     @Test
     fun failOnNonAscii() {
         assertFailsWith(IllegalArgumentException::class) {
-            CustomAuthType("1234567#4? 𠜎𠜱𠝹𠱓𠱸𠲖𠳏𠳕𠴕𠵼𠵿𠸎")
+            AuthType("1234567#4? 𠜎𠜱𠝹𠱓𠱸𠲖𠳏𠳕𠴕𠵼𠵿𠸎")
         }
     }
 
     @Test
     fun failOnLongMimeType() {
         assertFailsWith(IllegalArgumentException::class) {
-            CustomAuthType("1234567890".repeat(13))
+            AuthType("1234567890".repeat(13))
         }
     }
 
     @Test
     fun failOnEmptyMimeType() {
         assertFailsWith(IllegalArgumentException::class) {
-            CustomAuthType("")
+            AuthType("")
         }
     }
 

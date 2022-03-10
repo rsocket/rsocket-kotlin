@@ -25,7 +25,7 @@ import io.rsocket.kotlin.*
 public class BearerAuthMetadata(
     public val token: String,
 ) : AuthMetadata {
-    override val type: AuthType get() = WellKnowAuthType.Bearer
+    override val type: AuthType get() = AuthType.WellKnown.Bearer
     override fun BytePacketBuilder.writeContent() {
         writeText(token)
     }
@@ -34,7 +34,7 @@ public class BearerAuthMetadata(
 
     public companion object Reader : AuthMetadataReader<BearerAuthMetadata> {
         override fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): BearerAuthMetadata {
-            require(type == WellKnowAuthType.Bearer) { "Metadata auth type should be 'bearer'" }
+            require(type == AuthType.WellKnown.Bearer) { "Metadata auth type should be 'bearer'" }
             val token = readText()
             return BearerAuthMetadata(token)
         }

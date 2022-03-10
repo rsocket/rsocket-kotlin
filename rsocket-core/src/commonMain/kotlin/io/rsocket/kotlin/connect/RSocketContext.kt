@@ -4,7 +4,6 @@ package io.rsocket.kotlin.connect
 
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.configuration.*
-import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.*
@@ -214,8 +213,8 @@ internal class RSocketServerConnectContextImpl(
     deferredRequester: Deferred<RSocket>,
     keepAliveInterval: Duration,
     keepAliveMaxLifetime: Duration,
-    metadataMimeType: MimeTypeWithName,
-    dataMimeType: MimeTypeWithName,
+    metadataMimeType: MimeType.WithName,
+    dataMimeType: MimeType.WithName,
     setupPayload: Payload,
 ) : RSocketServerConnectContext, RSocketConnectContextImpl(session, deferredRequester) {
     override val isServer: Boolean get() = true

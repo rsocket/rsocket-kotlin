@@ -20,7 +20,6 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
 import kotlin.experimental.*
 
@@ -70,7 +69,7 @@ public class ZipkinTracingMetadata internal constructor(
     override fun close(): Unit = Unit
 
     public companion object Reader : MetadataReader<ZipkinTracingMetadata> {
-        override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketTracingZipkin
+        override val mimeType: MimeType get() = MimeType.WellKnown.MessageRSocketTracingZipkin
         override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): ZipkinTracingMetadata {
             val flags = readByte()
 

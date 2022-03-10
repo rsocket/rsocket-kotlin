@@ -20,8 +20,6 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.metadata.*
 
 @ExperimentalMetadataApi
@@ -29,10 +27,10 @@ public sealed interface AuthMetadata : Metadata {
     public val type: AuthType
     public fun BytePacketBuilder.writeContent()
 
-    override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketAuthentication
+    override val mimeType: MimeType get() = MimeType.WellKnown.MessageRSocketAuthentication
 
     override fun BytePacketBuilder.writeSelf() {
-        writeAuthType(type)
+        writeCompactType(type)
         writeContent()
     }
 }
@@ -41,9 +39,9 @@ public sealed interface AuthMetadata : Metadata {
 public sealed interface AuthMetadataReader<AM : AuthMetadata> : MetadataReader<AM> {
     public fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): AM
 
-    override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketAuthentication
+    override val mimeType: MimeType get() = MimeType.WellKnown.MessageRSocketAuthentication
     override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): AM {
-        val type = readAuthType()
+        val type = readCompactType(AuthType)
         return readContent(type, pool)
     }
 }

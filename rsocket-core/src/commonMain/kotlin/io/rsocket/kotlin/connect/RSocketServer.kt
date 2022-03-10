@@ -19,7 +19,6 @@
 package io.rsocket.kotlin.connect
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.logging.*
@@ -131,10 +130,8 @@ private class RSocketServerImpl(
                                     deferred,
                                     keepAliveInterval = setupFrame.keepAliveIntervalMillis.milliseconds,
                                     keepAliveMaxLifetime = setupFrame.keepAliveMaxLifetimeMillis.milliseconds,
-                                    metadataMimeType = WellKnownMimeType(setupFrame.metadataMimeTypeText)
-                                        ?: CustomMimeType(setupFrame.metadataMimeTypeText),
-                                    dataMimeType = WellKnownMimeType(setupFrame.dataMimeTypeText)
-                                        ?: CustomMimeType(setupFrame.dataMimeTypeText),
+                                    metadataMimeType = MimeType(setupFrame.metadataMimeTypeText),
+                                    dataMimeType = MimeType(setupFrame.dataMimeTypeText),
                                     setupPayload = setupFrame.payload,
                                 )
                                 connectContext.configure(beforeConfigurators, afterConfigurators, peerConfigurator)

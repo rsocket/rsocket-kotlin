@@ -20,7 +20,6 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
 
 @ExperimentalMetadataApi
 public fun RoutingMetadata(vararg tags: String): RoutingMetadata = RoutingMetadata(tags.toList())
@@ -46,7 +45,7 @@ public class RoutingMetadata(public val tags: List<String>) : Metadata {
     override fun close(): Unit = Unit
 
     public companion object Reader : MetadataReader<RoutingMetadata> {
-        override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketRouting
+        override val mimeType: MimeType get() = MimeType.WellKnown.MessageRSocketRouting
         override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): RoutingMetadata {
             val list = mutableListOf<String>()
             while (isNotEmpty) {

@@ -20,7 +20,6 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
 
 @ExperimentalMetadataApi
@@ -38,7 +37,7 @@ public sealed interface CompositeMetadata : Metadata {
 
     override fun BytePacketBuilder.writeSelf() {
         entries.forEach {
-            writeMimeType(it.mimeType)
+            writeCompactType(it.mimeType)
             writeLength(it.content.remaining.toInt()) //write metadata length
             writePacket(it.content) //write metadata content
         }
@@ -53,11 +52,11 @@ public sealed interface CompositeMetadata : Metadata {
     }
 
     public companion object Reader : MetadataReader<CompositeMetadata> {
-        override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketCompositeMetadata
+        override val mimeType: MimeType get() = MimeType.WellKnown.MessageRSocketCompositeMetadata
         override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): CompositeMetadata {
             val list = mutableListOf<Entry>()
             while (isNotEmpty) {
-                val type = readMimeType()
+                val type = readCompactType(MimeType)
                 val length = readLength()
                 val packet = readPacket(pool, length)
                 list.add(Entry(type, packet))
