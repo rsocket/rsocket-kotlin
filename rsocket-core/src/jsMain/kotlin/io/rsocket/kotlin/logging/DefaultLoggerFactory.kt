@@ -16,13 +16,11 @@
 
 package io.rsocket.kotlin.logging
 
-import io.rsocket.kotlin.*
-
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 internal actual val DefaultLoggerFactory: LoggerFactory
     get() = ConsoleLogger
 
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public class ConsoleLogger(
     override val tag: String,
     private val minLevel: LoggingLevel = LoggingLevel.INFO,

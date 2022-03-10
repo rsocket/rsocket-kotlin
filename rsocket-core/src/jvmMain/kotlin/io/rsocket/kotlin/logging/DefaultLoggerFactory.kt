@@ -16,16 +16,15 @@
 
 package io.rsocket.kotlin.logging
 
-import io.rsocket.kotlin.*
 import java.util.logging.*
 import java.util.logging.Level as JLevel
 import java.util.logging.Logger as JLogger
 
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 internal actual val DefaultLoggerFactory: LoggerFactory
     get() = JavaLogger
 
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public class JavaLogger(override val tag: String) : Logger {
     private val jLogger = JLogger.getLogger(tag)
 

@@ -14,5 +14,5 @@ fun LanguageSettingsBuilder.optInForTest() {
     optIn("io.rsocket.kotlin.TransportApi")
     optIn("io.rsocket.kotlin.ExperimentalMetadataApi")
     optIn("io.rsocket.kotlin.ExperimentalStreamsApi")
-    optIn("io.rsocket.kotlin.RSocketLoggingApi")
+    optIn("io.rsocket.kotlin.logging.ExperimentalLoggingApi")
 }

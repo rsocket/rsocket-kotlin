@@ -16,9 +16,7 @@
 
 package io.rsocket.kotlin.logging
 
-import io.rsocket.kotlin.*
-
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public class PrintLogger(
     override val tag: String,
     private val minLevel: LoggingLevel = LoggingLevel.INFO,

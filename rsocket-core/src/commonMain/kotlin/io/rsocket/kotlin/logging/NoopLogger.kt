@@ -16,12 +16,10 @@
 
 package io.rsocket.kotlin.logging
 
-import io.rsocket.kotlin.*
-
 /**
  * Logger implementation, that never print
  */
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public object NoopLogger : Logger, LoggerFactory {
     override val tag: String get() = "noop"
     override fun isLoggable(level: LoggingLevel): Boolean = false

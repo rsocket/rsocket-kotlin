@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-@file:OptIn(TransportApi::class, RSocketLoggingApi::class)
+@file:OptIn(TransportApi::class, ExperimentalLoggingApi::class)
 
-package io.rsocket.kotlin.internal
+package io.rsocket.kotlin.connect
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*

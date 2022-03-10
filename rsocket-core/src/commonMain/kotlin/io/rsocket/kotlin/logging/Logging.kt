@@ -16,27 +16,25 @@
 
 package io.rsocket.kotlin.logging
 
-import io.rsocket.kotlin.*
-
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public enum class LoggingLevel { TRACE, DEBUG, INFO, WARN, ERROR }
 
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public fun interface LoggerFactory {
     public fun logger(tag: String): Logger
 }
 
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 internal expect val DefaultLoggerFactory: LoggerFactory
 
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public interface Logger {
     public val tag: String
     public fun isLoggable(level: LoggingLevel): Boolean
     public fun rawLog(level: LoggingLevel, throwable: Throwable?, message: Any?)
 }
 
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public inline fun Logger.log(level: LoggingLevel, throwable: Throwable? = null, message: () -> Any?) {
     if (!isLoggable(level)) return
 
@@ -48,27 +46,27 @@ public inline fun Logger.log(level: LoggingLevel, throwable: Throwable? = null, 
     rawLog(level, throwable, msg)
 }
 
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public inline fun Logger.trace(throwable: Throwable? = null, message: () -> Any?) {
     log(LoggingLevel.TRACE, throwable, message)
 }
 
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public inline fun Logger.debug(throwable: Throwable? = null, message: () -> Any?) {
     log(LoggingLevel.DEBUG, throwable, message)
 }
 
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public inline fun Logger.info(throwable: Throwable? = null, message: () -> Any?) {
     log(LoggingLevel.INFO, throwable, message)
 }
 
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public inline fun Logger.warn(throwable: Throwable? = null, message: () -> Any?) {
     log(LoggingLevel.WARN, throwable, message)
 }
 
-@RSocketLoggingApi
+@ExperimentalLoggingApi
 public inline fun Logger.error(throwable: Throwable? = null, message: () -> Any?) {
     log(LoggingLevel.ERROR, throwable, message)
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(TransportApi::class, RSocketLoggingApi::class)
+@file:OptIn(TransportApi::class, ExperimentalLoggingApi::class)
 
 package io.rsocket.kotlin.connect
 

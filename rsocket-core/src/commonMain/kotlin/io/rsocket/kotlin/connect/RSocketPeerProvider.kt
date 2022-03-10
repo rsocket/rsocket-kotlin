@@ -1,16 +1,15 @@
 package io.rsocket.kotlin.connect
 
-import io.rsocket.kotlin.*
 import io.rsocket.kotlin.logging.*
 
 public sealed interface RSocketPeerProvider {
-    @RSocketLoggingApi
+    @ExperimentalLoggingApi
     public val loggerFactory: LoggerFactory
 }
 
 //TODO: naming
 public sealed interface RSocketPeerProviderBuilder {
-    @RSocketLoggingApi
+    @ExperimentalLoggingApi
     public fun loggerFactory(factory: LoggerFactory)
 
     public fun beforePeerConfiguration(configurator: RSocketConnectConfigurator)
@@ -23,7 +22,7 @@ public sealed interface RSocketPeerProviderBuilder {
 }
 
 internal abstract class RSocketPeerBuilderImpl : RSocketPeerProviderBuilder {
-    @RSocketLoggingApi
+    @ExperimentalLoggingApi
     protected var loggerFactory: LoggerFactory = DefaultLoggerFactory
         private set
 
@@ -31,7 +30,7 @@ internal abstract class RSocketPeerBuilderImpl : RSocketPeerProviderBuilder {
     protected val afterConfigurators = mutableListOf<RSocketConnectConfigurator>()
     protected var defaultConfigurator: RSocketConnectConfigurator? = null
 
-    @RSocketLoggingApi
+    @ExperimentalLoggingApi
     final override fun loggerFactory(factory: LoggerFactory) {
         loggerFactory = factory
     }
