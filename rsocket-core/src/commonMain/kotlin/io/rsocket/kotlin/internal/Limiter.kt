@@ -32,27 +32,62 @@ internal suspend inline fun Flow<Payload>.collectLimiting(limiter: Limiter, cros
     }
 }
 
-//TODO revisit 2 atomics and sync object
+/**
+ * Maintains the amount of requests which the client is ready to consume and
+ * prevents sending further updates by suspending the sending coroutine
+ * if this amount reaches 0.
+ *
+ * ### Operation
+ *
+ * Each [useRequest] call decrements the maintained requests amount.
+ * Calling coroutine is suspended when this amount reaches 0.
+ * The coroutine is resumed when [updateRequests] is called.
+ *
+ * ### Unbounded mode
+ *
+ * Limiter enters an unbounded mode when:
+ * * [Limiter] is created passing `Int.MAX_VALUE` as `initial`
+ * * client sends a `RequestN` frame with `Int.MAX_VALUE`
+ * * Internal Long counter overflows
+ *
+ * In unbounded mode Limiter will assume that the client
+ * is able to process requests without limitations, all further
+ * [updateRequests] will be NOP and [useRequest] will never suspend.
+ */
 internal class Limiter(initial: Int) : SynchronizedObject() {
-    private val requests = atomic(initial)
-    private val awaiter = atomic<CancellableContinuation<Unit>?>(null)
+    private val requests: AtomicLong = atomic(initial.toLong())
+    private val unbounded: AtomicBoolean = atomic(initial == Int.MAX_VALUE)
+    private var awaiter: CancellableContinuation<Unit>? = null
 
     fun updateRequests(n: Int) {
-        if (n <= 0) return
+        if (n <= 0 || unbounded.value) return
         synchronized(this) {
-            requests += n
-            awaiter.getAndSet(null)?.takeIf(CancellableContinuation<Unit>::isActive)?.resume(Unit)
+            val updatedRequests = requests.value + n.toLong()
+            if (updatedRequests < 0) {
+                unbounded.value = true
+                requests.value = Long.MAX_VALUE
+            } else {
+                requests.value = updatedRequests
+            }
+
+            if (awaiter?.isActive == true) {
+                awaiter?.resume(Unit)
+                awaiter = null
+            }
         }
     }
 
     suspend fun useRequest() {
-        if (requests.getAndDecrement() > 0) {
+        if (unbounded.value || requests.decrementAndGet() >= 0) {
             currentCoroutineContext().ensureActive()
         } else {
-            suspendCancellableCoroutine<Unit> {
+            suspendCancellableCoroutine<Unit> { continuation ->
                 synchronized(this) {
-                    awaiter.value = it
-                    if (requests.value >= 0 && it.isActive) it.resume(Unit)
+                    if (requests.value >= 0 && continuation.isActive) {
+                        continuation.resume(Unit)
+                    } else {
+                        this.awaiter = continuation
+                    }
                 }
             }
         }

@@ -23,6 +23,7 @@ import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.local.*
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
@@ -190,6 +191,52 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             channel.receive().close()
         }
         assertTrue(channel.receiveCatching().isClosed)
+    }
+
+    @Test
+    fun testStreamInitialUnbounded() = test {
+        val requester = start(RSocketRequestHandler {
+            requestStream {
+                (0..9).asFlow().map {
+                    payload(it.toString())
+                }
+            }
+        })
+        requester.requestStream(payload("HELLO"))
+                .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
+                .test {
+                    repeat(10) {
+                        awaitItem().close()
+                    }
+                    awaitComplete()
+                }
+    }
+
+    @Test
+    fun testStreamRequestNUnbounded() = test {
+        class UnboundedAfterNStrategy(private val initial: Int) : RequestStrategy {
+            override fun provide(): RequestStrategy.Element = Element()
+            inner class Element : RequestStrategy.Element {
+                private val requested = atomic(initial)
+                override suspend fun firstRequest(): Int = initial
+                override suspend fun nextRequest(): Int {
+                    val requestUnbounded = requested.getAndDecrement() == 0
+                    return if (requestUnbounded) Int.MAX_VALUE else 0
+                }
+            }
+        }
+
+        start(RSocketRequestHandler {
+            requestStream {
+                (0..9).asFlow().map { payload(it.toString()) }
+            }
+        })
+                .requestStream(payload("HELLO"))
+                .flowOn(UnboundedAfterNStrategy(initial = 5))
+                .test {
+                    repeat(10) { awaitItem().close() }
+                    awaitComplete()
+                }
     }
 
     @Test
