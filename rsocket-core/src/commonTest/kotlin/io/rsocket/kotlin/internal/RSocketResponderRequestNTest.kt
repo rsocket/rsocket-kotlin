@@ -71,7 +71,7 @@ class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
         )
 
     @Test
-    fun testStreamInitialEnoughToConsume() = test(timeout = 10.seconds) {
+    fun testStreamInitialEnoughToConsume() = test {
         start(
                 RSocketRequestHandler {
                     requestStream { payload ->
@@ -93,7 +93,7 @@ class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
     }
 
     @Test
-    fun testStreamSuspendWhenNoRequestsLeft() = test(timeout = 10.seconds) {
+    fun testStreamSuspendWhenNoRequestsLeft() = test {
         var lastSent = -1
         start(
                 RSocketRequestHandler {
@@ -118,7 +118,7 @@ class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
     }
 
     @Test
-    fun testStreamRequestNFrameResumesOperation() = test(timeout = 10.seconds) {
+    fun testStreamRequestNFrameResumesOperation() = test {
         start(
                 RSocketRequestHandler {
                     requestStream { payload ->
@@ -145,28 +145,7 @@ class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
     }
 
     @Test
-    fun testStreamInitialUnbounded() = test(timeout = 10.seconds) {
-        start(
-                RSocketRequestHandler {
-                    requestStream { payload ->
-                        payload.close()
-                        (0..19).asFlow().map { buildPayload { data("$it") } }
-                    }
-                }
-        )
-        connection.test {
-            connection.sendToReceiver(setupFrame)
-
-            connection.sendToReceiver(RequestStreamFrame(initialRequestN = Int.MAX_VALUE, streamId = 1, payload = payload("request")))
-
-            awaitAndReleasePayloadFrames(amount = 20)
-            awaitCompleteFrame()
-            expectNoEventsIn(200)
-        }
-    }
-
-    @Test
-    fun testStreamRequestNUnbounded() = test(timeout = 10.seconds) {
+    fun testStreamRequestNEnoughToComplete() = test {
         val total = 20
         start(
                 RSocketRequestHandler {
@@ -192,7 +171,7 @@ class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
     }
 
     @Test
-    fun testStreamRequestNUnboundedWithOverflow() = test(timeout = 10.seconds) {
+    fun testStreamRequestNAttemptedIntOverflow() = test {
         val latch = Channel<Unit>(1)
         start(
                 RSocketRequestHandler {
@@ -220,7 +199,7 @@ class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
 
 
     @Test
-    fun testStreamRequestNUnboundedSummingUpToOverflow() = test(timeout = 10.seconds) {
+    fun testStreamRequestNSummingUpToOverflow() = test {
         val latch = Channel<Unit>(1)
         start(
                 RSocketRequestHandler {

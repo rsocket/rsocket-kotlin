@@ -43,28 +43,16 @@ internal suspend inline fun Flow<Payload>.collectLimiting(limiter: Limiter, cros
  * Calling coroutine is suspended when this amount reaches 0.
  * The coroutine is resumed when [updateRequests] is called.
  *
- * ### Unbounded mode
- *
- * Limiter enters an unbounded mode when:
- * * [Limiter] is created passing `Int.MAX_VALUE` as `initial`
- * * client sends a `RequestN` frame with `Int.MAX_VALUE`
- * * Internal Long counter overflows
- *
- * In unbounded mode Limiter will assume that the client
- * is able to process requests without limitations, all further
- * [updateRequests] will be NOP and [useRequest] will never suspend.
  */
 internal class Limiter(initial: Int) : SynchronizedObject() {
     private val requests: AtomicLong = atomic(initial.toLong())
-    private val unbounded: AtomicBoolean = atomic(initial == Int.MAX_VALUE)
     private var awaiter: CancellableContinuation<Unit>? = null
 
     fun updateRequests(n: Int) {
-        if (n <= 0 || unbounded.value) return
+        if (n <= 0) return
         synchronized(this) {
             val updatedRequests = requests.value + n.toLong()
             if (updatedRequests < 0) {
-                unbounded.value = true
                 requests.value = Long.MAX_VALUE
             } else {
                 requests.value = updatedRequests
@@ -78,7 +66,7 @@ internal class Limiter(initial: Int) : SynchronizedObject() {
     }
 
     suspend fun useRequest() {
-        if (unbounded.value || requests.decrementAndGet() >= 0) {
+        if (requests.decrementAndGet() >= 0) {
             currentCoroutineContext().ensureActive()
         } else {
             suspendCancellableCoroutine<Unit> { continuation ->
