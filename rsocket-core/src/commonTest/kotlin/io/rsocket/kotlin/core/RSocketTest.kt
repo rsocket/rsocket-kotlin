@@ -194,7 +194,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun testStreamInitialUnbounded() = test {
+    fun testStreamInitialMaxValue() = test {
         val requester = start(RSocketRequestHandler {
             requestStream {
                 (0..9).asFlow().map {
@@ -213,26 +213,14 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun testStreamRequestNUnbounded() = test {
-        class UnboundedAfterNStrategy(private val initial: Int) : RequestStrategy {
-            override fun provide(): RequestStrategy.Element = Element()
-            inner class Element : RequestStrategy.Element {
-                private val requested = atomic(initial)
-                override suspend fun firstRequest(): Int = initial
-                override suspend fun nextRequest(): Int {
-                    val requestUnbounded = requested.getAndDecrement() == 0
-                    return if (requestUnbounded) Int.MAX_VALUE else 0
-                }
-            }
-        }
-
+    fun testStreamRequestN() = test {
         start(RSocketRequestHandler {
             requestStream {
                 (0..9).asFlow().map { payload(it.toString()) }
             }
         })
                 .requestStream(payload("HELLO"))
-                .flowOn(UnboundedAfterNStrategy(initial = 5))
+                .flowOn(PrefetchStrategy(5, 3))
                 .test {
                     repeat(10) { awaitItem().close() }
                     awaitComplete()
