@@ -32,27 +32,50 @@ internal suspend inline fun Flow<Payload>.collectLimiting(limiter: Limiter, cros
     }
 }
 
-//TODO revisit 2 atomics and sync object
+/**
+ * Maintains the amount of requests which the client is ready to consume and
+ * prevents sending further updates by suspending the sending coroutine
+ * if this amount reaches 0.
+ *
+ * ### Operation
+ *
+ * Each [useRequest] call decrements the maintained requests amount.
+ * Calling coroutine is suspended when this amount reaches 0.
+ * The coroutine is resumed when [updateRequests] is called.
+ *
+ */
 internal class Limiter(initial: Int) : SynchronizedObject() {
-    private val requests = atomic(initial)
-    private val awaiter = atomic<CancellableContinuation<Unit>?>(null)
+    private val requests: AtomicLong = atomic(initial.toLong())
+    private var awaiter: CancellableContinuation<Unit>? = null
 
     fun updateRequests(n: Int) {
         if (n <= 0) return
         synchronized(this) {
-            requests += n
-            awaiter.getAndSet(null)?.takeIf(CancellableContinuation<Unit>::isActive)?.resume(Unit)
+            val updatedRequests = requests.value + n.toLong()
+            if (updatedRequests < 0) {
+                requests.value = Long.MAX_VALUE
+            } else {
+                requests.value = updatedRequests
+            }
+
+            if (awaiter?.isActive == true) {
+                awaiter?.resume(Unit)
+                awaiter = null
+            }
         }
     }
 
     suspend fun useRequest() {
-        if (requests.getAndDecrement() > 0) {
+        if (requests.decrementAndGet() >= 0) {
             currentCoroutineContext().ensureActive()
         } else {
-            suspendCancellableCoroutine<Unit> {
+            suspendCancellableCoroutine<Unit> { continuation ->
                 synchronized(this) {
-                    awaiter.value = it
-                    if (requests.value >= 0 && it.isActive) it.resume(Unit)
+                    if (requests.value >= 0 && continuation.isActive) {
+                        continuation.resume(Unit)
+                    } else {
+                        this.awaiter = continuation
+                    }
                 }
             }
         }

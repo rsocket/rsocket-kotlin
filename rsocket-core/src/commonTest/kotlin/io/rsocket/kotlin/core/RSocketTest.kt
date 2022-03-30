@@ -23,6 +23,7 @@ import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.local.*
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
@@ -190,6 +191,40 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             channel.receive().close()
         }
         assertTrue(channel.receiveCatching().isClosed)
+    }
+
+    @Test
+    fun testStreamInitialMaxValue() = test {
+        val requester = start(RSocketRequestHandler {
+            requestStream {
+                (0..9).asFlow().map {
+                    payload(it.toString())
+                }
+            }
+        })
+        requester.requestStream(payload("HELLO"))
+                .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
+                .test {
+                    repeat(10) {
+                        awaitItem().close()
+                    }
+                    awaitComplete()
+                }
+    }
+
+    @Test
+    fun testStreamRequestN() = test {
+        start(RSocketRequestHandler {
+            requestStream {
+                (0..9).asFlow().map { payload(it.toString()) }
+            }
+        })
+                .requestStream(payload("HELLO"))
+                .flowOn(PrefetchStrategy(5, 3))
+                .test {
+                    repeat(10) { awaitItem().close() }
+                    awaitComplete()
+                }
     }
 
     @Test
