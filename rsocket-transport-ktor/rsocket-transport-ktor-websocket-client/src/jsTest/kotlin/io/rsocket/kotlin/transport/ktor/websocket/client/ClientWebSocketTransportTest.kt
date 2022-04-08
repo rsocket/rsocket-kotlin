@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport.ktor.websocket
+package io.rsocket.kotlin.transport.ktor.websocket.client
 
 import io.ktor.client.*
 import io.ktor.client.engine.js.*
 import io.ktor.client.plugins.websocket.*
-import io.rsocket.kotlin.transport.ktor.websocket.client.*
 import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
 

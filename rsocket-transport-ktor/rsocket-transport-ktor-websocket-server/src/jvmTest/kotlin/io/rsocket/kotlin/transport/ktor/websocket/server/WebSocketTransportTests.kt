@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport.ktor.websocket
+package io.rsocket.kotlin.transport.ktor.websocket.server
 
 import io.ktor.client.engine.okhttp.*
 import io.ktor.server.jetty.*
 import io.ktor.server.netty.*
 import io.ktor.client.engine.cio.CIO as ClientCIO
 import io.ktor.server.cio.CIO as ServerCIO
-
-//cio client and cio server - default for tests
-
-class CIOWebSocketTransportTest : WebSocketTransportTest(ClientCIO, ServerCIO)
 
 class OkHttpClientWebSocketTransportTest : WebSocketTransportTest(OkHttp, ServerCIO)
 

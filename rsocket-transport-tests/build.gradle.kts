@@ -79,7 +79,7 @@ val startTransportTestServer by tasks.registering(StartTransportTestServer::clas
 }
 
 rootProject.allprojects {
-    if (name == "rsocket-transport-ktor-websocket") {
+    if (name == "rsocket-transport-ktor-websocket-client") {
         val names = setOf(
             "jsLegacyNodeTest",
             "jsIrNodeTest",

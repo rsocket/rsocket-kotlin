@@ -33,7 +33,7 @@ import kotlin.time.Duration.Companion.seconds
 abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     override val testTimeout: Duration = 3.minutes
 
-    protected val testJob = Job()
+    private val testJob = SupervisorJob()
     protected val testContext = testJob + TestExceptionHandler
     protected val testScope = CoroutineScope(testContext)
 

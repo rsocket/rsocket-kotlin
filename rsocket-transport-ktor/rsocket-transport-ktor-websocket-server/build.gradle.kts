@@ -19,7 +19,7 @@ plugins {
 }
 
 kotlin {
-    configureJvm {
+    configureCommon {
         main {
             dependencies {
                 api(projects.rsocketCore)
@@ -28,7 +28,25 @@ kotlin {
                 api(libs.ktor.server.websockets)
             }
         }
+        test {
+            dependencies {
+                implementation(projects.rsocketTransportKtor.rsocketTransportKtorWebsocketClient)
+                implementation(libs.ktor.client.cio)
+                implementation(libs.ktor.server.cio)
+            }
+        }
     }
+    configureJvm {
+        test {
+            dependencies {
+                implementation(libs.ktor.client.okhttp)
+
+                implementation(libs.ktor.server.netty)
+                implementation(libs.ktor.server.jetty)
+            }
+        }
+    }
+    configureNative(NativeTargets.Nix)
 }
 
 description = "Ktor WebSocket Server RSocket transport implementation"

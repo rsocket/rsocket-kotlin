@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport.ktor.websocket
+package io.rsocket.kotlin.transport.ktor.websocket.server
 
 import io.ktor.client.*
 import io.ktor.client.engine.*
@@ -22,7 +22,6 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.routing.*
 import io.rsocket.kotlin.transport.ktor.websocket.client.*
-import io.rsocket.kotlin.transport.ktor.websocket.server.*
 import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
 import io.ktor.client.plugins.websocket.WebSockets as ClientWebSockets
@@ -42,7 +41,7 @@ abstract class WebSocketTransportTest(
     }
 
     override suspend fun before() {
-        (GlobalScope + testJob).embeddedServer(serverEngine, port) {
+        testScope.embeddedServer(serverEngine, port) {
             install(ServerWebSockets)
             install(ServerRSocketSupport) { server = SERVER }
             install(Routing) { rSocket(acceptor = ACCEPTOR) }

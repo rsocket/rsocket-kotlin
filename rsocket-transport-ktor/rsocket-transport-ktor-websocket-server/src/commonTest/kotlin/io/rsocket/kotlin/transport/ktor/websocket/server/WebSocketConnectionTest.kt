@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport.ktor.websocket
+package io.rsocket.kotlin.transport.ktor.websocket.server
 
 import io.ktor.client.*
 import io.ktor.server.application.*
@@ -25,7 +25,6 @@ import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.ktor.websocket.client.*
-import io.rsocket.kotlin.transport.ktor.websocket.server.*
 import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*

@@ -10,7 +10,7 @@ class TcpTransportTest : TransportTest() {
     override suspend fun before() {
         val port = PortProvider.next()
         server = startServer(TcpServerTransport(port, "127.0.0.1", InUseTrackingPool))
-        client = connectClient(TcpClientTransport(port, "127.0.0.1", InUseTrackingPool, testJob))
+        client = connectClient(TcpClientTransport(port, "127.0.0.1", InUseTrackingPool, testContext))
     }
 
     override suspend fun after() {
