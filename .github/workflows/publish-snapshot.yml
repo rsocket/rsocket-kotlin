@@ -8,7 +8,7 @@ on:
 
 jobs:
   publish:
-    if: github.repository == "rsocket/rsocket-kotlin"
+    if: github.repository == 'rsocket/rsocket-kotlin'
     runs-on: macos-11
     steps:
       - uses: actions/checkout@v2
