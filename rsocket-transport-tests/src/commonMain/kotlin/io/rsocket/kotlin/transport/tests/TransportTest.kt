@@ -56,8 +56,8 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun largePayloadFireAndForget10() = test {
-        (1..10).map { async { client.fireAndForget(requesterLargeMetadata) } }.awaitAll()
+    open fun largePayloadFireAndForget10() = test {
+        (1..10).map { async { client.fireAndForget(requesterLargePayload) } }.awaitAll()
     }
 
     @Test
@@ -66,7 +66,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun largePayloadMetadataPush10() = test {
+    open fun largePayloadMetadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterLargeData)) } }.awaitAll()
     }
 
@@ -93,12 +93,12 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun largePayloadRequestChannel200() = test {
+    open fun largePayloadRequestChannel200() = test {
         val request = flow {
-            repeat(200) { emit(requesterLargeMetadata) }
+            repeat(200) { emit(requesterLargePayload) }
         }
         val list =
-            client.requestChannel(requesterLargeMetadata, request)
+            client.requestChannel(requesterLargePayload, request)
                 .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
                 .onEach { it.close() }
                 .toList()
@@ -192,8 +192,8 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun largePayloadRequestResponse100() = test {
-        (1..100).map { async { client.requestResponse(requesterLargeMetadata) } }.awaitAll().onEach { it.close() }
+    open fun largePayloadRequestResponse100() = test {
+        (1..100).map { async { client.requestResponse(requesterLargePayload) } }.awaitAll().onEach { it.close() }
     }
 
     @Test
@@ -249,7 +249,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         const val requesterMetadata: String = "metadata"
 
         val requesterLargeData = "large.text.12345".repeat(2000)
-        val requesterLargeMetadata get() = payload(requesterLargeData, requesterLargeData)
+        val requesterLargePayload get() = payload(requesterLargeData, requesterLargeData)
 
         fun payload(metadataPresent: Int): Payload {
             val metadata = when (metadataPresent % 5) {
