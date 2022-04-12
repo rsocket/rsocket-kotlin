@@ -53,21 +53,25 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun fireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(payload(it)) } }.awaitAll()
+        delay(1000) //TODO: leak check
     }
 
     @Test
     open fun largePayloadFireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(requesterLargePayload) } }.awaitAll()
+        delay(1000) //TODO: leak check
     }
 
     @Test
     fun metadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterData)) } }.awaitAll()
+        delay(1000) //TODO: leak check
     }
 
     @Test
     open fun largePayloadMetadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterLargeData)) } }.awaitAll()
+        delay(1000) //TODO: leak check
     }
 
     @Test
@@ -174,6 +178,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
                     assertEquals(requesterMetadata, it.metadata?.readText())
                 }.toList()
         assertEquals(500, list.size)
+        delay(1000) //TODO: leak check
     }
 
     @Test
@@ -230,6 +235,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
                 .onEach { checkPayload(it) }
                 .toList()
         assertEquals(500, list.size)
+        delay(1000) //TODO: leak check
     }
 
     companion object {
