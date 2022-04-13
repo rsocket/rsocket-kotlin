@@ -38,7 +38,9 @@ public inline fun PayloadBuilder.data(block: BytePacketBuilder.() -> Unit): Unit
 public fun PayloadBuilder.data(value: String): Unit = data { writeText(value) }
 public fun PayloadBuilder.data(value: ByteArray): Unit = data { writeFully(value) }
 
-public inline fun PayloadBuilder.metadata(block: BytePacketBuilder.() -> Unit): Unit = metadata(buildPacket(block = block))
+public inline fun PayloadBuilder.metadata(block: BytePacketBuilder.() -> Unit): Unit =
+    metadata(buildPacket(block = block))
+
 public fun PayloadBuilder.metadata(value: String): Unit = metadata { writeText(value) }
 public fun PayloadBuilder.metadata(value: ByteArray): Unit = metadata { writeFully(value) }
 

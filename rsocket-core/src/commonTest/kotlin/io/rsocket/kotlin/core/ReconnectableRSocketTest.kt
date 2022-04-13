@@ -229,35 +229,36 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testNoLeakRequestChannel() = testNoLeaksInteraction { requestChannel(it, emptyFlow()).collect() }
 
-    private inline fun testNoLeaksInteraction(crossinline interaction: suspend RSocket.(payload: Payload) -> Unit) = test {
-        val firstJob = Job()
-        val connect: suspend () -> RSocket = {
-            if (first.compareAndSet(true, false)) {
-                handler(firstJob)
-            } else {
-                error("Failed to connect")
+    private inline fun testNoLeaksInteraction(crossinline interaction: suspend RSocket.(payload: Payload) -> Unit) =
+        test {
+            val firstJob = Job()
+            val connect: suspend () -> RSocket = {
+                if (first.compareAndSet(true, false)) {
+                    handler(firstJob)
+                } else {
+                    error("Failed to connect")
+                }
             }
-        }
-        val rSocket = connectWithReconnect(connect) { _, attempt ->
-            delay(100)
-            attempt < 5
-        }
+            val rSocket = connectWithReconnect(connect) { _, attempt ->
+                delay(100)
+                attempt < 5
+            }
 
-        rSocket.requestResponse(Payload.Empty) //first request to be sure, that connected
-        firstJob.cancelAndJoin() //cancel
+            rSocket.requestResponse(Payload.Empty) //first request to be sure, that connected
+            firstJob.cancelAndJoin() //cancel
 
-        val p = payload("text")
-        assertFails {
-            rSocket.interaction(p) //test release on reconnecting
-        }
-        assertTrue(p.data.isEmpty)
+            val p = payload("text")
+            assertFails {
+                rSocket.interaction(p) //test release on reconnecting
+            }
+            assertTrue(p.data.isEmpty)
 
-        val p2 = payload("text")
-        assertFails {
-            rSocket.interaction(p2)  //test release on failed
+            val p2 = payload("text")
+            assertFails {
+                rSocket.interaction(p2)  //test release on failed
+            }
+            assertTrue(p2.data.isEmpty)
         }
-        assertTrue(p2.data.isEmpty)
-    }
 
     private fun handler(job: Job): RSocket = RSocketRequestHandler(job) {
         requestResponse { payload ->

@@ -23,7 +23,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
-internal suspend inline fun Flow<Payload>.collectLimiting(limiter: Limiter, crossinline action: suspend (value: Payload) -> Unit) {
+internal suspend inline fun Flow<Payload>.collectLimiting(
+    limiter: Limiter,
+    crossinline action: suspend (value: Payload) -> Unit
+) {
     collect { payload ->
         payload.closeOnError {
             limiter.useRequest()

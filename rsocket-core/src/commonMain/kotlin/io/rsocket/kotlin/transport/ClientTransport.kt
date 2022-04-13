@@ -28,9 +28,10 @@ public fun interface ClientTransport : CoroutineScope {
 }
 
 @TransportApi
-public fun ClientTransport(coroutineContext: CoroutineContext, transport: ClientTransport): ClientTransport = object : ClientTransport {
-    override val coroutineContext: CoroutineContext get() = coroutineContext
+public fun ClientTransport(coroutineContext: CoroutineContext, transport: ClientTransport): ClientTransport =
+    object : ClientTransport {
+        override val coroutineContext: CoroutineContext get() = coroutineContext
 
-    @TransportApi
-    override suspend fun connect(): Connection = transport.connect()
-}
+        @TransportApi
+        override suspend fun connect(): Connection = transport.connect()
+    }

@@ -45,4 +45,5 @@ internal class MetadataPushFrame(
     }
 }
 
-internal fun ByteReadPacket.readMetadataPush(pool: ObjectPool<ChunkBuffer>): MetadataPushFrame = MetadataPushFrame(readPacket(pool))
+internal fun ByteReadPacket.readMetadataPush(pool: ObjectPool<ChunkBuffer>): MetadataPushFrame =
+    MetadataPushFrame(readPacket(pool))

@@ -42,7 +42,9 @@ internal class FrameSender(
     suspend fun sendMetadataPush(metadata: ByteReadPacket): Unit = prioritizer.send(MetadataPushFrame(metadata))
 
     suspend fun sendCancel(id: Int): Unit = withContext(NonCancellable) { prioritizer.send(CancelFrame(id)) }
-    suspend fun sendError(id: Int, throwable: Throwable): Unit = withContext(NonCancellable) { prioritizer.send(ErrorFrame(id, throwable)) }
+    suspend fun sendError(id: Int, throwable: Throwable): Unit =
+        withContext(NonCancellable) { prioritizer.send(ErrorFrame(id, throwable)) }
+
     suspend fun sendRequestN(id: Int, n: Int): Unit = prioritizer.send(RequestNFrame(id, n))
 
     suspend fun sendRequestPayload(type: FrameType, streamId: Int, payload: Payload, initialRequest: Int = 0) {
@@ -103,14 +105,24 @@ internal class FrameSender(
             val fType = if (first && type.isRequestType) type else FrameType.Payload
             val fragment = Payload(dataFragment, metadataFragment)
             val follows = metadata != null && metadata.isNotEmpty || data.isNotEmpty
-            prioritizer.send(RequestFrame(fType, streamId, follows, (!follows && complete), !fType.isRequestType, initialRequest, fragment))
+            prioritizer.send(
+                RequestFrame(
+                    type = fType,
+                    streamId = streamId,
+                    follows = follows,
+                    complete = (!follows && complete),
+                    next = !fType.isRequestType,
+                    initialRequest = initialRequest,
+                    payload = fragment
+                )
+            )
             first = false
             remaining = fragmentSize
         } while (follows)
     }
 
     private fun Payload.isFragmentable(hasInitialRequest: Boolean) = when (maxFragmentSize) {
-        0    -> false
+        0 -> false
         else -> when (val meta = metadata) {
             null -> data.remaining > maxFragmentSize - fragmentOffset - (if (hasInitialRequest) Int.SIZE_BYTES else 0)
             else -> data.remaining + meta.remaining > maxFragmentSize - fragmentOffsetWithMetadata - (if (hasInitialRequest) Int.SIZE_BYTES else 0)

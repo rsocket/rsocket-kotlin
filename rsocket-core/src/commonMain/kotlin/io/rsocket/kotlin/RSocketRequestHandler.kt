@@ -27,7 +27,8 @@ public class RSocketRequestHandlerBuilder internal constructor() {
     private var fireAndForget: (suspend RSocket.(payload: Payload) -> Unit)? = null
     private var requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null
     private var requestStream: (suspend RSocket.(payload: Payload) -> Flow<Payload>)? = null
-    private var requestChannel: (suspend RSocket.(initPayload: Payload, payloads: Flow<Payload>) -> Flow<Payload>)? = null
+    private var requestChannel: (suspend RSocket.(initPayload: Payload, payloads: Flow<Payload>) -> Flow<Payload>)? =
+        null
 
     public fun metadataPush(block: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)) {
         check(metadataPush == null) { "Metadata Push handler already configured" }

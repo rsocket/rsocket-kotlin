@@ -113,11 +113,12 @@ abstract class RSocketBenchmark<Payload : Any> {
     }
 
     //Run every request in separate coroutine which will be dispatched on Default dispatcher (threads amount = cores amount)
-    private inline fun parallel(bh: Blackhole, p: Int, crossinline block: suspend (bh: Blackhole) -> Unit): Unit = runBlocking {
-        (0..p).map {
-            GlobalScope.async { block(bh) }
-        }.awaitAll()
-    }
+    private inline fun parallel(bh: Blackhole, p: Int, crossinline block: suspend (bh: Blackhole) -> Unit): Unit =
+        runBlocking {
+            (0..p).map {
+                GlobalScope.async { block(bh) }
+            }.awaitAll()
+        }
 
     //Run every request in separate coroutine, but on single thread dispatcher:
     //  - do request 1
@@ -128,9 +129,10 @@ abstract class RSocketBenchmark<Payload : Any> {
     //  - receive result on request 2
     //  - ....
     //working with requests is single threaded but concurrent
-    private inline fun concurrent(bh: Blackhole, p: Int, crossinline block: suspend (bh: Blackhole) -> Unit): Unit = runBlocking {
-        (0..p).map {
-            async { block(bh) }
-        }.awaitAll()
-    }
+    private inline fun concurrent(bh: Blackhole, p: Int, crossinline block: suspend (bh: Blackhole) -> Unit): Unit =
+        runBlocking {
+            (0..p).map {
+                async { block(bh) }
+            }.awaitAll()
+        }
 }

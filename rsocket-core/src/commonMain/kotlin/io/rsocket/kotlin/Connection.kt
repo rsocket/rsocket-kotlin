@@ -35,7 +35,8 @@ public interface Connection : CoroutineScope {
 }
 
 @OptIn(TransportApi::class)
-internal suspend inline fun <T> Connection.receiveFrame(block: (frame: Frame) -> T): T = receive().readFrame(pool).closeOnError(block)
+internal suspend inline fun <T> Connection.receiveFrame(block: (frame: Frame) -> T): T =
+    receive().readFrame(pool).closeOnError(block)
 
 @OptIn(TransportApi::class)
 internal suspend fun Connection.sendFrame(frame: Frame) {

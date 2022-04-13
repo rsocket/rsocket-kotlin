@@ -27,7 +27,8 @@ import kotlin.test.*
 class RequesterRequestResponseFrameHandlerTest : SuspendTest, TestWithLeakCheck {
     private val storage = StreamsStorage(true, InUseTrackingPool)
     private val deferred = CompletableDeferred<Payload>()
-    private val handler = RequesterRequestResponseFrameHandler(1, storage, deferred, InUseTrackingPool).also { storage.save(1, it) }
+    private val handler =
+        RequesterRequestResponseFrameHandler(1, storage, deferred, InUseTrackingPool).also { storage.save(1, it) }
 
     @Test
     fun testCompleteOnPayloadReceive() = test {
