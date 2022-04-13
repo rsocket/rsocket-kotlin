@@ -74,7 +74,7 @@ open class StartTransportTestServer : DefaultTask() {
 }
 
 val startTransportTestServer by tasks.registering(StartTransportTestServer::class) {
-    dependsOn(tasks["compileTestKotlinJvm"]) //TODO?
+    dependsOn(tasks["jvmTest"]) //TODO?
     classpath = (kotlin.targets["jvm"].compilations["test"] as KotlinJvmCompilation).runtimeDependencyFiles
 }
 
