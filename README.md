@@ -1,99 +1,82 @@
 # rsocket-kotlin
 
-RSocket Kotlin multi-platform implementation based on [kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines).
+RSocket Kotlin multi-platform implementation based on
+[kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines) and [ktor-io](https://github.com/ktorio/ktor).
 
-RSocket is a binary protocol for use on byte stream transports such as TCP, WebSockets and Aeron.
+RSocket is a binary application protocol providing Reactive Streams semantics for use on byte stream transports such as
+TCP, WebSockets, QUIC and Aeron.
 
 It enables the following symmetric interaction models via async message passing over a single connection:
 
-- request/response (stream of 1)
-- request/stream (finite stream of many)
-- fire-and-forget (no response)
-- event subscription (infinite stream of many)
+* [Fire-and-Forget](https://rsocket.io/about/motivations#fire-and-forget)
+* [Request-Response](https://rsocket.io/about/motivations#requestresponse-single-response)
+* [Request-Stream](https://rsocket.io/about/motivations#requeststream-multi-response-finite)
+* [Request-Channel](https://rsocket.io/about/motivations#channel)
 
 Learn more at http://rsocket.io
 
 ## Supported platforms and transports :
 
-Transports are implemented based on [ktor](https://github.com/ktorio/ktor) to ensure Kotlin multiplatform. So it depends on `ktor` engines
-for available transports and platforms (JVM, JS, Native):
+Local (in memory) transport is supported on all targets.
+Most of other transports are implemented using [ktor](https://github.com/ktorio/ktor) to ensure Kotlin multiplatform.
+So it depends on `ktor` client/server engines for available transports and platforms.
 
-* JVM - TCP and WebSocket for both client and server
-* JS - WebSocket client only
-* Native - TCP (linux x64, macos, ios, watchos, tvos) for both client and server
+### Client transports:
 
-## Interactions
+|                             | TCP                                     | WebSocket  |
+|-----------------------------|-----------------------------------------|------------|
+| JVM                         | ✅ via ktor                              | ✅ via ktor |
+| JS                          | ✅ via nodeJS (not supported in browser) | ✅ via ktor |
+| Native<br/>(except windows) | ✅ via ktor                              | ✅ via ktor |
 
-RSocket interface contains 5 methods:
+### Server transports:
 
-* Fire and Forget:
-
-  `suspend fun fireAndForget(payload: Payload)`
-* Request-Response:
-
-  `suspend requestResponse(payload: Payload): Payload`
-* Request-Stream:
-
-  `fun requestStream(payload: Payload): Flow<Payload>`
-* Request-Channel:
-
-  `fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload>`
-* Metadata-Push:
-
-  `suspend fun metadataPush(metadata: ByteReadPacket)`
+|                             | TCP                                     | WebSocket  |
+|-----------------------------|-----------------------------------------|------------|
+| JVM                         | ✅ via ktor                              | ✅ via ktor |
+| JS                          | ✅ via nodeJS (not supported in browser) | ❌          |
+| Native<br/>(except windows) | ✅ via ktor                              | ✅ via ktor |
 
 ## Using in your projects
 
-Make sure, that you use Kotlin 1.6.10
+rsocket-kotlin is available on [Maven Central](https://mvnrepository.com/artifact/io.rsocket.kotlin)
 
-### Gradle:
+Make sure, that you use Kotlin 1.6.20+, ktor 2.0.0+ and have `mavenCentral()` in the list of repositories:
 
 ```kotlin
 repositories {
     mavenCentral()
 }
-dependencies {
-    implementation("io.rsocket.kotlin:rsocket-core:0.14.3")
-
-    // TCP ktor transport
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor:0.14.3")
-
-    // WS ktor transport client plugin
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-client:0.14.3")
-
-    // WS ktor transport server plugin
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-server:0.14.3")
-}
 ```
 
-For WS ktor transport, available client or server engine should be added:
+### Ktor plugins
+
+rsocket-kotlin provides [client](https://ktor.io/docs/http-client-plugins.html)
+and [server](https://ktor.io/docs/plugins.html) plugins for [ktor](https://ktor.io)
+
+Dependencies:
 
 ```kotlin
 dependencies {
-    // client engines for WS transport
-    implementation("io.ktor:ktor-client-js:1.6.7") //js
-    implementation("io.ktor:ktor-client-cio:1.6.7") //jvm
-    implementation("io.ktor:ktor-client-okhttp:1.6.7") //jvm
+    //for client
+    implementation("io.rsocket.kotlin:rsocket-ktor-client:0.15.0")
 
-    // server engines for WS transport (jvm only)
-    implementation("io.ktor:ktor-server-cio:1.6.7")
-    implementation("io.ktor:ktor-server-netty:1.6.7")
-    implementation("io.ktor:ktor-server-jetty:1.6.7")
-    implementation("io.ktor:ktor-server-tomcat:1.6.7")
+    //for server
+    implementation("io.rsocket.kotlin:rsocket-ktor-server:0.15.0")
 }
 ```
 
-## Usage
-
-### Client WebSocket with CIO ktor engine
+Example of client plugin usage:
 
 ```kotlin
 //create ktor client
-val client = HttpClient(CIO) {
-    install(WebSockets)
+val client = HttpClient {
+    install(WebSockets) //rsocket requires websockets plugin installed
     install(RSocketSupport) {
-        connector = RSocketConnector {
-            //configure rSocket connector (all values have defaults)
+        //configure rSocket connector (all values have defaults)
+        connector {
+            maxFragmentSize = 1024
+
             connectionConfig {
                 keepAlive = KeepAlive(
                     interval = 30.seconds,
@@ -101,12 +84,16 @@ val client = HttpClient(CIO) {
                 )
 
                 //payload for setup frame
-                setupPayload { buildPayload { data("hello world") } }
+                setupPayload {
+                    buildPayload {
+                        data("""{ "data": "setup" }""")
+                    }
+                }
 
                 //mime types
                 payloadMimeType = PayloadMimeType(
-                    data = "application/json",
-                    metadata = "application/json"
+                    data = WellKnownMimeType.ApplicationJson,
+                    metadata = WellKnownMimeType.MessageRSocketCompositeMetadata
                 )
             }
 
@@ -124,7 +111,11 @@ val client = HttpClient(CIO) {
 val rSocket: RSocket = client.rSocket("wss://demo.rsocket.io/rsocket")
 
 //request stream
-val stream: Flow<Payload> = rSocket.requestStream(Payload.Empty)
+val stream: Flow<Payload> = rSocket.requestStream(
+    buildPayload {
+        data("""{ "data": "hello world" }""")
+    }
+)
 
 //take 5 values and print response
 stream.take(5).collect { payload: Payload ->
@@ -132,14 +123,18 @@ stream.take(5).collect { payload: Payload ->
 }
 ```
 
-### Server WebSocket with CIO ktor engine
+Example of server plugin usage:
 
 ```kotlin
 //create ktor server
 embeddedServer(CIO) {
+    install(WebSockets) //rsocket requires websockets plugin installed
     install(RSocketSupport) {
         //configure rSocket server (all values have defaults)
-        server = RSocketServer {
+
+        server {
+            maxFragmentSize = 1024
+
             //install interceptors
             interceptors {
                 forConnection(::SomeConnectionInterceptor)
@@ -148,23 +143,29 @@ embeddedServer(CIO) {
     }
     //configure routing
     routing {
-        //configure route `url:port/rsocket`
+        //configure route `/rsocket`
         rSocket("rsocket") {
+            println(config.setupPayload.data.readText()) //print setup payload data
+
             RSocketRequestHandler {
                 //handler for request/response
                 requestResponse { request: Payload ->
-                    //... some work here
+                    println(request.data.readText()) //print request payload data
                     delay(500) // work emulation
                     buildPayload {
-                        data("data")
-                        metadata("metadata")
+                        data("""{ "data": "Server response" }""")
                     }
                 }
                 //handler for request/stream      
                 requestStream { request: Payload ->
+                    println(request.data.readText()) //print request payload data
                     flow {
-                        repeat(1000) { i ->
-                            emit(buildPayload { data("data: $i") })
+                        repeat(10) { i ->
+                            emit(
+                                buildPayload {
+                                    data("""{ "data": "Server stream response: $i" }""")
+                                }
+                            )
                         }
                     }
                 }
@@ -174,10 +175,72 @@ embeddedServer(CIO) {
 }.start(true)
 ```
 
+### Standalone transports
+
+rsocket-kotlin also provides standalone transports which can be used to establish RSocket connection:
+
+Dependencies:
+
+```kotlin
+dependencies {
+    implementation("io.rsocket.kotlin:rsocket-core:0.15.0")
+
+    // TCP ktor client/server transport
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:0.15.0")
+
+    // WS ktor client transport
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-client:0.15.0")
+
+    // WS ktor server transport
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:0.15.0")
+
+    // TCP nodeJS client/server transport
+    implementation("io.rsocket.kotlin:rsocket-transport-nodejs-tcp:0.15.0")
+}
+```
+
+Example of usage standalone client transport:
+
+```kotlin
+
+val transport = TcpClientTransport("0.0.0.0", 8080)
+val connector = RSocketConnector {
+    //configuration goes here
+}
+val rsocket: RSocket = connector.connect(transport)
+//use rsocket to do request
+val response = rsocket.requestResponse(buildPayload { data("""{ "data": "hello world" }""") })
+println(response.data.readText())
+```
+
+Example of usage standalone server transport:
+
+```kotlin
+
+val transport = TcpServerTransport("0.0.0.0", 8080)
+val connector = RSocketServer {
+    //configuration goes here
+}
+val server: TcpServer = server.bind(transport) {
+    RSocketRequestHandler {
+        //handler for request/response
+        requestResponse { request: Payload ->
+            println(request.data.readText()) //print request payload data
+            delay(500) // work emulation
+            buildPayload {
+                data("""{ "data": "Server response" }""")
+            }
+        }
+    }
+}
+server.handlerJob.join() //wait for server to finish
+```
+
 ### More samples:
 
-- [multiplatform-chat](samples/chat) - chat implementation with JVM server and JS/JVM client with shared classes and
-  serializing data using [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization)
+- [multiplatform-chat](samples/chat) - chat implementation with JVM/JS/Native server and JVM/JS/Native client with
+  shared classes and shared data serialization
+  using [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization)
 
 ## Reactive Streams Semantics
 
@@ -187,9 +250,10 @@ From [RSocket protocol](https://github.com/rsocket/rsocket/blob/master/Protocol.
     This is a credit-based model where the Requester grants the Responder credit for the number of PAYLOADs it can send. 
     It is sometimes referred to as "request-n" or "request(n)".
 
-`kotlinx.coroutines` doesn't truly support `request(n)` semantic, but it has flexible `CoroutineContext`
-which can be used to achieve something similar. `rsocket-kotlin` contains `RequestStrategy` coroutine context element, which defines,
-strategy for sending of `requestN` frames.
+`kotlinx.coroutines` doesn't truly support `request(n)` semantic,
+but it has flexible `CoroutineContext` which can be used to achieve something similar.
+`rsocket-kotlin` contains `RequestStrategy` coroutine context element, which defines,
+strategy for sending of `requestN`frames.
 
 Example:
 
@@ -215,7 +279,7 @@ For bugs, questions and discussions please use the [Github Issues](https://githu
 
 ## LICENSE
 
-Copyright 2015-2020 the original author or authors.
+Copyright 2015-2022 the original author or authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
