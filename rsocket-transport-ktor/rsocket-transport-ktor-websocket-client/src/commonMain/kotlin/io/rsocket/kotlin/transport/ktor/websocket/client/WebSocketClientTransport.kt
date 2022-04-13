@@ -20,47 +20,83 @@
 package io.rsocket.kotlin.transport.ktor.websocket.client
 
 import io.ktor.client.*
+import io.ktor.client.engine.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.*
 import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
-public fun WebSocketClientTransport(
-    httpClient: HttpClient,
-    request: HttpRequestBuilder.() -> Unit,
-): ClientTransport = ClientTransport(httpClient.coroutineContext + SupervisorJob(httpClient.coroutineContext[Job])) {
-    val session = httpClient.webSocketSession(request)
-    WebSocketConnection(session)
+//TODO: will be reworked later with transport API rework
+
+public fun <T : HttpClientEngineConfig> WebSocketClientTransport(
+    engineFactory: HttpClientEngineFactory<T>,
+    context: CoroutineContext = EmptyCoroutineContext,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
+    engine: T.() -> Unit = {},
+    webSockets: WebSockets.Config.() -> Unit = {},
+    request: HttpRequestBuilder.() -> Unit
+): ClientTransport {
+    val clientEngine = engineFactory.create(engine)
+
+    val transportJob = SupervisorJob(context[Job])
+    val transportContext = clientEngine.coroutineContext + context + transportJob
+
+    val httpClient = HttpClient(clientEngine) {
+        WebSockets(webSockets)
+    }
+
+    Job(transportJob).invokeOnCompletion {
+        httpClient.close()
+        httpClient.cancel()
+        clientEngine.close()
+        clientEngine.cancel()
+    }
+
+    return ClientTransport(transportContext) {
+        val session = httpClient.webSocketSession(request)
+        WebSocketConnection(session, pool)
+    }
 }
 
-public fun WebSocketClientTransport(
-    httpClient: HttpClient,
-    urlString: String,
-    secure: Boolean = false,
-    request: HttpRequestBuilder.() -> Unit = {},
-): ClientTransport = WebSocketClientTransport(httpClient) {
+public fun <T : HttpClientEngineConfig> WebSocketClientTransport(
+    engineFactory: HttpClientEngineFactory<T>,
+    urlString: String, secure: Boolean = false,
+    context: CoroutineContext = EmptyCoroutineContext,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
+    engine: HttpClientEngineConfig.() -> Unit = {},
+    webSockets: WebSockets.Config.() -> Unit = {},
+    request: HttpRequestBuilder.() -> Unit = {}
+): ClientTransport = WebSocketClientTransport(engineFactory, context, pool, engine, webSockets) {
     url {
-        protocol = if (secure) URLProtocol.WSS else URLProtocol.WS
-        port = url.protocol.defaultPort
+        this.protocol = if (secure) URLProtocol.WSS else URLProtocol.WS
+        this.port = protocol.defaultPort
         takeFrom(urlString)
     }
     request()
 }
 
-public fun WebSocketClientTransport(
-    httpClient: HttpClient,
-    host: String = "localhost", port: Int = DEFAULT_PORT, path: String = "/",
+public fun <T : HttpClientEngineConfig> WebSocketClientTransport(
+    engineFactory: HttpClientEngineFactory<T>,
+    host: String? = null,
+    port: Int? = null,
+    path: String? = null,
     secure: Boolean = false,
-    request: HttpRequestBuilder.() -> Unit = {},
-): ClientTransport = WebSocketClientTransport(httpClient) {
+    context: CoroutineContext = EmptyCoroutineContext,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
+    engine: HttpClientEngineConfig.() -> Unit = {},
+    webSockets: WebSockets.Config.() -> Unit = {},
+    request: HttpRequestBuilder.() -> Unit = {}
+): ClientTransport = WebSocketClientTransport(engineFactory, context, pool, engine, webSockets) {
     url {
         this.protocol = if (secure) URLProtocol.WSS else URLProtocol.WS
-        this.port = port
-        this.host = host
-        this.encodedPath = path
+        this.port = protocol.defaultPort
+        set(host = host, port = port, path = path)
     }
     request()
 }

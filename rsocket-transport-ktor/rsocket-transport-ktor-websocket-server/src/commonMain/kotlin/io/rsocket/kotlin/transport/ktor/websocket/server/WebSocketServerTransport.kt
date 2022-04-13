@@ -16,25 +16,62 @@
 
 package io.rsocket.kotlin.transport.ktor.websocket.server
 
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.*
 
+//TODO: will be reworked later with transport API rework
+
+@Suppress("FunctionName")
+public fun <A : ApplicationEngine, T : ApplicationEngine.Configuration> WebSocketServerTransport(
+    engineFactory: ApplicationEngineFactory<A, T>,
+    port: Int = 80, host: String = "0.0.0.0",
+    path: String? = null, protocol: String? = null,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
+    engine: T.() -> Unit = {},
+    webSockets: WebSockets.WebSocketOptions.() -> Unit = {},
+): ServerTransport<A> = WebSocketServerTransport(
+    engineFactory,
+    EngineConnectorBuilder().apply {
+        this.port = port
+        this.host = host
+    } as EngineConnectorConfig,
+    path = path,
+    protocol = protocol,
+    pool = pool,
+    engine = engine,
+    webSockets = webSockets,
+)
+
+@Suppress("FunctionName")
 @OptIn(TransportApi::class)
-internal fun Route.serverTransport(
-    path: String?,
-    protocol: String?,
-): ServerTransport<Unit> = ServerTransport { acceptor ->
-    when (path) {
-        null -> webSocket(protocol) {
-            val connection = WebSocketConnection(this)
-            acceptor(connection)
+public fun <A : ApplicationEngine, T : ApplicationEngine.Configuration> WebSocketServerTransport(
+    engineFactory: ApplicationEngineFactory<A, T>,
+    vararg connectors: EngineConnectorConfig,
+    path: String? = null, protocol: String? = null,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
+    engine: T.() -> Unit = {},
+    webSockets: WebSockets.WebSocketOptions.() -> Unit = {},
+): ServerTransport<A> = ServerTransport { acceptor ->
+    val handler: suspend DefaultWebSocketServerSession.() -> Unit = {
+        val connection = WebSocketConnection(this, pool)
+        acceptor(connection)
+    }
+    embeddedServer(engineFactory, *connectors, configure = engine) {
+        install(WebSockets, webSockets)
+        routing {
+            when (path) {
+                null -> webSocket(protocol, handler)
+                else -> webSocket(path, protocol, handler)
+            }
         }
-        else -> webSocket(path, protocol) {
-            val connection = WebSocketConnection(this)
-            acceptor(connection)
-        }
+    }.also {
+        it.start(wait = false)
     }
 }

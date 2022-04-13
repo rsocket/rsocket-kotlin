@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport.ktor.websocket.server
-
-import io.ktor.server.application.*
-import io.ktor.server.routing.*
-import io.rsocket.kotlin.*
-import kotlinx.coroutines.*
-
-@OptIn(DelicateCoroutinesApi::class)
-public fun Route.rSocket(
-    path: String? = null,
-    protocol: String? = null,
-    acceptor: ConnectionAcceptor,
-) {
-    val serverTransport = serverTransport(path, protocol)
-    val server = application.plugin(RSocketSupport).server
-
-    server.bind(serverTransport, acceptor)
+plugins {
+    rsocket.template.library
 }
+
+kotlin {
+    configureCommon {
+        main {
+            dependencies {
+                api(projects.rsocketCore)
+                api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
+                //TODO ContentNegotiation will be here later
+            }
+        }
+    }
+    configureJvm()
+    configureJs()
+    configureNative()
+}
+
+description = "Ktor RSocket integration"

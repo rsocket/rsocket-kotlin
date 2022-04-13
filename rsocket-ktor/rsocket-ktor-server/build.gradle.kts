@@ -15,38 +15,28 @@
  */
 
 plugins {
-    rsocket.template.transport
+    rsocket.template.library
 }
 
 kotlin {
     configureCommon {
         main {
             dependencies {
-                api(projects.rsocketCore)
-                api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
-                api(libs.ktor.server.host.common)
+                api(projects.rsocketKtor)
                 api(libs.ktor.server.websockets)
             }
         }
         test {
             dependencies {
-                implementation(projects.rsocketTransportKtor.rsocketTransportKtorWebsocketClient)
+                implementation(projects.rsocketKtor.rsocketKtorClient)
+                implementation(projects.rsocketTransportTests) //port provider
                 implementation(libs.ktor.client.cio)
                 implementation(libs.ktor.server.cio)
             }
         }
     }
-    configureJvm {
-        test {
-            dependencies {
-                implementation(libs.ktor.client.okhttp)
-
-                implementation(libs.ktor.server.netty)
-                implementation(libs.ktor.server.jetty)
-            }
-        }
-    }
+    configureJvm()
     configureNative(NativeTargets.Nix)
 }
 
-description = "Ktor WebSocket Server RSocket transport implementation"
+description = "Ktor Server RSocket Plugin"

@@ -16,11 +16,7 @@
 
 package io.rsocket.kotlin.transport.tests.server
 
-import io.ktor.server.application.*
 import io.ktor.server.cio.*
-import io.ktor.server.engine.*
-import io.ktor.server.routing.*
-import io.ktor.server.websocket.*
 import io.rsocket.kotlin.transport.ktor.tcp.*
 import io.rsocket.kotlin.transport.ktor.websocket.server.*
 import io.rsocket.kotlin.transport.tests.*
@@ -39,11 +35,11 @@ fun start(): Closeable {
         ).serverSocket.await() //await server start
     }
 
-    scope.embeddedServer(CIO, port = PortProvider.testServerWebSocket) {
-        install(WebSockets)
-        install(RSocketSupport) { server = TransportTest.SERVER }
-        install(Routing) { rSocket(acceptor = TransportTest.ACCEPTOR) }
-    }.start()
+    TransportTest.SERVER.bindIn(
+        scope,
+        WebSocketServerTransport(CIO, port = PortProvider.testServerWebSocket),
+        TransportTest.ACCEPTOR
+    )
 
     Thread.sleep(1000) //await start
 
