@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import com.github.benmanes.gradle.versions.updates.*
+
 buildscript {
     repositories {
         mavenCentral()
@@ -27,6 +29,10 @@ buildscript {
 
 plugins {
     alias(libs.plugins.versionUpdates)
+}
+
+tasks.named<DependencyUpdatesTask>("dependencyUpdates") {
+    rejectVersionIf { candidate.group == "io.ktor" && candidate.version.contains("ide-debug") }
 }
 
 configureYarn()

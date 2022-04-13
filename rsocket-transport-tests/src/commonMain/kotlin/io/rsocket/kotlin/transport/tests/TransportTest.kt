@@ -33,7 +33,7 @@ import kotlin.time.Duration.Companion.seconds
 abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     override val testTimeout: Duration = 3.minutes
 
-    protected val testJob = Job()
+    private val testJob = SupervisorJob()
     protected val testContext = testJob + TestExceptionHandler
     protected val testScope = CoroutineScope(testContext)
 
@@ -53,21 +53,25 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun fireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(payload(it)) } }.awaitAll()
+        delay(1000) //TODO: leak check
     }
 
     @Test
-    fun largePayloadFireAndForget10() = test {
-        (1..10).map { async { client.fireAndForget(requesterLargeMetadata) } }.awaitAll()
+    open fun largePayloadFireAndForget10() = test {
+        (1..10).map { async { client.fireAndForget(requesterLargePayload) } }.awaitAll()
+        delay(1000) //TODO: leak check
     }
 
     @Test
     fun metadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterData)) } }.awaitAll()
+        delay(1000) //TODO: leak check
     }
 
     @Test
-    fun largePayloadMetadataPush10() = test {
+    open fun largePayloadMetadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterLargeData)) } }.awaitAll()
+        delay(1000) //TODO: leak check
     }
 
     @Test
@@ -93,12 +97,12 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun largePayloadRequestChannel200() = test {
+    open fun largePayloadRequestChannel200() = test {
         val request = flow {
-            repeat(200) { emit(requesterLargeMetadata) }
+            repeat(200) { emit(requesterLargePayload) }
         }
         val list =
-            client.requestChannel(requesterLargeMetadata, request)
+            client.requestChannel(requesterLargePayload, request)
                 .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
                 .onEach { it.close() }
                 .toList()
@@ -174,6 +178,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
                     assertEquals(requesterMetadata, it.metadata?.readText())
                 }.toList()
         assertEquals(500, list.size)
+        delay(1000) //TODO: leak check
     }
 
     @Test
@@ -192,8 +197,8 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    fun largePayloadRequestResponse100() = test {
-        (1..100).map { async { client.requestResponse(requesterLargeMetadata) } }.awaitAll().onEach { it.close() }
+    open fun largePayloadRequestResponse100() = test {
+        (1..100).map { async { client.requestResponse(requesterLargePayload) } }.awaitAll().onEach { it.close() }
     }
 
     @Test
@@ -230,6 +235,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
                 .onEach { checkPayload(it) }
                 .toList()
         assertEquals(500, list.size)
+        delay(1000) //TODO: leak check
     }
 
     companion object {
@@ -249,7 +255,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         const val requesterMetadata: String = "metadata"
 
         val requesterLargeData = "large.text.12345".repeat(2000)
-        val requesterLargeMetadata get() = payload(requesterLargeData, requesterLargeData)
+        val requesterLargePayload get() = payload(requesterLargeData, requesterLargeData)
 
         fun payload(metadataPresent: Int): Payload {
             val metadata = when (metadataPresent % 5) {

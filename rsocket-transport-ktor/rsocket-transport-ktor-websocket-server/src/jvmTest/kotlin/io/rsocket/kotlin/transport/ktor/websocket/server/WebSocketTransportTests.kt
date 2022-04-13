@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-plugins {
-    rsocket.template.transport
-}
+package io.rsocket.kotlin.transport.ktor.websocket.server
 
-kotlin {
-    configureCommon {
-        main {
-            dependencies {
-                api(projects.rsocketTransportKtor)
-                api(libs.ktor.websockets)
-            }
-        }
-    }
-    configureJvm()
-    configureJs()
-    configureNative()
-}
+import io.ktor.client.engine.okhttp.*
+import io.ktor.server.jetty.*
+import io.ktor.server.netty.*
+import io.ktor.client.engine.cio.CIO as ClientCIO
+import io.ktor.server.cio.CIO as ServerCIO
 
-description = "Ktor WebSocket RSocket transport implementation"
+class OkHttpClientWebSocketTransportTest : WebSocketTransportTest(OkHttp, ServerCIO)
+
+class NettyServerWebSocketTransportTest : WebSocketTransportTest(ClientCIO, Netty)
+
+class JettyServerWebSocketTransportTest : WebSocketTransportTest(ClientCIO, Jetty)

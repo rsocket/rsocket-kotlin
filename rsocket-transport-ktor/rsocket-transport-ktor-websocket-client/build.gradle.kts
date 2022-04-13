@@ -35,3 +35,5 @@ kotlin {
 }
 
 description = "Ktor WebSocket Client RSocket transport implementation"
+
+evaluationDependsOn(":rsocket-transport-tests")
