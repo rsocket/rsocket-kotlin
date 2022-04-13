@@ -404,4 +404,18 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     fun rcTerminatedOnConnectionClose() =
         streamIsTerminatedOnConnectionClose { requester.requestChannel(Payload.Empty, emptyFlow()).collect() }
 
+    @Test
+    fun cancelRequesterToCloseConnection() = test {
+        val request = requester.requestStream(Payload.Empty).produceIn(GlobalScope)
+        connection.test {
+            awaitFrame { frame ->
+                assertTrue(frame is RequestFrame)
+            }
+            requester.cancel() //cancel requester
+            expectNoEventsIn(200)
+        }
+        assertFalse(connection.isActive)
+        assertTrue(request.isClosedForReceive)
+    }
+
 }
