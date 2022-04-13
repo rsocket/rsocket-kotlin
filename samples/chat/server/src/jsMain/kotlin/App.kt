@@ -16,12 +16,8 @@
 
 package io.rsocket.kotlin.samples.chat.server
 
-import kotlin.native.concurrent.*
-import kotlin.system.*
+import io.rsocket.kotlin.samples.chat.api.*
 
-actual class Counter {
-    private val atomic = AtomicInt(0)
-    actual fun next(): Int = atomic.addAndGet(1)
+suspend fun main() {
+    startServer(Servers.JS.TCP)
 }
-
-actual fun currentMillis(): Long = getTimeMillis()

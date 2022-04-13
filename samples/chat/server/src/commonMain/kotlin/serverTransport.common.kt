@@ -16,12 +16,14 @@
 
 package io.rsocket.kotlin.samples.chat.server
 
-import kotlin.native.concurrent.*
-import kotlin.system.*
+import io.rsocket.kotlin.samples.chat.api.*
+import io.rsocket.kotlin.transport.*
 
-actual class Counter {
-    private val atomic = AtomicInt(0)
-    actual fun next(): Int = atomic.addAndGet(1)
-}
+fun ServerTransport(address: ServerAddress): ServerTransport<*> =
+    serverTransport(address.type, "0.0.0.0", address.port)
 
-actual fun currentMillis(): Long = getTimeMillis()
+expect fun serverTransport(
+    type: TransportType,
+    host: String,
+    port: Int
+): ServerTransport<*>

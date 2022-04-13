@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.samples.chat.server
+package io.rsocket.kotlin.samples.chat.client
 
-import kotlin.native.concurrent.*
-import kotlin.system.*
+import io.ktor.client.engine.js.*
+import io.rsocket.kotlin.samples.chat.api.*
+import io.rsocket.kotlin.transport.*
+import io.rsocket.kotlin.transport.ktor.websocket.client.*
 
-actual class Counter {
-    private val atomic = AtomicInt(0)
-    actual fun next(): Int = atomic.addAndGet(1)
+internal actual fun clientTransport(
+    type: TransportType,
+    host: String,
+    port: Int
+): ClientTransport = when (type) {
+    TransportType.TCP -> error("TCP is not supported")
+    TransportType.WS  -> WebSocketClientTransport(Js, host, port)
 }
-
-actual fun currentMillis(): Long = getTimeMillis()
