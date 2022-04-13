@@ -17,12 +17,17 @@
 package io.rsocket.kotlin.transport.ktor.websocket
 
 import io.ktor.utils.io.core.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import kotlinx.coroutines.*
 
 @TransportApi
-public class WebSocketConnection(private val session: WebSocketSession) : Connection, CoroutineScope by session {
+public class WebSocketConnection(
+    private val session: WebSocketSession,
+    override val pool: ObjectPool<ChunkBuffer>
+) : Connection, CoroutineScope by session {
     override suspend fun send(packet: ByteReadPacket) {
         session.send(packet.readBytes())
     }

@@ -14,27 +14,34 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport.ktor.websocket.client
+package io.rsocket.kotlin.ktor.client
 
 import io.ktor.client.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.util.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.core.*
 
-public class RSocketSupport(
+public class RSocketSupport private constructor(
     internal val connector: RSocketConnector,
+    internal val bufferPool: ObjectPool<ChunkBuffer>
 ) {
 
     public class Config internal constructor() {
+        public var bufferPool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
         public var connector: RSocketConnector = RSocketConnector()
+        public fun connector(block: RSocketConnectorBuilder.() -> Unit) {
+            connector = RSocketConnector(block)
+        }
     }
 
-    public companion object Feature : HttpClientPlugin<Config, RSocketSupport> {
+    public companion object Plugin : HttpClientPlugin<Config, RSocketSupport> {
         override val key: AttributeKey<RSocketSupport> = AttributeKey("RSocket")
-        override fun prepare(block: Config.() -> Unit): RSocketSupport {
-            val connector = Config().apply(block).connector
-            return RSocketSupport(connector)
+        override fun prepare(block: Config.() -> Unit): RSocketSupport = Config().run {
+            block()
+            RSocketSupport(connector, bufferPool)
         }
 
         override fun install(plugin: RSocketSupport, scope: HttpClient) {

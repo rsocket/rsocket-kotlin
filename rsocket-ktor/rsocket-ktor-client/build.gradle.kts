@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport.ktor.websocket.client
-
-import io.ktor.client.engine.js.*
-import io.rsocket.kotlin.test.*
-import io.rsocket.kotlin.transport.tests.*
-
-class ClientWebSocketTransportTest : TransportTest() {
-    override suspend fun before() {
-        client = connectClient(
-            WebSocketClientTransport(Js, port = 9000, context = testContext, pool = InUseTrackingPool)
-        )
-    }
+plugins {
+    rsocket.template.library
 }
+
+kotlin {
+    configureCommon {
+        main {
+            dependencies {
+                api(projects.rsocketKtor)
+                api(libs.ktor.client.websockets)
+            }
+        }
+    }
+    configureJvm()
+    configureJs()
+    configureNative()
+}
+
+description = "Ktor Client RSocket plugin"

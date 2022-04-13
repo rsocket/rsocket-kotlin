@@ -62,3 +62,10 @@ include(
 )
 
 include("rsocket-transport-nodejs-tcp")
+
+//deep ktor integration module
+include(
+    "rsocket-ktor",
+    "rsocket-ktor:rsocket-ktor-client",
+    "rsocket-ktor:rsocket-ktor-server",
+)

@@ -22,9 +22,10 @@ import io.ktor.server.engine.*
 import io.ktor.server.routing.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.keepalive.*
+import io.rsocket.kotlin.ktor.client.*
+import io.rsocket.kotlin.ktor.server.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
-import io.rsocket.kotlin.transport.ktor.websocket.client.*
 import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -33,8 +34,8 @@ import io.ktor.client.engine.cio.CIO as ClientCIO
 import io.ktor.client.plugins.websocket.WebSockets as ClientWebSockets
 import io.ktor.server.cio.CIO as ServerCIO
 import io.ktor.server.websocket.WebSockets as ServerWebSockets
-import io.rsocket.kotlin.transport.ktor.websocket.client.RSocketSupport as ClientRSocketSupport
-import io.rsocket.kotlin.transport.ktor.websocket.server.RSocketSupport as ServerRSocketSupport
+import io.rsocket.kotlin.ktor.client.RSocketSupport as ClientRSocketSupport
+import io.rsocket.kotlin.ktor.server.RSocketSupport as ServerRSocketSupport
 
 class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
     private val port = PortProvider.next()

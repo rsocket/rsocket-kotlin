@@ -14,18 +14,25 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport.ktor.websocket.server
+package io.rsocket.kotlin.ktor.server
 
 import io.ktor.server.application.*
 import io.ktor.server.websocket.*
 import io.ktor.util.*
+import io.ktor.utils.io.core.internal.*
+import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.core.*
 
-public class RSocketSupport(
+public class RSocketSupport private constructor(
     internal val server: RSocketServer,
+    internal val bufferPool: ObjectPool<ChunkBuffer>
 ) {
     public class Config internal constructor() {
+        public var bufferPool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
         public var server: RSocketServer = RSocketServer()
+        public fun server(block: RSocketServerBuilder.() -> Unit) {
+            server = RSocketServer(block)
+        }
     }
 
     public companion object Feature : BaseApplicationPlugin<Application, Config, RSocketSupport> {
@@ -33,8 +40,11 @@ public class RSocketSupport(
         override fun install(pipeline: Application, configure: Config.() -> Unit): RSocketSupport {
             pipeline.pluginOrNull(WebSockets)
                 ?: error("RSocket require WebSockets to work. You must install WebSockets plugin first.")
-            val server = Config().apply(configure).server
-            return RSocketSupport(server)
+
+            return Config().run {
+                configure()
+                RSocketSupport(server, bufferPool)
+            }
         }
     }
 }
