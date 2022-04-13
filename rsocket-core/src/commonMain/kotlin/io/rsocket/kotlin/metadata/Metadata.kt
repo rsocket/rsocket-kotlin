@@ -41,9 +41,13 @@ public interface MetadataReader<M : Metadata> {
 public fun PayloadBuilder.metadata(metadata: Metadata): Unit = metadata(metadata.toPacket())
 
 @ExperimentalMetadataApi
-public fun <M : Metadata> ByteReadPacket.read(reader: MetadataReader<M>, pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool): M = use {
+public fun <M : Metadata> ByteReadPacket.read(
+    reader: MetadataReader<M>,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
+): M = use {
     with(reader) { read(pool) }
 }
 
 @ExperimentalMetadataApi
-public fun Metadata.toPacket(pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool): ByteReadPacket = buildPacket(pool) { writeSelf() }
+public fun Metadata.toPacket(pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool): ByteReadPacket =
+    buildPacket(pool) { writeSelf() }

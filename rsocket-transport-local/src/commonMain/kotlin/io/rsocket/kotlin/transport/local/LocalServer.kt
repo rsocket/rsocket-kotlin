@@ -57,10 +57,18 @@ public class LocalServer internal constructor(
             @Suppress("INVISIBLE_MEMBER") serverChannel.fullClose(it)
         }
         val connectionContext = coroutineContext + connectionJob
-        val clientConnection =
-            LocalConnection(serverChannel, clientChannel, pool, connectionContext + CoroutineName("rSocket-local-client"))
-        val serverConnection =
-            LocalConnection(clientChannel, serverChannel, pool, connectionContext + CoroutineName("rSocket-local-server"))
+        val clientConnection = LocalConnection(
+            sender = serverChannel,
+            receiver = clientChannel,
+            pool = pool,
+            coroutineContext = connectionContext + CoroutineName("rSocket-local-client")
+        )
+        val serverConnection = LocalConnection(
+            sender = clientChannel,
+            receiver = serverChannel,
+            pool = pool,
+            coroutineContext = connectionContext + CoroutineName("rSocket-local-server")
+        )
         connections.send(serverConnection)
         return clientConnection
     }

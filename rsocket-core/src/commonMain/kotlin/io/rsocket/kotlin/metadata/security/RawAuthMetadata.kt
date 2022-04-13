@@ -48,7 +48,10 @@ public class RawAuthMetadata(
 public fun RawAuthMetadata.hasAuthTypeOf(reader: AuthMetadataReader<*>): Boolean = type == reader.mimeType
 
 @ExperimentalMetadataApi
-public fun <AM : AuthMetadata> RawAuthMetadata.read(reader: AuthMetadataReader<AM>, pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool): AM {
+public fun <AM : AuthMetadata> RawAuthMetadata.read(
+    reader: AuthMetadataReader<AM>,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
+): AM {
     return readOrNull(reader, pool) ?: run {
         content.close()
         error("Expected auth type '${reader.mimeType}' but was '$mimeType'")

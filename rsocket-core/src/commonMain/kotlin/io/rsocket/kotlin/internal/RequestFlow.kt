@@ -27,7 +27,11 @@ import kotlinx.coroutines.flow.*
 internal inline fun requestFlow(
     crossinline block: suspend FlowCollector<Payload>.(strategy: RequestStrategy.Element, initialRequest: Int) -> Unit
 ): Flow<Payload> = object : RequestFlow() {
-    override suspend fun collect(collector: FlowCollector<Payload>, strategy: RequestStrategy.Element, initialRequest: Int) {
+    override suspend fun collect(
+        collector: FlowCollector<Payload>,
+        strategy: RequestStrategy.Element,
+        initialRequest: Int
+    ) {
         collector.block(strategy, initialRequest)
     }
 }
@@ -59,7 +63,11 @@ internal abstract class RequestFlow : Flow<Payload> {
         collect(collector, strategy, initial)
     }
 
-    abstract suspend fun collect(collector: FlowCollector<Payload>, strategy: RequestStrategy.Element, initialRequest: Int)
+    abstract suspend fun collect(
+        collector: FlowCollector<Payload>,
+        strategy: RequestStrategy.Element,
+        initialRequest: Int
+    )
 }
 
 @ExperimentalStreamsApi

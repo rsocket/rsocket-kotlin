@@ -37,7 +37,8 @@ public class RawMetadata(
     }
 
     private class Reader(override val mimeType: MimeType) : MetadataReader<RawMetadata> {
-        override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): RawMetadata = RawMetadata(mimeType, readPacket(pool))
+        override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): RawMetadata =
+            RawMetadata(mimeType, readPacket(pool))
     }
 
     public companion object {

@@ -54,5 +54,6 @@ internal class Interceptors(
     fun wrapRequester(requester: RSocket): RSocket = requesters.fold(requester) { r, i -> i.intercept(r) }
     fun wrapResponder(responder: RSocket): RSocket = responders.fold(responder) { r, i -> i.intercept(r) }
     fun wrapConnection(connection: Connection): Connection = connections.fold(connection) { c, i -> i.intercept(c) }
-    fun wrapAcceptor(connection: ConnectionAcceptor): ConnectionAcceptor = acceptors.fold(connection) { c, i -> i.intercept(c) }
+    fun wrapAcceptor(connection: ConnectionAcceptor): ConnectionAcceptor =
+        acceptors.fold(connection) { c, i -> i.intercept(c) }
 }

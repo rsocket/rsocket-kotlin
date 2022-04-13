@@ -16,28 +16,18 @@
 
 package io.rsocket.kotlin.internal
 
-import app.cash.turbine.FlowTurbine
+import app.cash.turbine.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
-import io.rsocket.kotlin.frame.io.Version
-import io.rsocket.kotlin.keepalive.DefaultKeepAlive
-import io.rsocket.kotlin.payload.DefaultPayloadMimeType
-import io.rsocket.kotlin.payload.buildPayload
-import io.rsocket.kotlin.payload.data
-import io.rsocket.kotlin.test.TestExceptionHandler
-import io.rsocket.kotlin.test.TestServer
-import io.rsocket.kotlin.test.TestWithLeakCheck
-import io.rsocket.kotlin.test.payload
-import io.rsocket.kotlin.transport.ServerTransport
+import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.keepalive.*
+import io.rsocket.kotlin.payload.*
+import io.rsocket.kotlin.test.*
+import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
-import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
+import kotlin.test.*
 
 class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
     private val testJob: Job = Job()
@@ -62,29 +52,35 @@ class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
 
     private val setupFrame
         get() = SetupFrame(
-                version = Version.Current,
-                honorLease = false,
-                keepAlive = DefaultKeepAlive,
-                resumeToken = null,
-                payloadMimeType = DefaultPayloadMimeType,
-                payload = payload("setup"),
+            version = Version.Current,
+            honorLease = false,
+            keepAlive = DefaultKeepAlive,
+            resumeToken = null,
+            payloadMimeType = DefaultPayloadMimeType,
+            payload = payload("setup"),
         )
 
     @Test
     fun testStreamInitialEnoughToConsume() = test {
         start(
-                RSocketRequestHandler {
-                    requestStream { payload ->
-                        payload.close()
-                        (0..9).asFlow().map { buildPayload { data("$it") } }
-                    }
+            RSocketRequestHandler {
+                requestStream { payload ->
+                    payload.close()
+                    (0..9).asFlow().map { buildPayload { data("$it") } }
                 }
+            }
         )
 
         connection.test {
             connection.sendToReceiver(setupFrame)
 
-            connection.sendToReceiver(RequestStreamFrame(initialRequestN = 16, streamId = 1, payload = payload("request")))
+            connection.sendToReceiver(
+                RequestStreamFrame(
+                    initialRequestN = 16,
+                    streamId = 1,
+                    payload = payload("request")
+                )
+            )
 
             awaitAndReleasePayloadFrames(amount = 10)
             awaitCompleteFrame()
@@ -96,20 +92,26 @@ class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
     fun testStreamSuspendWhenNoRequestsLeft() = test {
         var lastSent = -1
         start(
-                RSocketRequestHandler {
-                    requestStream { payload ->
-                        payload.close()
-                        (0..9).asFlow()
-                                .onEach { lastSent = it }
-                                .map { buildPayload { data("$it") } }
-                    }
+            RSocketRequestHandler {
+                requestStream { payload ->
+                    payload.close()
+                    (0..9).asFlow()
+                        .onEach { lastSent = it }
+                        .map { buildPayload { data("$it") } }
                 }
+            }
         )
 
         connection.test {
             connection.sendToReceiver(setupFrame)
 
-            connection.sendToReceiver(RequestStreamFrame(initialRequestN = 3, streamId = 1, payload = payload("request")))
+            connection.sendToReceiver(
+                RequestStreamFrame(
+                    initialRequestN = 3,
+                    streamId = 1,
+                    payload = payload("request")
+                )
+            )
 
             awaitAndReleasePayloadFrames(amount = 3)
             expectNoEventsIn(200)
@@ -120,17 +122,23 @@ class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
     @Test
     fun testStreamRequestNFrameResumesOperation() = test {
         start(
-                RSocketRequestHandler {
-                    requestStream { payload ->
-                        payload.close()
-                        (0..15).asFlow().map { buildPayload { data("$it") } }
-                    }
+            RSocketRequestHandler {
+                requestStream { payload ->
+                    payload.close()
+                    (0..15).asFlow().map { buildPayload { data("$it") } }
                 }
+            }
         )
         connection.test {
             connection.sendToReceiver(setupFrame)
 
-            connection.sendToReceiver(RequestStreamFrame(initialRequestN = 3, streamId = 1, payload = payload("request")))
+            connection.sendToReceiver(
+                RequestStreamFrame(
+                    initialRequestN = 3,
+                    streamId = 1,
+                    payload = payload("request")
+                )
+            )
             awaitAndReleasePayloadFrames(amount = 3)
             expectNoEventsIn(200)
 
@@ -148,18 +156,24 @@ class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
     fun testStreamRequestNEnoughToComplete() = test {
         val total = 20
         start(
-                RSocketRequestHandler {
-                    requestStream { payload ->
-                        payload.close()
-                        (0 until total).asFlow().map { buildPayload { data("$it") } }
-                    }
+            RSocketRequestHandler {
+                requestStream { payload ->
+                    payload.close()
+                    (0 until total).asFlow().map { buildPayload { data("$it") } }
                 }
+            }
         )
         connection.test {
             connection.sendToReceiver(setupFrame)
 
             val firstRequest = 3
-            connection.sendToReceiver(RequestStreamFrame(initialRequestN = firstRequest, streamId = 1, payload = payload("request")))
+            connection.sendToReceiver(
+                RequestStreamFrame(
+                    initialRequestN = firstRequest,
+                    streamId = 1,
+                    payload = payload("request")
+                )
+            )
             awaitAndReleasePayloadFrames(amount = firstRequest)
             expectNoEventsIn(200)
 
@@ -174,20 +188,26 @@ class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
     fun testStreamRequestNAttemptedIntOverflow() = test {
         val latch = Channel<Unit>(1)
         start(
-                RSocketRequestHandler {
-                    requestStream { payload ->
-                        payload.close()
-                        latch.receive()
-                        // make sure limiter has got the RequestNFrame before emitting the values
-                        delay(200)
-                        (0..19).asFlow().map { buildPayload { data("$it") } }
-                    }
+            RSocketRequestHandler {
+                requestStream { payload ->
+                    payload.close()
+                    latch.receive()
+                    // make sure limiter has got the RequestNFrame before emitting the values
+                    delay(200)
+                    (0..19).asFlow().map { buildPayload { data("$it") } }
                 }
+            }
         )
         connection.test {
             connection.sendToReceiver(setupFrame)
 
-            connection.sendToReceiver(RequestStreamFrame(initialRequestN = Int.MAX_VALUE, streamId = 1, payload = payload("request")))
+            connection.sendToReceiver(
+                RequestStreamFrame(
+                    initialRequestN = Int.MAX_VALUE,
+                    streamId = 1,
+                    payload = payload("request")
+                )
+            )
             connection.sendToReceiver(RequestNFrame(streamId = 1, requestN = Int.MAX_VALUE))
             latch.send(Unit)
 
@@ -202,21 +222,27 @@ class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
     fun testStreamRequestNSummingUpToOverflow() = test {
         val latch = Channel<Unit>(1)
         start(
-                RSocketRequestHandler {
-                    requestStream { payload ->
-                        payload.close()
-                        latch.receive()
-                        // make sure limiter has got the RequestNFrame before emitting the values
-                        delay(200)
-                        (0..19).asFlow().map { buildPayload { data("$it") } }
-                    }
+            RSocketRequestHandler {
+                requestStream { payload ->
+                    payload.close()
+                    latch.receive()
+                    // make sure limiter has got the RequestNFrame before emitting the values
+                    delay(200)
+                    (0..19).asFlow().map { buildPayload { data("$it") } }
                 }
+            }
         )
 
         connection.test {
             connection.sendToReceiver(setupFrame)
 
-            connection.sendToReceiver(RequestStreamFrame(initialRequestN = 5, streamId = 1, payload = payload("request")))
+            connection.sendToReceiver(
+                RequestStreamFrame(
+                    initialRequestN = 5,
+                    streamId = 1,
+                    payload = payload("request")
+                )
+            )
             connection.sendToReceiver(RequestNFrame(streamId = 1, requestN = Int.MAX_VALUE / 3))
             connection.sendToReceiver(RequestNFrame(streamId = 1, requestN = Int.MAX_VALUE / 3))
             connection.sendToReceiver(RequestNFrame(streamId = 1, requestN = Int.MAX_VALUE / 3))

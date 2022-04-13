@@ -87,29 +87,30 @@ internal class RSocketRequester(
         }
     }
 
-    override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> = requestFlow { strategy, initialRequest ->
-        ensureActiveOrRelease(initPayload)
+    override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> =
+        requestFlow { strategy, initialRequest ->
+            ensureActiveOrRelease(initPayload)
 
-        val id = streamsStorage.nextId()
+            val id = streamsStorage.nextId()
 
-        val channel = SafeChannel<Payload>(Channel.UNLIMITED)
-        val limiter = Limiter(0)
-        val payloadsJob = Job(this@RSocketRequester.coroutineContext.job)
-        val handler = RequesterRequestChannelFrameHandler(id, streamsStorage, limiter, payloadsJob, channel, pool)
-        streamsStorage.save(id, handler)
+            val channel = SafeChannel<Payload>(Channel.UNLIMITED)
+            val limiter = Limiter(0)
+            val payloadsJob = Job(this@RSocketRequester.coroutineContext.job)
+            val handler = RequesterRequestChannelFrameHandler(id, streamsStorage, limiter, payloadsJob, channel, pool)
+            streamsStorage.save(id, handler)
 
-        handler.receiveOrCancel(id, initPayload) {
-            sender.sendRequestPayload(FrameType.RequestChannel, id, initPayload, initialRequest)
-            //TODO lazy?
-            launch(payloadsJob) {
-                handler.sendOrFail(id) {
-                    payloads.collectLimiting(limiter) { sender.sendNextPayload(id, it) }
-                    sender.sendCompletePayload(id)
+            handler.receiveOrCancel(id, initPayload) {
+                sender.sendRequestPayload(FrameType.RequestChannel, id, initPayload, initialRequest)
+                //TODO lazy?
+                launch(payloadsJob) {
+                    handler.sendOrFail(id) {
+                        payloads.collectLimiting(limiter) { sender.sendNextPayload(id, it) }
+                        sender.sendCompletePayload(id)
+                    }
                 }
+                emitAllWithRequestN(channel, strategy) { sender.sendRequestN(id, it) }
             }
-            emitAllWithRequestN(channel, strategy) { sender.sendRequestN(id, it) }
         }
-    }
 
     private suspend inline fun SendFrameHandler.sendOrFail(id: Int, block: () -> Unit) {
         try {

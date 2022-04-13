@@ -31,7 +31,8 @@ internal inline fun <T : Closeable, R> T.closeOnError(block: (T) -> R): R {
 private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
 
 @Suppress("FunctionName")
-internal fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> = Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
+internal fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> =
+    Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
 
 internal fun <E : Closeable> SendChannel<E>.safeTrySend(element: E) {
     trySend(element).onFailure { element.close() }

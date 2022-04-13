@@ -26,7 +26,10 @@ import io.rsocket.kotlin.core.*
 public fun CompositeMetadata.Entry.hasMimeTypeOf(reader: MetadataReader<*>): Boolean = mimeType == reader.mimeType
 
 @ExperimentalMetadataApi
-public fun <M : Metadata> CompositeMetadata.Entry.read(reader: MetadataReader<M>, pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool): M {
+public fun <M : Metadata> CompositeMetadata.Entry.read(
+    reader: MetadataReader<M>,
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
+): M {
     if (mimeType == reader.mimeType) return content.read(reader, pool)
 
     content.close()

@@ -64,7 +64,8 @@ internal class RSocketResponder(
             }
         }
         handler.sendOrFail(id, payload) {
-            requestHandler.requestChannel(payload, payloads).collectLimiting(handler.limiter) { sender.sendNextPayload(id, it) }
+            requestHandler.requestChannel(payload, payloads)
+                .collectLimiting(handler.limiter) { sender.sendNextPayload(id, it) }
             sender.sendCompletePayload(id)
         }
     }.closeOnCompletion(payload)

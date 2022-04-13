@@ -31,11 +31,21 @@ public class ConsoleLogger(
     override fun rawLog(level: LoggingLevel, throwable: Throwable?, message: Any?) {
         val meta = "[$level] ($tag)"
         when (level) {
-            LoggingLevel.ERROR -> throwable?.let { console.error(meta, message, "Error:", it) } ?: console.error(meta, message)
-            LoggingLevel.WARN  -> throwable?.let { console.warn(meta, message, "Error:", it) } ?: console.warn(meta, message)
-            LoggingLevel.INFO  -> throwable?.let { console.info(meta, message, "Error:", it) } ?: console.info(meta, message)
-            LoggingLevel.DEBUG -> throwable?.let { console.log(meta, message, "Error:", it) } ?: console.log(meta, message)
-            LoggingLevel.TRACE -> throwable?.let { console.log(meta, message, "Error:", it) } ?: console.log(meta, message)
+            LoggingLevel.ERROR -> throwable
+                ?.let { console.error(meta, message, "Error:", it) }
+                ?: console.error(meta, message)
+            LoggingLevel.WARN  -> throwable
+                ?.let { console.warn(meta, message, "Error:", it) }
+                ?: console.warn(meta, message)
+            LoggingLevel.INFO  -> throwable
+                ?.let { console.info(meta, message, "Error:", it) }
+                ?: console.info(meta, message)
+            LoggingLevel.DEBUG -> throwable
+                ?.let { console.log(meta, message, "Error:", it) }
+                ?: console.log(meta, message)
+            LoggingLevel.TRACE -> throwable
+                ?.let { console.log(meta, message, "Error:", it) }
+                ?: console.log(meta, message)
         }
     }
 

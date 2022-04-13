@@ -91,7 +91,16 @@ public class ZipkinTracingMetadata internal constructor(
             val spanId = readLong()
             val parentSpanId = if (hasParentSpanId) readLong() else 0
 
-            return ZipkinTracingMetadata(kind, true, hasParentSpanId, extendedTraceId, traceId, traceIdHigh, spanId, parentSpanId)
+            return ZipkinTracingMetadata(
+                kind = kind,
+                hasIds = true,
+                hasParentSpanId = hasParentSpanId,
+                extendedTraceId = extendedTraceId,
+                traceId = traceId,
+                traceIdHigh = traceIdHigh,
+                spanId = spanId,
+                parentSpanId = parentSpanId
+            )
         }
     }
 }

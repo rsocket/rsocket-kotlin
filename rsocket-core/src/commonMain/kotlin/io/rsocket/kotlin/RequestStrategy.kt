@@ -24,7 +24,8 @@ import kotlin.coroutines.*
 private val DefaultStrategy: RequestStrategy = PrefetchStrategy(64, 16)
 
 @ExperimentalStreamsApi
-internal fun CoroutineContext.requestStrategy(): RequestStrategy.Element = (get(RequestStrategy) ?: DefaultStrategy).provide()
+internal fun CoroutineContext.requestStrategy(): RequestStrategy.Element =
+    (get(RequestStrategy) ?: DefaultStrategy).provide()
 
 @ExperimentalStreamsApi
 public interface RequestStrategy : CoroutineContext.Element {
