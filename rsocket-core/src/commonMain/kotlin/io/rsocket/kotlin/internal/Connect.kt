@@ -45,18 +45,35 @@ internal suspend inline fun connect(
     }
 
     val requester = interceptors.wrapRequester(
-        RSocketRequester(requestContext + CoroutineName("rSocket-requester"), frameSender, streamsStorage, connection.pool)
+        RSocketRequester(
+            requestContext + CoroutineName("rSocket-requester"),
+            frameSender,
+            streamsStorage,
+            connection.pool
+        )
     )
     val requestHandler = interceptors.wrapResponder(
         with(interceptors.wrapAcceptor(acceptor)) {
             ConnectionAcceptorContext(connectionConfig, requester).accept()
         }
     )
-    val responder = RSocketResponder(requestContext + CoroutineName("rSocket-responder"), frameSender, requestHandler)
+    val responder = RSocketResponder(
+        requestContext + CoroutineName("rSocket-responder"),
+        frameSender,
+        requestHandler
+    )
 
-    // link completing of connection and requestHandler
-    connection.coroutineContext[Job]?.invokeOnCompletion { requestHandler.cancel("Connection closed", it) }
-    requestHandler.coroutineContext[Job]?.invokeOnCompletion { if (it != null) connection.cancel("Request handler failed", it) }
+    // link completing of requester, connection and requestHandler
+    requester.coroutineContext[Job]?.invokeOnCompletion {
+        connection.cancel("Requester cancelled", it)
+    }
+    requestHandler.coroutineContext[Job]?.invokeOnCompletion {
+        if (it != null) connection.cancel("Request handler failed", it)
+    }
+    connection.coroutineContext[Job]?.invokeOnCompletion {
+        requester.cancel("Connection closed", it)
+        requestHandler.cancel("Connection closed", it)
+    }
 
     // start keepalive ticks
     (connection + CoroutineName("rSocket-connection-keep-alive")).launch {
