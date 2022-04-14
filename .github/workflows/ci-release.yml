@@ -25,10 +25,4 @@ jobs:
             -PsigningPassword=${{ secrets.signingPassword }}
             -PsonatypeUsername=${{ secrets.sonatypeUsername }}
             -PsonatypePassword=${{ secrets.sonatypePassword }}
-          cache-read-only: true
-          gradle-home-cache-includes: |
-            caches
-            notifications
-            konan
-            nodejs
-            yarn
+          cache-disabled: true
