@@ -95,6 +95,9 @@ publishing {
     }
 
     signing {
+        isRequired = sonatypeUsername != null && sonatypePassword != null &&
+                signingKey != null && signingPassword != null
+
         useInMemoryPgpKeys(signingKey, signingPassword)
         sign(publications)
     }

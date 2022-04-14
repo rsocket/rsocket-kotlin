@@ -5,10 +5,10 @@ on:
       - '*'
 
 jobs:
-#   test:
-#     uses: ./.github/workflows/run-tests.yml
+  test:
+    uses: ./.github/workflows/run-tests.yml
   publish:
-#     needs: [ test ]
+    needs: [ test ]
     runs-on: macos-11
     steps:
       - uses: actions/checkout@v2
