@@ -34,6 +34,6 @@ kotlin {
     configureNative()
 }
 
-description = "Ktor WebSocket Client RSocket transport implementation"
+description = "RSocket ktor WebSocket client transport implementation"
 
 evaluationDependsOn(":rsocket-transport-tests")

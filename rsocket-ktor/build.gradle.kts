@@ -33,4 +33,4 @@ kotlin {
     configureNative()
 }
 
-description = "Ktor RSocket integration"
+description = "RSocket ktor integration"

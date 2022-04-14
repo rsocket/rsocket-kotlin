@@ -39,4 +39,4 @@ kotlin {
     configureNative(NativeTargets.Nix)
 }
 
-description = "Ktor Server RSocket Plugin"
+description = "RSocket ktor server plugin"

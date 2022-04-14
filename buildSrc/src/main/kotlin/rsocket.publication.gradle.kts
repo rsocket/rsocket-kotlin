@@ -34,34 +34,36 @@ publishing {
     publications.withType<MavenPublication> {
         artifact(javadocJar.get())
 
-        pom {
-            name.set(project.name)
-            description.set(project.description)
-            url.set("http://rsocket.io")
+        afterEvaluate {
+            pom {
+                name.set(project.name)
+                description.set(project.description)
+                url.set("http://rsocket.io")
 
-            licenses {
-                license {
-                    name.set("The Apache Software License, Version 2.0")
-                    url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-                    distribution.set("repo")
+                licenses {
+                    license {
+                        name.set("The Apache Software License, Version 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                        distribution.set("repo")
+                    }
                 }
-            }
-            developers {
-                developer {
-                    id.set("whyoleg")
-                    name.set("Oleg Yukhnevich")
-                    email.set("whyoleg@gmail.com")
+                developers {
+                    developer {
+                        id.set("whyoleg")
+                        name.set("Oleg Yukhnevich")
+                        email.set("whyoleg@gmail.com")
+                    }
+                    developer {
+                        id.set("OlegDokuka")
+                        name.set("Oleh Dokuka")
+                        email.set("oleh.dokuka@icloud.com")
+                    }
                 }
-                developer {
-                    id.set("OlegDokuka")
-                    name.set("Oleh Dokuka")
-                    email.set("oleh.dokuka@icloud.com")
+                scm {
+                    connection.set("https://github.com/rsocket/rsocket-kotlin.git")
+                    developerConnection.set("https://github.com/rsocket/rsocket-kotlin.git")
+                    url.set("https://github.com/rsocket/rsocket-kotlin")
                 }
-            }
-            scm {
-                connection.set("https://github.com/rsocket/rsocket-kotlin.git")
-                developerConnection.set("https://github.com/rsocket/rsocket-kotlin.git")
-                url.set("https://github.com/rsocket/rsocket-kotlin")
             }
         }
     }

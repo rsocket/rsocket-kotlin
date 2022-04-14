@@ -32,4 +32,4 @@ kotlin {
     configureNative()
 }
 
-description = "Ktor WebSocket RSocket transport implementation"
+description = "RSocket ktor WebSocket transport utilities"
