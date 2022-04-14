@@ -37,4 +37,4 @@ kotlin {
     configureNative()
 }
 
-description = "Core functionality for the RSocket library"
+description = "RSocket core functionality"

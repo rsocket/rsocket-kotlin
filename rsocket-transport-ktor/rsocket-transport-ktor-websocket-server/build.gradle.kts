@@ -48,5 +48,4 @@ kotlin {
     }
     configureNative(NativeTargets.Nix)
 }
-
-description = "Ktor WebSocket Server RSocket transport implementation"
+description = "RSocket ktor WebSocket server transport implementation"

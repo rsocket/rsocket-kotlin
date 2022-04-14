@@ -31,4 +31,4 @@ kotlin {
     configureNative()
 }
 
-description = "Local RSocket transport implementation"
+description = "RSocket Local transport implementation"

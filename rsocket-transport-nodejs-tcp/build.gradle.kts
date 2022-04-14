@@ -27,3 +27,5 @@ kotlin {
         }
     }
 }
+
+description = "RSocket NodeJS TCP client/server transport implementation"

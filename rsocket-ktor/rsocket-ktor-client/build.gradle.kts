@@ -32,4 +32,4 @@ kotlin {
     configureNative()
 }
 
-description = "Ktor Client RSocket plugin"
+description = "RSocket ktor client plugin"

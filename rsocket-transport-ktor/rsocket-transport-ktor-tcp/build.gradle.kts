@@ -31,4 +31,4 @@ kotlin {
     configureNative(NativeTargets.Nix)
 }
 
-description = "Ktor TCP RSocket transport implementation"
+description = "RSocket ktor TCP client/server transport implementation"
