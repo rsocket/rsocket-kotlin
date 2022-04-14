@@ -59,10 +59,10 @@ Dependencies:
 ```kotlin
 dependencies {
     //for client
-    implementation("io.rsocket.kotlin:rsocket-ktor-client:0.15.0")
+    implementation("io.rsocket.kotlin:rsocket-ktor-client:0.15.4")
 
     //for server
-    implementation("io.rsocket.kotlin:rsocket-ktor-server:0.15.0")
+    implementation("io.rsocket.kotlin:rsocket-ktor-server:0.15.4")
 }
 ```
 
@@ -183,19 +183,19 @@ Dependencies:
 
 ```kotlin
 dependencies {
-    implementation("io.rsocket.kotlin:rsocket-core:0.15.0")
+    implementation("io.rsocket.kotlin:rsocket-core:0.15.4")
 
     // TCP ktor client/server transport
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:0.15.0")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:0.15.4")
 
     // WS ktor client transport
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-client:0.15.0")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-client:0.15.4")
 
     // WS ktor server transport
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:0.15.0")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:0.15.4")
 
     // TCP nodeJS client/server transport
-    implementation("io.rsocket.kotlin:rsocket-transport-nodejs-tcp:0.15.0")
+    implementation("io.rsocket.kotlin:rsocket-transport-nodejs-tcp:0.15.4")
 }
 ```
 
