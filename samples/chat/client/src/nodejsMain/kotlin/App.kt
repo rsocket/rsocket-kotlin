@@ -16,29 +16,17 @@
 
 package io.rsocket.kotlin.samples.chat.client
 
-import io.rsocket.kotlin.*
-import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.samples.chat.api.*
-import kotlinx.serialization.*
+import kotlinx.coroutines.*
 
-@OptIn(ExperimentalSerializationApi::class)
-class ApiClient(rSocket: RSocket) {
-    private val proto = ConfiguredProtoBuf
-    val users = UserApiClient(rSocket, proto)
-    val chats = ChatApiClient(rSocket, proto)
-    val messages = MessageApiClient(rSocket, proto)
-}
-
-suspend fun ApiClient(
-    address: ServerAddress,
-    name: String
-): ApiClient {
-    println("Connecting client to: $address")
-    val connector = RSocketConnector {
-        connectionConfig {
-            setupPayload { buildPayload { data(name) } }
+suspend fun main() {
+    coroutineScope {
+        // native WS server is incompatible with js WS client
+        (Servers.ALL - Servers.Native.WS).forEach {
+            val client = ApiClient(it, "Kolya")
+            launch {
+                client.use(it, "RSocket is awesome! (from nodeJS)")
+            }
         }
     }
-    return ApiClient(connector.connect(ClientTransport(address)))
 }

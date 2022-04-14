@@ -16,12 +16,11 @@
 
 package io.rsocket.kotlin.samples.chat.server
 
-import kotlin.native.concurrent.*
-import kotlin.system.*
+import kotlin.js.*
 
 actual class Counter {
-    private val atomic = AtomicInt(0)
-    actual fun next(): Int = atomic.addAndGet(1)
+    private var value = 0
+    actual fun next(): Int = value++
 }
 
-actual fun currentMillis(): Long = getTimeMillis()
+actual fun currentMillis(): Long = Date.now().toLong()

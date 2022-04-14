@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.samples.chat.server
+package io.rsocket.kotlin.samples.chat.client
 
-import kotlin.native.concurrent.*
-import kotlin.system.*
+import io.rsocket.kotlin.samples.chat.api.*
+import io.rsocket.kotlin.transport.*
 
-actual class Counter {
-    private val atomic = AtomicInt(0)
-    actual fun next(): Int = atomic.addAndGet(1)
-}
+fun ClientTransport(address: ServerAddress): ClientTransport =
+    clientTransport(address.type, "localhost", address.port)
 
-actual fun currentMillis(): Long = getTimeMillis()
+internal expect fun clientTransport(
+    type: TransportType,
+    host: String,
+    port: Int
+): ClientTransport

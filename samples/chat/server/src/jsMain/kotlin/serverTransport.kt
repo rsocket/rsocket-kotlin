@@ -16,12 +16,15 @@
 
 package io.rsocket.kotlin.samples.chat.server
 
-import kotlin.native.concurrent.*
-import kotlin.system.*
+import io.rsocket.kotlin.samples.chat.api.*
+import io.rsocket.kotlin.transport.*
+import io.rsocket.kotlin.transport.nodejs.tcp.*
 
-actual class Counter {
-    private val atomic = AtomicInt(0)
-    actual fun next(): Int = atomic.addAndGet(1)
+actual fun serverTransport(
+    type: TransportType,
+    host: String,
+    port: Int
+): ServerTransport<*> = when (type) {
+    TransportType.TCP -> TcpServerTransport(port, host)
+    TransportType.WS  -> error("WebSocket is not supported")
 }
-
-actual fun currentMillis(): Long = getTimeMillis()

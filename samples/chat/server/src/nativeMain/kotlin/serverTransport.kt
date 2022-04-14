@@ -16,12 +16,17 @@
 
 package io.rsocket.kotlin.samples.chat.server
 
-import kotlin.native.concurrent.*
-import kotlin.system.*
+import io.ktor.server.cio.*
+import io.rsocket.kotlin.samples.chat.api.*
+import io.rsocket.kotlin.transport.*
+import io.rsocket.kotlin.transport.ktor.tcp.*
+import io.rsocket.kotlin.transport.ktor.websocket.server.*
 
-actual class Counter {
-    private val atomic = AtomicInt(0)
-    actual fun next(): Int = atomic.addAndGet(1)
+actual fun serverTransport(
+    type: TransportType,
+    host: String,
+    port: Int
+): ServerTransport<*> = when (type) {
+    TransportType.TCP -> TcpServerTransport(host, port)
+    TransportType.WS  -> WebSocketServerTransport(CIO, port, host)
 }
-
-actual fun currentMillis(): Long = getTimeMillis()
