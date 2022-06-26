@@ -71,7 +71,7 @@ class TestConnection : Connection, ClientTransport {
     internal suspend fun test(validate: suspend FlowTurbine<Frame>.() -> Unit) {
         sendChannel.consumeAsFlow().map {
             it.readFrame(InUseTrackingPool)
-        }.test(5.seconds, validate = validate)
+        }.test(validate)
     }
 }
 

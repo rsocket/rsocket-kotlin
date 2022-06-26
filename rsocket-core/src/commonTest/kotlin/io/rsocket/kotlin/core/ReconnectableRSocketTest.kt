@@ -203,7 +203,7 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
             rSocket.requestStream(Payload.Empty).collect()
         }
 
-        rSocket.requestStream(Payload.Empty).test(5.seconds) {
+        rSocket.requestStream(Payload.Empty).test {
             repeat(5) {
                 assertEquals(Payload.Empty, awaitItem())
             }

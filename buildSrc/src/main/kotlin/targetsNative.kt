@@ -42,14 +42,12 @@ fun KotlinMultiplatformExtension.configureNative(
     }.forEach {
         sourceSets["${it.name}Main"].dependsOn(nativeMain)
         sourceSets["${it.name}Test"].dependsOn(nativeTest)
-    }
 
-    targets.all {
         //add another test task with release binary
-        if (this is KotlinNativeTargetWithTests<*>) {
-            binaries.test(listOf(NativeBuildType.RELEASE))
-            val releaseTest by testRuns.creating {
-                setExecutionSourceFrom(binaries.getTest(NativeBuildType.RELEASE))
+        if (it is KotlinNativeTargetWithTests<*>) {
+            it.binaries.test(listOf(NativeBuildType.RELEASE))
+            it.testRuns.create("releaseTest") {
+                setExecutionSourceFrom(it.binaries.getTest(NativeBuildType.RELEASE))
             }
         }
     }

@@ -1,9 +1,6 @@
 name: Run tests on all platforms
 on: [ workflow_call, workflow_dispatch ]
 
-env:
-  GRADLE_BUILD_ACTION_CACHE_DEBUG_ENABLED: true
-
 jobs:
   jvm-test:
     name: Run JVM(${{ matrix.target }}) tests
@@ -11,9 +8,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [ '', '11', '17' ]
+        target: [ '8', '11', '17' ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: echo "KONAN_DATA_DIR=${HOME}/.gradle/konan" >> $GITHUB_ENV
       - name: Run tests
         timeout-minutes: 30
@@ -31,7 +28,7 @@ jobs:
             nodejs
             yarn
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-reports
           path: "**/build/test-results/*Test/TEST-*.xml"
@@ -45,7 +42,7 @@ jobs:
       matrix:
         target: [ Ir, Legacy ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: echo "KONAN_DATA_DIR=${HOME}/.gradle/konan" >> $GITHUB_ENV
       - name: Run tests
         timeout-minutes: 30
@@ -64,7 +61,7 @@ jobs:
             nodejs
             yarn
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-reports
           path: "**/build/test-results/*Test/TEST-*.xml"
@@ -76,7 +73,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ macos-11 ]
+        os: [ macos-latest ]
         target: [ macosX64, iosX64, tvosX64, watchosX64 ]
         include:
           - os: ubuntu-latest
@@ -84,14 +81,14 @@ jobs:
           - os: windows-latest
             target: mingwX64
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - if: matrix.os != 'windows-latest'
         run: echo "KONAN_DATA_DIR=${HOME}/.gradle/konan" >> $GITHUB_ENV
       - if: matrix.os == 'windows-latest'
         run: echo "KONAN_DATA_DIR=${USERPROFILE}\.gradle\konan" >> $GITHUB_ENV
         shell: bash
       - name: Run tests
-        timeout-minutes: 30
+        timeout-minutes: 60
         uses: gradle/gradle-build-action@v2
         with:
           arguments: |
@@ -107,7 +104,7 @@ jobs:
             nodejs
             yarn
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-reports
           path: "**/build/test-results/*Test/TEST-*.xml"
@@ -119,7 +116,7 @@ jobs:
     name: Publish test report
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: test-reports
           path: test-reports

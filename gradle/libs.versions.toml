@@ -1,17 +1,17 @@
 [versions]
-kotlin = "1.6.20"
+kotlin = "1.7.20"
 
-kotlinx-atomicfu = "0.17.1"
-kotlinx-coroutines = "1.6.1"
-kotlinx-benchmark = "0.4.2"
+kotlinx-atomicfu = "0.18.4"
+kotlinx-coroutines = "1.6.4"
+kotlinx-benchmark = "0.4.5"
 
-ktor = "2.0.0"
+ktor = "2.1.2"
 
-turbine = "0.7.0"
+turbine = "0.8.0"
 
 versionUpdates = "0.42.0"
 
-rsocket-java = "1.1.2"
+rsocket-java = "1.1.3"
 
 jmh = "1.35"
 

@@ -23,9 +23,6 @@ dependencies {
     implementation(buildLibs.build.kotlinx.atomicfu)
 }
 
-kotlin {
-    jvmToolchain {
-        this as JavaToolchainSpec
-        languageVersion.set(JavaLanguageVersion.of(8))
-    }
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
 }

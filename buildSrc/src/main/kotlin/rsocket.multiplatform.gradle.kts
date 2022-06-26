@@ -24,9 +24,12 @@ kotlin {
         languageSettings {
             progressiveMode = true
 
-            optIn("kotlin.RequiresOptIn")
-
             if (name.contains("test", ignoreCase = true)) optInForTest()
         }
     }
+}
+
+atomicfu {
+    dependenciesVersion = extensions.getByType<VersionCatalogsExtension>()
+        .named("libs").findVersion("kotlinx-atomicfu").get().requiredVersion
 }
