@@ -1,7 +1,7 @@
 [versions]
 kotlin = "1.7.20"
 
-kotlinx-atomicfu = "0.18.4"
+kotlinx-atomicfu = "0.18.5"
 kotlinx-coroutines = "1.6.4"
 kotlinx-benchmark = "0.4.5"
 
