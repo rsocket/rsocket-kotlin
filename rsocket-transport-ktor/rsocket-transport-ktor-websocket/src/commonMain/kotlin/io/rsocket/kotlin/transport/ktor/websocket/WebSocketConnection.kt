@@ -22,19 +22,25 @@ import io.ktor.utils.io.pool.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 
 @TransportApi
 public class WebSocketConnection(
     private val session: WebSocketSession,
-    override val pool: ObjectPool<ChunkBuffer>
+    override val pool: ObjectPool<ChunkBuffer>,
 ) : Connection, CoroutineScope by session {
-    override suspend fun send(packet: ByteReadPacket) {
-        session.send(packet.readBytes())
+    override suspend fun send(packet: ByteReadPacket): Boolean {
+        return try {
+            session.send(packet.readBytes())
+            true
+        } catch (cause: ClosedSendChannelException) {
+            false
+        }
     }
 
-    override suspend fun receive(): ByteReadPacket {
-        val frame = session.incoming.receive()
-        return ByteReadPacket(frame.data)
+    override suspend fun receive(): ByteReadPacket? {
+        return session.incoming.receiveCatching().onClosed { it?.let { throw it } }.getOrNull()?.let {
+            ByteReadPacket(it.data)
+        }
     }
-
 }

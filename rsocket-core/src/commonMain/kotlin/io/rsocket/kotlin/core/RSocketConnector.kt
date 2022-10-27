@@ -70,7 +70,7 @@ public class RSocketConnector internal constructor(
                 connectionConfig = connectionConfig,
                 acceptor = acceptor
             )
-            connection.sendFrame(setupFrame)
+            check(connection.sendFrame(setupFrame)) { "Connection closed" }
             return requester
         } catch (cause: Throwable) {
             connectionConfig.setupPayload.close()

@@ -28,14 +28,19 @@ internal class LocalConnection(
     private val sender: SendChannel<ByteReadPacket>,
     private val receiver: ReceiveChannel<ByteReadPacket>,
     override val pool: ObjectPool<ChunkBuffer>,
-    override val coroutineContext: CoroutineContext
+    override val coroutineContext: CoroutineContext,
 ) : Connection {
 
-    override suspend fun send(packet: ByteReadPacket) {
-        sender.send(packet)
+    override suspend fun send(packet: ByteReadPacket): Boolean {
+        return try {
+            sender.send(packet)
+            true
+        } catch (cause: ClosedSendChannelException) {
+            false
+        }
     }
 
-    override suspend fun receive(): ByteReadPacket {
-        return receiver.receive()
+    override suspend fun receive(): ByteReadPacket? {
+        return receiver.receiveCatching().onClosed { it?.let { throw it } }.getOrNull()
     }
 }

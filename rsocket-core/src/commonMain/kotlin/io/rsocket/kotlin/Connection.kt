@@ -30,15 +30,15 @@ import kotlinx.coroutines.*
 public interface Connection : CoroutineScope {
     public val pool: ObjectPool<ChunkBuffer> get() = ChunkBuffer.Pool
 
-    public suspend fun send(packet: ByteReadPacket)
-    public suspend fun receive(): ByteReadPacket
+    public suspend fun send(packet: ByteReadPacket): Boolean
+    public suspend fun receive(): ByteReadPacket?
 }
 
 @OptIn(TransportApi::class)
-internal suspend inline fun <T> Connection.receiveFrame(block: (frame: Frame) -> T): T =
-    receive().readFrame(pool).closeOnError(block)
+internal suspend inline fun <T : Any> Connection.receiveFrame(block: (frame: Frame) -> T): T? =
+    receive()?.readFrame(pool)?.closeOnError(block)
 
 @OptIn(TransportApi::class)
-internal suspend fun Connection.sendFrame(frame: Frame) {
-    frame.toPacket(pool).closeOnError { send(it) }
+internal suspend fun Connection.sendFrame(frame: Frame): Boolean {
+    return frame.toPacket(pool).closeOnError { send(it) }
 }

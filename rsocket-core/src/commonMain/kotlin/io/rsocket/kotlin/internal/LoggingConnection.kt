@@ -36,13 +36,13 @@ private class LoggingConnection(
         return copy().use { it.readFrame(pool).use { it.dump(length) } }
     }
 
-    override suspend fun send(packet: ByteReadPacket) {
+    override suspend fun send(packet: ByteReadPacket): Boolean {
         logger.debug { "Send:    ${packet.dumpFrameToString()}" }
-        delegate.send(packet)
+        return delegate.send(packet)
     }
 
-    override suspend fun receive(): ByteReadPacket {
-        val packet = delegate.receive()
+    override suspend fun receive(): ByteReadPacket? {
+        val packet = delegate.receive() ?: return null
         logger.debug { "Receive: ${packet.dumpFrameToString()}" }
         return packet
     }

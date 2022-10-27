@@ -37,6 +37,9 @@ kotlin {
         main {
             dependencies {
                 api(kotlin("test-junit"))
+
+                implementation("org.slf4j:jul-to-slf4j:1.7.36")
+                implementation("ch.qos.logback:logback-classic:1.2.11")
             }
         }
     }

@@ -43,39 +43,47 @@ public class RSocketServer internal constructor(
         acceptor: ConnectionAcceptor,
     ): T = with(transport) {
         scope.start {
-            it.wrapConnection().bind(acceptor).join()
+            it.wrapConnection().bind(acceptor)
         }
     }
 
-    private suspend fun Connection.bind(acceptor: ConnectionAcceptor): Job = receiveFrame { setupFrame ->
-        when {
-            setupFrame !is SetupFrame             -> failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
-            setupFrame.version != Version.Current -> failSetup(RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}"))
-            setupFrame.honorLease                 -> failSetup(RSocketError.Setup.Unsupported("Lease is not supported"))
-            setupFrame.resumeToken != null        -> failSetup(RSocketError.Setup.Unsupported("Resume is not supported"))
-            else                                  -> try {
-                connect(
-                    connection = this,
-                    isServer = true,
-                    maxFragmentSize = maxFragmentSize,
-                    interceptors = interceptors,
-                    connectionConfig = ConnectionConfig(
-                        keepAlive = setupFrame.keepAlive,
-                        payloadMimeType = setupFrame.payloadMimeType,
-                        setupPayload = setupFrame.payload
-                    ),
-                    acceptor = acceptor
-                )
-                coroutineContext.job
-            } catch (e: Throwable) {
-                failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
+    @Suppress("SuspendFunctionOnCoroutineScope")
+    private suspend fun Connection.bind(acceptor: ConnectionAcceptor) {
+        val job = receiveFrame { setupFrame ->
+            when {
+                setupFrame !is SetupFrame             -> failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
+                setupFrame.version != Version.Current -> failSetup(RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}"))
+                setupFrame.honorLease                 -> failSetup(RSocketError.Setup.Unsupported("Lease is not supported"))
+                setupFrame.resumeToken != null        -> failSetup(RSocketError.Setup.Unsupported("Resume is not supported"))
+                else                                  -> try {
+                    connect(
+                        connection = this,
+                        isServer = true,
+                        maxFragmentSize = maxFragmentSize,
+                        interceptors = interceptors,
+                        connectionConfig = ConnectionConfig(
+                            keepAlive = setupFrame.keepAlive,
+                            payloadMimeType = setupFrame.payloadMimeType,
+                            setupPayload = setupFrame.payload
+                        ),
+                        acceptor = acceptor
+                    )
+                    coroutineContext.job
+                } catch (e: Throwable) {
+                    failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
+                }
             }
+        }
+
+        when (job) {
+            null -> cancel("Connection closed")
+            else -> job.join()
         }
     }
 
     @Suppress("SuspendFunctionOnCoroutineScope")
     private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
-        sendFrame(ErrorFrame(0, error))
+        check(sendFrame(ErrorFrame(0, error))) { "Connection closed" }
         cancel("Connection establishment failed", error)
         throw error
     }

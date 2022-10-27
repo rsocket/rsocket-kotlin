@@ -27,13 +27,14 @@ import io.rsocket.kotlin.Connection
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
 @TransportApi
 internal class TcpConnection(
     socket: Socket,
     override val coroutineContext: CoroutineContext,
-    override val pool: ObjectPool<ChunkBuffer>
+    override val pool: ObjectPool<ChunkBuffer>,
 ) : Connection {
     private val socketConnection = socket.connection()
 
@@ -43,8 +44,8 @@ internal class TcpConnection(
     init {
         launch {
             socketConnection.output.use {
-                while (isActive) {
-                    val packet = sendChannel.receive()
+                while (true) {
+                    val packet = sendChannel.receiveCatching().getOrNull() ?: break
                     val length = packet.remaining.toInt()
                     try {
                         writePacket {
@@ -61,9 +62,9 @@ internal class TcpConnection(
         }
         launch {
             socketConnection.input.apply {
-                while (isActive) {
-                    val length = @Suppress("INVISIBLE_MEMBER") readPacket(3).readLength()
-                    val packet = readPacket(length)
+                while (true) {
+                    val length = @Suppress("INVISIBLE_MEMBER") readPacketOrNull(3)?.readLength() ?: break
+                    val packet = readPacketOrNull(length.toLong()) ?: break
                     try {
                         receiveChannel.send(packet)
                     } catch (cause: Throwable) {
@@ -82,6 +83,23 @@ internal class TcpConnection(
         }
     }
 
-    override suspend fun send(packet: ByteReadPacket): Unit = sendChannel.send(packet)
-    override suspend fun receive(): ByteReadPacket = receiveChannel.receive()
+    private suspend fun ByteReadChannel.readPacketOrNull(size: Long): ByteReadPacket? {
+        val packet = readRemaining(size)
+        if (packet.remaining == size) return packet
+        packet.close()
+        return null
+    }
+
+    override suspend fun send(packet: ByteReadPacket): Boolean {
+        return try {
+            sendChannel.send(packet)
+            true
+        } catch (cause: ClosedSendChannelException) {
+            false
+        }
+    }
+
+    override suspend fun receive(): ByteReadPacket? {
+        return receiveChannel.receiveCatching().onClosed { it?.let { throw it } }.getOrNull()
+    }
 }

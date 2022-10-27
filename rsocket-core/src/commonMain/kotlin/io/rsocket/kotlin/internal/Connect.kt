@@ -28,7 +28,7 @@ internal suspend inline fun connect(
     maxFragmentSize: Int,
     interceptors: Interceptors,
     connectionConfig: ConnectionConfig,
-    acceptor: ConnectionAcceptor
+    acceptor: ConnectionAcceptor,
 ): RSocket {
     val prioritizer = Prioritizer()
     val frameSender = FrameSender(prioritizer, connection.pool, maxFragmentSize)
@@ -77,26 +77,38 @@ internal suspend inline fun connect(
 
     // start keepalive ticks
     (connection + CoroutineName("rSocket-connection-keep-alive")).launch {
-        while (isActive) keepAliveHandler.tick()
+        while (true) keepAliveHandler.tick()
     }
 
     // start sending frames to connection
     (connection + CoroutineName("rSocket-connection-send")).launch {
-        while (isActive) connection.sendFrame(prioritizer.receive())
+        while (true) {
+            if (!connection.sendFrame(prioritizer.receive())) {
+                connection.cancel("Connection closed")
+                break
+            }
+        }
     }
 
     // start frame handling
     (connection + CoroutineName("rSocket-connection-receive")).launch {
-        while (isActive) connection.receiveFrame { frame ->
-            when (frame.streamId) {
-                0 -> when (frame) {
-                    is MetadataPushFrame -> responder.handleMetadataPush(frame.metadata)
-                    is ErrorFrame        -> connection.cancel("Error frame received on 0 stream", frame.throwable)
-                    is KeepAliveFrame    -> keepAliveHandler.mark(frame)
-                    is LeaseFrame        -> frame.close().also { error("lease isn't implemented") }
-                    else                 -> frame.close()
+        while (true) {
+            val result = connection.receiveFrame { frame ->
+                when (frame.streamId) {
+                    0 -> when (frame) {
+                        is MetadataPushFrame -> responder.handleMetadataPush(frame.metadata)
+                        is ErrorFrame        -> connection.cancel("Error frame received on 0 stream", frame.throwable)
+                        is KeepAliveFrame    -> keepAliveHandler.mark(frame)
+                        is LeaseFrame        -> frame.close().also { error("lease isn't implemented") }
+                        else                 -> frame.close()
+                    }
+
+                    else -> streamsStorage.handleFrame(frame, responder)
                 }
-                else -> streamsStorage.handleFrame(frame, responder)
+            }
+            if (result == null) {
+                connection.cancel("Connection closed")
+                break
             }
         }
     }

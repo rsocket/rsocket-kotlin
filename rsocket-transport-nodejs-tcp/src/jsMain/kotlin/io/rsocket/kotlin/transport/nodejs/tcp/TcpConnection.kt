@@ -60,11 +60,16 @@ internal class TcpConnection(
         )
     }
 
-    override suspend fun send(packet: ByteReadPacket) {
-        sendChannel.send(packet)
+    override suspend fun send(packet: ByteReadPacket): Boolean {
+        return try {
+            sendChannel.send(packet)
+            true
+        } catch (cause: ClosedSendChannelException) {
+            false
+        }
     }
 
-    override suspend fun receive(): ByteReadPacket {
-        return receiveChannel.receive()
+    override suspend fun receive(): ByteReadPacket? {
+        return receiveChannel.receiveCatching().onClosed { it?.let { throw it } }.getOrNull()
     }
 }
