@@ -14,22 +14,31 @@
  * limitations under the License.
  */
 
-plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.all")
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+    includeBuild("../kotlin-version-catalog")
 }
 
-kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketCore)
-                api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
-                api(libs.ktor.client.core)
-                api(libs.ktor.client.websockets)
-            }
+dependencyResolutionManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+
+    versionCatalogs {
+        create("libs") {
+            from(files("../../libs.versions.toml"))
         }
     }
 }
 
-description = "RSocket ktor WebSocket client transport implementation"
+plugins {
+    id("kotlin-version-catalog")
+}
+
+rootProject.name = "build-logic"
+
+includeBuild("../build-parameters")

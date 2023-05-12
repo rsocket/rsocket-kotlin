@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 
 plugins {
-    rsocket.template.transport
+    id("rsocket.template.transport")
+    id("rsocket.target.jvm")
+    id("rsocket.target.native.nix")
 }
 
 kotlin {
-    configureCommon {
-        main {
+    sourceSets {
+        commonMain {
             dependencies {
                 api(projects.rsocketCore)
                 api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
@@ -28,16 +30,15 @@ kotlin {
                 api(libs.ktor.server.websockets)
             }
         }
-        test {
+        commonTest {
             dependencies {
                 implementation(projects.rsocketTransportKtor.rsocketTransportKtorWebsocketClient)
                 implementation(libs.ktor.client.cio)
                 implementation(libs.ktor.server.cio)
             }
         }
-    }
-    configureJvm {
-        test {
+
+        jvmTest {
             dependencies {
                 implementation(libs.ktor.client.okhttp)
 
@@ -46,6 +47,6 @@ kotlin {
             }
         }
     }
-    configureNative(NativeTargets.Nix)
 }
+
 description = "RSocket ktor WebSocket server transport implementation"

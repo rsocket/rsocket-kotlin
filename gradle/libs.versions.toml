@@ -1,6 +1,4 @@
 [versions]
-kotlin = "1.8.21"
-
 kotlinx-atomicfu = "0.20.2"
 kotlinx-coroutines = "1.6.4" #1.7.0 needs ktor with 1.7.0...
 kotlinx-benchmark = "0.4.8"
@@ -41,7 +39,6 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 rsocket-java-core = { module = 'io.rsocket:rsocket-core', version.ref = "rsocket-java" }
 rsocket-java-transport-local = { module = 'io.rsocket:rsocket-transport-local', version.ref = "rsocket-java" }
 
-build-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 build-kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu-gradle-plugin", version.ref = "kotlinx-atomicfu" }
 
 [plugins]

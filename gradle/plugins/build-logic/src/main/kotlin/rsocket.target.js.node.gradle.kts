@@ -15,21 +15,17 @@
  */
 
 plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.all")
+    id("rsocket.multiplatform")
 }
 
 kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketCore)
-                api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
-                api(libs.ktor.client.core)
-                api(libs.ktor.client.websockets)
+    js {
+        nodejs {
+            testTask {
+                useMocha {
+                    timeout = "600s"
+                }
             }
         }
     }
 }
-
-description = "RSocket ktor WebSocket client transport implementation"

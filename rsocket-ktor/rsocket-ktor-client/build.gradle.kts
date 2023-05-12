@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,19 @@
  */
 
 plugins {
-    rsocket.template.library
+    id("rsocket.template.library")
+    id("rsocket.target.all")
 }
 
 kotlin {
-    configureCommon {
-        main {
+    sourceSets {
+        commonMain {
             dependencies {
                 api(projects.rsocketKtor)
                 api(libs.ktor.client.websockets)
             }
         }
     }
-    configureJvm()
-    configureJs()
-    configureNative()
 }
 
 description = "RSocket ktor client plugin"

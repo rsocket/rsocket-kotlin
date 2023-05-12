@@ -15,21 +15,18 @@
  */
 
 plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.all")
+    id("rsocket.multiplatform")
 }
 
 kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketCore)
-                api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
-                api(libs.ktor.client.core)
-                api(libs.ktor.client.websockets)
+    js {
+        browser {
+            testTask {
+                useKarma {
+                    useConfigDirectory(rootDir.resolve("gradle/js/karma.config.d"))
+                    useChromeHeadless()
+                }
             }
         }
     }
 }
-
-description = "RSocket ktor WebSocket client transport implementation"

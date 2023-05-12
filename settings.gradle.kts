@@ -21,6 +21,10 @@ pluginManagement {
         gradlePluginPortal()
         mavenCentral()
     }
+
+    includeBuild("gradle/plugins/build-parameters")
+    includeBuild("gradle/plugins/build-logic")
+    includeBuild("gradle/plugins/kotlin-version-catalog")
 }
 
 dependencyResolutionManagement {
@@ -30,6 +34,7 @@ dependencyResolutionManagement {
 }
 
 plugins {
+    id("kotlin-version-catalog")
     id("com.gradle.enterprise") version "3.13.2"
 }
 

@@ -15,21 +15,24 @@
  */
 
 plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.all")
+    id("rsocket.multiplatform.native")
 }
 
 kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketCore)
-                api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
-                api(libs.ktor.client.core)
-                api(libs.ktor.client.websockets)
-            }
-        }
-    }
-}
+    macosX64()
+    macosArm64()
 
-description = "RSocket ktor WebSocket client transport implementation"
+    iosArm64()
+    iosX64()
+    iosSimulatorArm64()
+
+    tvosArm64()
+    tvosX64()
+    tvosSimulatorArm64()
+
+    //TODO: after coroutines 1.7.0 add watchosDeviceArm64()
+    watchosArm32()
+    watchosArm64()
+    watchosX64()
+    watchosSimulatorArm64()
+}

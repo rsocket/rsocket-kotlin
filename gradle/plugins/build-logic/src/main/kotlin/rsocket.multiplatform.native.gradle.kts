@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.plugin.mpp.*
+
 plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.all")
+    id("rsocket.multiplatform")
 }
 
 kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketCore)
-                api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
-                api(libs.ktor.client.core)
-                api(libs.ktor.client.websockets)
+    targets.configureEach {
+        //add another test task with release binary
+        if (this is KotlinNativeTargetWithTests<*>) {
+            binaries.test(listOf(NativeBuildType.RELEASE))
+            testRuns.create("releaseTest") {
+                setExecutionSourceFrom(binaries.getTest(NativeBuildType.RELEASE))
             }
         }
     }
 }
-
-description = "RSocket ktor WebSocket client transport implementation"

@@ -22,21 +22,20 @@ buildscript {
     }
 
     dependencies {
-        classpath(libs.build.kotlin)
+        // kotlinx.atomicfu should be on classpath
+        //  it's an implementation detail of kotlinx.atomicfu gradle plugin
+        classpath(kotlinLibs.gradle.plugin)
         classpath(libs.build.kotlinx.atomicfu)
     }
+}
+
+plugins {
+    id("build-parameters")
 }
 
 plugins.withType<YarnPlugin> {
     yarn.apply {
         lockFileDirectory = file("gradle/js/yarn")
         yarnLockMismatchReport = YarnLockMismatchReport.WARNING
-    }
-}
-
-subprojects {
-    tasks.whenTaskAdded {
-        if (name.endsWith("test", ignoreCase = true)) onlyIf { !rootProject.hasProperty("skipTests") }
-        if (name.startsWith("link", ignoreCase = true)) onlyIf { !rootProject.hasProperty("skipLink") }
     }
 }

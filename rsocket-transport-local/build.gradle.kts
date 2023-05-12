@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,18 @@
  */
 
 plugins {
-    rsocket.template.transport
+    id("rsocket.template.transport")
+    id("rsocket.target.all")
 }
 
 kotlin {
-    configureCommon {
-        main {
+    sourceSets {
+        commonMain {
             dependencies {
                 api(projects.rsocketCore)
             }
         }
     }
-    configureJvm()
-    configureJs()
-    configureNative()
 }
 
 description = "RSocket Local transport implementation"

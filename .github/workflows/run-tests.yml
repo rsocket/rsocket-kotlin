@@ -16,6 +16,7 @@ jobs:
             jvmTest
             jvm11Test
             jvm17Test
+            jvm20Test
             --scan
             --info
             --continue
