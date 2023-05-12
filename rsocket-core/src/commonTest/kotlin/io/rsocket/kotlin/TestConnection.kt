@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,23 +68,23 @@ class TestConnection : Connection, ClientTransport {
         }
     }
 
-    internal suspend fun test(validate: suspend FlowTurbine<Frame>.() -> Unit) {
+    internal suspend fun test(validate: suspend ReceiveTurbine<Frame>.() -> Unit) {
         sendChannel.consumeAsFlow().map {
             it.readFrame(InUseTrackingPool)
         }.test(5.seconds, validate = validate)
     }
 }
 
-suspend fun FlowTurbine<*>.expectNoEventsIn(duration: Duration) {
+suspend fun ReceiveTurbine<*>.expectNoEventsIn(duration: Duration) {
     delay(duration)
     expectNoEvents()
 }
 
-suspend fun FlowTurbine<*>.expectNoEventsIn(timeMillis: Long) {
+suspend fun ReceiveTurbine<*>.expectNoEventsIn(timeMillis: Long) {
     delay(timeMillis)
     expectNoEvents()
 }
 
-internal suspend inline fun FlowTurbine<Frame>.awaitFrame(block: (frame: Frame) -> Unit) {
+internal suspend inline fun ReceiveTurbine<Frame>.awaitFrame(block: (frame: Frame) -> Unit) {
     block(awaitItem())
 }
