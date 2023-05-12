@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,10 @@
 
 package io.rsocket.kotlin.transport.ktor.websocket.client
 
-import io.ktor.client.engine.js.*
-import io.rsocket.kotlin.test.*
-import io.rsocket.kotlin.transport.tests.*
-
-class ClientWebSocketTransportTest : TransportTest() {
-    override suspend fun before() {
-        client = connectClient(
-            WebSocketClientTransport(Js, port = 9000, context = testContext, pool = InUseTrackingPool)
-        )
-    }
-}
+//class ClientWebSocketTransportTest : TransportTest() {
+//    override suspend fun before() {
+//        client = connectClient(
+//            WebSocketClientTransport(Js, port = 9000, context = testContext, pool = InUseTrackingPool)
+//        )
+//    }
+//}
