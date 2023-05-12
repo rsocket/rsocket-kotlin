@@ -1,6 +1,9 @@
 syntax: glob
 
-/.idea/*
+**/.idea/*
+!/.idea/vcs.xml
+!/.idea/copyright
+!/.idea/codeStyles
 *.iml
 
 .gradle
@@ -8,6 +11,3 @@ classes
 build/
 *.log
 /local.properties
-
-/buildSrc/src/main/kotlin/KampVersions.kt
-/buildSrc/src/main/kotlin/KampModules.kt
