@@ -9,17 +9,34 @@ on:
 jobs:
   publish:
     if: github.repository == 'rsocket/rsocket-kotlin'
-    runs-on: macos-11
+    runs-on: macos-latest
+    concurrency:
+      group: publish-snapshot-${{ github.ref_name }}
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-gradle
+        with:
+          cache-read-only: true
       - if: inputs.add-branch-suffix
         id: set-version
         run: |
           ref_name=${{ github.ref_name }}
           branch_name="${ref_name////-}"
           echo "::set-output name=version-suffix::$branch_name"
-      - run: echo "KONAN_DATA_DIR=${HOME}/.gradle/konan" >> $GITHUB_ENV
-      - name: Publish to Github Packages (version x.y.z-${{ steps.set-version.outputs.version-suffix }}-SNAPSHOT)
+
+      - name: Publish to Maven Local (prepare packages)
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: |
+            publishToMavenLocal
+            --scan
+            --info
+            -PversionSuffix=${{ steps.set-version.outputs.version-suffix }}
+            -PgithubUsername=${{ github.actor }}
+            -PgithubPassword=${{ github.token }}
+
+      - name: Publish snapshot to Github Packages (version x.y.z-${{ steps.set-version.outputs.version-suffix }}-SNAPSHOT)
         uses: gradle/gradle-build-action@v2
         with:
           arguments: |
@@ -29,10 +46,3 @@ jobs:
             -PversionSuffix=${{ steps.set-version.outputs.version-suffix }}
             -PgithubUsername=${{ github.actor }}
             -PgithubPassword=${{ github.token }}
-          cache-read-only: true
-          gradle-home-cache-includes: |
-            caches
-            notifications
-            konan
-            nodejs
-            yarn

@@ -14,23 +14,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-11 ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
         sample: [ chat ]
     steps:
-      - uses: actions/checkout@v2
-      - if: matrix.os != 'windows-latest'
-        run: echo "KONAN_DATA_DIR=${HOME}/.gradle/konan" >> $GITHUB_ENV
-      - if: matrix.os == 'windows-latest'
-        run: echo "KONAN_DATA_DIR=${USERPROFILE}\.gradle\konan" >> $GITHUB_ENV
-        shell: bash
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-gradle
+        with:
+          cache-read-only: true
       - uses: gradle/gradle-build-action@v2
         with:
           arguments: build --continue
-          cache-read-only: true
           build-root-directory: samples/${{ matrix.sample }}
-          gradle-home-cache-includes: |
-            caches
-            notifications
-            konan
-            nodejs
-            yarn

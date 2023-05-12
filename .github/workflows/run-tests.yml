@@ -1,70 +1,49 @@
 name: Run tests on all platforms
 on: [ workflow_call, workflow_dispatch ]
 
-env:
-  GRADLE_BUILD_ACTION_CACHE_DEBUG_ENABLED: true
-
 jobs:
   jvm-test:
-    name: Run JVM(${{ matrix.target }}) tests
+    name: Run JVM tests
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [ '', '11', '17' ]
     steps:
-      - uses: actions/checkout@v2
-      - run: echo "KONAN_DATA_DIR=${HOME}/.gradle/konan" >> $GITHUB_ENV
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-gradle
       - name: Run tests
         timeout-minutes: 30
         uses: gradle/gradle-build-action@v2
         with:
           arguments: |
-            jvm${{ matrix.target }}Test
+            jvmTest
+            jvm11Test
+            jvm17Test
             --scan
             --info
             --continue
-          gradle-home-cache-includes: |
-            caches
-            notifications
-            konan
-            nodejs
-            yarn
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-reports
           path: "**/build/test-results/*Test/TEST-*.xml"
           retention-days: 1
 
   js-test:
-    name: Run JS(${{ matrix.target }}) tests
+    name: Run JS tests
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [ Ir, Legacy ]
     steps:
-      - uses: actions/checkout@v2
-      - run: echo "KONAN_DATA_DIR=${HOME}/.gradle/konan" >> $GITHUB_ENV
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-gradle
       - name: Run tests
         timeout-minutes: 30
         uses: gradle/gradle-build-action@v2
         with:
           arguments: |
-            js${{ matrix.target }}NodeTest
-            js${{ matrix.target }}BrowserTest
+            jsIrTest
+            jsLegacyTest
             --scan
             --info
             --continue
-          gradle-home-cache-includes: |
-            caches
-            notifications
-            konan
-            nodejs
-            yarn
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-reports
           path: "**/build/test-results/*Test/TEST-*.xml"
@@ -76,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ macos-11 ]
+        os: [ macos-latest ]
         target: [ macosX64, iosX64, tvosX64, watchosX64 ]
         include:
           - os: ubuntu-latest
@@ -84,12 +63,8 @@ jobs:
           - os: windows-latest
             target: mingwX64
     steps:
-      - uses: actions/checkout@v2
-      - if: matrix.os != 'windows-latest'
-        run: echo "KONAN_DATA_DIR=${HOME}/.gradle/konan" >> $GITHUB_ENV
-      - if: matrix.os == 'windows-latest'
-        run: echo "KONAN_DATA_DIR=${USERPROFILE}\.gradle\konan" >> $GITHUB_ENV
-        shell: bash
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup-gradle
       - name: Run tests
         timeout-minutes: 30
         uses: gradle/gradle-build-action@v2
@@ -100,14 +75,8 @@ jobs:
             --scan
             --info
             --continue
-          gradle-home-cache-includes: |
-            caches
-            notifications
-            konan
-            nodejs
-            yarn
       - if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-reports
           path: "**/build/test-results/*Test/TEST-*.xml"
@@ -118,15 +87,15 @@ jobs:
     if: always()
     name: Publish test report
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: test-reports
           path: test-reports
       - name: Publish Test Report
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          check_name: Test Report
           files: test-reports/**/TEST-*.xml
-          github_token: ${{ secrets.GITHUB_TOKEN }}
