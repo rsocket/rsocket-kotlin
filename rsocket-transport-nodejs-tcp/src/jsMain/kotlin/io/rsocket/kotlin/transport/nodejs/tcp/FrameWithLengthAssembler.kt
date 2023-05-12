@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 
 internal fun ByteReadPacket.withLength(): ByteReadPacket = buildPacket {
-    @Suppress("INVISIBLE_MEMBER") writeLength(this@withLength.remaining.toInt())
+    @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") writeLength(this@withLength.remaining.toInt())
     writePacket(this@withLength)
 }
 
@@ -36,7 +36,7 @@ internal class FrameWithLengthAssembler(private val onFrame: (frame: ByteReadPac
         while (true) when {
             expectedFrameLength == 0 && packetBuilder.size < 3 -> return // no length
             expectedFrameLength == 0                           -> withTemp { // has length
-                expectedFrameLength = @Suppress("INVISIBLE_MEMBER") it.readLength()
+                expectedFrameLength = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") it.readLength()
                 if (it.remaining >= expectedFrameLength) build(it) // if has length and frame
             }
             packetBuilder.size < expectedFrameLength           -> return // not enough bytes to read frame

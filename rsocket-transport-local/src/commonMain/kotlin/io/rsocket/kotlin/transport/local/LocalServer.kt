@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,12 +49,12 @@ public class LocalServer internal constructor(
     override val coroutineContext: CoroutineContext
 ) : ClientTransport {
     override suspend fun connect(): Connection {
-        val clientChannel = @Suppress("INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
-        val serverChannel = @Suppress("INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
+        val clientChannel = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
+        val serverChannel = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
         val connectionJob = Job(coroutineContext[Job])
         connectionJob.invokeOnCompletion {
-            @Suppress("INVISIBLE_MEMBER") clientChannel.fullClose(it)
-            @Suppress("INVISIBLE_MEMBER") serverChannel.fullClose(it)
+            @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") clientChannel.fullClose(it)
+            @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") serverChannel.fullClose(it)
         }
         val connectionContext = coroutineContext + connectionJob
         val clientConnection = LocalConnection(

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@ package io.rsocket.kotlin
 @Retention(value = AnnotationRetention.BINARY)
 @RequiresOptIn(
     level = RequiresOptIn.Level.WARNING,
-    message = "This is an API which is used to implement transport for RSocket, such as WS or TCP. " +
-            "This API can change in future in non backwards-compatible manner."
+    message = "This is an API which is used to implement transport for RSocket, such as WS or TCP. This API can change in future in non backwards-compatible manner."
 )
 public annotation class TransportApi
 
