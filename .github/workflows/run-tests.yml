@@ -37,8 +37,8 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: |
-            jsIrTest
-            jsLegacyTest
+            jsNodeTest
+            jsBrowserTest
             --scan
             --info
             --continue
