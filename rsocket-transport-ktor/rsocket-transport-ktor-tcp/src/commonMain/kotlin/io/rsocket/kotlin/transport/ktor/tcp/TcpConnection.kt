@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,8 @@ internal class TcpConnection(
 ) : Connection {
     private val socketConnection = socket.connection()
 
-    private val sendChannel = @Suppress("INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(8)
-    private val receiveChannel = @Suppress("INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(8)
+    private val sendChannel = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(8)
+    private val receiveChannel = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(8)
 
     init {
         launch {
@@ -48,7 +48,7 @@ internal class TcpConnection(
                     val length = packet.remaining.toInt()
                     try {
                         writePacket {
-                            @Suppress("INVISIBLE_MEMBER") writeLength(length)
+                            @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") writeLength(length)
                             writePacket(packet)
                         }
                         flush()
@@ -62,7 +62,7 @@ internal class TcpConnection(
         launch {
             socketConnection.input.apply {
                 while (isActive) {
-                    val length = @Suppress("INVISIBLE_MEMBER") readPacket(3).readLength()
+                    val length = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") readPacket(3).readLength()
                     val packet = readPacket(length)
                     try {
                         receiveChannel.send(packet)
@@ -74,8 +74,8 @@ internal class TcpConnection(
             }
         }
         coroutineContext.job.invokeOnCompletion {
-            @Suppress("INVISIBLE_MEMBER") sendChannel.fullClose(it)
-            @Suppress("INVISIBLE_MEMBER") receiveChannel.fullClose(it)
+            @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") sendChannel.fullClose(it)
+            @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") receiveChannel.fullClose(it)
             socketConnection.input.cancel(it)
             socketConnection.output.close(it)
             socketConnection.socket.close()
