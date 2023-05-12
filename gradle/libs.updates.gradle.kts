@@ -14,29 +14,28 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.gradle.targets.js.yarn.*
+/**
+ * run to check for dependencies:
+ *  ./gradlew :dependencyUpdates --init-script gradle/libs.updates.gradle.kts --no-configure-on-demand
+ */
 
-buildscript {
+initscript {
     repositories {
-        mavenCentral()
+        gradlePluginPortal()
     }
-
     dependencies {
-        classpath(libs.build.kotlin)
-        classpath(libs.build.kotlinx.atomicfu)
+        classpath("com.github.ben-manes:gradle-versions-plugin:+")
     }
 }
 
-plugins.withType<YarnPlugin> {
-    yarn.apply {
-        lockFileDirectory = file("gradle/js/yarn")
-        yarnLockMismatchReport = YarnLockMismatchReport.WARNING
-    }
-}
+allprojects {
+    println("Project: $name / ${rootProject.name}")
+    apply<com.github.benmanes.gradle.versions.VersionsPlugin>()
 
-subprojects {
-    tasks.whenTaskAdded {
-        if (name.endsWith("test", ignoreCase = true)) onlyIf { !rootProject.hasProperty("skipTests") }
-        if (name.startsWith("link", ignoreCase = true)) onlyIf { !rootProject.hasProperty("skipLink") }
+    // for root project add dependency on included builds
+    if (name == "rsocket-kotlin") tasks.named("dependencyUpdates") {
+        gradle.includedBuilds.forEach {
+            dependsOn(it.task(":dependencyUpdates"))
+        }
     }
 }
