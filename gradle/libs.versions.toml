@@ -7,7 +7,7 @@ kotlinx-benchmark = "0.4.8"
 
 ktor = "2.3.0"
 
-turbine = "0.7.0" #0.12.3
+turbine = "0.12.3" #0.13.0 needs coroutines 1.7.0
 
 rsocket-java = "1.1.3"
 
