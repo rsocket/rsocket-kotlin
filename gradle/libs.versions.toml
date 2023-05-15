@@ -1,19 +1,17 @@
 [versions]
-kotlin = "1.6.20"
+kotlin = "1.8.21"
 
-kotlinx-atomicfu = "0.17.1"
-kotlinx-coroutines = "1.6.1"
-kotlinx-benchmark = "0.4.2"
+kotlinx-atomicfu = "0.20.2"
+kotlinx-coroutines = "1.6.4" #1.7.0 needs ktor with 1.7.0...
+kotlinx-benchmark = "0.4.8"
 
-ktor = "2.0.0"
+ktor = "2.3.0"
 
-turbine = "0.7.0"
+turbine = "0.7.0" #0.12.3
 
-versionUpdates = "0.42.0"
+rsocket-java = "1.1.3"
 
-rsocket-java = "1.1.2"
-
-jmh = "1.35"
+jmh = "1.36"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
@@ -47,8 +45,4 @@ build-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.r
 build-kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu-gradle-plugin", version.ref = "kotlinx-atomicfu" }
 
 [plugins]
-kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
-
 kotlinx-benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotlinx-benchmark" }
-
-versionUpdates = { id = "com.github.ben-manes.versions", version.ref = "versionUpdates" }

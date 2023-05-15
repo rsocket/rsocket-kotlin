@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 import org.gradle.api.*
 import org.jetbrains.kotlin.gradle.dsl.*
-import org.jetbrains.kotlin.gradle.targets.js.yarn.*
 import java.io.*
 
 enum class JsTarget(
@@ -53,11 +52,6 @@ fun KotlinMultiplatformExtension.configureJs(
         }
     }
     TargetBuilder(sourceSets, "js").block()
-}
-
-//should be called only in root project
-fun Project.configureYarn() {
-    yarn.lockFileDirectory = project.jsDir("yarn")
 }
 
 private fun Project.jsDir(folder: String): File = rootDir.resolve("gradle").resolve("js").resolve(folder)
