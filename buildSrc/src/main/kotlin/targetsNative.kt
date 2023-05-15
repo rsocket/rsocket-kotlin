@@ -59,9 +59,9 @@ fun KotlinMultiplatformExtension.configureNative(
 
 private fun KotlinMultiplatformExtension.darwinTargets(): List<KotlinNativeTarget> {
     val macosTargets = listOf(macosX64(), macosArm64())
-    val iosTargets = listOf(iosArm32(), iosArm64(), iosX64(), iosSimulatorArm64())
+    val iosTargets = listOf(iosArm64(), iosX64(), iosSimulatorArm64())
     val tvosTargets = listOf(tvosArm64(), tvosX64(), tvosSimulatorArm64())
-    val watchosTargets = listOf(watchosArm32(), watchosArm64(), watchosX86(), watchosX64(), watchosSimulatorArm64())
+    val watchosTargets = listOf(watchosArm32(), watchosArm64(), watchosX64(), watchosSimulatorArm64())
     return macosTargets + iosTargets + tvosTargets + watchosTargets
 }
 
