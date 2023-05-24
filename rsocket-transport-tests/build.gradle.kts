@@ -15,22 +15,19 @@
  */
 
 plugins {
-    rsocket.multiplatform
+    id("rsocket.template.test")
+    id("rsocket.target.all")
+    id("kotlinx-atomicfu")
 }
 
 kotlin {
-    sourceSets.all {
-        languageSettings.optInForTest()
-    }
-    configureCommon {
-        main {
+    sourceSets {
+        commonMain {
             dependencies {
                 api(projects.rsocketTest)
             }
         }
-    }
-    configureJvm {
-        test {
+        jvmTest {
             dependencies {
                 implementation(projects.rsocketTransportKtor.rsocketTransportKtorTcp)
                 implementation(projects.rsocketTransportKtor.rsocketTransportKtorWebsocketServer)
@@ -38,8 +35,6 @@ kotlin {
             }
         }
     }
-    configureJs()
-    configureNative()
 }
 
 //open class StartTransportTestServer : DefaultTask() {

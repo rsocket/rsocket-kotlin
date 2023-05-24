@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-plugins {
-    org.jetbrains.kotlin.multiplatform
-    `kotlinx-atomicfu`
-}
-
-kotlin {
-    sourceSets.all {
-        languageSettings {
-            progressiveMode = true
-
-            optIn("kotlin.RequiresOptIn")
-
-            if (name.contains("test", ignoreCase = true)) optInForTest()
-        }
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
     }
 }
+
+dependencyResolutionManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "kotlin-version-catalog"
+
+includeBuild("../build-parameters")

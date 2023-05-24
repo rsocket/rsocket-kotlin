@@ -15,31 +15,36 @@
  */
 
 plugins {
-    id("rsocket.template.test")
-    id("rsocket.target.all")
-    id("kotlinx-atomicfu")
+    id("org.gradlex.build-parameters") version "1.4.3"
 }
 
-kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                api(kotlin("test"))
-                api(projects.rsocketCore)
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
+    }
+}
 
-                api(libs.ktor.utils)
-                api(libs.turbine)
-            }
+group = "rsocket.build"
+
+buildParameters {
+    enableValidation.set(false)
+    string("version")
+    string("versionSuffix")
+    string("useKotlin") {
+        fromEnvironment("KOTLIN_VERSION_OVERRIDE")
+    }
+
+    string("githubUsername")
+    string("githubPassword")
+
+    group("skip") {
+        bool("test") {
+            description.set("Skip running tests")
+            defaultValue.set(false)
         }
-        jvmMain {
-            dependencies {
-                api(kotlin("test-junit"))
-            }
-        }
-        jsMain {
-            dependencies {
-                api(kotlin("test-js"))
-            }
+        bool("link") {
+            description.set("Skip linking native binaries")
+            defaultValue.set(false)
         }
     }
 }

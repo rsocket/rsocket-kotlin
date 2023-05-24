@@ -15,21 +15,14 @@
  */
 
 plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.all")
+    `kotlin-dsl`
 }
 
 kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketCore)
-                api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
-                api(libs.ktor.client.core)
-                api(libs.ktor.client.websockets)
-            }
-        }
-    }
+    jvmToolchain(8)
 }
 
-description = "RSocket ktor WebSocket client transport implementation"
+dependencies {
+    implementation(kotlinLibs.gradle.plugin)
+    implementation("rsocket.build:build-parameters")
+}

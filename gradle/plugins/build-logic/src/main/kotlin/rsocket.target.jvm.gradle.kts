@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,33 +14,29 @@
  * limitations under the License.
  */
 
-import org.gradle.jvm.toolchain.*
-import org.gradle.kotlin.dsl.*
-import org.jetbrains.kotlin.gradle.dsl.*
+plugins {
+    id("rsocket.multiplatform")
+}
 
-fun KotlinMultiplatformExtension.configureJvm(block: TargetBuilder.() -> Unit = {}) {
-    jvmToolchain { (this as JavaToolchainSpec).setJdk(8) }
+kotlin {
     jvm {
-        listOf(11, 17).forEach { jdkVersion ->
+        listOf(11, 17, 20).forEach { jdkVersion ->
             testRuns.create("${jdkVersion}Test") {
                 executionTask.configure {
                     javaLauncher.set(
-                        project.extensions.getByType<JavaToolchainService>().launcherFor { setJdk(11) }
+                        javaToolchains.launcherFor {
+                            languageVersion.set(JavaLanguageVersion.of(jdkVersion))
+                        }
                     )
                 }
             }
         }
-        testRuns.all {
+        testRuns.configureEach {
             executionTask.configure {
                 // ActiveProcessorCount is used here, to make sure local setup is similar as on CI
-                // Github Actions linux runners have 2 cores
-                jvmArgs("-Xmx4g", "-XX:ActiveProcessorCount=2")
+                // GitHub Actions linux runners have 2 cores
+                jvmArgs("-Xmx1g", "-XX:ActiveProcessorCount=2")
             }
         }
     }
-    TargetBuilder(sourceSets, "jvm").block()
-}
-
-private fun JavaToolchainSpec.setJdk(version: Int) {
-    languageVersion.set(JavaLanguageVersion.of(version))
 }

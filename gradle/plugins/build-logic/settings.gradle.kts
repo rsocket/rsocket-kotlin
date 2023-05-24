@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,31 @@
  * limitations under the License.
  */
 
-plugins {
-    id("rsocket.multiplatform")
-    id("rsocket.publication")
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+    includeBuild("../kotlin-version-catalog")
 }
 
-kotlin {
-    explicitApi()
+dependencyResolutionManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
 
-    sourceSets {
-        commonTest {
-            dependencies {
-                implementation(project(":rsocket-test"))
-            }
+    versionCatalogs {
+        create("libs") {
+            from(files("../../libs.versions.toml"))
         }
     }
 }
+
+plugins {
+    id("kotlin-version-catalog")
+}
+
+rootProject.name = "build-logic"
+
+includeBuild("../build-parameters")

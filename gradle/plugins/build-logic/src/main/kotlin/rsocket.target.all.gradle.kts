@@ -15,21 +15,7 @@
  */
 
 plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.all")
+    id("rsocket.target.js.all")
+    id("rsocket.target.jvm")
+    id("rsocket.target.native.all")
 }
-
-kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketCore)
-                api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
-                api(libs.ktor.client.core)
-                api(libs.ktor.client.websockets)
-            }
-        }
-    }
-}
-
-description = "RSocket ktor WebSocket client transport implementation"
