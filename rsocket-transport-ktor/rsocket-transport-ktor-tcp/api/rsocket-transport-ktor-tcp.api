@@ -1,0 +1,19 @@
+public final class io/rsocket/kotlin/transport/ktor/tcp/TcpClientTransportKt {
+	public static final fun TcpClientTransport (Lio/ktor/network/sockets/InetSocketAddress;Lkotlin/coroutines/CoroutineContext;Lio/ktor/utils/io/pool/ObjectPool;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/transport/ClientTransport;
+	public static final fun TcpClientTransport (Ljava/lang/String;ILkotlin/coroutines/CoroutineContext;Lio/ktor/utils/io/pool/ObjectPool;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/transport/ClientTransport;
+	public static synthetic fun TcpClientTransport$default (Lio/ktor/network/sockets/InetSocketAddress;Lkotlin/coroutines/CoroutineContext;Lio/ktor/utils/io/pool/ObjectPool;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/rsocket/kotlin/transport/ClientTransport;
+	public static synthetic fun TcpClientTransport$default (Ljava/lang/String;ILkotlin/coroutines/CoroutineContext;Lio/ktor/utils/io/pool/ObjectPool;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/rsocket/kotlin/transport/ClientTransport;
+}
+
+public final class io/rsocket/kotlin/transport/ktor/tcp/TcpServer {
+	public final fun getHandlerJob ()Lkotlinx/coroutines/Job;
+	public final fun getServerSocket ()Lkotlinx/coroutines/Deferred;
+}
+
+public final class io/rsocket/kotlin/transport/ktor/tcp/TcpServerTransportKt {
+	public static final fun TcpServerTransport (Lio/ktor/network/sockets/InetSocketAddress;Lio/ktor/utils/io/pool/ObjectPool;Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/transport/ServerTransport;
+	public static final fun TcpServerTransport (Ljava/lang/String;ILio/ktor/utils/io/pool/ObjectPool;Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/transport/ServerTransport;
+	public static synthetic fun TcpServerTransport$default (Lio/ktor/network/sockets/InetSocketAddress;Lio/ktor/utils/io/pool/ObjectPool;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/rsocket/kotlin/transport/ServerTransport;
+	public static synthetic fun TcpServerTransport$default (Ljava/lang/String;ILio/ktor/utils/io/pool/ObjectPool;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/rsocket/kotlin/transport/ServerTransport;
+}
+

@@ -2,6 +2,7 @@
 kotlinx-atomicfu = "0.20.2"
 kotlinx-coroutines = "1.6.4" #1.7.0 needs ktor with 1.7.0...
 kotlinx-benchmark = "0.4.8"
+kotlinx-bcv = "0.13.1"
 
 ktor = "2.3.0"
 
@@ -43,3 +44,4 @@ build-kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu-gradle-plugi
 
 [plugins]
 kotlinx-benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotlinx-benchmark" }
+kotlinx-bcv = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinx-bcv" }

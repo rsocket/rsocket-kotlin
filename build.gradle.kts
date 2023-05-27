@@ -31,6 +31,17 @@ buildscript {
 
 plugins {
     id("build-parameters")
+    // for now BCV uses `allProjects` internally, so we can't apply it just to specific subprojects
+    alias(libs.plugins.kotlinx.bcv)
+}
+
+apiValidation {
+    ignoredProjects.addAll(
+        listOf(
+            "rsocket-test",
+            "rsocket-transport-tests"
+        )
+    )
 }
 
 plugins.withType<YarnPlugin> {

@@ -30,9 +30,7 @@ buildParameters {
     enableValidation.set(false)
     string("version")
     string("versionSuffix")
-    string("useKotlin") {
-        fromEnvironment("KOTLIN_VERSION_OVERRIDE")
-    }
+    string("useKotlin")
 
     string("githubUsername")
     string("githubPassword")

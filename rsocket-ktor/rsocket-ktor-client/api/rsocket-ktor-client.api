@@ -1,0 +1,29 @@
+public final class io/rsocket/kotlin/ktor/client/BuildersKt {
+	public static final fun rSocket (Lio/ktor/client/HttpClient;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun rSocket (Lio/ktor/client/HttpClient;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun rSocket (Lio/ktor/client/HttpClient;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun rSocket$default (Lio/ktor/client/HttpClient;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun rSocket$default (Lio/ktor/client/HttpClient;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/rsocket/kotlin/ktor/client/RSocketSupport {
+	public static final field Plugin Lio/rsocket/kotlin/ktor/client/RSocketSupport$Plugin;
+	public synthetic fun <init> (Lio/rsocket/kotlin/core/RSocketConnector;Lio/ktor/utils/io/pool/ObjectPool;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/rsocket/kotlin/ktor/client/RSocketSupport$Config {
+	public final fun connector (Lkotlin/jvm/functions/Function1;)V
+	public final fun getBufferPool ()Lio/ktor/utils/io/pool/ObjectPool;
+	public final fun getConnector ()Lio/rsocket/kotlin/core/RSocketConnector;
+	public final fun setBufferPool (Lio/ktor/utils/io/pool/ObjectPool;)V
+	public final fun setConnector (Lio/rsocket/kotlin/core/RSocketConnector;)V
+}
+
+public final class io/rsocket/kotlin/ktor/client/RSocketSupport$Plugin : io/ktor/client/plugins/HttpClientPlugin {
+	public fun getKey ()Lio/ktor/util/AttributeKey;
+	public fun install (Lio/rsocket/kotlin/ktor/client/RSocketSupport;Lio/ktor/client/HttpClient;)V
+	public synthetic fun install (Ljava/lang/Object;Lio/ktor/client/HttpClient;)V
+	public fun prepare (Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/ktor/client/RSocketSupport;
+	public synthetic fun prepare (Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
+}
+
