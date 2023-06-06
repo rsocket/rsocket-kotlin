@@ -5,6 +5,7 @@ on:
       - samples/**
     branches-ignore:
       - master
+      - kotlin-eap/*
 
 jobs:
   test:
