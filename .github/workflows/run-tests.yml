@@ -1,5 +1,46 @@
 name: Run tests on all platforms
-on: [ workflow_call, workflow_dispatch ]
+on:
+  workflow_call:
+    inputs:
+      kotlin-version:
+        description: Override Kotlin version
+        type: string
+      kotlin-use-k2:
+        description: Use or not K2
+        type: string
+        default: 'false'
+      cache-disabled:
+        description: When 'true', all caching is disabled. No entries will be written to or read from the cache.
+        type: boolean
+        default: false
+      configuration-cache-enabled:
+        description: When `true`, will use configuration cache
+        type: boolean
+        default: false
+      patch-file:
+        description: Path to git patch to apply
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      kotlin-version:
+        description: Override Kotlin version
+        type: string
+      kotlin-use-k2:
+        description: Use or not K2
+        type: string
+        default: 'false'
+      cache-disabled:
+        description: When 'true', all caching is disabled. No entries will be written to or read from the cache.
+        type: boolean
+        default: false
+      configuration-cache-enabled:
+        description: When `true`, will use configuration cache
+        type: boolean
+        default: false
+      patch-file:
+        description: Path to git patch to apply
+        type: string
 
 jobs:
   jvm-test:
@@ -7,7 +48,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - run: git apply ${{ inputs.patch-file }}
+        if: inputs.patch-file != ''
       - uses: ./.github/actions/setup-gradle
+        with:
+          cache-disabled: ${{ inputs.cache-disabled }}
+
+      - id: configuration-cache
+        if: ${{ inputs.configuration-cache-enabled }}
+        run: echo "ARGS=--configuration-cache" >> $GITHUB_OUTPUT
+
       - name: Run tests
         timeout-minutes: 15
         uses: gradle/gradle-build-action@v2
@@ -20,6 +70,9 @@ jobs:
             --scan
             --info
             --continue
+            -Pkotlin.experimental.tryK2=${{ inputs.kotlin-use-k2 }}
+            -PuseKotlin=${{ inputs.kotlin-version }}
+            ${{ steps.configuration-cache.outputs.ARGS }}"
       - if: always()
         uses: actions/upload-artifact@v3
         with:
@@ -32,7 +85,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - run: git apply ${{ inputs.patch-file }}
+        if: inputs.patch-file != ''
       - uses: ./.github/actions/setup-gradle
+        with:
+          cache-disabled: ${{ inputs.cache-disabled }}
+
+      - id: configuration-cache
+        if: ${{ inputs.configuration-cache-enabled }}
+        run: echo "ARGS=--configuration-cache" >> $GITHUB_OUTPUT
+
       - name: Run tests
         timeout-minutes: 15
         uses: gradle/gradle-build-action@v2
@@ -43,6 +105,9 @@ jobs:
             --scan
             --info
             --continue
+            -Pkotlin.experimental.tryK2=${{ inputs.kotlin-use-k2 }}
+            -PuseKotlin=${{ inputs.kotlin-version }}
+            ${{ steps.configuration-cache.outputs.ARGS }}"
       - if: always()
         uses: actions/upload-artifact@v3
         with:
@@ -65,7 +130,16 @@ jobs:
             target: mingwX64
     steps:
       - uses: actions/checkout@v3
+      - run: git apply ${{ inputs.patch-file }}
+        if: inputs.patch-file != ''
       - uses: ./.github/actions/setup-gradle
+        with:
+          cache-disabled: ${{ inputs.cache-disabled }}
+
+      - id: configuration-cache
+        if: ${{ inputs.configuration-cache-enabled }}
+        run: echo "ARGS=--configuration-cache" >> $GITHUB_OUTPUT
+
       - name: Run tests
         timeout-minutes: 30
         uses: gradle/gradle-build-action@v2
@@ -76,6 +150,9 @@ jobs:
             --scan
             --info
             --continue
+            -Pkotlin.experimental.tryK2=${{ inputs.kotlin-use-k2 }}
+            -PuseKotlin=${{ inputs.kotlin-version }}
+            ${{ steps.configuration-cache.outputs.ARGS }}"
       - if: always()
         uses: actions/upload-artifact@v3
         with:
@@ -110,7 +187,16 @@ jobs:
         os: [ 'ubuntu-latest', 'macos-latest', 'windows-latest' ]
     steps:
       - uses: actions/checkout@v3
+      - run: git apply ${{ inputs.patch-file }}
+        if: inputs.patch-file != ''
       - uses: ./.github/actions/setup-gradle
+        with:
+          cache-disabled: ${{ inputs.cache-disabled }}
+
+      - id: configuration-cache
+        if: ${{ inputs.configuration-cache-enabled }}
+        run: echo "ARGS=--configuration-cache" >> $GITHUB_OUTPUT
+
       - name: Build project without running tests
         uses: gradle/gradle-build-action@v2
         with:
@@ -121,3 +207,6 @@ jobs:
             --info
             --continue
             -Pskip.test
+            -Pkotlin.experimental.tryK2=${{ inputs.kotlin-use-k2 }}
+            -PuseKotlin=${{ inputs.kotlin-version }}
+            ${{ steps.configuration-cache.outputs.ARGS }}"
