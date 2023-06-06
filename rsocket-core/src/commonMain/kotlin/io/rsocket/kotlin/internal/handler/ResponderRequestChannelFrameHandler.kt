@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
@@ -32,7 +33,7 @@ internal class ResponderRequestChannelFrameHandler(
     pool: ObjectPool<ChunkBuffer>
 ) : ResponderFrameHandler(pool), ReceiveFrameHandler {
     val limiter = Limiter(initialRequest)
-    val channel = SafeChannel<Payload>(Channel.UNLIMITED)
+    val channel = channelForCloseable<Payload>(Channel.UNLIMITED)
 
     @OptIn(ExperimentalStreamsApi::class)
     override fun start(payload: Payload): Job = responder.handleRequestChannel(payload, id, this)
@@ -47,13 +48,13 @@ internal class ResponderRequestChannelFrameHandler(
 
     override fun handleError(cause: Throwable) {
         streamsStorage.remove(id)
-        channel.fullClose(cause)
+        channel.cancelWithCause(cause)
     }
 
     override fun handleCancel() {
         streamsStorage.remove(id)
         val cancelError = CancellationException("Request cancelled")
-        channel.fullClose(cancelError)
+        channel.cancelWithCause(cancelError)
         job?.cancel(cancelError)
     }
 
@@ -62,7 +63,7 @@ internal class ResponderRequestChannelFrameHandler(
     }
 
     override fun cleanup(cause: Throwable?) {
-        channel.fullClose(cause)
+        channel.cancelWithCause(cause)
     }
 
     override fun onSendComplete() {
@@ -72,7 +73,7 @@ internal class ResponderRequestChannelFrameHandler(
 
     override fun onSendFailed(cause: Throwable): Boolean {
         val isFailed = streamsStorage.remove(id) != null
-        if (isFailed) channel.fullClose(cause)
+        if (isFailed) channel.cancelWithCause(cause)
         return isFailed
     }
 

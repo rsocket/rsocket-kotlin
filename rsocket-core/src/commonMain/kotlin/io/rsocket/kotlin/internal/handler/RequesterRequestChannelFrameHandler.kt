@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.rsocket.kotlin.internal.handler
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
@@ -42,7 +43,7 @@ internal class RequesterRequestChannelFrameHandler(
 
     override fun handleError(cause: Throwable) {
         streamsStorage.remove(id)
-        channel.fullClose(cause)
+        channel.cancelWithCause(cause)
         sender.cancel("Request failed", cause)
     }
 
@@ -55,7 +56,7 @@ internal class RequesterRequestChannelFrameHandler(
     }
 
     override fun cleanup(cause: Throwable?) {
-        channel.fullClose(cause)
+        channel.cancelWithCause(cause)
         sender.cancel("Connection closed", cause)
     }
 
@@ -78,7 +79,7 @@ internal class RequesterRequestChannelFrameHandler(
         if (sender.isCancelled) return false
 
         val isFailed = streamsStorage.remove(id) != null
-        if (isFailed) channel.fullClose(cause)
+        if (isFailed) channel.cancelWithCause(cause)
         return isFailed
     }
 }

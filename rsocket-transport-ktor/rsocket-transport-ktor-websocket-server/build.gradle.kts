@@ -24,7 +24,6 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api(projects.rsocketCore)
                 api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
                 api(libs.ktor.server.host.common)
                 api(libs.ktor.server.websockets)

@@ -21,7 +21,7 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.*
-import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
@@ -37,13 +37,13 @@ class TestConnection : Connection, ClientTransport {
     override val coroutineContext: CoroutineContext =
         Job() + Dispatchers.Unconfined + TestExceptionHandler
 
-    private val sendChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
-    private val receiveChannel = Channel<ByteReadPacket>(Channel.UNLIMITED)
+    private val sendChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
+    private val receiveChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
 
     init {
         coroutineContext.job.invokeOnCompletion {
             sendChannel.close(it)
-            receiveChannel.fullClose(it)
+            receiveChannel.cancelWithCause(it)
         }
     }
 

@@ -15,20 +15,19 @@
  */
 
 plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.js.node")
+    id("rsocket.template.library")
+    id("rsocket.target.all")
 }
 
 kotlin {
     sourceSets {
-        jsMain {
+        commonMain {
             dependencies {
-                implementation(projects.rsocketInternalIo)
-
-                api(projects.rsocketCore)
+                api(libs.kotlinx.coroutines.core)
+                api(libs.ktor.io)
             }
         }
     }
 }
 
-description = "RSocket NodeJS TCP client/server transport implementation"
+description = "rsocket-kotlin internal IO support"

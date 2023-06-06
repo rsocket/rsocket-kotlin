@@ -17,10 +17,10 @@
 package io.rsocket.kotlin.transport.nodejs.tcp
 
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 
 internal fun ByteReadPacket.withLength(): ByteReadPacket = buildPacket {
-    @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") writeLength(this@withLength.remaining.toInt())
+    writeInt24(this@withLength.remaining.toInt())
     writePacket(this@withLength)
 }
 
@@ -36,7 +36,7 @@ internal class FrameWithLengthAssembler(private val onFrame: (frame: ByteReadPac
         while (true) when {
             expectedFrameLength == 0 && packetBuilder.size < 3 -> return // no length
             expectedFrameLength == 0                           -> withTemp { // has length
-                expectedFrameLength = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") it.readLength()
+                expectedFrameLength = it.readInt24()
                 if (it.remaining >= expectedFrameLength) build(it) // if has length and frame
             }
             packetBuilder.size < expectedFrameLength           -> return // not enough bytes to read frame

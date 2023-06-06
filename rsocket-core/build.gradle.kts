@@ -24,6 +24,8 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                implementation(projects.rsocketInternalIo)
+
                 api(libs.kotlinx.coroutines.core)
                 api(libs.ktor.io)
             }
