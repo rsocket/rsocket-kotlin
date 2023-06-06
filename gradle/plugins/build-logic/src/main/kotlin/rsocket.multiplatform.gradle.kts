@@ -45,5 +45,5 @@ kotlin {
 
 val buildParameters = the<buildparameters.BuildParametersExtension>()
 
-tasks.matching { it.name.endsWith("test", ignoreCase = true) }.configureEach { onlyIf { !buildParameters.skip.test } }
-tasks.matching { it.name.startsWith("link", ignoreCase = true) }.configureEach { onlyIf { !buildParameters.skip.link } }
+if (buildParameters.skip.test) tasks.matching { it.name.endsWith("test", ignoreCase = true) }.configureEach { onlyIf { false } }
+if (buildParameters.skip.link) tasks.matching { it.name.startsWith("link", ignoreCase = true) }.configureEach { onlyIf { false } }
