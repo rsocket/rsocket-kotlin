@@ -1,3 +1,22 @@
+public final class io/rsocket/kotlin/internal/io/BufferPool {
+	public static final field Companion Lio/rsocket/kotlin/internal/io/BufferPool$Companion;
+	public static final synthetic fun box-impl (Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/internal/io/BufferPool;
+	public static final fun buildPacket-impl (Lio/ktor/utils/io/pool/ObjectPool;Lkotlin/jvm/functions/Function1;)Lio/ktor/utils/io/core/ByteReadPacket;
+	public static fun constructor-impl (Lio/ktor/utils/io/pool/ObjectPool;)Lio/ktor/utils/io/pool/ObjectPool;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lio/ktor/utils/io/pool/ObjectPool;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lio/ktor/utils/io/pool/ObjectPool;Lio/ktor/utils/io/pool/ObjectPool;)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lio/ktor/utils/io/pool/ObjectPool;)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lio/ktor/utils/io/pool/ObjectPool;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lio/ktor/utils/io/pool/ObjectPool;
+}
+
+public final class io/rsocket/kotlin/internal/io/BufferPool$Companion {
+	public final fun getDefault-ulmh1bs ()Lio/ktor/utils/io/pool/ObjectPool;
+}
+
 public final class io/rsocket/kotlin/internal/io/ChannelsKt {
 	public static final fun cancelWithCause (Lkotlinx/coroutines/channels/Channel;Ljava/lang/Throwable;)V
 	public static final fun channelForCloseable (I)Lkotlinx/coroutines/channels/Channel;

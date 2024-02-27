@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import io.ktor.client.plugins.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.*
@@ -31,7 +29,7 @@ import kotlin.coroutines.*
 public suspend fun HttpClient.rSocket(
     request: HttpRequestBuilder.() -> Unit,
 ): RSocket = plugin(RSocketSupport).run {
-    connector.connect(KtorClientTransport(this@rSocket, request, bufferPool))
+    connector.connect(KtorClientTransport(this@rSocket, request))
 }
 
 public suspend fun HttpClient.rSocket(
@@ -65,10 +63,9 @@ public suspend fun HttpClient.rSocket(
 private class KtorClientTransport(
     private val client: HttpClient,
     private val request: HttpRequestBuilder.() -> Unit,
-    private val pool: ObjectPool<ChunkBuffer>
 ) : ClientTransport {
     override val coroutineContext: CoroutineContext get() = client.coroutineContext
 
     @TransportApi
-    override suspend fun connect(): Connection = WebSocketConnection(client.webSocketSession(request), pool)
+    override suspend fun connect(): Connection = WebSocketConnection(client.webSocketSession(request))
 }

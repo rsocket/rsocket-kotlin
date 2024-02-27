@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 package io.rsocket.kotlin.metadata.security
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.internal.io.*
 
 @ExperimentalMetadataApi
 public class BearerAuthMetadata(
@@ -33,7 +32,7 @@ public class BearerAuthMetadata(
     override fun close(): Unit = Unit
 
     public companion object Reader : AuthMetadataReader<BearerAuthMetadata> {
-        override fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): BearerAuthMetadata {
+        override fun ByteReadPacket.readContent(type: AuthType, pool: BufferPool): BearerAuthMetadata {
             require(type == WellKnowAuthType.Bearer) { "Metadata auth type should be 'bearer'" }
             val token = readText()
             return BearerAuthMetadata(token)

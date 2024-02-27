@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 
 private const val FlagsMask: Int = 1023
 private const val FrameTypeShift: Int = 10
@@ -33,9 +32,9 @@ internal sealed class Frame : Closeable {
     protected abstract fun StringBuilder.appendFlags()
     protected abstract fun StringBuilder.appendSelf()
 
-    internal fun toPacket(pool: ObjectPool<ChunkBuffer>): ByteReadPacket {
+    internal fun toPacket(pool: BufferPool): ByteReadPacket {
         check(type.canHaveMetadata || !(flags check Flags.Metadata)) { "bad value for metadata flag" }
-        return buildPacket(pool) {
+        return pool.buildPacket {
             writeInt(streamId)
             writeShort((type.encodedType shl FrameTypeShift or flags).toShort())
             writeSelf()
@@ -54,7 +53,7 @@ internal sealed class Frame : Closeable {
     }
 }
 
-internal fun ByteReadPacket.readFrame(pool: ObjectPool<ChunkBuffer>): Frame = use {
+internal fun ByteReadPacket.readFrame(pool: BufferPool): Frame = use {
     val streamId = readInt()
     val typeAndFlags = readShort().toInt() and 0xFFFF
     val flags = typeAndFlags and FlagsMask
@@ -75,9 +74,11 @@ internal fun ByteReadPacket.readFrame(pool: ObjectPool<ChunkBuffer>): Frame = us
         FrameType.RequestFnF,
         FrameType.RequestResponse,
                                -> readRequest(pool, type, streamId, flags, withInitial = false)
+
         FrameType.RequestStream,
         FrameType.RequestChannel,
                                -> readRequest(pool, type, streamId, flags, withInitial = true)
+
         FrameType.Reserved     -> error("Reserved")
     }
 }

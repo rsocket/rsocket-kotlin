@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.rsocket.kotlin.internal
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.internal.io.*
 import kotlinx.coroutines.*
 
 @OptIn(TransportApi::class)
@@ -28,11 +29,12 @@ internal suspend inline fun connect(
     maxFragmentSize: Int,
     interceptors: Interceptors,
     connectionConfig: ConnectionConfig,
-    acceptor: ConnectionAcceptor
+    acceptor: ConnectionAcceptor,
+    bufferPool: BufferPool,
 ): RSocket {
     val prioritizer = Prioritizer()
-    val frameSender = FrameSender(prioritizer, connection.pool, maxFragmentSize)
-    val streamsStorage = StreamsStorage(isServer, connection.pool)
+    val frameSender = FrameSender(prioritizer, bufferPool, maxFragmentSize)
+    val streamsStorage = StreamsStorage(isServer)
     val keepAliveHandler = KeepAliveHandler(connectionConfig.keepAlive, frameSender)
 
     val requestJob = SupervisorJob(connection.coroutineContext[Job])
@@ -49,7 +51,6 @@ internal suspend inline fun connect(
             requestContext + CoroutineName("rSocket-requester"),
             frameSender,
             streamsStorage,
-            connection.pool
         )
     )
     val requestHandler = interceptors.wrapResponder(
@@ -82,12 +83,12 @@ internal suspend inline fun connect(
 
     // start sending frames to connection
     (connection + CoroutineName("rSocket-connection-send")).launch {
-        while (isActive) connection.sendFrame(prioritizer.receive())
+        while (isActive) connection.sendFrame(bufferPool, prioritizer.receive())
     }
 
     // start frame handling
     (connection + CoroutineName("rSocket-connection-receive")).launch {
-        while (isActive) connection.receiveFrame { frame ->
+        while (isActive) connection.receiveFrame(bufferPool) { frame ->
             when (frame.streamId) {
                 0 -> when (frame) {
                     is MetadataPushFrame -> responder.handleMetadataPush(frame.metadata)

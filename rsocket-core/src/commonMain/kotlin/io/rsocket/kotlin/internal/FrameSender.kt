@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlin.math.*
@@ -32,8 +31,8 @@ private const val fragmentOffsetWithMetadata = fragmentOffset + lengthSize
 
 internal class FrameSender(
     private val prioritizer: Prioritizer,
-    private val pool: ObjectPool<ChunkBuffer>,
-    private val maxFragmentSize: Int
+    private val pool: BufferPool,
+    private val maxFragmentSize: Int,
 ) {
 
     suspend fun sendKeepAlive(respond: Boolean, lastPosition: Long, data: ByteReadPacket): Unit =

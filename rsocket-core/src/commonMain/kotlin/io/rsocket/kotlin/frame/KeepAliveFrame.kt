@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 
 private const val RespondFlag = 128
 
@@ -51,7 +50,7 @@ internal class KeepAliveFrame(
     }
 }
 
-internal fun ByteReadPacket.readKeepAlive(pool: ObjectPool<ChunkBuffer>, flags: Int): KeepAliveFrame {
+internal fun ByteReadPacket.readKeepAlive(pool: BufferPool, flags: Int): KeepAliveFrame {
     val respond = flags check RespondFlag
     val lastPosition = readLong()
     val data = readPacket(pool)

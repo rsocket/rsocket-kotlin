@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@
 package io.rsocket.kotlin.metadata.security
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.metadata.*
 
 @ExperimentalMetadataApi
@@ -39,10 +38,10 @@ public sealed interface AuthMetadata : Metadata {
 
 @ExperimentalMetadataApi
 public sealed interface AuthMetadataReader<AM : AuthMetadata> : MetadataReader<AM> {
-    public fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): AM
+    public fun ByteReadPacket.readContent(type: AuthType, pool: BufferPool): AM
 
     override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketAuthentication
-    override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): AM {
+    override fun ByteReadPacket.read(pool: BufferPool): AM {
         val type = readAuthType()
         return readContent(type, pool)
     }

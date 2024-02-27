@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 
 internal class MetadataPushFrame(
     val metadata: ByteReadPacket,
@@ -45,5 +44,5 @@ internal class MetadataPushFrame(
     }
 }
 
-internal fun ByteReadPacket.readMetadataPush(pool: ObjectPool<ChunkBuffer>): MetadataPushFrame =
+internal fun ByteReadPacket.readMetadataPush(pool: BufferPool): MetadataPushFrame =
     MetadataPushFrame(readPacket(pool))

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@
 package io.rsocket.kotlin.transport.local
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
@@ -29,9 +27,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
-public fun LocalServerTransport(
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
-): ServerTransport<LocalServer> = ServerTransport { accept ->
+public fun LocalServerTransport(): ServerTransport<LocalServer> = ServerTransport { accept ->
     val connections = Channel<Connection>()
     val handlerJob = launch {
         supervisorScope {
@@ -40,11 +36,10 @@ public fun LocalServerTransport(
             }
         }
     }
-    LocalServer(pool, connections, coroutineContext + SupervisorJob(handlerJob))
+    LocalServer(connections, coroutineContext + SupervisorJob(handlerJob))
 }
 
 public class LocalServer internal constructor(
-    private val pool: ObjectPool<ChunkBuffer>,
     private val connections: Channel<Connection>,
     override val coroutineContext: CoroutineContext,
 ) : ClientTransport {
@@ -60,13 +55,11 @@ public class LocalServer internal constructor(
         val clientConnection = LocalConnection(
             sender = serverChannel,
             receiver = clientChannel,
-            pool = pool,
             coroutineContext = connectionContext + CoroutineName("rSocket-local-client")
         )
         val serverConnection = LocalConnection(
             sender = clientChannel,
             receiver = serverChannel,
-            pool = pool,
             coroutineContext = connectionContext + CoroutineName("rSocket-local-server")
         )
         connections.send(serverConnection)

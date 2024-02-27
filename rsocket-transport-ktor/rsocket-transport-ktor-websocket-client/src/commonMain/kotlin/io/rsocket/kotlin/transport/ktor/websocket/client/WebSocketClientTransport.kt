@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import io.ktor.client.engine.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.*
@@ -37,7 +35,6 @@ import kotlin.coroutines.*
 public fun <T : HttpClientEngineConfig> WebSocketClientTransport(
     engineFactory: HttpClientEngineFactory<T>,
     context: CoroutineContext = EmptyCoroutineContext,
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
     engine: T.() -> Unit = {},
     webSockets: WebSockets.Config.() -> Unit = {},
     request: HttpRequestBuilder.() -> Unit
@@ -60,7 +57,7 @@ public fun <T : HttpClientEngineConfig> WebSocketClientTransport(
 
     return ClientTransport(transportContext) {
         val session = httpClient.webSocketSession(request)
-        WebSocketConnection(session, pool)
+        WebSocketConnection(session)
     }
 }
 
@@ -68,11 +65,10 @@ public fun <T : HttpClientEngineConfig> WebSocketClientTransport(
     engineFactory: HttpClientEngineFactory<T>,
     urlString: String, secure: Boolean = false,
     context: CoroutineContext = EmptyCoroutineContext,
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
     engine: HttpClientEngineConfig.() -> Unit = {},
     webSockets: WebSockets.Config.() -> Unit = {},
-    request: HttpRequestBuilder.() -> Unit = {}
-): ClientTransport = WebSocketClientTransport(engineFactory, context, pool, engine, webSockets) {
+    request: HttpRequestBuilder.() -> Unit = {},
+): ClientTransport = WebSocketClientTransport(engineFactory, context, engine, webSockets) {
     url {
         this.protocol = if (secure) URLProtocol.WSS else URLProtocol.WS
         this.port = protocol.defaultPort
@@ -88,11 +84,10 @@ public fun <T : HttpClientEngineConfig> WebSocketClientTransport(
     path: String? = null,
     secure: Boolean = false,
     context: CoroutineContext = EmptyCoroutineContext,
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
     engine: HttpClientEngineConfig.() -> Unit = {},
     webSockets: WebSockets.Config.() -> Unit = {},
-    request: HttpRequestBuilder.() -> Unit = {}
-): ClientTransport = WebSocketClientTransport(engineFactory, context, pool, engine, webSockets) {
+    request: HttpRequestBuilder.() -> Unit = {},
+): ClientTransport = WebSocketClientTransport(engineFactory, context, engine, webSockets) {
     url {
         this.protocol = if (secure) URLProtocol.WSS else URLProtocol.WS
         this.port = protocol.defaultPort

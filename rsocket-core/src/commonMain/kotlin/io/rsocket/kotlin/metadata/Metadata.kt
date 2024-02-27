@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,9 @@
 package io.rsocket.kotlin.metadata
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.payload.*
 
 @ExperimentalMetadataApi
@@ -33,7 +31,7 @@ public interface Metadata : Closeable {
 @ExperimentalMetadataApi
 public interface MetadataReader<M : Metadata> {
     public val mimeType: MimeType
-    public fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): M
+    public fun ByteReadPacket.read(pool: BufferPool): M
 }
 
 
@@ -43,11 +41,11 @@ public fun PayloadBuilder.metadata(metadata: Metadata): Unit = metadata(metadata
 @ExperimentalMetadataApi
 public fun <M : Metadata> ByteReadPacket.read(
     reader: MetadataReader<M>,
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
+    pool: BufferPool = BufferPool.Default,
 ): M = use {
     with(reader) { read(pool) }
 }
 
 @ExperimentalMetadataApi
-public fun Metadata.toPacket(pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool): ByteReadPacket =
-    buildPacket(pool) { writeSelf() }
+public fun Metadata.toPacket(pool: BufferPool = BufferPool.Default): ByteReadPacket =
+    pool.buildPacket { writeSelf() }

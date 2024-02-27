@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package io.rsocket.kotlin.metadata
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
@@ -55,7 +53,7 @@ public sealed interface CompositeMetadata : Metadata {
 
     public companion object Reader : MetadataReader<CompositeMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketCompositeMetadata
-        override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): CompositeMetadata {
+        override fun ByteReadPacket.read(pool: BufferPool): CompositeMetadata {
             val list = mutableListOf<Entry>()
             while (isNotEmpty) {
                 val type = readMimeType()

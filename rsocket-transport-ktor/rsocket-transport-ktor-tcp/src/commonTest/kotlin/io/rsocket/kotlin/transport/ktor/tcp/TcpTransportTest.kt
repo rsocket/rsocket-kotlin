@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,12 @@
 package io.rsocket.kotlin.transport.ktor.tcp
 
 import io.ktor.network.sockets.*
-import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.tests.*
 
 class TcpTransportTest : TransportTest() {
     override suspend fun before() {
         val address = InetSocketAddress("0.0.0.0", PortProvider.next())
-        startServer(TcpServerTransport(address, InUseTrackingPool)).serverSocket.await()
-        client = connectClient(TcpClientTransport(address, testContext, InUseTrackingPool))
+        startServer(TcpServerTransport(address)).serverSocket.await()
+        client = connectClient(TcpClientTransport(address, testContext))
     }
 }

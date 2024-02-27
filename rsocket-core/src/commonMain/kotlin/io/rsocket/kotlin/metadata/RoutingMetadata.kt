@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 package io.rsocket.kotlin.metadata
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.internal.io.*
 
 @ExperimentalMetadataApi
 public fun RoutingMetadata(vararg tags: String): RoutingMetadata = RoutingMetadata(tags.toList())
@@ -47,7 +46,7 @@ public class RoutingMetadata(public val tags: List<String>) : Metadata {
 
     public companion object Reader : MetadataReader<RoutingMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketRouting
-        override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): RoutingMetadata {
+        override fun ByteReadPacket.read(pool: BufferPool): RoutingMetadata {
             val list = mutableListOf<String>()
             while (isNotEmpty) {
                 val length = readByte().toInt() and 0xFF

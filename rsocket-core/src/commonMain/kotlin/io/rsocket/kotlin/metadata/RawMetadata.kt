@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@
 package io.rsocket.kotlin.metadata
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 
 @ExperimentalMetadataApi
 public class RawMetadata(
@@ -37,7 +36,7 @@ public class RawMetadata(
     }
 
     private class Reader(override val mimeType: MimeType) : MetadataReader<RawMetadata> {
-        override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): RawMetadata =
+        override fun ByteReadPacket.read(pool: BufferPool): RawMetadata =
             RawMetadata(mimeType, readPacket(pool))
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 package io.rsocket.kotlin.frame.io
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
+import io.rsocket.kotlin.internal.io.*
 
-internal fun ByteReadPacket.readResumeToken(pool: ObjectPool<ChunkBuffer>): ByteReadPacket {
+internal fun ByteReadPacket.readResumeToken(pool: BufferPool): ByteReadPacket {
     val length = readShort().toInt() and 0xFFFF
     return readPacket(pool, length)
 }
@@ -33,16 +32,16 @@ internal fun BytePacketBuilder.writeResumeToken(resumeToken: ByteReadPacket?) {
     }
 }
 
-internal fun ByteReadPacket.readPacket(pool: ObjectPool<ChunkBuffer>): ByteReadPacket {
+internal fun ByteReadPacket.readPacket(pool: BufferPool): ByteReadPacket {
     if (isEmpty) return ByteReadPacket.Empty
-    return buildPacket(pool) {
+    return pool.buildPacket {
         writePacket(this@readPacket)
     }
 }
 
-internal fun ByteReadPacket.readPacket(pool: ObjectPool<ChunkBuffer>, length: Int): ByteReadPacket {
+internal fun ByteReadPacket.readPacket(pool: BufferPool, length: Int): ByteReadPacket {
     if (length == 0) return ByteReadPacket.Empty
-    return buildPacket(pool) {
+    return pool.buildPacket {
         writePacket(this@readPacket, length)
     }
 }

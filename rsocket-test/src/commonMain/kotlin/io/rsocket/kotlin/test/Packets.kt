@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,14 @@ package io.rsocket.kotlin.test
 
 import io.ktor.util.*
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.payload.*
 import kotlin.test.*
 
-fun packet(block: BytePacketBuilder.() -> Unit): ByteReadPacket = buildPacket(InUseTrackingPool, block)
+fun packet(block: BytePacketBuilder.() -> Unit): ByteReadPacket = InUseTrackingPool.buildPacket(block)
 
-fun packet(text: String): ByteReadPacket = buildPacket(InUseTrackingPool) { writeText(text) }
+fun packet(text: String): ByteReadPacket = InUseTrackingPool.buildPacket { writeText(text) }
 
-fun packet(array: ByteArray): ByteReadPacket = buildPacket(InUseTrackingPool) { writeFully(array) }
+fun packet(array: ByteArray): ByteReadPacket = InUseTrackingPool.buildPacket { writeFully(array) }
 
 fun payload(data: ByteArray, metadata: ByteArray? = null): Payload = Payload(packet(data), metadata?.let(::packet))
 
@@ -35,15 +33,4 @@ fun payload(data: String, metadata: String? = null): Payload = Payload(packet(da
 
 fun assertBytesEquals(expected: ByteArray?, actual: ByteArray?) {
     assertEquals(expected?.let(::hex), actual?.let(::hex))
-}
-
-private inline fun buildPacket(pool: ObjectPool<ChunkBuffer>, block: BytePacketBuilder.() -> Unit): ByteReadPacket {
-    val builder = BytePacketBuilder(pool)
-    try {
-        block(builder)
-        return builder.build()
-    } catch (t: Throwable) {
-        builder.close()
-        throw t
-    }
 }

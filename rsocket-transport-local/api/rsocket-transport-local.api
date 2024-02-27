@@ -4,7 +4,6 @@ public final class io/rsocket/kotlin/transport/local/LocalServer : io/rsocket/ko
 }
 
 public final class io/rsocket/kotlin/transport/local/LocalServerKt {
-	public static final fun LocalServerTransport (Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/transport/ServerTransport;
-	public static synthetic fun LocalServerTransport$default (Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/transport/ServerTransport;
+	public static final fun LocalServerTransport ()Lio/rsocket/kotlin/transport/ServerTransport;
 }
 

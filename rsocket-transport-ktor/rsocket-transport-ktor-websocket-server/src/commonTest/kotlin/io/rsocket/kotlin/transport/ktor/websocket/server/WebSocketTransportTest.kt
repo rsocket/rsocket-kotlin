@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.rsocket.kotlin.transport.ktor.websocket.server
 
 import io.ktor.client.engine.*
 import io.ktor.server.engine.*
-import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.ktor.websocket.client.*
 import io.rsocket.kotlin.transport.tests.*
 
@@ -29,10 +28,10 @@ abstract class WebSocketTransportTest(
     override suspend fun before() {
         val port = PortProvider.next()
         startServer(
-            WebSocketServerTransport(serverEngine, port = port, pool = InUseTrackingPool)
+            WebSocketServerTransport(serverEngine, port = port)
         )
         client = connectClient(
-            WebSocketClientTransport(clientEngine, port = port, context = testContext, pool = InUseTrackingPool)
+            WebSocketClientTransport(clientEngine, port = port, context = testContext)
         )
     }
 }

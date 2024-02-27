@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.*
@@ -33,7 +31,6 @@ public fun <A : ApplicationEngine, T : ApplicationEngine.Configuration> WebSocke
     engineFactory: ApplicationEngineFactory<A, T>,
     port: Int = 80, host: String = "0.0.0.0",
     path: String? = null, protocol: String? = null,
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
     engine: T.() -> Unit = {},
     webSockets: WebSockets.WebSocketOptions.() -> Unit = {},
 ): ServerTransport<A> = WebSocketServerTransport(
@@ -44,7 +41,6 @@ public fun <A : ApplicationEngine, T : ApplicationEngine.Configuration> WebSocke
     } as EngineConnectorConfig,
     path = path,
     protocol = protocol,
-    pool = pool,
     engine = engine,
     webSockets = webSockets,
 )
@@ -55,12 +51,11 @@ public fun <A : ApplicationEngine, T : ApplicationEngine.Configuration> WebSocke
     engineFactory: ApplicationEngineFactory<A, T>,
     vararg connectors: EngineConnectorConfig,
     path: String? = null, protocol: String? = null,
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
     engine: T.() -> Unit = {},
     webSockets: WebSockets.WebSocketOptions.() -> Unit = {},
 ): ServerTransport<A> = ServerTransport { acceptor ->
     val handler: suspend DefaultWebSocketServerSession.() -> Unit = {
-        val connection = WebSocketConnection(this, pool)
+        val connection = WebSocketConnection(this)
         acceptor(connection)
     }
     embeddedServer(engineFactory, *connectors, configure = engine) {

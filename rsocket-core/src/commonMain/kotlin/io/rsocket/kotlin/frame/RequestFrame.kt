@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,8 @@
 package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.payload.*
 
 internal class RequestFrame(
@@ -66,11 +65,11 @@ internal class RequestFrame(
 }
 
 internal fun ByteReadPacket.readRequest(
-    pool: ObjectPool<ChunkBuffer>,
+    pool: BufferPool,
     type: FrameType,
     streamId: Int,
     flags: Int,
-    withInitial: Boolean
+    withInitial: Boolean,
 ): RequestFrame {
     val fragmentFollows = flags check Flags.Follows
     val complete = flags check Flags.Complete

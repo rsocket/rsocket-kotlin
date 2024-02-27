@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,21 @@ package io.rsocket.kotlin.internal
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.logging.*
 
-internal fun Connection.logging(logger: Logger): Connection =
-    if (logger.isLoggable(LoggingLevel.DEBUG)) LoggingConnection(this, logger) else this
+internal fun Connection.logging(logger: Logger, bufferPool: BufferPool): Connection =
+    if (logger.isLoggable(LoggingLevel.DEBUG)) LoggingConnection(this, logger, bufferPool) else this
 
 private class LoggingConnection(
     private val delegate: Connection,
     private val logger: Logger,
+    private val bufferPool: BufferPool,
 ) : Connection by delegate {
 
     private fun ByteReadPacket.dumpFrameToString(): String {
         val length = remaining
-        return copy().use { it.readFrame(pool).use { it.dump(length) } }
+        return copy().use { it.readFrame(bufferPool).use { it.dump(length) } }
     }
 
     override suspend fun send(packet: ByteReadPacket) {

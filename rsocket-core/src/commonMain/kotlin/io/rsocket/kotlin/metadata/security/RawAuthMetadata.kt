@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 package io.rsocket.kotlin.metadata.security
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 
 @ExperimentalMetadataApi
 public class RawAuthMetadata(
@@ -37,7 +36,7 @@ public class RawAuthMetadata(
     }
 
     public companion object Reader : AuthMetadataReader<RawAuthMetadata> {
-        override fun ByteReadPacket.readContent(type: AuthType, pool: ObjectPool<ChunkBuffer>): RawAuthMetadata {
+        override fun ByteReadPacket.readContent(type: AuthType, pool: BufferPool): RawAuthMetadata {
             val content = readPacket(pool)
             return RawAuthMetadata(type, content)
         }
@@ -50,7 +49,7 @@ public fun RawAuthMetadata.hasAuthTypeOf(reader: AuthMetadataReader<*>): Boolean
 @ExperimentalMetadataApi
 public fun <AM : AuthMetadata> RawAuthMetadata.read(
     reader: AuthMetadataReader<AM>,
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
+    pool: BufferPool = BufferPool.Default,
 ): AM {
     return readOrNull(reader, pool) ?: run {
         content.close()
@@ -62,7 +61,7 @@ public fun <AM : AuthMetadata> RawAuthMetadata.read(
 
 public fun <AM : AuthMetadata> RawAuthMetadata.readOrNull(
     reader: AuthMetadataReader<AM>,
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
+    pool: BufferPool = BufferPool.Default,
 ): AM? {
     if (type != reader.mimeType) return null
 

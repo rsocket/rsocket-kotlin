@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package io.rsocket.kotlin.transport.local
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
@@ -27,7 +25,6 @@ import kotlin.coroutines.*
 internal class LocalConnection(
     private val sender: SendChannel<ByteReadPacket>,
     private val receiver: ReceiveChannel<ByteReadPacket>,
-    override val pool: ObjectPool<ChunkBuffer>,
     override val coroutineContext: CoroutineContext
 ) : Connection {
 

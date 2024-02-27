@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
@@ -32,6 +33,7 @@ public class RSocketConnector internal constructor(
     private val connectionConfigProvider: () -> ConnectionConfig,
     private val acceptor: ConnectionAcceptor,
     private val reconnectPredicate: ReconnectPredicate?,
+    private val bufferPool: BufferPool,
 ) {
 
     public suspend fun connect(transport: ClientTransport): RSocket = when (reconnectPredicate) {
@@ -68,9 +70,10 @@ public class RSocketConnector internal constructor(
                 maxFragmentSize = maxFragmentSize,
                 interceptors = interceptors,
                 connectionConfig = connectionConfig,
-                acceptor = acceptor
+                acceptor = acceptor,
+                bufferPool = bufferPool
             )
-            connection.sendFrame(setupFrame)
+            connection.sendFrame(bufferPool, setupFrame)
             return requester
         } catch (cause: Throwable) {
             connectionConfig.setupPayload.close()
@@ -82,5 +85,5 @@ public class RSocketConnector internal constructor(
 
     private fun Connection.wrapConnection(): Connection =
         interceptors.wrapConnection(this)
-            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"))
+            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"), bufferPool)
 }

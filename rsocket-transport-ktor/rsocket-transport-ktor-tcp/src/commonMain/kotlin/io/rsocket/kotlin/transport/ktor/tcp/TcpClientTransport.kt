@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ package io.rsocket.kotlin.transport.ktor.tcp
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
@@ -36,15 +34,13 @@ internal expect val defaultDispatcher: CoroutineDispatcher
 public fun TcpClientTransport(
     hostname: String, port: Int,
     context: CoroutineContext = EmptyCoroutineContext,
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
     intercept: (Socket) -> Socket = { it }, //f.e. for tls, which is currently supported by ktor only on JVM
-    configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {}
-): ClientTransport = TcpClientTransport(InetSocketAddress(hostname, port), context, pool, intercept, configure)
+    configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {},
+): ClientTransport = TcpClientTransport(InetSocketAddress(hostname, port), context, intercept, configure)
 
 public fun TcpClientTransport(
     remoteAddress: InetSocketAddress,
     context: CoroutineContext = EmptyCoroutineContext,
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
     intercept: (Socket) -> Socket = { it }, //f.e. for tls, which is currently supported by ktor only on JVM
     configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {}
 ): ClientTransport {
@@ -54,6 +50,6 @@ public fun TcpClientTransport(
     Job(transportJob).invokeOnCompletion { selector.close() }
     return ClientTransport(transportContext) {
         val socket = aSocket(selector).tcp().connect(remoteAddress, configure)
-        TcpConnection(intercept(socket), transportContext + Job(transportJob), pool)
+        TcpConnection(intercept(socket), transportContext + Job(transportJob))
     }
 }

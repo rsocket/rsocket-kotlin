@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.rsocket.kotlin.internal.handler
 
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.internal.io.*
@@ -30,8 +28,7 @@ internal class ResponderRequestChannelFrameHandler(
     private val streamsStorage: StreamsStorage,
     private val responder: RSocketResponder,
     initialRequest: Int,
-    pool: ObjectPool<ChunkBuffer>
-) : ResponderFrameHandler(pool), ReceiveFrameHandler {
+) : ResponderFrameHandler(), ReceiveFrameHandler {
     val limiter = Limiter(initialRequest)
     val channel = channelForCloseable<Payload>(Channel.UNLIMITED)
 

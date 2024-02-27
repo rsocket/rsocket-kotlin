@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.handler.*
@@ -35,7 +33,6 @@ internal class RSocketRequester(
     override val coroutineContext: CoroutineContext,
     private val sender: FrameSender,
     private val streamsStorage: StreamsStorage,
-    private val pool: ObjectPool<ChunkBuffer>
 ) : RSocket {
 
     override suspend fun metadataPush(metadata: ByteReadPacket) {
@@ -64,7 +61,7 @@ internal class RSocketRequester(
         val id = streamsStorage.nextId()
 
         val deferred = CompletableDeferred<Payload>()
-        val handler = RequesterRequestResponseFrameHandler(id, streamsStorage, deferred, pool)
+        val handler = RequesterRequestResponseFrameHandler(id, streamsStorage, deferred)
         streamsStorage.save(id, handler)
 
         return handler.receiveOrCancel(id, payload) {
@@ -79,7 +76,7 @@ internal class RSocketRequester(
         val id = streamsStorage.nextId()
 
         val channel = channelForCloseable<Payload>(Channel.UNLIMITED)
-        val handler = RequesterRequestStreamFrameHandler(id, streamsStorage, channel, pool)
+        val handler = RequesterRequestStreamFrameHandler(id, streamsStorage, channel)
         streamsStorage.save(id, handler)
 
         handler.receiveOrCancel(id, payload) {
@@ -97,7 +94,7 @@ internal class RSocketRequester(
             val channel = channelForCloseable<Payload>(Channel.UNLIMITED)
             val limiter = Limiter(0)
             val payloadsJob = Job(this@RSocketRequester.coroutineContext.job)
-            val handler = RequesterRequestChannelFrameHandler(id, streamsStorage, limiter, payloadsJob, channel, pool)
+            val handler = RequesterRequestChannelFrameHandler(id, streamsStorage, limiter, payloadsJob, channel)
             streamsStorage.save(id, handler)
 
             handler.receiveOrCancel(id, initPayload) {

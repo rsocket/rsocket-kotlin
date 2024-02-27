@@ -8,14 +8,12 @@ public final class io/rsocket/kotlin/ktor/client/BuildersKt {
 
 public final class io/rsocket/kotlin/ktor/client/RSocketSupport {
 	public static final field Plugin Lio/rsocket/kotlin/ktor/client/RSocketSupport$Plugin;
-	public synthetic fun <init> (Lio/rsocket/kotlin/core/RSocketConnector;Lio/ktor/utils/io/pool/ObjectPool;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/rsocket/kotlin/core/RSocketConnector;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class io/rsocket/kotlin/ktor/client/RSocketSupport$Config {
 	public final fun connector (Lkotlin/jvm/functions/Function1;)V
-	public final fun getBufferPool ()Lio/ktor/utils/io/pool/ObjectPool;
 	public final fun getConnector ()Lio/rsocket/kotlin/core/RSocketConnector;
-	public final fun setBufferPool (Lio/ktor/utils/io/pool/ObjectPool;)V
 	public final fun setConnector (Lio/rsocket/kotlin/core/RSocketConnector;)V
 }
 

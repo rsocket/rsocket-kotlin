@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
@@ -34,6 +35,9 @@ public class RSocketConnectorBuilder internal constructor() {
             }
             field = value
         }
+
+    @Deprecated("Only for tests in rsocket", level = DeprecationLevel.ERROR)
+    public var bufferPool: BufferPool = BufferPool.Default
 
     private val connectionConfig: ConnectionConfigBuilder = ConnectionConfigBuilder()
     private val interceptors: InterceptorsBuilder = InterceptorsBuilder()
@@ -108,7 +112,8 @@ public class RSocketConnectorBuilder internal constructor() {
         interceptors.build(),
         connectionConfig.producer(),
         acceptor ?: defaultAcceptor,
-        reconnectPredicate
+        reconnectPredicate,
+        @Suppress("DEPRECATION_ERROR") bufferPool
     )
 
     private companion object {

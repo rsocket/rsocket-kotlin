@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 
-internal abstract class FrameHandler(pool: ObjectPool<ChunkBuffer>) : Closeable {
-    private val data = BytePacketBuilder(pool)
-    private val metadata = BytePacketBuilder(pool)
+internal abstract class FrameHandler : Closeable {
+    private val data = BytePacketBuilder(NoPool)
+    private val metadata = BytePacketBuilder(NoPool)
     private var hasMetadata: Boolean = false
 
     fun handleRequest(frame: RequestFrame) {
@@ -73,7 +73,7 @@ internal interface SendFrameHandler {
     fun onSendFailed(cause: Throwable): Boolean // if true, then request is failed
 }
 
-internal abstract class RequesterFrameHandler(pool: ObjectPool<ChunkBuffer>) : FrameHandler(pool), ReceiveFrameHandler {
+internal abstract class RequesterFrameHandler : FrameHandler(), ReceiveFrameHandler {
     override fun handleCancel() {
         //should be called only for RC
     }
@@ -83,7 +83,7 @@ internal abstract class RequesterFrameHandler(pool: ObjectPool<ChunkBuffer>) : F
     }
 }
 
-internal abstract class ResponderFrameHandler(pool: ObjectPool<ChunkBuffer>) : FrameHandler(pool), SendFrameHandler {
+internal abstract class ResponderFrameHandler : FrameHandler(), SendFrameHandler {
     protected var job: Job? = null
 
     protected abstract fun start(payload: Payload): Job
@@ -103,5 +103,22 @@ internal abstract class ResponderFrameHandler(pool: ObjectPool<ChunkBuffer>) : F
 
     override fun handleError(cause: Throwable) {
         //should be called only for RC
+    }
+}
+
+private object NoPool : ObjectPool<ChunkBuffer> {
+    override val capacity: Int
+        get() = error("should not be called")
+
+    override fun borrow(): ChunkBuffer {
+        error("should not be called")
+    }
+
+    override fun dispose() {
+        error("should not be called")
+    }
+
+    override fun recycle(instance: ChunkBuffer) {
+        error("should not be called")
     }
 }

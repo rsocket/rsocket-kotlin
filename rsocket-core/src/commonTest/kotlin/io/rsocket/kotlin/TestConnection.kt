@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package io.rsocket.kotlin
 
 import app.cash.turbine.*
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.test.*
@@ -33,7 +31,6 @@ import kotlin.time.*
 import kotlin.time.Duration.Companion.seconds
 
 class TestConnection : Connection, ClientTransport {
-    override val pool: ObjectPool<ChunkBuffer> = InUseTrackingPool
     override val coroutineContext: CoroutineContext =
         Job() + Dispatchers.Unconfined + TestExceptionHandler
 
