@@ -315,6 +315,7 @@ public final class io/rsocket/kotlin/core/WellKnownMimeType : java/lang/Enum, io
 	public static final field VideoH264 Lio/rsocket/kotlin/core/WellKnownMimeType;
 	public static final field VideoH265 Lio/rsocket/kotlin/core/WellKnownMimeType;
 	public static final field VideoVp8 Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public fun getIdentifier ()B
 	public fun getText ()Ljava/lang/String;
 	public fun toString ()Ljava/lang/String;
@@ -383,6 +384,7 @@ public final class io/rsocket/kotlin/logging/LoggingLevel : java/lang/Enum {
 	public static final field INFO Lio/rsocket/kotlin/logging/LoggingLevel;
 	public static final field TRACE Lio/rsocket/kotlin/logging/LoggingLevel;
 	public static final field WARN Lio/rsocket/kotlin/logging/LoggingLevel;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/rsocket/kotlin/logging/LoggingLevel;
 	public static fun values ()[Lio/rsocket/kotlin/logging/LoggingLevel;
 }
@@ -581,6 +583,7 @@ public final class io/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind : java/
 	public static final field NotSampled Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;
 	public static final field Sample Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;
 	public static final field Unspecified Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public static fun valueOf (Ljava/lang/String;)Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;
 	public static fun values ()[Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;
 }
@@ -728,6 +731,7 @@ public final class io/rsocket/kotlin/metadata/security/WellKnowAuthType : java/l
 	public static final field Bearer Lio/rsocket/kotlin/metadata/security/WellKnowAuthType;
 	public static final field Companion Lio/rsocket/kotlin/metadata/security/WellKnowAuthType$Companion;
 	public static final field Simple Lio/rsocket/kotlin/metadata/security/WellKnowAuthType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public fun getIdentifier ()B
 	public fun getText ()Ljava/lang/String;
 	public fun toString ()Ljava/lang/String;

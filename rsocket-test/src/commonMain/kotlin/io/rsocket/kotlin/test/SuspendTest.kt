@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.rsocket.kotlin.test
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.test.*
 import kotlin.coroutines.*
 import kotlin.time.*
 import kotlin.time.Duration.Companion.minutes
@@ -40,18 +41,19 @@ interface SuspendTest {
     fun test(
         timeout: Duration = testTimeout,
         block: suspend CoroutineScope.() -> Unit,
-    ) = runTest {
+    ) = runTest(timeout = 10.minutes) {
+        withContext(Dispatchers.Default) {
+            val beforeError = runPhase("BEFORE", beforeTimeout) { before() }
 
-        val beforeError = runPhase("BEFORE", beforeTimeout) { before() }
+            val testError = when (beforeError) { //don't run test if before failed
+                null -> runPhase("RUN", timeout, block)
+                else -> null
+            }
 
-        val testError = when (beforeError) { //don't run test if before failed
-            null -> runPhase("RUN", timeout, block)
-            else -> null
+            val afterError = runPhase("AFTER", afterTimeout) { after() }
+
+            handleErrors(testError, listOf(beforeError, afterError))
         }
-
-        val afterError = runPhase("AFTER", afterTimeout) { after() }
-
-        handleErrors(testError, listOf(beforeError, afterError))
     }
 
     //suppresses errors if more than one
@@ -61,6 +63,7 @@ interface SuspendTest {
                 if (other.isEmpty()) return
                 handleErrors(other.first(), other.drop(1))
             }
+
             else -> {
                 other.forEach { it?.let(error::addSuppressed) }
                 throw error
@@ -75,10 +78,12 @@ interface SuspendTest {
                 println("[TEST] $tag completed in ${result.duration}")
                 null
             }
+
             is TestResult.Failed  -> {
                 println("[TEST] $tag failed in ${result.duration} with error: ${result.cause.stackTraceToString()}")
                 result.cause
             }
+
             is TestResult.Timeout -> {
                 println("[TEST] $tag failed by timeout: ${result.timeout}")
                 result.cause

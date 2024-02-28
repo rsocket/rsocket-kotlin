@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.util.*
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.test.*
@@ -31,12 +30,12 @@ class ErrorFrameTest : TestWithLeakCheck {
         val frame = ErrorFrame(1, RSocketError.ApplicationError("d"))
         val bytes = frame.toPacketWithLength().readBytes()
 
-        assertEquals(dump, hex(bytes))
+        assertEquals(dump, bytes.toHexString())
     }
 
     @Test
     fun testDecoding() {
-        val packet = packet(hex(dump))
+        val packet = packet(dump.hexToByteArray())
         val frame = packet.toFrameWithLength()
 
         assertTrue(frame is ErrorFrame)

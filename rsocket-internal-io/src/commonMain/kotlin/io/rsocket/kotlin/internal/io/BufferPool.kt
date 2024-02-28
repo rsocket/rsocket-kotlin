@@ -21,6 +21,7 @@ import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import kotlin.jvm.*
 
+@Suppress("DEPRECATION")
 @JvmInline
 public value class BufferPool(
     @PublishedApi

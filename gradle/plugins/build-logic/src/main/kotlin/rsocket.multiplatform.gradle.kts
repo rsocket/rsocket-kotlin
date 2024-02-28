@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.gradle.*
-
 plugins {
     kotlin("multiplatform")
     id("build-parameters")
@@ -23,9 +21,6 @@ plugins {
 
 kotlin {
     jvmToolchain(8)
-
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    targetHierarchy.default()
 
     targets.configureEach {
         compilations.configureEach {
@@ -44,6 +39,5 @@ kotlin {
 }
 
 val buildParameters = the<buildparameters.BuildParametersExtension>()
-
-tasks.matching { it.name.endsWith("test", ignoreCase = true) }.configureEach { onlyIf { !buildParameters.skip.test } }
-tasks.matching { it.name.startsWith("link", ignoreCase = true) }.configureEach { onlyIf { !buildParameters.skip.link } }
+if (buildParameters.skip.test) tasks.matching { it.name.endsWith("test", ignoreCase = true) }.configureEach { onlyIf { false } }
+if (buildParameters.skip.link) tasks.matching { it.name.startsWith("link", ignoreCase = true) }.configureEach { onlyIf { false } }

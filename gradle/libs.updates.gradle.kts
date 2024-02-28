@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 /**
  * run to check for dependencies:
- *  ./gradlew :dependencyUpdates --init-script gradle/libs.updates.gradle.kts --no-configure-on-demand
+ *  ./gradlew dependencyUpdates --init-script gradle/libs.updates.gradle.kts --no-configuration-cache
  */
 
 initscript {
@@ -28,12 +28,9 @@ initscript {
     }
 }
 
-allprojects {
-    println("Project: $name / ${rootProject.name}")
+rootProject {
     apply<com.github.benmanes.gradle.versions.VersionsPlugin>()
-
-    // for root project add dependency on included builds
-    if (name == "rsocket-kotlin") tasks.named("dependencyUpdates") {
+    tasks.named("dependencyUpdates") {
         gradle.includedBuilds.forEach {
             dependsOn(it.task(":dependencyUpdates"))
         }

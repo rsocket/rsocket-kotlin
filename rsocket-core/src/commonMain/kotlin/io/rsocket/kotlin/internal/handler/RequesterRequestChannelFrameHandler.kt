@@ -67,7 +67,7 @@ internal class RequesterRequestChannelFrameHandler(
         return isCancelled
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onSendComplete() {
         if (channel.isClosedForSend) streamsStorage.remove(id)
     }
