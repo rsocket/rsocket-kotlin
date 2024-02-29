@@ -14,35 +14,38 @@
  * limitations under the License.
  */
 
-plugins {
-    id("build-parameters")
-}
+@file:Suppress("UnstableApiUsage")
 
-val kotlinVersion = "1.9.22"
-val kotlinVersionOverride = the<buildparameters.BuildParametersExtension>().useKotlin.orNull?.takeIf(String::isNotBlank)
+val kotlinVersionOverride = providers.gradleProperty("rsocketbuild.kotlinVersionOverride").orNull?.takeIf(String::isNotBlank)
 
 if (kotlinVersionOverride != null) logger.lifecycle("Kotlin version override: $kotlinVersionOverride")
 
 pluginManagement {
     if (kotlinVersionOverride != null) repositories {
-        maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
+        maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev") {
+            content {
+                includeGroupAndSubgroups("org.jetbrains.kotlin")
+            }
+        }
     }
 }
 
 dependencyResolutionManagement {
     if (kotlinVersionOverride != null) repositories {
-        maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
+        maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev") {
+            content {
+                includeGroupAndSubgroups("org.jetbrains.kotlin")
+            }
+        }
     }
     versionCatalogs {
         create("kotlinLibs") {
-            val kotlin = version("kotlin", kotlinVersionOverride ?: kotlinVersion)
+            val kotlin = version("kotlin", kotlinVersionOverride ?: rsocketsettings.kotlinVersion)
 
             library("gradle-plugin", "org.jetbrains.kotlin", "kotlin-gradle-plugin").versionRef(kotlin)
 
             plugin("multiplatform", "org.jetbrains.kotlin.multiplatform").versionRef(kotlin)
             plugin("jvm", "org.jetbrains.kotlin.jvm").versionRef(kotlin)
-            plugin("plugin.serialization", "org.jetbrains.kotlin.plugin.serialization").versionRef(kotlin)
-            plugin("plugin.allopen", "org.jetbrains.kotlin.plugin.allopen").versionRef(kotlin)
         }
     }
 }

@@ -117,4 +117,4 @@ jobs:
             --scan
             --info
             --continue
-            -Pskip.test
+            -Prsocketbuild.skipTests=true

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 
 plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.jvm")
-    id("rsocket.target.native.nix")
+    id("rsocketbuild.template.transport")
+    id("rsocketbuild.target.jvm")
+    id("rsocketbuild.target.native.nix")
 }
 
 kotlin {

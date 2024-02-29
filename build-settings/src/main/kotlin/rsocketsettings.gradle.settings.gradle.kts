@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,15 @@
  */
 
 plugins {
-    `kotlin-dsl`
+    id("com.gradle.enterprise")
+    id("com.gradle.common-custom-user-data-gradle-plugin")
+    id("org.gradle.toolchains.foojay-resolver-convention")
 }
 
-kotlin {
-    jvmToolchain(8)
+gradleEnterprise {
+    buildScan {
+        publishAlwaysIf(System.getenv("CI").toBoolean())
+    }
 }
 
-dependencies {
-    implementation("rsocket.build:build-parameters")
-}
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

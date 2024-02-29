@@ -17,7 +17,7 @@
 import org.jetbrains.kotlin.gradle.targets.jvm.tasks.*
 
 plugins {
-    id("rsocket.multiplatform")
+    id("rsocketbuild.multiplatform")
 }
 
 kotlin {

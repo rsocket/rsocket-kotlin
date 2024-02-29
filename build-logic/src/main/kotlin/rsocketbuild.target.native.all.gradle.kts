@@ -15,19 +15,9 @@
  */
 
 plugins {
-    id("rsocketbuild.template.library")
-    id("rsocketbuild.target.all")
+    id("rsocketbuild.target.native.nix")
 }
 
 kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketKtor)
-                api(libs.ktor.client.websockets)
-            }
-        }
-    }
+    mingwX64()
 }
-
-description = "RSocket ktor client plugin"

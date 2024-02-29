@@ -17,8 +17,8 @@
 import org.jetbrains.kotlin.gradle.*
 
 plugins {
-    id("rsocket.template.test")
-    id("rsocket.target.all")
+    id("rsocketbuild.template.test")
+    id("rsocketbuild.target.all")
     id("kotlinx-atomicfu")
 }
 

@@ -15,19 +15,21 @@
  */
 
 plugins {
-    id("rsocketbuild.template.library")
-    id("rsocketbuild.target.all")
+    `kotlin-dsl`
+    alias(libs.plugins.buildconfig)
 }
 
-kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketKtor)
-                api(libs.ktor.client.websockets)
-            }
-        }
+dependencies {
+    implementation(libs.build.gradle.enterprise)
+    implementation(libs.build.gradle.customUserData)
+    implementation(libs.build.gradle.foojay)
+}
+
+buildConfig {
+    packageName("rsocketsettings")
+    useKotlinOutput {
+        topLevelConstants = true
+        internalVisibility = true
     }
+    buildConfigField("String", "kotlinVersion", libs.versions.kotlin.map { "\"$it\"" })
 }
-
-description = "RSocket ktor client plugin"

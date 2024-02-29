@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.tasks.*
+
 plugins {
     kotlin("multiplatform")
-    id("build-parameters")
 }
 
 kotlin {
@@ -38,6 +39,11 @@ kotlin {
     }
 }
 
-val buildParameters = the<buildparameters.BuildParametersExtension>()
-if (buildParameters.skip.test) tasks.matching { it.name.endsWith("test", ignoreCase = true) }.configureEach { onlyIf { false } }
-if (buildParameters.skip.link) tasks.matching { it.name.startsWith("link", ignoreCase = true) }.configureEach { onlyIf { false } }
+
+if (providers.gradleProperty("rsocketbuild.skipTests").map(String::toBoolean).getOrElse(false)) {
+    tasks.withType<AbstractTestTask>().configureEach { onlyIf { false } }
+}
+
+if (providers.gradleProperty("rsocketbuild.skipNativeLink").map(String::toBoolean).getOrElse(false)) {
+    tasks.withType<KotlinNativeLink>().configureEach { onlyIf { false } }
+}

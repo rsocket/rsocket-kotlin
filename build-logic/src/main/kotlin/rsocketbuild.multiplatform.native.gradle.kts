@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,20 @@
  * limitations under the License.
  */
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-    }
-    includeBuild("../kotlin-version-catalog")
+import org.jetbrains.kotlin.gradle.plugin.mpp.*
+
+plugins {
+    id("rsocketbuild.multiplatform")
 }
 
-dependencyResolutionManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-    }
-
-    versionCatalogs {
-        create("libs") {
-            from(files("../../libs.versions.toml"))
+kotlin {
+    targets.configureEach {
+        //add another test task with release binary
+        if (this is KotlinNativeTargetWithTests<*>) {
+            binaries.test(listOf(NativeBuildType.RELEASE))
+            testRuns.create("releaseTest") {
+                setExecutionSourceFrom(binaries.getTest(NativeBuildType.RELEASE))
+            }
         }
     }
 }
-
-plugins {
-    id("kotlin-version-catalog")
-}
-
-rootProject.name = "build-logic"
-
-includeBuild("../build-parameters")

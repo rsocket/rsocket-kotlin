@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,24 @@
  */
 
 plugins {
-    id("rsocket.multiplatform")
+    id("rsocketbuild.multiplatform.native")
 }
 
 kotlin {
-    js {
-        browser {
-            testTask {
-                useKarma {
-                    useConfigDirectory(rootDir.resolve("gradle/js/karma.config.d"))
-                    useChromeHeadless()
-                }
-            }
-        }
-    }
+    macosX64()
+    macosArm64()
+
+    iosArm64()
+    iosX64()
+    iosSimulatorArm64()
+
+    tvosArm64()
+    tvosX64()
+    tvosSimulatorArm64()
+
+    //TODO: after coroutines 1.7.0 add watchosDeviceArm64()
+    watchosArm32()
+    watchosArm64()
+    watchosX64()
+    watchosSimulatorArm64()
 }
