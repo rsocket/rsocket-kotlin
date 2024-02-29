@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.targets.jvm.tasks.*
+
 plugins {
     id("rsocket.multiplatform")
 }
 
 kotlin {
     jvm {
-        listOf(11, 17, 20).forEach { jdkVersion ->
+        listOf(11, 17, 21).forEach { jdkVersion ->
             testRuns.create("${jdkVersion}Test") {
                 executionTask.configure {
                     javaLauncher.set(
