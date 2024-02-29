@@ -14,22 +14,17 @@
  * limitations under the License.
  */
 
-import rsocketbuild.*
+@file:Suppress("UnstableApiUsage")
 
-plugins {
-    id("rsocketbuild.multiplatform-library")
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
 }
 
-description = "rsocket-kotlin ktor transport utilities"
-
-kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
-
-    sourceSets {
-        commonMain.dependencies {
-            api(projects.rsocketCore)
-        }
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
     }
 }

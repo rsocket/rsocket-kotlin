@@ -70,6 +70,7 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
             assertEquals(errorMessage, error.message)
         }
         connection.coroutineContext.job.join()
+        @OptIn(InternalCoroutinesApi::class)
         val error = connection.coroutineContext.job.getCancellationException().cause
         assertTrue(error is RSocketError.Setup.Rejected)
         assertEquals(errorMessage, error.message)

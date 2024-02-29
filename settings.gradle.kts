@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,64 +14,37 @@
  * limitations under the License.
  */
 
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+import rsocketsettings.*
 
 pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-    }
-
-    includeBuild("gradle/plugins/build-parameters")
-    includeBuild("gradle/plugins/build-logic")
-    includeBuild("gradle/plugins/kotlin-version-catalog")
-}
-
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-    }
+    includeBuild("build-logic")
+    includeBuild("build-settings")
 }
 
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.5.0"
-    id("com.gradle.enterprise") version "3.13.2"
-    id("kotlin-version-catalog")
+    id("rsocketsettings.default")
 }
 
-gradleEnterprise {
-    buildScan {
-        termsOfServiceUrl = "https://gradle.com/terms-of-service"
-        termsOfServiceAgree = "yes"
+projects("rsocket-kotlin") {
+    module("rsocket-internal-io")
+    module("rsocket-core")
+    module("rsocket-test")
+
+    module("rsocket-transport-tests")
+    module("rsocket-transport-local")
+    module("rsocket-transport-nodejs-tcp")
+
+    //ktor transport modules
+    module("rsocket-transport-ktor", prefix = null) {
+        module("rsocket-transport-ktor-tcp")
+        module("rsocket-transport-ktor-websocket")
+        module("rsocket-transport-ktor-websocket-client")
+        module("rsocket-transport-ktor-websocket-server")
+    }
+
+    //deep ktor integration module
+    module("rsocket-ktor", prefix = null) {
+        module("rsocket-ktor-client")
+        module("rsocket-ktor-server")
     }
 }
-
-rootProject.name = "rsocket-kotlin"
-
-//include("benchmarks")
-
-include("rsocket-internal-io")
-
-include("rsocket-core")
-include("rsocket-test")
-
-include("rsocket-transport-tests")
-include("rsocket-transport-local")
-
-//ktor transport modules
-include(
-    "rsocket-transport-ktor",
-    "rsocket-transport-ktor:rsocket-transport-ktor-tcp",
-    "rsocket-transport-ktor:rsocket-transport-ktor-websocket",
-    "rsocket-transport-ktor:rsocket-transport-ktor-websocket-client",
-    "rsocket-transport-ktor:rsocket-transport-ktor-websocket-server",
-)
-
-include("rsocket-transport-nodejs-tcp")
-
-//deep ktor integration module
-include(
-    "rsocket-ktor",
-    "rsocket-ktor:rsocket-ktor-client",
-    "rsocket-ktor:rsocket-ktor-server",
-)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
+import rsocketbuild.*
+
 plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.all")
+    id("rsocketbuild.multiplatform-library")
 }
 
-kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                implementation(projects.rsocketInternalIo)
+description = "rsocket-kotlin Local transport implementation"
 
-                api(projects.rsocketCore)
-            }
+kotlin {
+    jvmTarget()
+    jsTarget()
+    nativeTargets()
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.rsocketInternalIo)
+            api(projects.rsocketCore)
+        }
+        commonTest.dependencies {
+            implementation(projects.rsocketTransportTests)
         }
     }
 }
-
-description = "RSocket Local transport implementation"
