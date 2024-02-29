@@ -13,10 +13,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: |
-            jvmTest
-            jvm11Test
-            jvm17Test
-            jvm20Test
+            jvmAllTest
             --scan
             --info
             --continue
