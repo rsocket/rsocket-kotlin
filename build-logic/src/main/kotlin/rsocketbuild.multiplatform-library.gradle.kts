@@ -15,15 +15,10 @@
  */
 
 plugins {
-    id("rsocketbuild.template.library")
+    id("rsocketbuild.multiplatform-base")
+    id("rsocketbuild.publication")
 }
 
 kotlin {
-    sourceSets {
-        commonTest {
-            dependencies {
-                implementation(project(":rsocket-transport-tests"))
-            }
-        }
-    }
+    explicitApi()
 }

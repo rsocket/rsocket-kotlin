@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
+import rsocketbuild.*
+
 plugins {
-    id("rsocketbuild.template.transport")
-    id("rsocketbuild.target.js.node")
+    id("rsocketbuild.multiplatform-library")
 }
 
-kotlin {
-    sourceSets {
-        jsMain {
-            dependencies {
-                implementation(projects.rsocketInternalIo)
+description = "rsocket-kotlin NodeJS TCP client/server transport implementation"
 
-                api(projects.rsocketCore)
-            }
+kotlin {
+    jsTarget(supportsBrowser = false)
+
+    sourceSets {
+        jsMain.dependencies {
+            implementation(projects.rsocketInternalIo)
+            api(projects.rsocketCore)
+        }
+        jsTest.dependencies {
+            implementation(projects.rsocketTransportTests)
         }
     }
 }
-
-description = "RSocket NodeJS TCP client/server transport implementation"

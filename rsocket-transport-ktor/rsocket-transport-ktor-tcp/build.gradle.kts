@@ -14,23 +14,27 @@
  * limitations under the License.
  */
 
+import rsocketbuild.*
+
 plugins {
-    id("rsocketbuild.template.transport")
-    id("rsocketbuild.target.jvm")
-    id("rsocketbuild.target.native.nix")
+    id("rsocketbuild.multiplatform-library")
 }
 
-kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                implementation(projects.rsocketInternalIo)
+description = "rsocket-kotlin ktor TCP client/server transport implementation"
 
-                api(projects.rsocketTransportKtor)
-                api(libs.ktor.network)
-            }
+kotlin {
+    jvmTarget()
+    nixTargets()
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.rsocketInternalIo)
+
+            api(projects.rsocketTransportKtor)
+            api(libs.ktor.network)
+        }
+        commonTest.dependencies {
+            implementation(projects.rsocketTransportTests)
         }
     }
 }
-
-description = "RSocket ktor TCP client/server transport implementation"

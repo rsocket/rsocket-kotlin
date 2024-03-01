@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-plugins {
-    id("rsocketbuild.template.library")
-    id("rsocketbuild.target.all")
-}
+import rsocketbuild.*
 
-kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                api(libs.kotlinx.coroutines.core)
-                api(libs.ktor.io)
-            }
-        }
-    }
+plugins {
+    id("rsocketbuild.multiplatform-library")
 }
 
 description = "rsocket-kotlin internal IO support"
+
+kotlin {
+    jvmTarget()
+    jsTarget()
+    nativeTargets()
+
+    sourceSets {
+        commonMain.dependencies {
+            api(libs.kotlinx.coroutines.core)
+            api(libs.ktor.io)
+        }
+    }
+}

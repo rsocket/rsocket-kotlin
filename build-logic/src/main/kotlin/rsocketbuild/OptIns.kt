@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-plugins {
-    id("rsocketbuild.target.native.apple")
-}
+package rsocketbuild
 
-kotlin {
-    linuxX64()
+@Suppress("ConstPropertyName")
+object OptIns {
+    const val ExperimentalStdlibApi = "kotlin.ExperimentalStdlibApi"
+    const val ExperimentalCoroutinesApi = "kotlinx.coroutines.ExperimentalCoroutinesApi"
+    const val DelicateCoroutinesApi = "kotlinx.coroutines.DelicateCoroutinesApi"
+
+    const val TransportApi = "io.rsocket.kotlin.TransportApi"
+    const val ExperimentalMetadataApi = "io.rsocket.kotlin.ExperimentalMetadataApi"
+    const val ExperimentalStreamsApi = "io.rsocket.kotlin.ExperimentalStreamsApi"
+    const val RSocketLoggingApi = "io.rsocket.kotlin.RSocketLoggingApi"
 }

@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
+import rsocketbuild.*
+
 plugins {
-    id("rsocketbuild.template.transport")
-    id("rsocketbuild.target.all")
+    id("rsocketbuild.multiplatform-library")
 }
 
-kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                implementation(projects.rsocketInternalIo)
+description = "rsocket-kotlin Local transport implementation"
 
-                api(projects.rsocketCore)
-            }
+kotlin {
+    jvmTarget()
+    jsTarget()
+    nativeTargets()
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.rsocketInternalIo)
+            api(projects.rsocketCore)
+        }
+        commonTest.dependencies {
+            implementation(projects.rsocketTransportTests)
         }
     }
 }
-
-description = "RSocket Local transport implementation"

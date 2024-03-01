@@ -14,28 +14,30 @@
  * limitations under the License.
  */
 
+import rsocketbuild.*
+
 plugins {
-    id("rsocketbuild.template.library")
-    id("rsocketbuild.target.all")
+    id("rsocketbuild.multiplatform-library")
     id("kotlinx-atomicfu")
 }
 
-kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                implementation(projects.rsocketInternalIo)
+description = "rsocket-kotlin core functionality"
 
-                api(libs.kotlinx.coroutines.core)
-                api(libs.ktor.io)
-            }
+kotlin {
+    jvmTarget()
+    jsTarget()
+    nativeTargets()
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.rsocketInternalIo)
+
+            api(libs.kotlinx.coroutines.core)
+            api(libs.ktor.io)
         }
-        commonTest {
-            dependencies {
-                implementation(projects.rsocketTransportLocal)
-            }
+        commonTest.dependencies {
+            implementation(projects.rsocketTest)
+            implementation(projects.rsocketTransportLocal)
         }
     }
 }
-
-description = "RSocket core functionality"

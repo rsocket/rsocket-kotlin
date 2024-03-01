@@ -14,38 +14,35 @@
  * limitations under the License.
  */
 
+import rsocketbuild.*
+
 plugins {
-    id("rsocketbuild.template.transport")
-    id("rsocketbuild.target.jvm")
-    id("rsocketbuild.target.native.nix")
+    id("rsocketbuild.multiplatform-library")
 }
 
+description = "rsocket-kotlin ktor WebSocket server transport implementation"
+
 kotlin {
+    jvmTarget()
+    nixTargets()
+
     sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
-                api(libs.ktor.server.host.common)
-                api(libs.ktor.server.websockets)
-            }
+        commonMain.dependencies {
+            api(projects.rsocketTransportKtor.rsocketTransportKtorWebsocket)
+            api(libs.ktor.server.host.common)
+            api(libs.ktor.server.websockets)
         }
-        commonTest {
-            dependencies {
-                implementation(projects.rsocketTransportKtor.rsocketTransportKtorWebsocketClient)
-                implementation(libs.ktor.client.cio)
-                implementation(libs.ktor.server.cio)
-            }
+        commonTest.dependencies {
+            implementation(projects.rsocketTransportTests)
+            implementation(projects.rsocketTransportKtor.rsocketTransportKtorWebsocketClient)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.server.cio)
         }
+        jvmTest.dependencies {
+            implementation(libs.ktor.client.okhttp)
 
-        jvmTest {
-            dependencies {
-                implementation(libs.ktor.client.okhttp)
-
-                implementation(libs.ktor.server.netty)
-                implementation(libs.ktor.server.jetty)
-            }
+            implementation(libs.ktor.server.netty)
+            implementation(libs.ktor.server.jetty)
         }
     }
 }
-
-description = "RSocket ktor WebSocket server transport implementation"

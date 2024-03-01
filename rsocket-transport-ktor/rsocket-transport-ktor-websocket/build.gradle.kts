@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
+import rsocketbuild.*
+
 plugins {
-    id("rsocketbuild.template.transport")
-    id("rsocketbuild.target.all")
+    id("rsocketbuild.multiplatform-library")
 }
 
+description = "rsocket-kotlin ktor WebSocket transport utilities"
+
 kotlin {
+    jvmTarget()
+    jsTarget()
+    nativeTargets()
+
     sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketTransportKtor)
-                api(libs.ktor.websockets)
-            }
+        commonMain.dependencies {
+            api(projects.rsocketTransportKtor)
+            api(libs.ktor.websockets)
         }
     }
 }
-
-description = "RSocket ktor WebSocket transport utilities"
