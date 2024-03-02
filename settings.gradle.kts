@@ -50,6 +50,8 @@ rootProject.name = "rsocket-kotlin"
 
 //include("benchmarks")
 
+include("rsocket-internal-io")
+
 include("rsocket-core")
 include("rsocket-test")
 

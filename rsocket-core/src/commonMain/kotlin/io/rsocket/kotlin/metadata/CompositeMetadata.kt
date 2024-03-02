@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 
 @ExperimentalMetadataApi
 public fun CompositeMetadata(vararg entries: Metadata): CompositeMetadata =
@@ -39,7 +40,7 @@ public sealed interface CompositeMetadata : Metadata {
     override fun BytePacketBuilder.writeSelf() {
         entries.forEach {
             writeMimeType(it.mimeType)
-            writeLength(it.content.remaining.toInt()) //write metadata length
+            writeInt24(it.content.remaining.toInt()) //write metadata length
             writePacket(it.content) //write metadata content
         }
     }
@@ -58,7 +59,7 @@ public sealed interface CompositeMetadata : Metadata {
             val list = mutableListOf<Entry>()
             while (isNotEmpty) {
                 val type = readMimeType()
-                val length = readLength()
+                val length = readInt24()
                 val packet = readPacket(pool, length)
                 list.add(Entry(type, packet))
             }

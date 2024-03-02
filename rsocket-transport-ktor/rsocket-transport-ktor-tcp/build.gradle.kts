@@ -24,6 +24,8 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                implementation(projects.rsocketInternalIo)
+
                 api(projects.rsocketTransportKtor)
                 api(libs.ktor.network)
             }

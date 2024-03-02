@@ -23,14 +23,14 @@ import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
 public fun LocalServerTransport(
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool
+    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
 ): ServerTransport<LocalServer> = ServerTransport { accept ->
     val connections = Channel<Connection>()
     val handlerJob = launch {
@@ -46,15 +46,15 @@ public fun LocalServerTransport(
 public class LocalServer internal constructor(
     private val pool: ObjectPool<ChunkBuffer>,
     private val connections: Channel<Connection>,
-    override val coroutineContext: CoroutineContext
+    override val coroutineContext: CoroutineContext,
 ) : ClientTransport {
     override suspend fun connect(): Connection {
-        val clientChannel = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
-        val serverChannel = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
+        val clientChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
+        val serverChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
         val connectionJob = Job(coroutineContext[Job])
         connectionJob.invokeOnCompletion {
-            @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") clientChannel.fullClose(it)
-            @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") serverChannel.fullClose(it)
+            clientChannel.cancelWithCause(it)
+            serverChannel.cancelWithCause(it)
         }
         val connectionContext = coroutineContext + connectionJob
         val clientConnection = LocalConnection(

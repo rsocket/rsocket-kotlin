@@ -24,8 +24,7 @@ import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.Connection
-import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.internal.io.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
@@ -37,8 +36,8 @@ internal class TcpConnection(
 ) : Connection {
     private val socketConnection = socket.connection()
 
-    private val sendChannel = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(8)
-    private val receiveChannel = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(8)
+    private val sendChannel = channelForCloseable<ByteReadPacket>(8)
+    private val receiveChannel = channelForCloseable<ByteReadPacket>(8)
 
     init {
         launch {
@@ -48,7 +47,7 @@ internal class TcpConnection(
                     val length = packet.remaining.toInt()
                     try {
                         writePacket {
-                            @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") writeLength(length)
+                            writeInt24(length)
                             writePacket(packet)
                         }
                         flush()
@@ -62,7 +61,7 @@ internal class TcpConnection(
         launch {
             socketConnection.input.apply {
                 while (isActive) {
-                    val length = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") readPacket(3).readLength()
+                    val length = readPacket(3).readInt24()
                     val packet = readPacket(length)
                     try {
                         receiveChannel.send(packet)
@@ -74,8 +73,8 @@ internal class TcpConnection(
             }
         }
         coroutineContext.job.invokeOnCompletion {
-            @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") sendChannel.fullClose(it)
-            @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") receiveChannel.fullClose(it)
+            sendChannel.cancelWithCause(it)
+            receiveChannel.cancelWithCause(it)
             socketConnection.input.cancel(it)
             socketConnection.output.close(it)
             socketConnection.socket.close()

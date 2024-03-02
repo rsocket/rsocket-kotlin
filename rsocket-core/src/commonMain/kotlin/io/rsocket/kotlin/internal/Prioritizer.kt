@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.rsocket.kotlin.internal
 
 import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.internal.io.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.selects.*
@@ -24,8 +25,8 @@ import kotlinx.coroutines.selects.*
 private val selectFrame: suspend (Frame) -> Frame = { it }
 
 internal class Prioritizer {
-    private val priorityChannel = SafeChannel<Frame>(Channel.UNLIMITED)
-    private val commonChannel = SafeChannel<Frame>(Channel.UNLIMITED)
+    private val priorityChannel = channelForCloseable<Frame>(Channel.UNLIMITED)
+    private val commonChannel = channelForCloseable<Frame>(Channel.UNLIMITED)
 
     suspend fun send(frame: Frame) {
         currentCoroutineContext().ensureActive()
@@ -43,7 +44,7 @@ internal class Prioritizer {
     }
 
     fun close(error: Throwable?) {
-        priorityChannel.fullClose(error)
-        commonChannel.fullClose(error)
+        priorityChannel.cancelWithCause(error)
+        commonChannel.cancelWithCause(error)
     }
 }

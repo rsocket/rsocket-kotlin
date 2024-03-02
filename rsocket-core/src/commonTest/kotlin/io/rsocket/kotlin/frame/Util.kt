@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,18 @@ package io.rsocket.kotlin.frame
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
 internal fun Frame.toPacketWithLength(): ByteReadPacket = buildPacket(InUseTrackingPool) {
     val packet = toPacket(InUseTrackingPool)
-    writeLength(packet.remaining.toInt())
+    writeInt24(packet.remaining.toInt())
     writePacket(packet)
 }
 
 internal fun ByteReadPacket.toFrameWithLength(): Frame {
-    val length = readLength()
+    val length = readInt24()
     assertEquals(length, remaining.toInt())
     return readFrame(InUseTrackingPool)
 }

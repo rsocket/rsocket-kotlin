@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.handler.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
@@ -77,7 +78,7 @@ internal class RSocketRequester(
 
         val id = streamsStorage.nextId()
 
-        val channel = SafeChannel<Payload>(Channel.UNLIMITED)
+        val channel = channelForCloseable<Payload>(Channel.UNLIMITED)
         val handler = RequesterRequestStreamFrameHandler(id, streamsStorage, channel, pool)
         streamsStorage.save(id, handler)
 
@@ -93,7 +94,7 @@ internal class RSocketRequester(
 
             val id = streamsStorage.nextId()
 
-            val channel = SafeChannel<Payload>(Channel.UNLIMITED)
+            val channel = channelForCloseable<Payload>(Channel.UNLIMITED)
             val limiter = Limiter(0)
             val payloadsJob = Job(this@RSocketRequester.coroutineContext.job)
             val handler = RequesterRequestChannelFrameHandler(id, streamsStorage, limiter, payloadsJob, channel, pool)

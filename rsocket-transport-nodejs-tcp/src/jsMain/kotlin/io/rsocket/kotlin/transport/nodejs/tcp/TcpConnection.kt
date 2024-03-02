@@ -21,7 +21,7 @@ import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.js.*
 import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.nodejs.tcp.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
@@ -32,11 +32,11 @@ import kotlin.coroutines.*
 internal class TcpConnection(
     override val coroutineContext: CoroutineContext,
     override val pool: ObjectPool<ChunkBuffer>,
-    private val socket: Socket
+    private val socket: Socket,
 ) : Connection {
 
-    private val sendChannel = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(8)
-    private val receiveChannel = @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") SafeChannel<ByteReadPacket>(Channel.UNLIMITED)
+    private val sendChannel = channelForCloseable<ByteReadPacket>(8)
+    private val receiveChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
 
     init {
         launch {

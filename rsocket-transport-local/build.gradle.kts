@@ -23,6 +23,8 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                implementation(projects.rsocketInternalIo)
+
                 api(projects.rsocketCore)
             }
         }

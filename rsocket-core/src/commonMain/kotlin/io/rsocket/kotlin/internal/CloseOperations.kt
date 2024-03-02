@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,17 +28,6 @@ internal inline fun <T : Closeable, R> T.closeOnError(block: (T) -> R): R {
     }
 }
 
-private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
-
-@Suppress("FunctionName")
-internal fun <E : Closeable> SafeChannel(capacity: Int): Channel<E> =
-    Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
-
 internal fun <E : Closeable> SendChannel<E>.safeTrySend(element: E) {
     trySend(element).onFailure { element.close() }
-}
-
-internal fun Channel<out Closeable>.fullClose(cause: Throwable?) {
-    close(cause) // close channel to provide right cause
-    cancel() // force call of onUndeliveredElement to release buffered elements
 }

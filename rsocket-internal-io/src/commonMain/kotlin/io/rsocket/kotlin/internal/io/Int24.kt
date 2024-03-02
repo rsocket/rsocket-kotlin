@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.js.node")
+package io.rsocket.kotlin.internal.io
+
+import io.ktor.utils.io.core.*
+
+private const val lengthMask: Int = 0xFFFFFF.inv()
+
+public fun ByteReadPacket.readInt24(): Int {
+    val b = readByte().toInt() and 0xFF shl 16
+    val b1 = readByte().toInt() and 0xFF shl 8
+    val b2 = readByte().toInt() and 0xFF
+    return b or b1 or b2
 }
 
-kotlin {
-    sourceSets {
-        jsMain {
-            dependencies {
-                implementation(projects.rsocketInternalIo)
-
-                api(projects.rsocketCore)
-            }
-        }
-    }
+public fun BytePacketBuilder.writeInt24(length: Int) {
+    require(length and lengthMask == 0) { "Length is larger than 24 bits" }
+    writeByte((length shr 16).toByte())
+    writeByte((length shr 8).toByte())
+    writeByte(length.toByte())
 }
-
-description = "RSocket NodeJS TCP client/server transport implementation"
