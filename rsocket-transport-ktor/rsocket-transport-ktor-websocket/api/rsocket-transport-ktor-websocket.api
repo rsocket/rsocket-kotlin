@@ -1,0 +1,8 @@
+public final class io/rsocket/kotlin/transport/ktor/websocket/WebSocketConnection : io/rsocket/kotlin/Connection, kotlinx/coroutines/CoroutineScope {
+	public fun <init> (Lio/ktor/websocket/WebSocketSession;Lio/ktor/utils/io/pool/ObjectPool;)V
+	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+	public fun getPool ()Lio/ktor/utils/io/pool/ObjectPool;
+	public fun receive (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun send (Lio/ktor/utils/io/core/ByteReadPacket;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

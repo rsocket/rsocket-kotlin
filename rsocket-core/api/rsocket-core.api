@@ -1,0 +1,818 @@
+public final class io/rsocket/kotlin/ChannelStrategy : io/rsocket/kotlin/RequestStrategy, io/rsocket/kotlin/RequestStrategy$Element {
+	public fun <init> (Lkotlinx/coroutines/channels/ReceiveChannel;)V
+	public fun firstRequest (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun fold (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public fun get (Lkotlin/coroutines/CoroutineContext$Key;)Lkotlin/coroutines/CoroutineContext$Element;
+	public fun getKey ()Lkotlin/coroutines/CoroutineContext$Key;
+	public fun minusKey (Lkotlin/coroutines/CoroutineContext$Key;)Lkotlin/coroutines/CoroutineContext;
+	public fun nextRequest (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun plus (Lkotlin/coroutines/CoroutineContext;)Lkotlin/coroutines/CoroutineContext;
+	public fun provide ()Lio/rsocket/kotlin/RequestStrategy$Element;
+}
+
+public abstract interface class io/rsocket/kotlin/Connection : kotlinx/coroutines/CoroutineScope {
+	public abstract fun getPool ()Lio/ktor/utils/io/pool/ObjectPool;
+	public abstract fun receive (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun send (Lio/ktor/utils/io/core/ByteReadPacket;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/rsocket/kotlin/Connection$DefaultImpls {
+	public static fun getPool (Lio/rsocket/kotlin/Connection;)Lio/ktor/utils/io/pool/ObjectPool;
+}
+
+public abstract interface class io/rsocket/kotlin/ConnectionAcceptor {
+	public abstract fun accept (Lio/rsocket/kotlin/ConnectionAcceptorContext;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/rsocket/kotlin/ConnectionAcceptorContext {
+	public final fun getConfig ()Lio/rsocket/kotlin/ConnectionConfig;
+	public final fun getRequester ()Lio/rsocket/kotlin/RSocket;
+}
+
+public final class io/rsocket/kotlin/ConnectionConfig {
+	public final fun getKeepAlive ()Lio/rsocket/kotlin/keepalive/KeepAlive;
+	public final fun getPayloadMimeType ()Lio/rsocket/kotlin/payload/PayloadMimeType;
+	public final fun getSetupPayload ()Lio/rsocket/kotlin/payload/Payload;
+}
+
+public abstract interface annotation class io/rsocket/kotlin/ExperimentalMetadataApi : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class io/rsocket/kotlin/ExperimentalStreamsApi : java/lang/annotation/Annotation {
+}
+
+public final class io/rsocket/kotlin/PrefetchStrategy : io/rsocket/kotlin/RequestStrategy {
+	public fun <init> (II)V
+	public fun fold (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public fun get (Lkotlin/coroutines/CoroutineContext$Key;)Lkotlin/coroutines/CoroutineContext$Element;
+	public fun getKey ()Lkotlin/coroutines/CoroutineContext$Key;
+	public fun minusKey (Lkotlin/coroutines/CoroutineContext$Key;)Lkotlin/coroutines/CoroutineContext;
+	public fun plus (Lkotlin/coroutines/CoroutineContext;)Lkotlin/coroutines/CoroutineContext;
+	public fun provide ()Lio/rsocket/kotlin/RequestStrategy$Element;
+}
+
+public abstract interface class io/rsocket/kotlin/RSocket : kotlinx/coroutines/CoroutineScope {
+	public abstract fun fireAndForget (Lio/rsocket/kotlin/payload/Payload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun metadataPush (Lio/ktor/utils/io/core/ByteReadPacket;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun requestChannel (Lio/rsocket/kotlin/payload/Payload;Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public abstract fun requestResponse (Lio/rsocket/kotlin/payload/Payload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun requestStream (Lio/rsocket/kotlin/payload/Payload;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class io/rsocket/kotlin/RSocket$DefaultImpls {
+	public static fun fireAndForget (Lio/rsocket/kotlin/RSocket;Lio/rsocket/kotlin/payload/Payload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun metadataPush (Lio/rsocket/kotlin/RSocket;Lio/ktor/utils/io/core/ByteReadPacket;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun requestChannel (Lio/rsocket/kotlin/RSocket;Lio/rsocket/kotlin/payload/Payload;Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public static fun requestResponse (Lio/rsocket/kotlin/RSocket;Lio/rsocket/kotlin/payload/Payload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun requestStream (Lio/rsocket/kotlin/RSocket;Lio/rsocket/kotlin/payload/Payload;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public abstract class io/rsocket/kotlin/RSocketError : java/lang/Throwable {
+	public synthetic fun <init> (ILjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getErrorCode ()I
+}
+
+public final class io/rsocket/kotlin/RSocketError$ApplicationError : io/rsocket/kotlin/RSocketError {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/rsocket/kotlin/RSocketError$Canceled : io/rsocket/kotlin/RSocketError {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/rsocket/kotlin/RSocketError$ConnectionClose : io/rsocket/kotlin/RSocketError {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/rsocket/kotlin/RSocketError$ConnectionError : io/rsocket/kotlin/RSocketError {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/rsocket/kotlin/RSocketError$Custom : io/rsocket/kotlin/RSocketError {
+	public static final field Companion Lio/rsocket/kotlin/RSocketError$Custom$Companion;
+	public static final field MaxAllowedCode I
+	public static final field MinAllowedCode I
+	public fun <init> (ILjava/lang/String;)V
+}
+
+public final class io/rsocket/kotlin/RSocketError$Custom$Companion {
+	public final fun checkCodeInAllowedRange (I)Z
+}
+
+public final class io/rsocket/kotlin/RSocketError$Invalid : io/rsocket/kotlin/RSocketError {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/rsocket/kotlin/RSocketError$Rejected : io/rsocket/kotlin/RSocketError {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/rsocket/kotlin/RSocketError$RejectedResume : io/rsocket/kotlin/RSocketError {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public abstract class io/rsocket/kotlin/RSocketError$Setup : io/rsocket/kotlin/RSocketError {
+	public synthetic fun <init> (ILjava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class io/rsocket/kotlin/RSocketError$Setup$Invalid : io/rsocket/kotlin/RSocketError$Setup {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/rsocket/kotlin/RSocketError$Setup$Rejected : io/rsocket/kotlin/RSocketError$Setup {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/rsocket/kotlin/RSocketError$Setup$Unsupported : io/rsocket/kotlin/RSocketError$Setup {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/rsocket/kotlin/RSocketKt {
+	public static final fun emitOrClose (Lkotlinx/coroutines/flow/FlowCollector;Ljava/io/Closeable;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface annotation class io/rsocket/kotlin/RSocketLoggingApi : java/lang/annotation/Annotation {
+}
+
+public final class io/rsocket/kotlin/RSocketRequestHandlerBuilder {
+	public final fun fireAndForget (Lkotlin/jvm/functions/Function3;)V
+	public final fun metadataPush (Lkotlin/jvm/functions/Function3;)V
+	public final fun requestChannel (Lkotlin/jvm/functions/Function4;)V
+	public final fun requestResponse (Lkotlin/jvm/functions/Function3;)V
+	public final fun requestStream (Lkotlin/jvm/functions/Function3;)V
+}
+
+public final class io/rsocket/kotlin/RSocketRequestHandlerKt {
+	public static final fun RSocketRequestHandler (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/RSocket;
+	public static synthetic fun RSocketRequestHandler$default (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/rsocket/kotlin/RSocket;
+}
+
+public abstract interface class io/rsocket/kotlin/RequestStrategy : kotlin/coroutines/CoroutineContext$Element {
+	public static final field Key Lio/rsocket/kotlin/RequestStrategy$Key;
+	public abstract fun getKey ()Lkotlin/coroutines/CoroutineContext$Key;
+	public abstract fun provide ()Lio/rsocket/kotlin/RequestStrategy$Element;
+}
+
+public final class io/rsocket/kotlin/RequestStrategy$DefaultImpls {
+	public static fun fold (Lio/rsocket/kotlin/RequestStrategy;Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public static fun get (Lio/rsocket/kotlin/RequestStrategy;Lkotlin/coroutines/CoroutineContext$Key;)Lkotlin/coroutines/CoroutineContext$Element;
+	public static fun getKey (Lio/rsocket/kotlin/RequestStrategy;)Lkotlin/coroutines/CoroutineContext$Key;
+	public static fun minusKey (Lio/rsocket/kotlin/RequestStrategy;Lkotlin/coroutines/CoroutineContext$Key;)Lkotlin/coroutines/CoroutineContext;
+	public static fun plus (Lio/rsocket/kotlin/RequestStrategy;Lkotlin/coroutines/CoroutineContext;)Lkotlin/coroutines/CoroutineContext;
+}
+
+public abstract interface class io/rsocket/kotlin/RequestStrategy$Element {
+	public abstract fun firstRequest (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun nextRequest (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/rsocket/kotlin/RequestStrategy$Key : kotlin/coroutines/CoroutineContext$Key {
+}
+
+public abstract interface annotation class io/rsocket/kotlin/TransportApi : java/lang/annotation/Annotation {
+}
+
+public final class io/rsocket/kotlin/core/CustomMimeType : io/rsocket/kotlin/core/MimeTypeWithName {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/rsocket/kotlin/core/CustomMimeType;
+	public static synthetic fun copy$default (Lio/rsocket/kotlin/core/CustomMimeType;Ljava/lang/String;ILjava/lang/Object;)Lio/rsocket/kotlin/core/CustomMimeType;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/rsocket/kotlin/core/Interceptor {
+	public abstract fun intercept (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/rsocket/kotlin/core/InterceptorsBuilder {
+	public final fun forAcceptor (Lio/rsocket/kotlin/core/Interceptor;)V
+	public final fun forConnection (Lio/rsocket/kotlin/core/Interceptor;)V
+	public final fun forRequester (Lio/rsocket/kotlin/core/Interceptor;)V
+	public final fun forResponder (Lio/rsocket/kotlin/core/Interceptor;)V
+}
+
+public abstract interface class io/rsocket/kotlin/core/MimeType {
+}
+
+public abstract interface class io/rsocket/kotlin/core/MimeTypeWithId : io/rsocket/kotlin/core/MimeType {
+	public abstract fun getIdentifier ()B
+}
+
+public abstract interface class io/rsocket/kotlin/core/MimeTypeWithName : io/rsocket/kotlin/core/MimeType {
+	public abstract fun getText ()Ljava/lang/String;
+}
+
+public final class io/rsocket/kotlin/core/RSocketConnector {
+	public final fun connect (Lio/rsocket/kotlin/transport/ClientTransport;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class io/rsocket/kotlin/core/RSocketConnectorBuilder {
+	public final fun acceptor (Lio/rsocket/kotlin/ConnectionAcceptor;)V
+	public final fun connectionConfig (Lkotlin/jvm/functions/Function1;)V
+	public final fun getLoggerFactory ()Lio/rsocket/kotlin/logging/LoggerFactory;
+	public final fun getMaxFragmentSize ()I
+	public final fun interceptors (Lkotlin/jvm/functions/Function1;)V
+	public final fun reconnectable (JLkotlin/jvm/functions/Function2;)V
+	public final fun reconnectable (Lkotlin/jvm/functions/Function3;)V
+	public static synthetic fun reconnectable$default (Lio/rsocket/kotlin/core/RSocketConnectorBuilder;JLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+	public final fun setLoggerFactory (Lio/rsocket/kotlin/logging/LoggerFactory;)V
+	public final fun setMaxFragmentSize (I)V
+}
+
+public final class io/rsocket/kotlin/core/RSocketConnectorBuilder$ConnectionConfigBuilder {
+	public final fun getKeepAlive ()Lio/rsocket/kotlin/keepalive/KeepAlive;
+	public final fun getPayloadMimeType ()Lio/rsocket/kotlin/payload/PayloadMimeType;
+	public final fun setKeepAlive (Lio/rsocket/kotlin/keepalive/KeepAlive;)V
+	public final fun setPayloadMimeType (Lio/rsocket/kotlin/payload/PayloadMimeType;)V
+	public final fun setupPayload (Lio/rsocket/kotlin/payload/Payload;)V
+	public final fun setupPayload (Lkotlin/jvm/functions/Function0;)V
+}
+
+public final class io/rsocket/kotlin/core/RSocketConnectorBuilderKt {
+	public static final fun RSocketConnector (Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/core/RSocketConnector;
+	public static synthetic fun RSocketConnector$default (Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/rsocket/kotlin/core/RSocketConnector;
+}
+
+public final class io/rsocket/kotlin/core/RSocketServer {
+	public final fun bind (Lio/rsocket/kotlin/transport/ServerTransport;Lio/rsocket/kotlin/ConnectionAcceptor;)Ljava/lang/Object;
+	public final fun bindIn (Lkotlinx/coroutines/CoroutineScope;Lio/rsocket/kotlin/transport/ServerTransport;Lio/rsocket/kotlin/ConnectionAcceptor;)Ljava/lang/Object;
+}
+
+public final class io/rsocket/kotlin/core/RSocketServerBuilder {
+	public final fun getLoggerFactory ()Lio/rsocket/kotlin/logging/LoggerFactory;
+	public final fun getMaxFragmentSize ()I
+	public final fun interceptors (Lkotlin/jvm/functions/Function1;)V
+	public final fun setLoggerFactory (Lio/rsocket/kotlin/logging/LoggerFactory;)V
+	public final fun setMaxFragmentSize (I)V
+}
+
+public final class io/rsocket/kotlin/core/RSocketServerBuilderKt {
+	public static final fun RSocketServer (Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/core/RSocketServer;
+	public static synthetic fun RSocketServer$default (Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/rsocket/kotlin/core/RSocketServer;
+}
+
+public final class io/rsocket/kotlin/core/ReservedMimeType : io/rsocket/kotlin/core/MimeTypeWithId {
+	public fun <init> (B)V
+	public final fun component1 ()B
+	public final fun copy (B)Lio/rsocket/kotlin/core/ReservedMimeType;
+	public static synthetic fun copy$default (Lio/rsocket/kotlin/core/ReservedMimeType;BILjava/lang/Object;)Lio/rsocket/kotlin/core/ReservedMimeType;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getIdentifier ()B
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/rsocket/kotlin/core/WellKnownMimeType : java/lang/Enum, io/rsocket/kotlin/core/MimeTypeWithId, io/rsocket/kotlin/core/MimeTypeWithName {
+	public static final field ApplicationAvro Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationCapnProto Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationCbor Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationCloudeventsJson Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationFlatBuffers Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationGraphql Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationGzip Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationHessian Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationJavaObject Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationJavascript Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationJson Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationOctetStream Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationPdf Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationProtoBuf Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationThrift Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationXml Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ApplicationZip Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field AudioAac Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field AudioMp3 Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field AudioMp4 Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field AudioMpeg Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field AudioMpeg3 Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field AudioOgg Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field AudioOpus Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field AudioVorbis Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field Companion Lio/rsocket/kotlin/core/WellKnownMimeType$Companion;
+	public static final field ImageBmp Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ImageGif Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ImageHeic Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ImageHeicSequence Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ImageHeif Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ImageHeifSequence Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ImageJpeg Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ImagePng Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field ImageTiff Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field MessageRSocketAcceptMimeTypes Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field MessageRSocketAuthentication Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field MessageRSocketCompositeMetadata Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field MessageRSocketMimeType Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field MessageRSocketRouting Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field MessageRSocketTracingZipkin Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field MultipartMixed Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field TextCss Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field TextCsv Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field TextHtml Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field TextPlain Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field TextXml Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field VideoH264 Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field VideoH265 Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static final field VideoVp8 Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public fun getIdentifier ()B
+	public fun getText ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public static fun values ()[Lio/rsocket/kotlin/core/WellKnownMimeType;
+}
+
+public final class io/rsocket/kotlin/core/WellKnownMimeType$Companion {
+	public final fun invoke (B)Lio/rsocket/kotlin/core/WellKnownMimeType;
+	public final fun invoke (Ljava/lang/String;)Lio/rsocket/kotlin/core/WellKnownMimeType;
+}
+
+public final class io/rsocket/kotlin/keepalive/KeepAlive {
+	public fun <init> ()V
+	public fun <init> (II)V
+	public synthetic fun <init> (IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getIntervalMillis ()I
+	public final fun getMaxLifetimeMillis ()I
+}
+
+public final class io/rsocket/kotlin/keepalive/KeepAliveKt {
+	public static final fun KeepAlive-QTBD994 (JJ)Lio/rsocket/kotlin/keepalive/KeepAlive;
+	public static synthetic fun KeepAlive-QTBD994$default (JJILjava/lang/Object;)Lio/rsocket/kotlin/keepalive/KeepAlive;
+}
+
+public final class io/rsocket/kotlin/logging/JavaLogger : io/rsocket/kotlin/logging/Logger {
+	public static final field Companion Lio/rsocket/kotlin/logging/JavaLogger$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public fun getTag ()Ljava/lang/String;
+	public fun isLoggable (Lio/rsocket/kotlin/logging/LoggingLevel;)Z
+	public fun rawLog (Lio/rsocket/kotlin/logging/LoggingLevel;Ljava/lang/Throwable;Ljava/lang/Object;)V
+}
+
+public final class io/rsocket/kotlin/logging/JavaLogger$Companion : io/rsocket/kotlin/logging/LoggerFactory {
+	public fun logger (Ljava/lang/String;)Lio/rsocket/kotlin/logging/Logger;
+}
+
+public abstract interface class io/rsocket/kotlin/logging/Logger {
+	public abstract fun getTag ()Ljava/lang/String;
+	public abstract fun isLoggable (Lio/rsocket/kotlin/logging/LoggingLevel;)Z
+	public abstract fun rawLog (Lio/rsocket/kotlin/logging/LoggingLevel;Ljava/lang/Throwable;Ljava/lang/Object;)V
+}
+
+public abstract interface class io/rsocket/kotlin/logging/LoggerFactory {
+	public abstract fun logger (Ljava/lang/String;)Lio/rsocket/kotlin/logging/Logger;
+}
+
+public final class io/rsocket/kotlin/logging/LoggingKt {
+	public static final fun debug (Lio/rsocket/kotlin/logging/Logger;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun debug$default (Lio/rsocket/kotlin/logging/Logger;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public static final fun error (Lio/rsocket/kotlin/logging/Logger;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun error$default (Lio/rsocket/kotlin/logging/Logger;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public static final fun info (Lio/rsocket/kotlin/logging/Logger;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun info$default (Lio/rsocket/kotlin/logging/Logger;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public static final fun log (Lio/rsocket/kotlin/logging/Logger;Lio/rsocket/kotlin/logging/LoggingLevel;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun log$default (Lio/rsocket/kotlin/logging/Logger;Lio/rsocket/kotlin/logging/LoggingLevel;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public static final fun trace (Lio/rsocket/kotlin/logging/Logger;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun trace$default (Lio/rsocket/kotlin/logging/Logger;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public static final fun warn (Lio/rsocket/kotlin/logging/Logger;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun warn$default (Lio/rsocket/kotlin/logging/Logger;Ljava/lang/Throwable;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+}
+
+public final class io/rsocket/kotlin/logging/LoggingLevel : java/lang/Enum {
+	public static final field DEBUG Lio/rsocket/kotlin/logging/LoggingLevel;
+	public static final field ERROR Lio/rsocket/kotlin/logging/LoggingLevel;
+	public static final field INFO Lio/rsocket/kotlin/logging/LoggingLevel;
+	public static final field TRACE Lio/rsocket/kotlin/logging/LoggingLevel;
+	public static final field WARN Lio/rsocket/kotlin/logging/LoggingLevel;
+	public static fun valueOf (Ljava/lang/String;)Lio/rsocket/kotlin/logging/LoggingLevel;
+	public static fun values ()[Lio/rsocket/kotlin/logging/LoggingLevel;
+}
+
+public final class io/rsocket/kotlin/logging/NoopLogger : io/rsocket/kotlin/logging/Logger, io/rsocket/kotlin/logging/LoggerFactory {
+	public static final field INSTANCE Lio/rsocket/kotlin/logging/NoopLogger;
+	public fun getTag ()Ljava/lang/String;
+	public fun isLoggable (Lio/rsocket/kotlin/logging/LoggingLevel;)Z
+	public fun logger (Ljava/lang/String;)Lio/rsocket/kotlin/logging/Logger;
+	public fun rawLog (Lio/rsocket/kotlin/logging/LoggingLevel;Ljava/lang/Throwable;Ljava/lang/Object;)V
+}
+
+public final class io/rsocket/kotlin/logging/PrintLogger : io/rsocket/kotlin/logging/Logger {
+	public static final field Companion Lio/rsocket/kotlin/logging/PrintLogger$Companion;
+	public fun <init> (Ljava/lang/String;Lio/rsocket/kotlin/logging/LoggingLevel;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/rsocket/kotlin/logging/LoggingLevel;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getTag ()Ljava/lang/String;
+	public fun isLoggable (Lio/rsocket/kotlin/logging/LoggingLevel;)Z
+	public fun rawLog (Lio/rsocket/kotlin/logging/LoggingLevel;Ljava/lang/Throwable;Ljava/lang/Object;)V
+}
+
+public final class io/rsocket/kotlin/logging/PrintLogger$Companion : io/rsocket/kotlin/logging/LoggerFactory {
+	public fun logger (Ljava/lang/String;)Lio/rsocket/kotlin/logging/Logger;
+	public final fun withLevel (Lio/rsocket/kotlin/logging/LoggingLevel;)Lio/rsocket/kotlin/logging/LoggerFactory;
+}
+
+public abstract interface class io/rsocket/kotlin/metadata/CompositeMetadata : io/rsocket/kotlin/metadata/Metadata {
+	public static final field Reader Lio/rsocket/kotlin/metadata/CompositeMetadata$Reader;
+	public abstract fun close ()V
+	public abstract fun getEntries ()Ljava/util/List;
+	public abstract fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public abstract fun writeSelf (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/CompositeMetadata$DefaultImpls {
+	public static fun close (Lio/rsocket/kotlin/metadata/CompositeMetadata;)V
+	public static fun getMimeType (Lio/rsocket/kotlin/metadata/CompositeMetadata;)Lio/rsocket/kotlin/core/MimeType;
+	public static fun writeSelf (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/CompositeMetadata$Entry {
+	public fun <init> (Lio/rsocket/kotlin/core/MimeType;Lio/ktor/utils/io/core/ByteReadPacket;)V
+	public fun <init> (Lio/rsocket/kotlin/metadata/Metadata;)V
+	public final fun getContent ()Lio/ktor/utils/io/core/ByteReadPacket;
+	public final fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+}
+
+public final class io/rsocket/kotlin/metadata/CompositeMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/CompositeMetadata;
+	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+}
+
+public abstract interface class io/rsocket/kotlin/metadata/CompositeMetadataBuilder : java/io/Closeable {
+	public abstract fun add (Lio/rsocket/kotlin/core/MimeType;Lio/ktor/utils/io/core/ByteReadPacket;)V
+	public abstract fun add (Lio/rsocket/kotlin/metadata/Metadata;)V
+}
+
+public final class io/rsocket/kotlin/metadata/CompositeMetadataBuilderKt {
+	public static final fun buildCompositeMetadata (Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/metadata/CompositeMetadata;
+	public static final fun compositeMetadata (Lio/rsocket/kotlin/payload/PayloadBuilder;Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class io/rsocket/kotlin/metadata/CompositeMetadataExtensionsKt {
+	public static final fun contains (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/core/MimeType;)Z
+	public static final fun contains (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/metadata/MetadataReader;)Z
+	public static final fun get (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/core/MimeType;)Lio/ktor/utils/io/core/ByteReadPacket;
+	public static final fun get (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/metadata/MetadataReader;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static final fun getOrNull (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/core/MimeType;)Lio/ktor/utils/io/core/ByteReadPacket;
+	public static final fun getOrNull (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/metadata/MetadataReader;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static final fun hasMimeTypeOf (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;)Z
+	public static final fun list (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/core/MimeType;)Ljava/util/List;
+	public static final fun list (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/metadata/MetadataReader;)Ljava/util/List;
+	public static final fun read (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static synthetic fun read$default (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static final fun readOrNull (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static synthetic fun readOrNull$default (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/Metadata;
+}
+
+public final class io/rsocket/kotlin/metadata/CompositeMetadataFromBuilder : io/rsocket/kotlin/metadata/CompositeMetadata, io/rsocket/kotlin/metadata/CompositeMetadataBuilder {
+	public fun <init> ()V
+	public fun add (Lio/rsocket/kotlin/core/MimeType;Lio/ktor/utils/io/core/ByteReadPacket;)V
+	public fun add (Lio/rsocket/kotlin/metadata/Metadata;)V
+	public fun close ()V
+	public fun getEntries ()Ljava/util/List;
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public fun writeSelf (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/CompositeMetadataKt {
+	public static final fun CompositeMetadata (Ljava/util/List;)Lio/rsocket/kotlin/metadata/CompositeMetadata;
+	public static final fun CompositeMetadata ([Lio/rsocket/kotlin/metadata/Metadata;)Lio/rsocket/kotlin/metadata/CompositeMetadata;
+}
+
+public abstract interface class io/rsocket/kotlin/metadata/Metadata : java/io/Closeable {
+	public abstract fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public abstract fun writeSelf (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/MetadataKt {
+	public static final fun metadata (Lio/rsocket/kotlin/payload/PayloadBuilder;Lio/rsocket/kotlin/metadata/Metadata;)V
+	public static final fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static synthetic fun read$default (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static final fun toPacket (Lio/rsocket/kotlin/metadata/Metadata;Lio/ktor/utils/io/pool/ObjectPool;)Lio/ktor/utils/io/core/ByteReadPacket;
+	public static synthetic fun toPacket$default (Lio/rsocket/kotlin/metadata/Metadata;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/ktor/utils/io/core/ByteReadPacket;
+}
+
+public abstract interface class io/rsocket/kotlin/metadata/MetadataReader {
+	public abstract fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public abstract fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+}
+
+public final class io/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata : io/rsocket/kotlin/metadata/Metadata {
+	public static final field Reader Lio/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata$Reader;
+	public fun <init> (Ljava/util/List;)V
+	public fun close ()V
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public final fun getTypes ()Ljava/util/List;
+	public fun writeSelf (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata;
+}
+
+public final class io/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadataKt {
+	public static final fun PerStreamAcceptableDataMimeTypesMetadata ([Lio/rsocket/kotlin/core/MimeType;)Lio/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata;
+}
+
+public final class io/rsocket/kotlin/metadata/PerStreamDataMimeTypeMetadata : io/rsocket/kotlin/metadata/Metadata {
+	public static final field Reader Lio/rsocket/kotlin/metadata/PerStreamDataMimeTypeMetadata$Reader;
+	public fun <init> (Lio/rsocket/kotlin/core/MimeType;)V
+	public fun close ()V
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public final fun getType ()Lio/rsocket/kotlin/core/MimeType;
+	public fun writeSelf (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/PerStreamDataMimeTypeMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/PerStreamDataMimeTypeMetadata;
+}
+
+public final class io/rsocket/kotlin/metadata/RawMetadata : io/rsocket/kotlin/metadata/Metadata {
+	public static final field Companion Lio/rsocket/kotlin/metadata/RawMetadata$Companion;
+	public fun <init> (Lio/rsocket/kotlin/core/MimeType;Lio/ktor/utils/io/core/ByteReadPacket;)V
+	public fun close ()V
+	public final fun getContent ()Lio/ktor/utils/io/core/ByteReadPacket;
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public fun writeSelf (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/RawMetadata$Companion {
+	public final fun reader (Lio/rsocket/kotlin/core/MimeType;)Lio/rsocket/kotlin/metadata/MetadataReader;
+}
+
+public final class io/rsocket/kotlin/metadata/RoutingMetadata : io/rsocket/kotlin/metadata/Metadata {
+	public static final field Reader Lio/rsocket/kotlin/metadata/RoutingMetadata$Reader;
+	public fun <init> (Ljava/util/List;)V
+	public fun close ()V
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public final fun getTags ()Ljava/util/List;
+	public fun writeSelf (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/RoutingMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/RoutingMetadata;
+}
+
+public final class io/rsocket/kotlin/metadata/RoutingMetadataKt {
+	public static final fun RoutingMetadata ([Ljava/lang/String;)Lio/rsocket/kotlin/metadata/RoutingMetadata;
+}
+
+public final class io/rsocket/kotlin/metadata/ZipkinTracingMetadata : io/rsocket/kotlin/metadata/Metadata {
+	public static final field Reader Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Reader;
+	public fun close ()V
+	public final fun getExtendedTraceId ()Z
+	public final fun getHasIds ()Z
+	public final fun getHasParentSpanId ()Z
+	public final fun getKind ()Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public final fun getParentSpanId ()J
+	public final fun getSpanId ()J
+	public final fun getTraceId ()J
+	public final fun getTraceIdHigh ()J
+	public fun writeSelf (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind : java/lang/Enum {
+	public static final field Debug Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;
+	public static final field NotSampled Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;
+	public static final field Sample Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;
+	public static final field Unspecified Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;
+	public static fun valueOf (Ljava/lang/String;)Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;
+	public static fun values ()[Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;
+}
+
+public final class io/rsocket/kotlin/metadata/ZipkinTracingMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata;
+}
+
+public final class io/rsocket/kotlin/metadata/ZipkinTracingMetadataKt {
+	public static final fun ZipkinTracingMetadata (Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;)Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata;
+	public static final fun ZipkinTracingMetadata (Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;JJ)Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata;
+	public static final fun ZipkinTracingMetadata (Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;JJJ)Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata;
+	public static final fun ZipkinTracingMetadata128 (Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;JJJ)Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata;
+	public static final fun ZipkinTracingMetadata128 (Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind;JJJJ)Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata;
+}
+
+public abstract interface class io/rsocket/kotlin/metadata/security/AuthMetadata : io/rsocket/kotlin/metadata/Metadata {
+	public abstract fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public abstract fun getType ()Lio/rsocket/kotlin/metadata/security/AuthType;
+	public abstract fun writeContent (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+	public abstract fun writeSelf (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/security/AuthMetadata$DefaultImpls {
+	public static fun getMimeType (Lio/rsocket/kotlin/metadata/security/AuthMetadata;)Lio/rsocket/kotlin/core/MimeType;
+	public static fun writeSelf (Lio/rsocket/kotlin/metadata/security/AuthMetadata;Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public abstract interface class io/rsocket/kotlin/metadata/security/AuthMetadataReader : io/rsocket/kotlin/metadata/MetadataReader {
+	public abstract fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public abstract fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public abstract fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+}
+
+public final class io/rsocket/kotlin/metadata/security/AuthMetadataReader$DefaultImpls {
+	public static fun getMimeType (Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;)Lio/rsocket/kotlin/core/MimeType;
+	public static fun read (Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+}
+
+public abstract interface class io/rsocket/kotlin/metadata/security/AuthType {
+}
+
+public abstract interface class io/rsocket/kotlin/metadata/security/AuthTypeWithId : io/rsocket/kotlin/metadata/security/AuthType {
+	public abstract fun getIdentifier ()B
+}
+
+public abstract interface class io/rsocket/kotlin/metadata/security/AuthTypeWithName : io/rsocket/kotlin/metadata/security/AuthType {
+	public abstract fun getText ()Ljava/lang/String;
+}
+
+public final class io/rsocket/kotlin/metadata/security/BearerAuthMetadata : io/rsocket/kotlin/metadata/security/AuthMetadata {
+	public static final field Reader Lio/rsocket/kotlin/metadata/security/BearerAuthMetadata$Reader;
+	public fun <init> (Ljava/lang/String;)V
+	public fun close ()V
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public final fun getToken ()Ljava/lang/String;
+	public fun getType ()Lio/rsocket/kotlin/metadata/security/AuthType;
+	public fun writeContent (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+	public fun writeSelf (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/security/BearerAuthMetadata$Reader : io/rsocket/kotlin/metadata/security/AuthMetadataReader {
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/BearerAuthMetadata;
+	public synthetic fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/BearerAuthMetadata;
+}
+
+public final class io/rsocket/kotlin/metadata/security/CustomAuthType : io/rsocket/kotlin/metadata/security/AuthTypeWithName {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/rsocket/kotlin/metadata/security/CustomAuthType;
+	public static synthetic fun copy$default (Lio/rsocket/kotlin/metadata/security/CustomAuthType;Ljava/lang/String;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/security/CustomAuthType;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/rsocket/kotlin/metadata/security/RawAuthMetadata : io/rsocket/kotlin/metadata/security/AuthMetadata {
+	public static final field Reader Lio/rsocket/kotlin/metadata/security/RawAuthMetadata$Reader;
+	public fun <init> (Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/core/ByteReadPacket;)V
+	public fun close ()V
+	public final fun getContent ()Lio/ktor/utils/io/core/ByteReadPacket;
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public fun getType ()Lio/rsocket/kotlin/metadata/security/AuthType;
+	public fun writeContent (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+	public fun writeSelf (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/security/RawAuthMetadata$Reader : io/rsocket/kotlin/metadata/security/AuthMetadataReader {
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;
+	public synthetic fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;
+}
+
+public final class io/rsocket/kotlin/metadata/security/RawAuthMetadataKt {
+	public static final fun hasAuthTypeOf (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;)Z
+	public static final fun read (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public static synthetic fun read$default (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public static final fun readOrNull (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public static synthetic fun readOrNull$default (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+}
+
+public final class io/rsocket/kotlin/metadata/security/ReservedAuthType : io/rsocket/kotlin/metadata/security/AuthTypeWithId {
+	public fun <init> (B)V
+	public final fun component1 ()B
+	public final fun copy (B)Lio/rsocket/kotlin/metadata/security/ReservedAuthType;
+	public static synthetic fun copy$default (Lio/rsocket/kotlin/metadata/security/ReservedAuthType;BILjava/lang/Object;)Lio/rsocket/kotlin/metadata/security/ReservedAuthType;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getIdentifier ()B
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/rsocket/kotlin/metadata/security/SimpleAuthMetadata : io/rsocket/kotlin/metadata/security/AuthMetadata {
+	public static final field Reader Lio/rsocket/kotlin/metadata/security/SimpleAuthMetadata$Reader;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun close ()V
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public final fun getPassword ()Ljava/lang/String;
+	public fun getType ()Lio/rsocket/kotlin/metadata/security/AuthType;
+	public final fun getUsername ()Ljava/lang/String;
+	public fun writeContent (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+	public fun writeSelf (Lio/ktor/utils/io/core/BytePacketBuilder;)V
+}
+
+public final class io/rsocket/kotlin/metadata/security/SimpleAuthMetadata$Reader : io/rsocket/kotlin/metadata/security/AuthMetadataReader {
+	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
+	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/SimpleAuthMetadata;
+	public synthetic fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/SimpleAuthMetadata;
+}
+
+public final class io/rsocket/kotlin/metadata/security/WellKnowAuthType : java/lang/Enum, io/rsocket/kotlin/metadata/security/AuthTypeWithId, io/rsocket/kotlin/metadata/security/AuthTypeWithName {
+	public static final field Bearer Lio/rsocket/kotlin/metadata/security/WellKnowAuthType;
+	public static final field Companion Lio/rsocket/kotlin/metadata/security/WellKnowAuthType$Companion;
+	public static final field Simple Lio/rsocket/kotlin/metadata/security/WellKnowAuthType;
+	public fun getIdentifier ()B
+	public fun getText ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/rsocket/kotlin/metadata/security/WellKnowAuthType;
+	public static fun values ()[Lio/rsocket/kotlin/metadata/security/WellKnowAuthType;
+}
+
+public final class io/rsocket/kotlin/metadata/security/WellKnowAuthType$Companion {
+	public final fun invoke (B)Lio/rsocket/kotlin/metadata/security/WellKnowAuthType;
+	public final fun invoke (Ljava/lang/String;)Lio/rsocket/kotlin/metadata/security/WellKnowAuthType;
+}
+
+public abstract interface class io/rsocket/kotlin/payload/Payload : java/io/Closeable {
+	public static final field Companion Lio/rsocket/kotlin/payload/Payload$Companion;
+	public abstract fun close ()V
+	public abstract fun copy ()Lio/rsocket/kotlin/payload/Payload;
+	public abstract fun getData ()Lio/ktor/utils/io/core/ByteReadPacket;
+	public abstract fun getMetadata ()Lio/ktor/utils/io/core/ByteReadPacket;
+}
+
+public final class io/rsocket/kotlin/payload/Payload$Companion {
+	public final fun getEmpty ()Lio/rsocket/kotlin/payload/Payload;
+}
+
+public final class io/rsocket/kotlin/payload/Payload$DefaultImpls {
+	public static fun close (Lio/rsocket/kotlin/payload/Payload;)V
+	public static fun copy (Lio/rsocket/kotlin/payload/Payload;)Lio/rsocket/kotlin/payload/Payload;
+}
+
+public abstract interface class io/rsocket/kotlin/payload/PayloadBuilder : java/io/Closeable {
+	public abstract fun data (Lio/ktor/utils/io/core/ByteReadPacket;)V
+	public abstract fun metadata (Lio/ktor/utils/io/core/ByteReadPacket;)V
+}
+
+public final class io/rsocket/kotlin/payload/PayloadBuilderKt {
+	public static final fun buildPayload (Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/payload/Payload;
+	public static final fun data (Lio/rsocket/kotlin/payload/PayloadBuilder;Ljava/lang/String;)V
+	public static final fun data (Lio/rsocket/kotlin/payload/PayloadBuilder;Lkotlin/jvm/functions/Function1;)V
+	public static final fun data (Lio/rsocket/kotlin/payload/PayloadBuilder;[B)V
+	public static final fun metadata (Lio/rsocket/kotlin/payload/PayloadBuilder;Ljava/lang/String;)V
+	public static final fun metadata (Lio/rsocket/kotlin/payload/PayloadBuilder;Lkotlin/jvm/functions/Function1;)V
+	public static final fun metadata (Lio/rsocket/kotlin/payload/PayloadBuilder;[B)V
+}
+
+public final class io/rsocket/kotlin/payload/PayloadFromBuilder : io/rsocket/kotlin/payload/Payload, io/rsocket/kotlin/payload/PayloadBuilder {
+	public fun <init> ()V
+	public final fun build ()Lio/rsocket/kotlin/payload/Payload;
+	public fun close ()V
+	public fun copy ()Lio/rsocket/kotlin/payload/Payload;
+	public fun data (Lio/ktor/utils/io/core/ByteReadPacket;)V
+	public fun getData ()Lio/ktor/utils/io/core/ByteReadPacket;
+	public fun getMetadata ()Lio/ktor/utils/io/core/ByteReadPacket;
+	public fun metadata (Lio/ktor/utils/io/core/ByteReadPacket;)V
+}
+
+public final class io/rsocket/kotlin/payload/PayloadKt {
+	public static final fun Payload (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/core/ByteReadPacket;)Lio/rsocket/kotlin/payload/Payload;
+	public static synthetic fun Payload$default (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/core/ByteReadPacket;ILjava/lang/Object;)Lio/rsocket/kotlin/payload/Payload;
+}
+
+public final class io/rsocket/kotlin/payload/PayloadMimeType {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun getData ()Ljava/lang/String;
+	public final fun getMetadata ()Ljava/lang/String;
+}
+
+public final class io/rsocket/kotlin/payload/PayloadMimeTypeKt {
+	public static final fun PayloadMimeType (Lio/rsocket/kotlin/core/MimeTypeWithName;Lio/rsocket/kotlin/core/MimeTypeWithName;)Lio/rsocket/kotlin/payload/PayloadMimeType;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/ClientTransport : kotlinx/coroutines/CoroutineScope {
+	public abstract fun connect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
+}
+
+public final class io/rsocket/kotlin/transport/ClientTransport$DefaultImpls {
+	public static fun getCoroutineContext (Lio/rsocket/kotlin/transport/ClientTransport;)Lkotlin/coroutines/CoroutineContext;
+}
+
+public final class io/rsocket/kotlin/transport/ClientTransportKt {
+	public static final fun ClientTransport (Lkotlin/coroutines/CoroutineContext;Lio/rsocket/kotlin/transport/ClientTransport;)Lio/rsocket/kotlin/transport/ClientTransport;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/ServerTransport {
+	public abstract fun start (Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function3;)Ljava/lang/Object;
+}
+
