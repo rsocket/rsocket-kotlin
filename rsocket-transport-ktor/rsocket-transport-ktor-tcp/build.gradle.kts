@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,27 @@
  * limitations under the License.
  */
 
+import rsocketbuild.*
+
 plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.jvm")
-    id("rsocket.target.native.nix")
+    id("rsocketbuild.multiplatform-library")
 }
 
-kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                implementation(projects.rsocketInternalIo)
+description = "rsocket-kotlin ktor TCP client/server transport implementation"
 
-                api(projects.rsocketTransportKtor)
-                api(libs.ktor.network)
-            }
+kotlin {
+    jvmTarget()
+    nixTargets()
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.rsocketInternalIo)
+
+            api(projects.rsocketTransportKtor)
+            api(libs.ktor.network)
+        }
+        commonTest.dependencies {
+            implementation(projects.rsocketTransportTests)
         }
     }
 }
-
-description = "RSocket ktor TCP client/server transport implementation"

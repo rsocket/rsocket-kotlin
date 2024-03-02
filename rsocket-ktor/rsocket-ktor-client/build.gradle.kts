@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
+import rsocketbuild.*
+
 plugins {
-    id("rsocket.template.library")
-    id("rsocket.target.all")
+    id("rsocketbuild.multiplatform-library")
 }
 
+description = "rsocket-kotlin ktor client plugin"
+
 kotlin {
+    jvmTarget()
+    jsTarget()
+    nativeTargets()
+
     sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketKtor)
-                api(libs.ktor.client.websockets)
-            }
+        commonMain.dependencies {
+            api(projects.rsocketKtor)
+            api(libs.ktor.client.websockets)
         }
     }
 }
-
-description = "RSocket ktor client plugin"

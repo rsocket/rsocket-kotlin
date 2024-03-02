@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,16 @@
  * limitations under the License.
  */
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-    }
-    includeBuild("../kotlin-version-catalog")
-}
-
-dependencyResolutionManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-    }
-
-    versionCatalogs {
-        create("libs") {
-            from(files("../../libs.versions.toml"))
-        }
-    }
-}
-
 plugins {
-    id("kotlin-version-catalog")
+    id("com.gradle.enterprise")
+    id("com.gradle.common-custom-user-data-gradle-plugin")
+    id("org.gradle.toolchains.foojay-resolver-convention")
 }
 
-rootProject.name = "build-logic"
+gradleEnterprise {
+    buildScan {
+        publishAlwaysIf(System.getenv("CI").toBoolean())
+    }
+}
 
-includeBuild("../build-parameters")
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

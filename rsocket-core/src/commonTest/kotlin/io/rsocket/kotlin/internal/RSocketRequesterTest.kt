@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -254,6 +254,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
         connection.sendToReceiver(ErrorFrame(0, RSocketError.Setup.Rejected(errorMessage)))
         delay(100)
         assertFalse(requester.isActive)
+        @OptIn(InternalCoroutinesApi::class)
         val error = requester.coroutineContext.job.getCancellationException().cause
         assertTrue(error is RSocketError.Setup.Rejected)
         assertEquals(errorMessage, error.message)

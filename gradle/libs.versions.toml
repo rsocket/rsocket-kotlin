@@ -1,4 +1,6 @@
 [versions]
+kotlin = "1.9.22"
+
 kotlinx-atomicfu = "0.23.2"
 kotlinx-coroutines = "1.8.0"
 kotlinx-benchmark = "0.4.8"
@@ -9,6 +11,12 @@ ktor = "2.3.8"
 turbine = "1.0.0"
 
 rsocket-java = "1.1.3"
+
+gradle-enterprise = "3.16.2"
+gradle-customUserData = "1.12.1"
+gradle-foojay = "0.8.0"
+
+buildconfig = "5.3.5"
 
 jmh = "1.36"
 
@@ -43,6 +51,11 @@ rsocket-java-transport-local = { module = 'io.rsocket:rsocket-transport-local', 
 
 build-kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu-gradle-plugin", version.ref = "kotlinx-atomicfu" }
 
+build-gradle-enterprise = { module = "com.gradle:gradle-enterprise-gradle-plugin", version.ref = "gradle-enterprise" }
+build-gradle-customUserData = { module = "com.gradle:common-custom-user-data-gradle-plugin", version.ref = "gradle-customUserData" }
+build-gradle-foojay = { module = "org.gradle.toolchains:foojay-resolver", version.ref = "gradle-foojay" }
+
 [plugins]
 kotlinx-benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotlinx-benchmark" }
 kotlinx-bcv = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinx-bcv" }
+buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }

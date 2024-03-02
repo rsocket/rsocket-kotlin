@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,36 +14,13 @@
  * limitations under the License.
  */
 
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-
 pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-    }
-
-    includeBuild("gradle/plugins/build-parameters")
-    includeBuild("gradle/plugins/build-logic")
-    includeBuild("gradle/plugins/kotlin-version-catalog")
-}
-
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-    }
+    includeBuild("build-logic")
+    includeBuild("build-settings")
 }
 
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.5.0"
-    id("com.gradle.enterprise") version "3.13.2"
-    id("kotlin-version-catalog")
-}
-
-gradleEnterprise {
-    buildScan {
-        termsOfServiceUrl = "https://gradle.com/terms-of-service"
-        termsOfServiceAgree = "yes"
-    }
+    id("rsocketsettings.default")
 }
 
 rootProject.name = "rsocket-kotlin"

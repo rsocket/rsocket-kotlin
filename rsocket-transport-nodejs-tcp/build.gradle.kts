@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
+import rsocketbuild.*
+
 plugins {
-    id("rsocket.template.transport")
-    id("rsocket.target.js.node")
+    id("rsocketbuild.multiplatform-library")
 }
 
-kotlin {
-    sourceSets {
-        jsMain {
-            dependencies {
-                implementation(projects.rsocketInternalIo)
+description = "rsocket-kotlin NodeJS TCP client/server transport implementation"
 
-                api(projects.rsocketCore)
-            }
+kotlin {
+    jsTarget(supportsBrowser = false)
+
+    sourceSets {
+        jsMain.dependencies {
+            implementation(projects.rsocketInternalIo)
+            api(projects.rsocketCore)
+        }
+        jsTest.dependencies {
+            implementation(projects.rsocketTransportTests)
         }
     }
 }
-
-description = "RSocket NodeJS TCP client/server transport implementation"

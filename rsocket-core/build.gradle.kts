@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,30 @@
  * limitations under the License.
  */
 
+import rsocketbuild.*
+
 plugins {
-    id("rsocket.template.library")
-    id("rsocket.target.all")
+    id("rsocketbuild.multiplatform-library")
     id("kotlinx-atomicfu")
 }
 
-kotlin {
-    sourceSets {
-        commonMain {
-            dependencies {
-                implementation(projects.rsocketInternalIo)
+description = "rsocket-kotlin core functionality"
 
-                api(libs.kotlinx.coroutines.core)
-                api(libs.ktor.io)
-            }
+kotlin {
+    jvmTarget()
+    jsTarget()
+    nativeTargets()
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.rsocketInternalIo)
+
+            api(libs.kotlinx.coroutines.core)
+            api(libs.ktor.io)
         }
-        commonTest {
-            dependencies {
-                implementation(projects.rsocketTransportLocal)
-            }
+        commonTest.dependencies {
+            implementation(projects.rsocketTest)
+            implementation(projects.rsocketTransportLocal)
         }
     }
 }
-
-description = "RSocket core functionality"
