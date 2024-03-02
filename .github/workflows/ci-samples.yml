@@ -14,14 +14,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ ubuntu-latest, windows-latest, macos-14 ]
         sample: [ chat ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-gradle
         with:
           cache-read-only: true
-      - uses: gradle/gradle-build-action@v2
-        with:
-          arguments: build --continue
-          build-root-directory: samples/${{ matrix.sample }}
+      - run: ./gradlew build --continue
+        working-directory: samples/${{ matrix.sample }}

@@ -6,18 +6,20 @@ on:
         type: boolean
         required: true
 
+concurrency:
+  group: publish-snapshot-${{ github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     if: github.repository == 'rsocket/rsocket-kotlin'
-    runs-on: macos-latest
-    concurrency:
-      group: publish-snapshot-${{ github.ref_name }}
-      cancel-in-progress: false
+    runs-on: macos-14
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-gradle
         with:
           cache-read-only: true
+
       - if: inputs.add-branch-suffix
         id: set-version
         run: |
@@ -26,23 +28,7 @@ jobs:
           echo "::set-output name=version-suffix::$branch_name"
 
       - name: Publish to Maven Local (prepare packages)
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: |
-            publishToMavenLocal
-            --scan
-            --info
-            -PversionSuffix=${{ steps.set-version.outputs.version-suffix }}
-            -PgithubUsername=${{ github.actor }}
-            -PgithubPassword=${{ github.token }}
+        run: ./gradlew publishToMavenLocal -PversionSuffix=${{ steps.set-version.outputs.version-suffix }} -PgithubUsername=${{ github.actor }} -PgithubPassword=${{ github.token }} --no-configuration-cache
 
       - name: Publish snapshot to Github Packages (version x.y.z-${{ steps.set-version.outputs.version-suffix }}-SNAPSHOT)
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: |
-            publishAllPublicationsToGithubRepository
-            --scan
-            --info
-            -PversionSuffix=${{ steps.set-version.outputs.version-suffix }}
-            -PgithubUsername=${{ github.actor }}
-            -PgithubPassword=${{ github.token }}
+        run: ./gradlew publishAllPublicationsToGithubRepository -PversionSuffix=${{ steps.set-version.outputs.version-suffix }} -PgithubUsername=${{ github.actor }} -PgithubPassword=${{ github.token }} --no-configuration-cache
