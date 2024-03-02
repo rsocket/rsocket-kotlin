@@ -1,90 +1,60 @@
 name: Run tests on all platforms
 on: [ workflow_call, workflow_dispatch ]
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  jvm-test:
-    name: Run JVM tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./.github/actions/setup-gradle
-      - name: Run tests
-        timeout-minutes: 15
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: |
-            jvmTest
-            jvm11Test
-            jvm17Test
-            jvm21Test
-            --scan
-            --info
-            --continue
-      - if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-reports
-          path: "**/build/test-results/*Test/TEST-*.xml"
-          retention-days: 1
-
-  js-test:
-    name: Run JS tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./.github/actions/setup-gradle
-      - name: Run tests
-        timeout-minutes: 15
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: |
-            jsNodeTest
-            jsBrowserTest
-            --scan
-            --info
-            --continue
-      - if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-reports
-          path: "**/build/test-results/*Test/TEST-*.xml"
-          retention-days: 1
-
-  native-test:
-    name: Run Native(${{ matrix.target }}) tests
+  build-project:
+    name: Build project on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ macos-latest ]
-        target: [ macosX64, iosX64, tvosX64, watchosX64 ]
-        include:
-          - os: ubuntu-latest
-            target: linuxX64
-          - os: windows-latest
-            target: mingwX64
+        os: [ 'ubuntu-latest', 'macos-14', 'windows-latest' ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-gradle
-      - name: Run tests
+        with:
+          cache-read-only: ${{ github.ref_name != 'main' }}
+
+      - run: ./gradlew build publishToMavenLocal --continue -Prsocketbuild.skipTests=true
+
+  run-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ 'ubuntu-latest' ]
+        target: [ 'jvm', 'jvm11', 'jvm17', 'jvm21', 'js', 'native' ]
+        include:
+          - os: 'macos-14'
+            target: 'macos'
+          - os: 'macos-14'
+            target: 'ios'
+          - os: 'macos-14'
+            target: 'watchos'
+          - os: 'macos-14'
+            target: 'tvos'
+          - os: 'windows-latest'
+            target: 'native'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-gradle
+
+      - run: ./gradlew ${{ matrix.target }}Test --continue
         timeout-minutes: 30
-        uses: gradle/gradle-build-action@v2
+
+      - if: always() && !cancelled()
+        uses: actions/upload-artifact@v4
         with:
-          arguments: |
-            ${{ matrix.target }}Test
-            ${{ matrix.target }}ReleaseTest
-            --scan
-            --info
-            --continue
-      - if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-reports
+          name: test-reports-${{ matrix.os }}-${{ matrix.target }}
           path: "**/build/test-results/*Test/TEST-*.xml"
           retention-days: 1
 
   publish-test-results:
-    needs: [ jvm-test, js-test, native-test ]
+    needs: [ run-tests ]
     if: always()
     name: Publish test report
     runs-on: ubuntu-latest
@@ -92,32 +62,12 @@ jobs:
       checks: write
       pull-requests: write
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: test-reports
+          pattern: test-reports-*
           path: test-reports
+          merge-multiple: 'true'
       - name: Publish Test Report
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: test-reports/**/TEST-*.xml
-
-  build-project:
-    name: Build project on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ 'ubuntu-latest', 'macos-latest', 'windows-latest' ]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./.github/actions/setup-gradle
-      - name: Build project without running tests
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: |
-            build
-            publishToMavenLocal
-            --scan
-            --info
-            --continue
-            -Prsocketbuild.skipTests=true
