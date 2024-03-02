@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import rsocketsettings.*
+
 pluginManagement {
     includeBuild("build-logic")
     includeBuild("build-settings")
@@ -25,30 +27,29 @@ plugins {
 
 rootProject.name = "rsocket-kotlin"
 
-//include("benchmarks")
+projects {
+    module("rsocket-internal-io")
+    module("rsocket-core")
 
-include("rsocket-internal-io")
+    module("rsocket-test")
+    module("rsocket-transport-tests")
 
-include("rsocket-core")
-include("rsocket-test")
+    // transports
+    folder("rsocket-transports", "rsocket-transport") {
+        module("local")
 
-include("rsocket-transport-tests")
-include("rsocket-transport-local")
+        module("ktor-tcp")
 
-//ktor transport modules
-include(
-    "rsocket-transport-ktor",
-    "rsocket-transport-ktor:rsocket-transport-ktor-tcp",
-    "rsocket-transport-ktor:rsocket-transport-ktor-websocket",
-    "rsocket-transport-ktor:rsocket-transport-ktor-websocket-client",
-    "rsocket-transport-ktor:rsocket-transport-ktor-websocket-server",
-)
+        module("ktor-websocket-client")
+        module("ktor-websocket-server")
+        module("ktor-websocket-internal")
 
-include("rsocket-transport-nodejs-tcp")
+        module("nodejs-tcp")
+    }
 
-//deep ktor integration module
-include(
-    "rsocket-ktor",
-    "rsocket-ktor:rsocket-ktor-client",
-    "rsocket-ktor:rsocket-ktor-server",
-)
+    // ktor integration module
+    folder("rsocket-ktor") {
+        module("client")
+        module("server")
+    }
+}
