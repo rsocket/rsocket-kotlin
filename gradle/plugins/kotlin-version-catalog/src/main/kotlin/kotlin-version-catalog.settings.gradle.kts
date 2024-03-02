@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ plugins {
     id("build-parameters")
 }
 
-val kotlinVersion = "1.8.21"
+val kotlinVersion = "1.9.22"
 val kotlinVersionOverride = the<buildparameters.BuildParametersExtension>().useKotlin.orNull?.takeIf(String::isNotBlank)
 
 if (kotlinVersionOverride != null) logger.lifecycle("Kotlin version override: $kotlinVersionOverride")

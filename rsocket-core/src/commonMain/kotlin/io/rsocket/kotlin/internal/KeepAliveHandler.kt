@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,25 +22,27 @@ import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.keepalive.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
+import kotlin.time.*
 
 internal class KeepAliveHandler(
     private val keepAlive: KeepAlive,
-    private val sender: FrameSender
+    private val sender: FrameSender,
 ) {
-    private val lastMark = atomic(currentMillis()) // mark initial timestamp for keepalive
+    private val initial = TimeSource.Monotonic.markNow()
+    private fun currentDelayMillis() = initial.elapsedNow().inWholeMilliseconds
+
+    private val lastMark = atomic(currentDelayMillis()) // mark initial timestamp for keepalive
 
     suspend fun mark(frame: KeepAliveFrame) {
-        lastMark.value = currentMillis()
+        lastMark.value = currentDelayMillis()
         if (frame.respond) sender.sendKeepAlive(false, 0, frame.data)
     }
 
     suspend fun tick() {
         delay(keepAlive.intervalMillis.toLong())
-        if (currentMillis() - lastMark.value >= keepAlive.maxLifetimeMillis)
+        if (currentDelayMillis() - lastMark.value >= keepAlive.maxLifetimeMillis)
             throw RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetimeMillis} ms")
 
         sender.sendKeepAlive(true, 0, ByteReadPacket.Empty)
     }
 }
-
-internal expect fun currentMillis(): Long

@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.*
+
 plugins {
     id("rsocket.template.test")
     id("rsocket.target.all")
     id("kotlinx-atomicfu")
 }
 
+@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     sourceSets {
         commonMain {
             dependencies {
@@ -28,7 +35,7 @@ kotlin {
                 api(projects.rsocketCore)
                 implementation(projects.rsocketInternalIo)
 
-                api(libs.ktor.utils)
+                api(libs.kotlinx.coroutines.test)
                 api(libs.turbine)
             }
         }

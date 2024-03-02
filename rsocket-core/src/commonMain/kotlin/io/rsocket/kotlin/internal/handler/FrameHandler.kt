@@ -106,6 +106,7 @@ internal abstract class ResponderFrameHandler : FrameHandler(), SendFrameHandler
     }
 }
 
+@Suppress("DEPRECATION")
 private object NoPool : ObjectPool<ChunkBuffer> {
     override val capacity: Int
         get() = error("should not be called")

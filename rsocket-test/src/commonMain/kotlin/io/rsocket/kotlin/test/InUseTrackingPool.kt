@@ -26,6 +26,7 @@ import kotlin.test.*
 
 val InUseTrackingPool: BufferPool = BufferPool(InUseTrackingPoolInstance)
 
+@Suppress("DEPRECATION")
 private object InUseTrackingPoolInstance : ObjectPool<ChunkBuffer>, SynchronizedObject() {
     override val capacity: Int get() = BufferPool.capacity
     private val inUse = mutableSetOf<IdentityWrapper>()
@@ -125,7 +126,7 @@ private object InUseTrackingPoolInstance : ObjectPool<ChunkBuffer>, Synchronized
 }
 
 private class IdentityWrapper(
-    private val instance: ChunkBuffer,
+    private val instance: Any,
     val throwable: Throwable?,
 ) {
     override fun equals(other: Any?): Boolean {
@@ -136,9 +137,6 @@ private class IdentityWrapper(
     override fun hashCode(): Int = identityHashCode(instance)
 }
 
-//TODO leak tracking don't work on JS in SuspendTest
-// due to `hack`, that to run `suspend` tests on JS, we return `Promise`, for which kotlin JS test runner will subscribe
-// in such cases `AfterTest` will be called just after `Promise` returned, and not when it resolved
 interface TestWithLeakCheck {
 
     @BeforeTest

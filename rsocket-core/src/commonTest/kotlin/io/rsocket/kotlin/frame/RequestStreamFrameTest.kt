@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.util.*
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
@@ -30,13 +29,13 @@ class RequestStreamFrameTest : TestWithLeakCheck {
         val frame = RequestStreamFrame(1, 1, payload("d", "md"))
         val bytes = frame.toPacketWithLength().readBytes()
 
-        assertEquals(dump, hex(bytes))
+        assertEquals(dump, bytes.toHexString())
     }
 
     @Test
     fun testDecoding() {
         val dump = "000010000000011900000000010000026d6464"
-        val frame = packet(hex(dump)).toFrameWithLength()
+        val frame = packet(dump.hexToByteArray()).toFrameWithLength()
 
         assertTrue(frame is RequestFrame)
         assertEquals(FrameType.RequestStream, frame.type)
@@ -55,13 +54,13 @@ class RequestStreamFrameTest : TestWithLeakCheck {
         val frame = RequestStreamFrame(1, 1, Payload(packet("d"), ByteReadPacket.Empty))
         val bytes = frame.toPacketWithLength().readBytes()
 
-        assertEquals(dump, hex(bytes))
+        assertEquals(dump, bytes.toHexString())
     }
 
     @Test
     fun testDecodingWithEmptyMetadata() {
         val dump = "00000e0000000119000000000100000064"
-        val frame = packet(hex(dump)).toFrameWithLength()
+        val frame = packet(dump.hexToByteArray()).toFrameWithLength()
 
         assertTrue(frame is RequestFrame)
         assertEquals(FrameType.RequestStream, frame.type)
@@ -80,13 +79,13 @@ class RequestStreamFrameTest : TestWithLeakCheck {
         val frame = RequestStreamFrame(1, 1, payload("d"))
         val bytes = frame.toPacketWithLength().readBytes()
 
-        assertEquals(dump, hex(bytes))
+        assertEquals(dump, bytes.toHexString())
     }
 
     @Test
     fun testDecodingWithNullMetadata() {
         val dump = "00000b0000000118000000000164"
-        val frame = packet(hex(dump)).toFrameWithLength()
+        val frame = packet(dump.hexToByteArray()).toFrameWithLength()
 
         assertTrue(frame is RequestFrame)
         assertEquals(FrameType.RequestStream, frame.type)

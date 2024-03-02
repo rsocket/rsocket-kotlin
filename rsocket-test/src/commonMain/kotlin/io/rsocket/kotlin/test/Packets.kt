@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.test
 
-import io.ktor.util.*
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
 import kotlin.test.*
@@ -32,5 +31,5 @@ fun payload(data: ByteArray, metadata: ByteArray? = null): Payload = Payload(pac
 fun payload(data: String, metadata: String? = null): Payload = Payload(packet(data), metadata?.let(::packet))
 
 fun assertBytesEquals(expected: ByteArray?, actual: ByteArray?) {
-    assertEquals(expected?.let(::hex), actual?.let(::hex))
+    assertEquals(expected?.toHexString(), actual?.toHexString())
 }
