@@ -11,13 +11,8 @@ public final class io/rsocket/kotlin/ChannelStrategy : io/rsocket/kotlin/Request
 }
 
 public abstract interface class io/rsocket/kotlin/Connection : kotlinx/coroutines/CoroutineScope {
-	public abstract fun getPool ()Lio/ktor/utils/io/pool/ObjectPool;
 	public abstract fun receive (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun send (Lio/ktor/utils/io/core/ByteReadPacket;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class io/rsocket/kotlin/Connection$DefaultImpls {
-	public static fun getPool (Lio/rsocket/kotlin/Connection;)Lio/ktor/utils/io/pool/ObjectPool;
 }
 
 public abstract interface class io/rsocket/kotlin/ConnectionAcceptor {
@@ -212,12 +207,14 @@ public final class io/rsocket/kotlin/core/RSocketConnector {
 public final class io/rsocket/kotlin/core/RSocketConnectorBuilder {
 	public final fun acceptor (Lio/rsocket/kotlin/ConnectionAcceptor;)V
 	public final fun connectionConfig (Lkotlin/jvm/functions/Function1;)V
+	public final fun getBufferPool-ulmh1bs ()Lio/ktor/utils/io/pool/ObjectPool;
 	public final fun getLoggerFactory ()Lio/rsocket/kotlin/logging/LoggerFactory;
 	public final fun getMaxFragmentSize ()I
 	public final fun interceptors (Lkotlin/jvm/functions/Function1;)V
 	public final fun reconnectable (JLkotlin/jvm/functions/Function2;)V
 	public final fun reconnectable (Lkotlin/jvm/functions/Function3;)V
 	public static synthetic fun reconnectable$default (Lio/rsocket/kotlin/core/RSocketConnectorBuilder;JLkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+	public final fun setBufferPool-nnChvZA (Lio/ktor/utils/io/pool/ObjectPool;)V
 	public final fun setLoggerFactory (Lio/rsocket/kotlin/logging/LoggerFactory;)V
 	public final fun setMaxFragmentSize (I)V
 }
@@ -242,9 +239,11 @@ public final class io/rsocket/kotlin/core/RSocketServer {
 }
 
 public final class io/rsocket/kotlin/core/RSocketServerBuilder {
+	public final fun getBufferPool-ulmh1bs ()Lio/ktor/utils/io/pool/ObjectPool;
 	public final fun getLoggerFactory ()Lio/rsocket/kotlin/logging/LoggerFactory;
 	public final fun getMaxFragmentSize ()I
 	public final fun interceptors (Lkotlin/jvm/functions/Function1;)V
+	public final fun setBufferPool-nnChvZA (Lio/ktor/utils/io/pool/ObjectPool;)V
 	public final fun setLoggerFactory (Lio/rsocket/kotlin/logging/LoggerFactory;)V
 	public final fun setMaxFragmentSize (I)V
 }
@@ -433,8 +432,8 @@ public final class io/rsocket/kotlin/metadata/CompositeMetadata$Entry {
 
 public final class io/rsocket/kotlin/metadata/CompositeMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/CompositeMetadata;
-	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/CompositeMetadata;
+	public synthetic fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
 }
 
 public abstract interface class io/rsocket/kotlin/metadata/CompositeMetadataBuilder : java/io/Closeable {
@@ -457,10 +456,10 @@ public final class io/rsocket/kotlin/metadata/CompositeMetadataExtensionsKt {
 	public static final fun hasMimeTypeOf (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;)Z
 	public static final fun list (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/core/MimeType;)Ljava/util/List;
 	public static final fun list (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/metadata/MetadataReader;)Ljava/util/List;
-	public static final fun read (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
-	public static synthetic fun read$default (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/Metadata;
-	public static final fun readOrNull (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
-	public static synthetic fun readOrNull$default (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static final fun read-FTxoUho (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static synthetic fun read-FTxoUho$default (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static final fun readOrNull-FTxoUho (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static synthetic fun readOrNull-FTxoUho$default (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/Metadata;
 }
 
 public final class io/rsocket/kotlin/metadata/CompositeMetadataFromBuilder : io/rsocket/kotlin/metadata/CompositeMetadata, io/rsocket/kotlin/metadata/CompositeMetadataBuilder {
@@ -485,15 +484,15 @@ public abstract interface class io/rsocket/kotlin/metadata/Metadata : java/io/Cl
 
 public final class io/rsocket/kotlin/metadata/MetadataKt {
 	public static final fun metadata (Lio/rsocket/kotlin/payload/PayloadBuilder;Lio/rsocket/kotlin/metadata/Metadata;)V
-	public static final fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
-	public static synthetic fun read$default (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/Metadata;
-	public static final fun toPacket (Lio/rsocket/kotlin/metadata/Metadata;Lio/ktor/utils/io/pool/ObjectPool;)Lio/ktor/utils/io/core/ByteReadPacket;
-	public static synthetic fun toPacket$default (Lio/rsocket/kotlin/metadata/Metadata;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/ktor/utils/io/core/ByteReadPacket;
+	public static final fun read-FTxoUho (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static synthetic fun read-FTxoUho$default (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/MetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static final fun toPacket-sXCisgc (Lio/rsocket/kotlin/metadata/Metadata;Lio/ktor/utils/io/pool/ObjectPool;)Lio/ktor/utils/io/core/ByteReadPacket;
+	public static synthetic fun toPacket-sXCisgc$default (Lio/rsocket/kotlin/metadata/Metadata;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/ktor/utils/io/core/ByteReadPacket;
 }
 
 public abstract interface class io/rsocket/kotlin/metadata/MetadataReader {
 	public abstract fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public abstract fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public abstract fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
 }
 
 public final class io/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata : io/rsocket/kotlin/metadata/Metadata {
@@ -507,8 +506,8 @@ public final class io/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMe
 
 public final class io/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
-	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata;
+	public synthetic fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadataKt {
@@ -526,8 +525,8 @@ public final class io/rsocket/kotlin/metadata/PerStreamDataMimeTypeMetadata : io
 
 public final class io/rsocket/kotlin/metadata/PerStreamDataMimeTypeMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
-	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/PerStreamDataMimeTypeMetadata;
+	public synthetic fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/PerStreamDataMimeTypeMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/RawMetadata : io/rsocket/kotlin/metadata/Metadata {
@@ -554,8 +553,8 @@ public final class io/rsocket/kotlin/metadata/RoutingMetadata : io/rsocket/kotli
 
 public final class io/rsocket/kotlin/metadata/RoutingMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
-	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/RoutingMetadata;
+	public synthetic fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/RoutingMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/RoutingMetadataKt {
@@ -588,8 +587,8 @@ public final class io/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind : java/
 
 public final class io/rsocket/kotlin/metadata/ZipkinTracingMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
-	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata;
+	public synthetic fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/ZipkinTracingMetadataKt {
@@ -614,13 +613,13 @@ public final class io/rsocket/kotlin/metadata/security/AuthMetadata$DefaultImpls
 
 public abstract interface class io/rsocket/kotlin/metadata/security/AuthMetadataReader : io/rsocket/kotlin/metadata/MetadataReader {
 	public abstract fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public abstract fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public abstract fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public abstract fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public abstract fun readContent-FTxoUho (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/security/AuthMetadataReader$DefaultImpls {
 	public static fun getMimeType (Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;)Lio/rsocket/kotlin/core/MimeType;
-	public static fun read (Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public static fun read-sXCisgc (Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
 }
 
 public abstract interface class io/rsocket/kotlin/metadata/security/AuthType {
@@ -647,11 +646,11 @@ public final class io/rsocket/kotlin/metadata/security/BearerAuthMetadata : io/r
 
 public final class io/rsocket/kotlin/metadata/security/BearerAuthMetadata$Reader : io/rsocket/kotlin/metadata/security/AuthMetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
-	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/BearerAuthMetadata;
-	public synthetic fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/BearerAuthMetadata;
+	public synthetic fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public synthetic fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/BearerAuthMetadata;
+	public synthetic fun readContent-FTxoUho (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun readContent-FTxoUho (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/BearerAuthMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/security/CustomAuthType : io/rsocket/kotlin/metadata/security/AuthTypeWithName {
@@ -678,19 +677,19 @@ public final class io/rsocket/kotlin/metadata/security/RawAuthMetadata : io/rsoc
 
 public final class io/rsocket/kotlin/metadata/security/RawAuthMetadata$Reader : io/rsocket/kotlin/metadata/security/AuthMetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
-	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;
-	public synthetic fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;
+	public synthetic fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public synthetic fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;
+	public synthetic fun readContent-FTxoUho (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun readContent-FTxoUho (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/security/RawAuthMetadataKt {
 	public static final fun hasAuthTypeOf (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;)Z
-	public static final fun read (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public static synthetic fun read$default (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public static final fun readOrNull (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public static synthetic fun readOrNull$default (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public static final fun read-FTxoUho (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public static synthetic fun read-FTxoUho$default (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public static final fun readOrNull-FTxoUho (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public static synthetic fun readOrNull-FTxoUho$default (Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;Lio/rsocket/kotlin/metadata/security/AuthMetadataReader;Lio/ktor/utils/io/pool/ObjectPool;ILjava/lang/Object;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/security/ReservedAuthType : io/rsocket/kotlin/metadata/security/AuthTypeWithId {
@@ -718,11 +717,11 @@ public final class io/rsocket/kotlin/metadata/security/SimpleAuthMetadata : io/r
 
 public final class io/rsocket/kotlin/metadata/security/SimpleAuthMetadata$Reader : io/rsocket/kotlin/metadata/security/AuthMetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
-	public synthetic fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public fun read (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/SimpleAuthMetadata;
-	public synthetic fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public fun readContent (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/SimpleAuthMetadata;
+	public synthetic fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/Metadata;
+	public synthetic fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun read-sXCisgc (Lio/ktor/utils/io/core/ByteReadPacket;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/SimpleAuthMetadata;
+	public synthetic fun readContent-FTxoUho (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun readContent-FTxoUho (Lio/ktor/utils/io/core/ByteReadPacket;Lio/rsocket/kotlin/metadata/security/AuthType;Lio/ktor/utils/io/pool/ObjectPool;)Lio/rsocket/kotlin/metadata/security/SimpleAuthMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/security/WellKnowAuthType : java/lang/Enum, io/rsocket/kotlin/metadata/security/AuthTypeWithId, io/rsocket/kotlin/metadata/security/AuthTypeWithName {

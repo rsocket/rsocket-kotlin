@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package io.rsocket.kotlin.transport.ktor.websocket
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import kotlinx.coroutines.*
@@ -26,7 +24,6 @@ import kotlinx.coroutines.*
 @TransportApi
 public class WebSocketConnection(
     private val session: WebSocketSession,
-    override val pool: ObjectPool<ChunkBuffer>
 ) : Connection, CoroutineScope by session {
     override suspend fun send(packet: ByteReadPacket) {
         session.send(packet.readBytes())

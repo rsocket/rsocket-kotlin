@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,12 @@
 
 package io.rsocket.kotlin.internal
 
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.handler.*
 import kotlinx.atomicfu.locks.*
 
 internal class StreamsStorage(
     private val isServer: Boolean,
-    private val pool: ObjectPool<ChunkBuffer>
 ) : SynchronizedObject() {
     private val streamId: StreamId = StreamId(isServer)
     private val handlers: IntMap<FrameHandler> = IntMap()
@@ -60,21 +57,19 @@ internal class StreamsStorage(
                 else                            -> {
                     val initialRequest = frame.initialRequest
                     val handler = when (frame.type) {
-                        FrameType.RequestFnF      -> ResponderFireAndForgetFrameHandler(id, this, responder, pool)
-                        FrameType.RequestResponse -> ResponderRequestResponseFrameHandler(id, this, responder, pool)
+                        FrameType.RequestFnF      -> ResponderFireAndForgetFrameHandler(id, this, responder)
+                        FrameType.RequestResponse -> ResponderRequestResponseFrameHandler(id, this, responder)
                         FrameType.RequestStream   -> ResponderRequestStreamFrameHandler(
                             id,
                             this,
                             responder,
                             initialRequest,
-                            pool
                         )
                         FrameType.RequestChannel  -> ResponderRequestChannelFrameHandler(
                             id,
                             this,
                             responder,
                             initialRequest,
-                            pool
                         )
                         else                      -> error("Wrong request frame type") // should never happen
                     }

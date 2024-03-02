@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ fun TestServer(
     logging: Boolean = true,
     block: RSocketServerBuilder.() -> Unit = {}
 ): RSocketServer = RSocketServer {
+    @Suppress("DEPRECATION_ERROR")
+    bufferPool = InUseTrackingPool
     loggerFactory = if (logging) {
         LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("SERVER   |$it") }
     } else {
@@ -37,6 +39,8 @@ fun TestConnector(
     logging: Boolean = true,
     block: RSocketConnectorBuilder.() -> Unit = {}
 ): RSocketConnector = RSocketConnector {
+    @Suppress("DEPRECATION_ERROR")
+    bufferPool = InUseTrackingPool
     loggerFactory = if (logging) {
         LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("CLIENT   |$it") }
     } else {

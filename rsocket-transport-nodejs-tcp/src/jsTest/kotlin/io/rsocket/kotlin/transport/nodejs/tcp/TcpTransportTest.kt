@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.transport.nodejs.tcp
 
-import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
 
@@ -25,8 +24,8 @@ class TcpTransportTest : TransportTest() {
 
     override suspend fun before() {
         val port = PortProvider.next()
-        server = startServer(TcpServerTransport(port, "127.0.0.1", InUseTrackingPool))
-        client = connectClient(TcpClientTransport(port, "127.0.0.1", InUseTrackingPool, testContext))
+        server = startServer(TcpServerTransport(port, "127.0.0.1"))
+        client = connectClient(TcpClientTransport(port, "127.0.0.1", testContext))
     }
 
     override suspend fun after() {

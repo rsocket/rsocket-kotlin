@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.rsocket.kotlin.internal.handler
 
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
@@ -26,8 +24,7 @@ internal class ResponderRequestResponseFrameHandler(
     private val id: Int,
     private val streamsStorage: StreamsStorage,
     private val responder: RSocketResponder,
-    pool: ObjectPool<ChunkBuffer>
-) : ResponderFrameHandler(pool) {
+) : ResponderFrameHandler() {
 
     override fun start(payload: Payload): Job = responder.handleRequestResponse(payload, id, this)
 

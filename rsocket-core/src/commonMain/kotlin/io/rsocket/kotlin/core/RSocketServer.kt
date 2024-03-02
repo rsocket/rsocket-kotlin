@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
@@ -29,6 +30,7 @@ public class RSocketServer internal constructor(
     private val loggerFactory: LoggerFactory,
     private val maxFragmentSize: Int,
     private val interceptors: Interceptors,
+    private val bufferPool: BufferPool,
 ) {
 
     @DelicateCoroutinesApi
@@ -47,7 +49,7 @@ public class RSocketServer internal constructor(
         }
     }
 
-    private suspend fun Connection.bind(acceptor: ConnectionAcceptor): Job = receiveFrame { setupFrame ->
+    private suspend fun Connection.bind(acceptor: ConnectionAcceptor): Job = receiveFrame(bufferPool) { setupFrame ->
         when {
             setupFrame !is SetupFrame             -> failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
             setupFrame.version != Version.Current -> failSetup(RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}"))
@@ -64,7 +66,8 @@ public class RSocketServer internal constructor(
                         payloadMimeType = setupFrame.payloadMimeType,
                         setupPayload = setupFrame.payload
                     ),
-                    acceptor = acceptor
+                    acceptor = acceptor,
+                    bufferPool = bufferPool
                 )
                 coroutineContext.job
             } catch (e: Throwable) {
@@ -75,13 +78,13 @@ public class RSocketServer internal constructor(
 
     @Suppress("SuspendFunctionOnCoroutineScope")
     private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
-        sendFrame(ErrorFrame(0, error))
+        sendFrame(bufferPool, ErrorFrame(0, error))
         cancel("Connection establishment failed", error)
         throw error
     }
 
     private fun Connection.wrapConnection(): Connection =
         interceptors.wrapConnection(this)
-            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"))
+            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"), bufferPool)
 
 }

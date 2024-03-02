@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 package io.rsocket.kotlin
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.internal.io.*
 import kotlinx.coroutines.*
 
 /**
@@ -28,17 +27,15 @@ import kotlinx.coroutines.*
  */
 @TransportApi
 public interface Connection : CoroutineScope {
-    public val pool: ObjectPool<ChunkBuffer> get() = ChunkBuffer.Pool
-
     public suspend fun send(packet: ByteReadPacket)
     public suspend fun receive(): ByteReadPacket
 }
 
 @OptIn(TransportApi::class)
-internal suspend inline fun <T> Connection.receiveFrame(block: (frame: Frame) -> T): T =
+internal suspend inline fun <T> Connection.receiveFrame(pool: BufferPool, block: (frame: Frame) -> T): T =
     receive().readFrame(pool).closeOnError(block)
 
 @OptIn(TransportApi::class)
-internal suspend fun Connection.sendFrame(frame: Frame) {
+internal suspend fun Connection.sendFrame(pool: BufferPool, frame: Frame) {
     frame.toPacket(pool).closeOnError { send(it) }
 }

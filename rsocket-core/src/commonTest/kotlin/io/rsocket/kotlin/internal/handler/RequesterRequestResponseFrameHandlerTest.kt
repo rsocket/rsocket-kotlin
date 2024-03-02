@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ import kotlinx.coroutines.*
 import kotlin.test.*
 
 class RequesterRequestResponseFrameHandlerTest : SuspendTest, TestWithLeakCheck {
-    private val storage = StreamsStorage(true, InUseTrackingPool)
+    private val storage = StreamsStorage(true)
     private val deferred = CompletableDeferred<Payload>()
     private val handler =
-        RequesterRequestResponseFrameHandler(1, storage, deferred, InUseTrackingPool).also { storage.save(1, it) }
+        RequesterRequestResponseFrameHandler(1, storage, deferred).also { storage.save(1, it) }
 
     @Test
     fun testCompleteOnPayloadReceive() = test {

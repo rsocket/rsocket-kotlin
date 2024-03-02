@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
     private val testJob = Job()
     private val testContext = testJob + TestExceptionHandler
     private val address = InetSocketAddress("0.0.0.0", PortProvider.next())
-    private val serverTransport = TcpServerTransport(address, InUseTrackingPool)
-    private val clientTransport = TcpClientTransport(address, testContext, InUseTrackingPool)
+    private val serverTransport = TcpServerTransport(address)
+    private val clientTransport = TcpClientTransport(address, testContext)
 
     override suspend fun after() {
         testJob.cancelAndJoin()

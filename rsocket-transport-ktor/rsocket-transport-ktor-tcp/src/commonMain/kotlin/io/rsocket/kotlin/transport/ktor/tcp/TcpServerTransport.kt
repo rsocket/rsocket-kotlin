@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ package io.rsocket.kotlin.transport.ktor.tcp
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
@@ -35,13 +33,11 @@ public class TcpServer internal constructor(
 
 public fun TcpServerTransport(
     hostname: String = "0.0.0.0", port: Int = 0,
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
     configure: SocketOptions.AcceptorOptions.() -> Unit = {},
-): ServerTransport<TcpServer> = TcpServerTransport(InetSocketAddress(hostname, port), pool, configure)
+): ServerTransport<TcpServer> = TcpServerTransport(InetSocketAddress(hostname, port), configure)
 
 public fun TcpServerTransport(
     localAddress: InetSocketAddress? = null,
-    pool: ObjectPool<ChunkBuffer> = ChunkBuffer.Pool,
     configure: SocketOptions.AcceptorOptions.() -> Unit = {},
 ): ServerTransport<TcpServer> = ServerTransport { accept ->
     val serverSocketDeferred = CompletableDeferred<ServerSocket>()
@@ -54,7 +50,7 @@ public fun TcpServerTransport(
                 while (isActive) {
                     val clientSocket = serverSocket.accept()
                     connectionScope.launch {
-                        accept(TcpConnection(clientSocket, coroutineContext, pool))
+                        accept(TcpConnection(clientSocket, coroutineContext))
                     }.invokeOnCompletion {
                         clientSocket.close()
                     }

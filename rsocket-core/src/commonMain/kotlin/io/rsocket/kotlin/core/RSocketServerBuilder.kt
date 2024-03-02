@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.logging.*
 
 public class RSocketServerBuilder internal constructor() {
@@ -30,6 +31,9 @@ public class RSocketServerBuilder internal constructor() {
             field = value
         }
 
+    @Deprecated("Only for tests in rsocket", level = DeprecationLevel.ERROR)
+    public var bufferPool: BufferPool = BufferPool.Default
+
     private val interceptors: InterceptorsBuilder = InterceptorsBuilder()
 
     public fun interceptors(configure: InterceptorsBuilder.() -> Unit) {
@@ -37,7 +41,12 @@ public class RSocketServerBuilder internal constructor() {
     }
 
     @OptIn(RSocketLoggingApi::class)
-    internal fun build(): RSocketServer = RSocketServer(loggerFactory, maxFragmentSize, interceptors.build())
+    internal fun build(): RSocketServer = RSocketServer(
+        loggerFactory,
+        maxFragmentSize,
+        interceptors.build(),
+        @Suppress("DEPRECATION_ERROR") bufferPool
+    )
 }
 
 public fun RSocketServer(configure: RSocketServerBuilder.() -> Unit = {}): RSocketServer {

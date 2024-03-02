@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,13 @@ import io.ktor.utils.io.bits.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
+import io.rsocket.kotlin.internal.io.*
 import kotlinx.atomicfu.locks.*
 import kotlin.test.*
 
-object InUseTrackingPool : ObjectPool<ChunkBuffer>, SynchronizedObject() {
+val InUseTrackingPool: BufferPool = BufferPool(InUseTrackingPoolInstance)
+
+private object InUseTrackingPoolInstance : ObjectPool<ChunkBuffer>, SynchronizedObject() {
     override val capacity: Int get() = BufferPool.capacity
     private val inUse = mutableSetOf<IdentityWrapper>()
 
@@ -92,7 +95,7 @@ object InUseTrackingPool : ObjectPool<ChunkBuffer>, SynchronizedObject() {
     @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
     private object BufferPool : DefaultPool<ChunkBuffer>(1000) {
         override fun produceInstance(): ChunkBuffer {
-            return ChunkBuffer(DefaultAllocator.alloc(DEFAULT_BUFFER_SIZE), null, InUseTrackingPool)
+            return ChunkBuffer(DefaultAllocator.alloc(DEFAULT_BUFFER_SIZE), null, InUseTrackingPoolInstance)
         }
 
         override fun disposeInstance(instance: ChunkBuffer) {
@@ -123,7 +126,7 @@ object InUseTrackingPool : ObjectPool<ChunkBuffer>, SynchronizedObject() {
 
 private class IdentityWrapper(
     private val instance: ChunkBuffer,
-    val throwable: Throwable?
+    val throwable: Throwable?,
 ) {
     override fun equals(other: Any?): Boolean {
         if (other !is IdentityWrapper) return false
@@ -140,11 +143,11 @@ interface TestWithLeakCheck {
 
     @BeforeTest
     fun resetInUse() {
-        InUseTrackingPool.resetInUse()
+        InUseTrackingPoolInstance.resetInUse()
     }
 
     @AfterTest
     fun checkNoBuffersInUse() {
-        InUseTrackingPool.assertNoInUse()
+        InUseTrackingPoolInstance.assertNoInUse()
     }
 }

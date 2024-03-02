@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@
 package io.rsocket.kotlin.metadata
 
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
+import io.rsocket.kotlin.internal.io.*
 import kotlin.experimental.*
 
 @ExperimentalMetadataApi
@@ -71,7 +70,7 @@ public class ZipkinTracingMetadata internal constructor(
 
     public companion object Reader : MetadataReader<ZipkinTracingMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketTracingZipkin
-        override fun ByteReadPacket.read(pool: ObjectPool<ChunkBuffer>): ZipkinTracingMetadata {
+        override fun ByteReadPacket.read(pool: BufferPool): ZipkinTracingMetadata {
             val flags = readByte()
 
             val kind = when {

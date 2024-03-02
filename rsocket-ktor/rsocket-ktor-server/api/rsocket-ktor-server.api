@@ -1,13 +1,11 @@
 public final class io/rsocket/kotlin/ktor/server/RSocketSupport {
 	public static final field Feature Lio/rsocket/kotlin/ktor/server/RSocketSupport$Feature;
-	public synthetic fun <init> (Lio/rsocket/kotlin/core/RSocketServer;Lio/ktor/utils/io/pool/ObjectPool;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lio/rsocket/kotlin/core/RSocketServer;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class io/rsocket/kotlin/ktor/server/RSocketSupport$Config {
-	public final fun getBufferPool ()Lio/ktor/utils/io/pool/ObjectPool;
 	public final fun getServer ()Lio/rsocket/kotlin/core/RSocketServer;
 	public final fun server (Lkotlin/jvm/functions/Function1;)V
-	public final fun setBufferPool (Lio/ktor/utils/io/pool/ObjectPool;)V
 	public final fun setServer (Lio/rsocket/kotlin/core/RSocketServer;)V
 }
 

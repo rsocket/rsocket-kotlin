@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,30 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.frame.io
+package io.rsocket.kotlin.internal.io
 
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
+import kotlin.jvm.*
 
-internal inline fun buildPacket(pool: ObjectPool<ChunkBuffer>, block: BytePacketBuilder.() -> Unit): ByteReadPacket {
-    val builder = BytePacketBuilder(pool)
-    try {
-        block(builder)
-        return builder.build()
-    } catch (t: Throwable) {
-        builder.close()
-        throw t
+@JvmInline
+public value class BufferPool(
+    @PublishedApi
+    internal val pool: ObjectPool<ChunkBuffer>,
+) {
+    public inline fun buildPacket(block: BytePacketBuilder.() -> Unit): ByteReadPacket {
+        val builder = BytePacketBuilder(pool)
+        try {
+            block(builder)
+            return builder.build()
+        } catch (t: Throwable) {
+            builder.close()
+            throw t
+        }
+    }
+
+    public companion object {
+        public val Default: BufferPool = BufferPool(ChunkBuffer.Pool)
     }
 }
