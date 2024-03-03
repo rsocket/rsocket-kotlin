@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
+package io.rsocket.kotlin.core
 
 import io.ktor.utils.io.core.*
-import kotlinx.coroutines.*
+import io.rsocket.kotlin.*
+import io.rsocket.kotlin.transport.*
+import kotlin.coroutines.*
 
-/**
- * That interface isn't stable for inheritance.
- */
 @TransportApi
-public interface Connection : CoroutineScope {
-    public suspend fun send(packet: ByteReadPacket)
-    public suspend fun receive(): ByteReadPacket
+@RSocketTransportApi
+internal fun Connection.convert(): RSocketTransportSession.Sequential = object : RSocketTransportSession.Sequential {
+    override val coroutineContext: CoroutineContext get() = this@convert.coroutineContext
+    override suspend fun sendFrame(frame: ByteReadPacket) = send(frame)
+    override suspend fun receiveFrame(): ByteReadPacket = receive()
 }

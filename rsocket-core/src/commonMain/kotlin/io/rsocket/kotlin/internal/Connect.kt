@@ -20,11 +20,12 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.io.*
+import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 
-@OptIn(TransportApi::class)
+@RSocketTransportApi
 internal suspend inline fun connect(
-    connection: Connection,
+    connection: RSocketTransportSession.Sequential,
     isServer: Boolean,
     maxFragmentSize: Int,
     interceptors: Interceptors,
@@ -97,10 +98,21 @@ internal suspend inline fun connect(
                     is LeaseFrame        -> frame.close().also { error("lease isn't implemented") }
                     else                 -> frame.close()
                 }
+
                 else -> streamsStorage.handleFrame(frame, responder)
             }
         }
     }
 
     return requester
+}
+
+@RSocketTransportApi
+internal suspend inline fun <T> RSocketTransportSession.Sequential.receiveFrame(bufferPool: BufferPool, block: (frame: Frame) -> T): T {
+    return receiveFrame().readFrame(bufferPool).closeOnError(block)
+}
+
+@RSocketTransportApi
+internal suspend fun RSocketTransportSession.Sequential.sendFrame(bufferPool: BufferPool, frame: Frame) {
+    frame.toPacket(bufferPool).closeOnError { sendFrame(it) }
 }

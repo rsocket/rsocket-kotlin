@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin
+package io.rsocket.kotlin.transport
 
-import io.ktor.utils.io.core.*
-import kotlinx.coroutines.*
-
-/**
- * That interface isn't stable for inheritance.
- */
-@TransportApi
-public interface Connection : CoroutineScope {
-    public suspend fun send(packet: ByteReadPacket)
-    public suspend fun receive(): ByteReadPacket
-}
+@RequiresOptIn(
+    level = RequiresOptIn.Level.ERROR,
+    message = """
+              This is an API which is used to implement transport for RSocket, such as WS or TCP.
+              This API should not be used from general code
+              """
+)
+public annotation class RSocketTransportApi

@@ -24,10 +24,11 @@ import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
-@OptIn(TransportApi::class, RSocketLoggingApi::class)
+@OptIn(TransportApi::class, RSocketTransportApi::class, RSocketLoggingApi::class)
 public class RSocketConnector internal constructor(
-    private val loggerFactory: LoggerFactory,
+    loggerFactory: LoggerFactory,
     private val maxFragmentSize: Int,
     private val interceptors: Interceptors,
     private val connectionConfigProvider: () -> ConnectionConfig,
@@ -36,19 +37,32 @@ public class RSocketConnector internal constructor(
     private val bufferPool: BufferPool,
 ) {
 
-    public suspend fun connect(transport: ClientTransport): RSocket = when (reconnectPredicate) {
-        //TODO current coroutineContext job is overriden by transport coroutineContext jov
-        null -> withContext(transport.coroutineContext) { connectOnce(transport) }
-        else -> connectWithReconnect(
-            transport.coroutineContext,
-            loggerFactory.logger("io.rsocket.kotlin.connection"),
-            { connectOnce(transport) },
-            reconnectPredicate,
-        )
+    private val connectionLogger = loggerFactory.logger("io.rsocket.kotlin.connection")
+    private val frameLogger = loggerFactory.logger("io.rsocket.kotlin.frame")
+
+    public suspend fun connect(transport: ClientTransport): RSocket = connect(object : RSocketClientTarget {
+        override val coroutineContext: CoroutineContext get() = transport.coroutineContext
+        override suspend fun createSession(): RSocketTransportSession {
+            return interceptors.wrapConnection(transport.connect()).convert()
+        }
+    })
+
+    public suspend fun connect(transport: RSocketClientTarget): RSocket {
+        return when (reconnectPredicate) {
+            //TODO current coroutineContext job is overriden by transport coroutineContext jov
+            null -> withContext(transport.coroutineContext) { connectOnce(transport) }
+            else -> connectWithReconnect(
+                transport.coroutineContext,
+                connectionLogger,
+                { connectOnce(transport) },
+                reconnectPredicate,
+            )
+        }
     }
 
-    private suspend fun connectOnce(transport: ClientTransport): RSocket {
-        val connection = transport.connect().wrapConnection()
+    private suspend fun connectOnce(transport: RSocketClientTarget): RSocket {
+        val connection = transport.createSession().logging(frameLogger, bufferPool)
+        check(connection is RSocketTransportSession.Sequential) { "multiplexed is not yet supported" }
         val connectionConfig = try {
             connectionConfigProvider()
         } catch (cause: Throwable) {
@@ -82,8 +96,4 @@ public class RSocketConnector internal constructor(
             throw cause
         }
     }
-
-    private fun Connection.wrapConnection(): Connection =
-        interceptors.wrapConnection(this)
-            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"), bufferPool)
 }

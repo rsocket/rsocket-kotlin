@@ -25,13 +25,15 @@ import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 
-@OptIn(TransportApi::class, RSocketLoggingApi::class)
+@OptIn(TransportApi::class, RSocketTransportApi::class, RSocketLoggingApi::class)
 public class RSocketServer internal constructor(
-    private val loggerFactory: LoggerFactory,
+    loggerFactory: LoggerFactory,
     private val maxFragmentSize: Int,
     private val interceptors: Interceptors,
     private val bufferPool: BufferPool,
 ) {
+
+    private val frameLogger = loggerFactory.logger("io.rsocket.kotlin.frame")
 
     @DelicateCoroutinesApi
     public fun <T> bind(
@@ -45,46 +47,56 @@ public class RSocketServer internal constructor(
         acceptor: ConnectionAcceptor,
     ): T = with(transport) {
         scope.start {
-            it.wrapConnection().bind(acceptor).join()
+            interceptors.wrapConnection(it).convert().bind(acceptor).join()
         }
     }
 
-    private suspend fun Connection.bind(acceptor: ConnectionAcceptor): Job = receiveFrame(bufferPool) { setupFrame ->
-        when {
-            setupFrame !is SetupFrame             -> failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
-            setupFrame.version != Version.Current -> failSetup(RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}"))
-            setupFrame.honorLease                 -> failSetup(RSocketError.Setup.Unsupported("Lease is not supported"))
-            setupFrame.resumeToken != null        -> failSetup(RSocketError.Setup.Unsupported("Resume is not supported"))
-            else                                  -> try {
-                connect(
-                    connection = this,
-                    isServer = true,
-                    maxFragmentSize = maxFragmentSize,
-                    interceptors = interceptors,
-                    connectionConfig = ConnectionConfig(
-                        keepAlive = setupFrame.keepAlive,
-                        payloadMimeType = setupFrame.payloadMimeType,
-                        setupPayload = setupFrame.payload
-                    ),
-                    acceptor = acceptor,
-                    bufferPool = bufferPool
-                )
-                coroutineContext.job
-            } catch (e: Throwable) {
-                failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
+    public suspend fun <T : RSocketServerInstance> start(
+        transport: RSocketServerTarget<T>,
+        acceptor: ConnectionAcceptor,
+    ): T = transport.startServer(createAcceptor(acceptor))
+
+    @RSocketTransportApi
+    public fun createAcceptor(acceptor: ConnectionAcceptor): RSocketServerAcceptor = object : RSocketServerAcceptor {
+        override suspend fun acceptSession(session: RSocketTransportSession) {
+            session.logging(frameLogger, bufferPool).bind(acceptor)
+        }
+    }
+
+    private suspend fun RSocketTransportSession.bind(acceptor: ConnectionAcceptor): Job {
+        check(this is RSocketTransportSession.Sequential) { "multiplexed is not yet supported" }
+
+        return receiveFrame(bufferPool) { setupFrame ->
+            when {
+                setupFrame !is SetupFrame             -> failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
+                setupFrame.version != Version.Current -> failSetup(RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}"))
+                setupFrame.honorLease                 -> failSetup(RSocketError.Setup.Unsupported("Lease is not supported"))
+                setupFrame.resumeToken != null        -> failSetup(RSocketError.Setup.Unsupported("Resume is not supported"))
+                else                                  -> try {
+                    connect(
+                        connection = this,
+                        isServer = true,
+                        maxFragmentSize = maxFragmentSize,
+                        interceptors = interceptors,
+                        connectionConfig = ConnectionConfig(
+                            keepAlive = setupFrame.keepAlive,
+                            payloadMimeType = setupFrame.payloadMimeType,
+                            setupPayload = setupFrame.payload
+                        ),
+                        acceptor = acceptor,
+                        bufferPool = bufferPool
+                    )
+                    coroutineContext.job
+                } catch (e: Throwable) {
+                    failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
+                }
             }
         }
     }
 
-    @Suppress("SuspendFunctionOnCoroutineScope")
-    private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
+    private suspend fun RSocketTransportSession.Sequential.failSetup(error: RSocketError.Setup): Nothing {
         sendFrame(bufferPool, ErrorFrame(0, error))
         cancel("Connection establishment failed", error)
         throw error
     }
-
-    private fun Connection.wrapConnection(): Connection =
-        interceptors.wrapConnection(this)
-            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"), bufferPool)
-
 }

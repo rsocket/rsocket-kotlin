@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(TransportApi::class, RSocketLoggingApi::class)
-
 package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
@@ -23,29 +21,42 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.logging.*
+import io.rsocket.kotlin.transport.*
+import kotlin.coroutines.*
 
-internal fun Connection.logging(logger: Logger, bufferPool: BufferPool): Connection =
-    if (logger.isLoggable(LoggingLevel.DEBUG)) LoggingConnection(this, logger, bufferPool) else this
+@RSocketLoggingApi
+@RSocketTransportApi
+internal fun RSocketTransportSession.logging(logger: Logger, bufferPool: BufferPool): RSocketTransportSession {
+    if (!logger.isLoggable(LoggingLevel.DEBUG)) return this
 
-private class LoggingConnection(
-    private val delegate: Connection,
+    return when (this) {
+        is RSocketTransportSession.Sequential -> SequentialLoggingConnection(this, logger, bufferPool)
+        else                                  -> TODO("not yet supported")
+    }
+}
+
+@RSocketLoggingApi
+@RSocketTransportApi
+private class SequentialLoggingConnection(
+    private val delegate: RSocketTransportSession.Sequential,
     private val logger: Logger,
     private val bufferPool: BufferPool,
-) : Connection by delegate {
+) : RSocketTransportSession.Sequential {
+    override val coroutineContext: CoroutineContext get() = delegate.coroutineContext
 
     private fun ByteReadPacket.dumpFrameToString(): String {
         val length = remaining
         return copy().use { it.readFrame(bufferPool).use { it.dump(length) } }
     }
 
-    override suspend fun send(packet: ByteReadPacket) {
-        logger.debug { "Send:    ${packet.dumpFrameToString()}" }
-        delegate.send(packet)
+    override suspend fun sendFrame(frame: ByteReadPacket) {
+        logger.debug { "Send:    ${frame.dumpFrameToString()}" }
+        delegate.sendFrame(frame)
     }
 
-    override suspend fun receive(): ByteReadPacket {
-        val packet = delegate.receive()
-        logger.debug { "Receive: ${packet.dumpFrameToString()}" }
-        return packet
+    override suspend fun receiveFrame(): ByteReadPacket {
+        val frame = delegate.receiveFrame()
+        logger.debug { "Receive: ${frame.dumpFrameToString()}" }
+        return frame
     }
 }
