@@ -19,11 +19,24 @@ package io.rsocket.kotlin.ktor.server
 import io.ktor.server.application.*
 import io.ktor.server.websocket.*
 import io.ktor.util.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
+import io.rsocket.kotlin.transport.*
+import io.rsocket.kotlin.transport.ktor.websocket.internal.*
+import kotlinx.coroutines.*
 
 public class RSocketSupport private constructor(
-    internal val server: RSocketServer,
+    private val server: RSocketServer,
 ) {
+    @RSocketTransportApi
+    internal fun handler(acceptor: ConnectionAcceptor): suspend DefaultWebSocketServerSession.() -> Unit {
+        val serverAcceptor = server.createAcceptor(acceptor)
+        return {
+            serverAcceptor.acceptSession(KtorWebSocketSession(this))
+            coroutineContext.job.join()
+        }
+    }
+
     public class Config internal constructor() {
         public var server: RSocketServer = RSocketServer()
         public fun server(block: RSocketServerBuilder.() -> Unit) {

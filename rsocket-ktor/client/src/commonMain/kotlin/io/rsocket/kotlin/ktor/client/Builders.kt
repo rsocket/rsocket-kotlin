@@ -22,50 +22,48 @@ import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.internal.*
+import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
 public suspend fun HttpClient.rSocket(
     request: HttpRequestBuilder.() -> Unit,
-): RSocket = plugin(RSocketSupport).run {
-    connector.connect(KtorClientTransport(this@rSocket, request))
-}
+): RSocket = plugin(RSocketSupport).connector.connect(KtorWebSocketClientTarget(this, request))
 
 public suspend fun HttpClient.rSocket(
     urlString: String,
-    secure: Boolean = false,
     request: HttpRequestBuilder.() -> Unit = {},
-): RSocket = rSocket {
-    url {
-        this.protocol = if (secure) URLProtocol.WSS else URLProtocol.WS
-        this.port = protocol.defaultPort
-        takeFrom(urlString)
-    }
+): RSocket = rSocket(method = HttpMethod.Get, host = null, port = null, path = null) {
+    url.protocol = URLProtocol.WS
+    url.port = url.protocol.defaultPort
+    url.takeFrom(urlString)
     request()
 }
 
 public suspend fun HttpClient.rSocket(
+    method: HttpMethod = HttpMethod.Get,
     host: String? = null,
     port: Int? = null,
     path: String? = null,
-    secure: Boolean = false,
     request: HttpRequestBuilder.() -> Unit = {},
 ): RSocket = rSocket {
-    url {
-        this.protocol = if (secure) URLProtocol.WSS else URLProtocol.WS
-        this.port = protocol.defaultPort
-        set(host = host, port = port, path = path)
-    }
+    this.method = method
+    url("ws", host, port, path)
     request()
 }
 
-private class KtorClientTransport(
+private class KtorWebSocketClientTarget(
     private val client: HttpClient,
     private val request: HttpRequestBuilder.() -> Unit,
-) : ClientTransport {
-    override val coroutineContext: CoroutineContext get() = client.coroutineContext
+) : RSocketClientTarget {
+    override val coroutineContext: CoroutineContext = client.coroutineContext.supervisorContext()
 
-    @TransportApi
-    override suspend fun connect(): Connection = WebSocketConnection(client.webSocketSession(request))
+    @RSocketTransportApi
+    override suspend fun createSession(): RSocketTransportSession {
+        ensureActive()
+
+        return KtorWebSocketSession(client.webSocketSession(request))
+    }
 }

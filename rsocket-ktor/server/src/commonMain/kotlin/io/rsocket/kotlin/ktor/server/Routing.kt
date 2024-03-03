@@ -21,31 +21,11 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
-import io.rsocket.kotlin.transport.ktor.websocket.internal.*
-import kotlinx.coroutines.*
 
-public fun Route.rSocket(
-    path: String? = null,
-    protocol: String? = null,
-    acceptor: ConnectionAcceptor,
-): Unit = application.plugin(RSocketSupport).run {
-    server.bindIn(application, KtorServerTransport(this@rSocket, path, protocol), acceptor)
-}
+@OptIn(RSocketTransportApi::class)
+public fun Route.rSocket(protocol: String? = null, acceptor: ConnectionAcceptor): Unit =
+    webSocket(protocol, application.plugin(RSocketSupport).handler(acceptor))
 
-private class KtorServerTransport(
-    private val route: Route,
-    private val path: String?,
-    private val protocol: String?,
-) : ServerTransport<Unit> {
-    @TransportApi
-    override fun CoroutineScope.start(accept: suspend CoroutineScope.(Connection) -> Unit) {
-        val handler: suspend DefaultWebSocketServerSession.() -> Unit = {
-            val connection = WebSocketConnection(this)
-            accept(connection)
-        }
-        when (path) {
-            null -> route.webSocket(protocol, handler)
-            else -> route.webSocket(path, protocol, handler)
-        }
-    }
-}
+@OptIn(RSocketTransportApi::class)
+public fun Route.rSocket(path: String, protocol: String? = null, acceptor: ConnectionAcceptor): Unit =
+    webSocket(path, protocol, application.plugin(RSocketSupport).handler(acceptor))
