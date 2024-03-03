@@ -26,3 +26,10 @@ class TcpTransportTest : TransportTest() {
         client = connectClient(TcpClientTransport(address, testContext))
     }
 }
+
+class KtorTcpTransportTest : TransportTest() {
+    override suspend fun before() {
+        val server = startServer(KtorTcpServerTransport(testContext).target())
+        client = connectClient(KtorTcpClientTransport(testContext).target(server.localAddress))
+    }
+}
