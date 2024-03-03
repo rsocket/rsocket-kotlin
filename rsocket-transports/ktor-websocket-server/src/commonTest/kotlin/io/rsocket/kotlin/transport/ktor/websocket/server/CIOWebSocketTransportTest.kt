@@ -44,3 +44,5 @@ class CIOWebSocketTransportTest : WebSocketTransportTest(ClientCIO, ServerCIO) {
     @IgnoreNative
     override fun largePayloadRequestResponse100() = super.largePayloadRequestResponse100()
 }
+
+class CIOKtorWebSocketTransportTest : KtorWebSocketTransportTest(ClientCIO, ServerCIO)
