@@ -2,43 +2,32 @@ name: Publish RELEASE to Maven Central
 on:
   workflow_call:
 
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
 jobs:
   publish:
     if: github.repository == 'rsocket/rsocket-kotlin'
-    runs-on: macos-latest
-    concurrency:
-      group: publish-release
-      cancel-in-progress: false
+    runs-on: macos-14
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-gradle
         with:
           cache-disabled: true
 
       - name: Publish to Maven Local (prepare packages)
-        uses: gradle/gradle-build-action@v2
+        run: ./gradlew publishToMavenLocal -Pversion=${{ github.ref_name }} --no-configuration-cache
         env:
           ORG_GRADLE_PROJECT_signingKey: ${{secrets.signingKey}}
           ORG_GRADLE_PROJECT_signingPassword: ${{secrets.signingPassword}}
           ORG_GRADLE_PROJECT_sonatypeUsername: ${{secrets.sonatypeUsername}}
           ORG_GRADLE_PROJECT_sonatypePassword: ${{secrets.sonatypePassword}}
-        with:
-          arguments: |
-            publishToMavenLocal
-            --scan 
-            --info
-            -Pversion=${{ github.ref_name }}
 
       - name: Publish release to Maven Central (version ${{ github.ref_name }})
-        uses: gradle/gradle-build-action@v2
+        run: ./gradlew publishAllPublicationsToMavenCentralRepository -Pversion=${{ github.ref_name }} --no-configuration-cache
         env:
           ORG_GRADLE_PROJECT_signingKey: ${{secrets.signingKey}}
           ORG_GRADLE_PROJECT_signingPassword: ${{secrets.signingPassword}}
           ORG_GRADLE_PROJECT_sonatypeUsername: ${{secrets.sonatypeUsername}}
           ORG_GRADLE_PROJECT_sonatypePassword: ${{secrets.sonatypePassword}}
-        with:
-          arguments: |
-            publishAllPublicationsToSonatypeRepository
-            --scan 
-            --info
-            -Pversion=${{ github.ref_name }}
