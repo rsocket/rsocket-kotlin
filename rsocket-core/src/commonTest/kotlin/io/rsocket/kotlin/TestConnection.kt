@@ -30,7 +30,7 @@ import kotlin.test.*
 import kotlin.time.*
 import kotlin.time.Duration.Companion.seconds
 
-class TestConnection : Connection, ClientTransport {
+class TestConnection : RSocketTransportSession.Sequential, RSocketClientTarget {
     override val coroutineContext: CoroutineContext =
         Job() + Dispatchers.Unconfined + TestExceptionHandler
 
@@ -44,13 +44,13 @@ class TestConnection : Connection, ClientTransport {
         }
     }
 
-    override suspend fun connect(): Connection = this
+    override suspend fun createSession(): RSocketTransportSession.Sequential = this
 
-    override suspend fun send(packet: ByteReadPacket) {
-        sendChannel.send(packet)
+    override suspend fun sendFrame(frame: ByteReadPacket) {
+        sendChannel.send(frame)
     }
 
-    override suspend fun receive(): ByteReadPacket {
+    override suspend fun receiveFrame(): ByteReadPacket {
         return receiveChannel.receive()
     }
 
