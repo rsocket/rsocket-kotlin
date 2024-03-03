@@ -8,6 +8,10 @@ kotlinx-bcv = "0.14.0"
 
 ktor = "2.3.8"
 
+netty = "4.1.107.Final"
+
+bouncycastle = "1.77"
+
 turbine = "1.0.0"
 
 rsocket-java = "1.1.3"
@@ -43,6 +47,11 @@ ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.re
 ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 ktor-server-jetty = { module = "io.ktor:ktor-server-jetty", version.ref = "ktor" }
+
+netty-handler = { module = "io.netty:netty-handler", version.ref = "netty" }
+netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty" }
+
+bouncycastle = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
 
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 

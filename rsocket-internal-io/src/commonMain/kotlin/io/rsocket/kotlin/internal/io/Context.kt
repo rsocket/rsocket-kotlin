@@ -21,3 +21,23 @@ import kotlin.coroutines.*
 
 public fun CoroutineContext.supervisorContext(): CoroutineContext = plus(SupervisorJob(get(Job)))
 public fun CoroutineContext.childContext(): CoroutineContext = plus(Job(get(Job)))
+
+public inline fun CoroutineScope.invokeOnCancellation(
+    context: CoroutineContext = EmptyCoroutineContext,
+    crossinline block: suspend () -> Unit,
+) {
+    launch(context) {
+        try {
+            awaitCancellation()
+        } catch (cause: Throwable) {
+            withContext(NonCancellable) {
+                try {
+                    block()
+                } catch (suppressed: Throwable) {
+                    cause.addSuppressed(suppressed)
+                }
+            }
+            throw cause
+        }
+    }
+}

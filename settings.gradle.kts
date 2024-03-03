@@ -44,6 +44,9 @@ projects {
         module("ktor-websocket-server")
         module("ktor-websocket-internal")
 
+        module("netty-tcp")
+        module("netty-websocket")
+
         module("nodejs-tcp")
     }
 
