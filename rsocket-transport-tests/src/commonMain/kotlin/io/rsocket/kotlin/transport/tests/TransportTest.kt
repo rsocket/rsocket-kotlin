@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,12 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
 
     protected fun <T> startServer(serverTransport: ServerTransport<T>): T =
         SERVER.bindIn(testScope, serverTransport, ACCEPTOR)
+
+    protected suspend fun connectClient(clientTransport: RSocketClientTarget): RSocket =
+        CONNECTOR.connect(clientTransport)
+
+    protected suspend fun <T : RSocketServerInstance> startServer(serverTransport: RSocketServerTarget<T>): T =
+        SERVER.start(serverTransport, ACCEPTOR)
 
     override suspend fun after() {
         client.coroutineContext.job.cancelAndJoin()

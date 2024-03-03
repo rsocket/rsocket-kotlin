@@ -14,27 +14,10 @@
  * limitations under the License.
  */
 
-import rsocketbuild.*
+package io.rsocket.kotlin.internal.io
 
-plugins {
-    id("rsocketbuild.multiplatform-library")
-    id("kotlinx-atomicfu")
-}
+import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
-description = "rsocket-kotlin Local transport implementation"
-
-kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
-
-    sourceSets {
-        commonMain.dependencies {
-            implementation(projects.rsocketInternalIo)
-            api(projects.rsocketCore)
-        }
-        commonTest.dependencies {
-            implementation(projects.rsocketTransportTests)
-        }
-    }
-}
+public fun CoroutineContext.supervisorContext(): CoroutineContext = plus(SupervisorJob(get(Job)))
+public fun CoroutineContext.childContext(): CoroutineContext = plus(Job(get(Job)))

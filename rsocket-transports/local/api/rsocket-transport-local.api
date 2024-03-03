@@ -1,9 +1,47 @@
+public abstract interface class io/rsocket/kotlin/transport/local/LocalClientTarget : io/rsocket/kotlin/transport/RSocketClientTarget {
+	public abstract fun getServerName ()Ljava/lang/String;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/local/LocalClientTransport : io/rsocket/kotlin/transport/RSocketTransport {
+	public static final field Factory Lio/rsocket/kotlin/transport/local/LocalClientTransport$Factory;
+	public abstract fun target (Lio/rsocket/kotlin/transport/local/LocalServerInstance;)Lio/rsocket/kotlin/transport/local/LocalClientTarget;
+}
+
+public final class io/rsocket/kotlin/transport/local/LocalClientTransport$Factory : io/rsocket/kotlin/transport/RSocketTransportFactory {
+}
+
+public abstract interface class io/rsocket/kotlin/transport/local/LocalClientTransportBuilder : io/rsocket/kotlin/transport/RSocketTransportBuilder {
+	public abstract fun dispatcher (Lkotlin/coroutines/CoroutineContext;)V
+	public fun inheritDispatcher ()V
+}
+
 public final class io/rsocket/kotlin/transport/local/LocalServer : io/rsocket/kotlin/transport/ClientTransport {
 	public fun connect (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
 }
 
+public abstract interface class io/rsocket/kotlin/transport/local/LocalServerInstance : io/rsocket/kotlin/transport/RSocketServerInstance, io/rsocket/kotlin/transport/local/LocalClientTarget {
+}
+
 public final class io/rsocket/kotlin/transport/local/LocalServerKt {
 	public static final fun LocalServerTransport ()Lio/rsocket/kotlin/transport/ServerTransport;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/local/LocalServerTarget : io/rsocket/kotlin/transport/RSocketServerTarget {
+	public abstract fun getServerName ()Ljava/lang/String;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/local/LocalServerTransport : io/rsocket/kotlin/transport/RSocketTransport {
+	public static final field Factory Lio/rsocket/kotlin/transport/local/LocalServerTransport$Factory;
+	public fun target ()Lio/rsocket/kotlin/transport/local/LocalServerTarget;
+}
+
+public final class io/rsocket/kotlin/transport/local/LocalServerTransport$Factory : io/rsocket/kotlin/transport/RSocketTransportFactory {
+}
+
+public abstract interface class io/rsocket/kotlin/transport/local/LocalServerTransportBuilder : io/rsocket/kotlin/transport/RSocketTransportBuilder {
+	public abstract fun connectionBufferCapacity (I)V
+	public abstract fun dispatcher (Lkotlin/coroutines/CoroutineContext;)V
+	public fun inheritDispatcher ()V
 }
 

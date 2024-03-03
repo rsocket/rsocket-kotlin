@@ -18,9 +18,16 @@ package io.rsocket.kotlin.transport.local
 
 import io.rsocket.kotlin.transport.tests.*
 
-class LocalTransportTest : TransportTest() {
+class OldLocalTransportTest : TransportTest() {
     override suspend fun before() {
         val server = startServer(LocalServerTransport())
         client = connectClient(server)
+    }
+}
+
+class LocalTransportTest : TransportTest() {
+    override suspend fun before() {
+        val server = startServer(LocalServerTransport(testContext).target())
+        client = connectClient(LocalClientTransport(testContext).target(server))
     }
 }
