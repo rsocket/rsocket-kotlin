@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package io.rsocket.kotlin
 
+// TODO: redesign and rename to RSocketProtocolException,
+//  allow for custom exception to compute message lazily, so make it implemented via subclassing
+//  additionally introduce `RSocketProcessingException: IllegalStateException` for cases like wrong frame received or something wrong/not supported?
 public sealed class RSocketError(public val errorCode: Int, message: String) : Throwable(message) {
 
     public sealed class Setup(errorCode: Int, message: String) : RSocketError(errorCode, message) {

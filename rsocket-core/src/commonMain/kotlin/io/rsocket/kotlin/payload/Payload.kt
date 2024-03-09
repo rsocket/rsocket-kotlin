@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.ktor.utils.io.core.*
 
 public fun Payload(data: ByteReadPacket, metadata: ByteReadPacket? = null): Payload = DefaultPayload(data, metadata)
 
+// TODO: move to root, rename to RSocketPayload, cleanup API regarding creation of a Payload
 public sealed interface Payload : Closeable {
     public val data: ByteReadPacket
     public val metadata: ByteReadPacket?
