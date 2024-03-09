@@ -16,20 +16,17 @@
 
 package io.rsocket.kotlin.transport.local
 
-import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.atomicfu.locks.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 import kotlin.random.*
 
 internal class LocalServerInstanceImpl @RSocketTransportApi constructor(
     override val serverName: String,
     override val coroutineContext: CoroutineContext,
-    private val connectionBufferCapacity: Int,
     private val acceptor: RSocketServerAcceptor,
+    private val connector: LocalServerConnector,
 ) : LocalServerInstance {
 
     init {
@@ -38,31 +35,10 @@ internal class LocalServerInstanceImpl @RSocketTransportApi constructor(
     }
 
     @RSocketTransportApi
-    override suspend fun createSession(): RSocketTransportSession = connect(coroutineContext)
+    override suspend fun createSession(): RSocketTransportSession = connect(this)
 
     @RSocketTransportApi
-    fun connect(clientContext: CoroutineContext): RSocketTransportSession {
-        ensureActive()
-
-        val clientToServer = channelForCloseable<ByteReadPacket>(connectionBufferCapacity)
-        val serverToClient = channelForCloseable<ByteReadPacket>(connectionBufferCapacity)
-
-        launch {
-            acceptor.acceptSession(
-                LocalSequentialSession(
-                    coroutineContext = coroutineContext.childContext(),
-                    outbound = serverToClient,
-                    inbound = clientToServer
-                )
-            )
-        }
-
-        return LocalSequentialSession(
-            coroutineContext = clientContext.childContext(),
-            outbound = clientToServer,
-            inbound = serverToClient
-        )
-    }
+    fun connect(clientScope: CoroutineScope): RSocketTransportSession = connector.connect(acceptor, clientScope, this)
 
     companion object {
         private val lock = SynchronizedObject()
@@ -83,28 +59,5 @@ internal class LocalServerInstanceImpl @RSocketTransportApi constructor(
 
         @OptIn(ExperimentalStdlibApi::class)
         fun randomName(): String = Random.nextBytes(16).toHexString(HexFormat.UpperCase)
-    }
-}
-
-@RSocketTransportApi
-private class LocalSequentialSession(
-    override val coroutineContext: CoroutineContext,
-    private val outbound: SendChannel<ByteReadPacket>,
-    private val inbound: ReceiveChannel<ByteReadPacket>,
-) : RSocketTransportSession.Sequential {
-
-    init {
-        coroutineContext.job.invokeOnCompletion {
-            outbound.close(it)
-            inbound.cancel(CancellationException("Local connection closed", it))
-        }
-    }
-
-    override suspend fun sendFrame(frame: ByteReadPacket) {
-        outbound.send(frame)
-    }
-
-    override suspend fun receiveFrame(): ByteReadPacket {
-        return inbound.receive()
     }
 }

@@ -79,9 +79,5 @@ private class LocalClientTargetImpl(
 ) : LocalClientTarget {
 
     @RSocketTransportApi
-    override suspend fun createSession(): RSocketTransportSession {
-        ensureActive()
-
-        return server.connect(coroutineContext)
-    }
+    override suspend fun createSession(): RSocketTransportSession = server.connect(this)
 }

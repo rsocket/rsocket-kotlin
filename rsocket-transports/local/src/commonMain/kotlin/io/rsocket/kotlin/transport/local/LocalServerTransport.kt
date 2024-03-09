@@ -19,7 +19,6 @@ package io.rsocket.kotlin.transport.local
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
 // TODO: rename to inprocess and more to another module/package later
@@ -46,44 +45,50 @@ public sealed interface LocalServerTransportBuilder : RSocketTransportBuilder<
 
     public fun dispatcher(context: CoroutineContext)
     public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
-    public fun connectionBufferCapacity(capacity: Int)
+
+    public fun sequential(connectionBufferCapacity: Int = 64)
+    public fun multiplexed(connectionStreamsQueueCapacity: Int = 64, streamBufferCapacity: Int = 64)
 }
 
 private class LocalServerTransportBuilderImpl : LocalServerTransportBuilder {
     private var dispatcher: CoroutineContext = Dispatchers.Default
-    private var connectionBufferCapacity: Int = Channel.BUFFERED
+    private var connector: LocalServerConnector? = null
 
     override fun dispatcher(context: CoroutineContext) {
         check(context[Job] == null) { "Dispatcher shouldn't contain job" }
         this.dispatcher = context
     }
 
-    override fun connectionBufferCapacity(capacity: Int) {
-        this.connectionBufferCapacity = capacity
+    override fun sequential(connectionBufferCapacity: Int) {
+        connector = LocalServerConnector.Sequential(connectionBufferCapacity)
+    }
+
+    override fun multiplexed(connectionStreamsQueueCapacity: Int, streamBufferCapacity: Int) {
+        connector = LocalServerConnector.Multiplexed(connectionStreamsQueueCapacity, streamBufferCapacity)
     }
 
     @RSocketTransportApi
     override fun buildTransport(context: CoroutineContext): LocalServerTransport = LocalServerTransportImpl(
         coroutineContext = context.supervisorContext() + dispatcher,
-        connectionBufferCapacity = connectionBufferCapacity
+        connector = connector ?: LocalServerConnector.Sequential(64) // TODO: what is default?
     )
 }
 
 private class LocalServerTransportImpl(
     override val coroutineContext: CoroutineContext,
-    private val connectionBufferCapacity: Int,
+    private val connector: LocalServerConnector,
 ) : LocalServerTransport {
     override fun target(address: String): LocalServerTarget = LocalServerTargetImpl(
         serverName = address,
         coroutineContext = coroutineContext.supervisorContext(),
-        connectionBufferCapacity = connectionBufferCapacity
+        connector = connector
     )
 }
 
 private class LocalServerTargetImpl(
     override val serverName: String,
     override val coroutineContext: CoroutineContext,
-    private val connectionBufferCapacity: Int,
+    private val connector: LocalServerConnector,
 ) : LocalServerTarget {
     @RSocketTransportApi
     override suspend fun startServer(acceptor: RSocketServerAcceptor): LocalServerInstance {
@@ -92,8 +97,8 @@ private class LocalServerTargetImpl(
         return LocalServerInstanceImpl(
             serverName = serverName,
             coroutineContext = coroutineContext.supervisorContext(),
-            connectionBufferCapacity = connectionBufferCapacity,
-            acceptor = acceptor
+            acceptor = acceptor,
+            connector = connector
         )
     }
 }

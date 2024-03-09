@@ -25,9 +25,20 @@ class OldLocalTransportTest : TransportTest() {
     }
 }
 
-class LocalTransportTest : TransportTest() {
+class SequentialLocalTransportTest : TransportTest() {
     override suspend fun before() {
-        val server = startServer(LocalServerTransport(testContext).target())
+        val server = startServer(LocalServerTransport(testContext) {
+            sequential()
+        }.target())
+        client = connectClient(LocalClientTransport(testContext).target(server))
+    }
+}
+
+class MultiplexedLocalTransportTest : TransportTest() {
+    override suspend fun before() {
+        val server = startServer(LocalServerTransport(testContext) {
+            multiplexed()
+        }.target())
         client = connectClient(LocalClientTransport(testContext).target(server))
     }
 }
