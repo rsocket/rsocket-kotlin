@@ -51,8 +51,12 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
                 }
                 requestChannel { init, payloads ->
                     init.close()
-                    payloads.onEach { it.close() }.launchIn(this)
-                    flow { repeat(10) { emitOrClose(payload("server got -> [$it]")) } }
+                    flow {
+                        coroutineScope {
+                            payloads.onEach { it.close() }.launchIn(this)
+                            repeat(10) { emitOrClose(payload("server got -> [$it]")) }
+                        }
+                    }
                 }
             }
         }
@@ -251,10 +255,10 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
             }
         })
         val request = flow<Payload> { error("test") }
-        //TODO
-        kotlin.runCatching {
+        // TODO: should requester fail if there was a failure in `request`?
+        assertFailsWith(IllegalStateException::class) {
             requester.requestChannel(Payload.Empty, request).collect()
-        }.also(::println)
+        }
         val e = error.await()
         assertTrue(e is RSocketError.ApplicationError)
         assertEquals("test", e.message)
@@ -376,10 +380,10 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
         requesterReceiveChannel.cancel()
         delay(1000)
 
-        assertTrue(requesterSendChannel.isClosedForSend)
-        assertTrue(responderSendChannel.isClosedForSend)
-        assertTrue(requesterReceiveChannel.isClosedForReceive)
-        assertTrue(responderReceiveChannel.isClosedForReceive)
+        assertTrue(requesterSendChannel.isClosedForSend, "requesterSendChannel.isClosedForSend")
+        assertTrue(responderSendChannel.isClosedForSend, "responderSendChannel.isClosedForSend")
+        assertTrue(requesterReceiveChannel.isClosedForReceive, "requesterReceiveChannel.isClosedForReceive")
+        assertTrue(responderReceiveChannel.isClosedForReceive, "responderReceiveChannel.isClosedForReceive")
     }
 
     private suspend fun initRequestChannel(
@@ -413,7 +417,7 @@ class RSocketTest : SuspendTest, TestWithLeakCheck {
 
     private suspend inline fun cancel(
         requesterChannel: SendChannel<Payload>,
-        responderChannel: ReceiveChannel<Payload>
+        responderChannel: ReceiveChannel<Payload>,
     ) {
         responderChannel.cancel()
         delay(100)

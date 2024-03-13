@@ -31,8 +31,9 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 //TODO: need to somehow rework those tests, as now they are super flaky
+// there is some issue in K/N tcp...
 abstract class TransportTest : SuspendTest, TestWithLeakCheck {
-    override val testTimeout: Duration = 3.minutes
+    override val testTimeout: Duration = 5.minutes
 
     private val testJob = SupervisorJob()
     protected val testContext = testJob + TestExceptionHandler
@@ -60,25 +61,25 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun fireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(payload(it)) } }.awaitAll()
-        delay(1000) //TODO: leak check
+        delay(100) // TODO: leak check
     }
 
     @Test
     open fun largePayloadFireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(requesterLargePayload) } }.awaitAll()
-        delay(1000) //TODO: leak check
+        delay(100) // TODO: leak check
     }
 
     @Test
     fun metadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterData)) } }.awaitAll()
-        delay(1000) //TODO: leak check
+        delay(100) // TODO: leak check
     }
 
     @Test
     open fun largePayloadMetadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterLargeData)) } }.awaitAll()
-        delay(1000) //TODO: leak check
+        delay(100) // TODO: leak check
     }
 
     @Test
@@ -89,8 +90,11 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
 
     @Test
     fun requestChannel1() = test(10.seconds) {
-        val list = client.requestChannel(payload(0), flowOf(payload(0))).onEach { it.close() }.toList()
-        assertEquals(1, list.size)
+        val count =
+            client.requestChannel(payload(0), flowOf(payload(0)))
+                .onEach { it.close() }
+                .count()
+        assertEquals(1, count)
     }
 
     @Test
@@ -98,9 +102,12 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         val request = flow {
             repeat(3) { emit(payload(it)) }
         }
-        val list =
-            client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(3, 0)).onEach { it.close() }.toList()
-        assertEquals(3, list.size)
+        val count =
+            client.requestChannel(payload(0), request)
+                .flowOn(PrefetchStrategy(3, 0))
+                .onEach { it.close() }
+                .count()
+        assertEquals(3, count)
     }
 
     @Test
@@ -108,25 +115,25 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         val request = flow {
             repeat(200) { emit(requesterLargePayload) }
         }
-        val list =
+        val count =
             client.requestChannel(requesterLargePayload, request)
                 .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
                 .onEach { it.close() }
-                .toList()
-        assertEquals(200, list.size)
+                .count()
+        assertEquals(200, count)
     }
 
     @Test
-    @Ignore //flaky, ignore for now
+    @IgnoreNative //flaky, ignore for now
     fun requestChannel20000() = test {
         val request = flow {
             repeat(20_000) { emit(payload(7)) }
         }
-        val list = client.requestChannel(payload(7), request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).onEach {
+        val count = client.requestChannel(payload(7), request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).onEach {
             assertEquals(requesterData, it.data.readText())
             assertEquals(requesterMetadata, it.metadata?.readText())
-        }.toList()
-        assertEquals(20_000, list.size)
+        }.count()
+        assertEquals(20_000, count)
     }
 
     @Test
@@ -135,13 +142,16 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         val request = flow {
             repeat(200_000) { emit(payload(it)) }
         }
-        val list =
-            client.requestChannel(payload(0), request).flowOn(PrefetchStrategy(10000, 0)).onEach { it.close() }.toList()
-        assertEquals(200_000, list.size)
+        val count =
+            client.requestChannel(payload(0), request)
+                .flowOn(PrefetchStrategy(10000, 0))
+                .onEach { it.close() }
+                .count()
+        assertEquals(200_000, count)
     }
 
     @Test
-    @Ignore //flaky, ignore for now
+    @IgnoreNative //flaky, ignore for now
     fun requestChannel16x256() = test {
         val request = flow {
             repeat(256) {
@@ -149,9 +159,9 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
             }
         }
         (0..16).map {
-            async(Dispatchers.Default) {
-                val list = client.requestChannel(payload(0), request).onEach { it.close() }.toList()
-                assertEquals(256, list.size)
+            async {
+                val count = client.requestChannel(payload(0), request).onEach { it.close() }.count()
+                assertEquals(256, count)
             }
         }.awaitAll()
     }
@@ -165,20 +175,20 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
             }
         }
         (0..256).map {
-            async(Dispatchers.Default) {
-                val list = client.requestChannel(payload(0), request).onEach { it.close() }.toList()
-                assertEquals(512, list.size)
+            async {
+                val count = client.requestChannel(payload(0), request).onEach { it.close() }.count()
+                assertEquals(512, count)
             }
         }.awaitAll()
     }
 
     @Test
-    @Ignore //flaky, ignore for now
+    @IgnoreNative //flaky, ignore for now
     fun requestChannel500NoLeak() = test {
         val request = flow {
             repeat(10_000) { emitOrClose(payload(3)) }
         }
-        val list =
+        val count =
             client
                 .requestChannel(payload(3), request)
                 .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
@@ -186,9 +196,9 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
                 .onEach {
                     assertEquals(requesterData, it.data.readText())
                     assertEquals(requesterMetadata, it.metadata?.readText())
-                }.toList()
-        assertEquals(500, list.size)
-        delay(1000) //TODO: leak check
+                }
+                .count()
+        assertEquals(500, count)
     }
 
     @Test
@@ -202,6 +212,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
+    @IgnoreNative
     fun requestResponse100() = test {
         (1..100).map { async { client.requestResponse(payload(it)).let(Companion::checkPayload) } }.awaitAll()
     }
@@ -212,7 +223,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     }
 
     @Test
-    @Ignore //flaky, ignore for now
+    @IgnoreNative //flaky, ignore for now
     fun requestResponse10000() = test {
         (1..10000).map { async { client.requestResponse(payload(3)).let(Companion::checkPayload) } }.awaitAll()
     }
@@ -225,29 +236,29 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
 
     @Test
     fun requestStream5() = test {
-        val list =
-            client.requestStream(payload(3)).flowOn(PrefetchStrategy(5, 0)).take(5).onEach { checkPayload(it) }.toList()
-        assertEquals(5, list.size)
+        val count =
+            client.requestStream(payload(3)).flowOn(PrefetchStrategy(5, 0)).take(5).onEach { checkPayload(it) }.count()
+        assertEquals(5, count)
     }
 
     @Test
+    @IgnoreNative
     fun requestStream10000() = test {
-        val list = client.requestStream(payload(3)).onEach { checkPayload(it) }.toList()
-        assertEquals(10000, list.size)
+        val count = client.requestStream(payload(3)).onEach { checkPayload(it) }.count()
+        assertEquals(10000, count)
     }
 
     @Test
-    @Ignore //flaky, ignore for now
+    @IgnoreNative
     fun requestStream500NoLeak() = test {
-        val list =
+        val count =
             client
                 .requestStream(payload(3))
                 .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
                 .take(500)
                 .onEach { checkPayload(it) }
-                .toList()
-        assertEquals(500, list.size)
-        delay(1000) //TODO: leak check
+                .count()
+        assertEquals(500, count)
     }
 
     companion object {

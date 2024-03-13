@@ -26,10 +26,10 @@ abstract class WebSocketTransportTest(
     private val serverEngine: ApplicationEngineFactory<*, *>,
 ) : TransportTest() {
     override suspend fun before() {
-        val port = PortProvider.next()
-        startServer(
-            WebSocketServerTransport(serverEngine, port = port)
+        val server = startServer(
+            WebSocketServerTransport(serverEngine, port = 0)
         )
+        val port = server.resolvedConnectors().single().port
         client = connectClient(
             WebSocketClientTransport(clientEngine, port = port, context = testContext)
         )

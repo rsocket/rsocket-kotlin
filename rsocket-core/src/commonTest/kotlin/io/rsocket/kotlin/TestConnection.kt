@@ -39,7 +39,7 @@ class TestConnection : RSocketTransportSession.Sequential, RSocketClientTarget {
 
     init {
         coroutineContext.job.invokeOnCompletion {
-            sendChannel.close(it)
+            sendChannel.cancelWithCause(it)
             receiveChannel.cancelWithCause(it)
         }
     }

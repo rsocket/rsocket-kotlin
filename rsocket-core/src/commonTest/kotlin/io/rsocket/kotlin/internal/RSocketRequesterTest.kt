@@ -290,7 +290,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
     @Test
     fun testRequestReplyWithCancel() = test {
         connection.test {
-            withTimeoutOrNull(100) { requester.requestResponse(Payload.Empty) }
+            assertTrue(withTimeoutOrNull(100) { requester.requestResponse(Payload.Empty) } == null)
 
             awaitFrame { assertTrue(it is RequestFrame) }
             awaitFrame { assertTrue(it is CancelFrame) }

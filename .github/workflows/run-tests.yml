@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ 'ubuntu-latest' ]
-        target: [ 'jvmAll', 'js', 'native' ]
+        target: [ 'jvm', 'jvm11', 'jvm17', 'jvm21', 'js', 'native' ]
         include:
           - os: 'macos-14'
             target: 'macos'
@@ -43,8 +43,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-gradle
 
-      - run: ./gradlew ${{ matrix.target }}Test --continue
-        timeout-minutes: 30
+      - name: Build tests
+        run: ./gradlew ${{ matrix.target }}Test --continue -Prsocketbuild.skipTests=true
+
+      - name: Run tests
+        run: ./gradlew ${{ matrix.target }}Test --continue --no-configuration-cache --max-workers=1
 
       - if: always() && !cancelled()
         uses: actions/upload-artifact@v4
