@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,17 +20,20 @@ import io.rsocket.kotlin.payload.*
 import kotlinx.atomicfu.*
 import kotlinx.atomicfu.locks.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
-import kotlin.coroutines.*
 
 internal suspend inline fun Flow<Payload>.collectLimiting(
     limiter: Limiter,
-    crossinline action: suspend (value: Payload) -> Unit
+    crossinline action: suspend (value: Payload) -> Unit,
 ) {
     collect { payload ->
-        payload.closeOnError {
+        try {
             limiter.useRequest()
-            action(it)
+            action(payload)
+        } catch (cause: Throwable) {
+            payload.close()
+            throw cause
         }
     }
 }
@@ -48,39 +51,19 @@ internal suspend inline fun Flow<Payload>.collectLimiting(
  *
  */
 internal class Limiter(initial: Int) : SynchronizedObject() {
-    private val requests: AtomicLong = atomic(initial.toLong())
-    private var awaiter: CancellableContinuation<Unit>? = null
+    private val requests = atomic(initial)
+    private val requestNs = Channel<Int>(Channel.UNLIMITED)
 
     fun updateRequests(n: Int) {
         if (n <= 0) return
-        synchronized(this) {
-            val updatedRequests = requests.value + n.toLong()
-            if (updatedRequests < 0) {
-                requests.value = Long.MAX_VALUE
-            } else {
-                requests.value = updatedRequests
-            }
-
-            if (awaiter?.isActive == true) {
-                awaiter?.resume(Unit)
-                awaiter = null
-            }
-        }
+        requestNs.trySend(n)
     }
 
     suspend fun useRequest() {
-        if (requests.decrementAndGet() >= 0) {
+        if (requests.decrementAndGet() > 0) {
             currentCoroutineContext().ensureActive()
         } else {
-            suspendCancellableCoroutine<Unit> { continuation ->
-                synchronized(this) {
-                    if (requests.value >= 0 && continuation.isActive) {
-                        continuation.resume(Unit)
-                    } else {
-                        this.awaiter = continuation
-                    }
-                }
-            }
+            requests.value = requestNs.receive()
         }
     }
 }

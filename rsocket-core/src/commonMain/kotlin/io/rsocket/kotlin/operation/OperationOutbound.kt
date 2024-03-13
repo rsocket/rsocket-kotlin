@@ -14,65 +14,89 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.internal
+package io.rsocket.kotlin.operation
 
 import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.payload.*
-import kotlinx.coroutines.*
 import kotlin.math.*
+
+internal interface OperationOutbound : Closeable {
+    // should be called only once by Requester
+    suspend fun sendRequest(type: RSocketOperationType, payload: Payload, complete: Boolean, initialRequest: Int)
+
+    suspend fun sendNext(payload: Payload, complete: Boolean)
+    suspend fun sendComplete()
+    suspend fun sendError(cause: Throwable)
+    suspend fun sendCancel()
+    suspend fun sendRequestN(requestN: Int)
+}
 
 private const val lengthSize = 3
 private const val headerSize = 6
 private const val fragmentOffset = lengthSize + headerSize
 private const val fragmentOffsetWithMetadata = fragmentOffset + lengthSize
 
-internal class FrameSender(
-    private val prioritizer: Prioritizer,
-    private val pool: BufferPool,
+internal abstract class AbstractOperationOutbound(
+    protected val streamId: Int,
     private val maxFragmentSize: Int,
-) {
+    protected val bufferPool: BufferPool,
+) : OperationOutbound {
+    // TODO: decide on it
+    private var firstRequestFrameSent: Boolean = false
 
-    suspend fun sendKeepAlive(respond: Boolean, lastPosition: Long, data: ByteReadPacket): Unit =
-        prioritizer.send(KeepAliveFrame(respond, lastPosition, data))
+    protected abstract suspend fun sendFrame(frame: ByteReadPacket)
+    private suspend fun sendFrame(frame: Frame): Unit = sendFrame(frame.toPacket(bufferPool))
 
-    suspend fun sendMetadataPush(metadata: ByteReadPacket): Unit = prioritizer.send(MetadataPushFrame(metadata))
-
-    suspend fun sendCancel(id: Int): Unit = withContext(NonCancellable) { prioritizer.send(CancelFrame(id)) }
-    suspend fun sendError(id: Int, throwable: Throwable): Unit =
-        withContext(NonCancellable) { prioritizer.send(ErrorFrame(id, throwable)) }
-
-    suspend fun sendRequestN(id: Int, n: Int): Unit = prioritizer.send(RequestNFrame(id, n))
-
-    suspend fun sendRequestPayload(type: FrameType, streamId: Int, payload: Payload, initialRequest: Int = 0) {
-        sendFragmented(type, streamId, payload, false, false, initialRequest)
+    override suspend fun sendError(cause: Throwable) {
+        sendFrame(ErrorFrame(streamId, cause))
     }
 
-    suspend fun sendNextPayload(streamId: Int, payload: Payload) {
-        sendFragmented(FrameType.Payload, streamId, payload, false, true, 0)
+    override suspend fun sendCancel() {
+        sendFrame(CancelFrame(streamId))
     }
 
-    suspend fun sendNextCompletePayload(streamId: Int, payload: Payload) {
-        sendFragmented(FrameType.Payload, streamId, payload, true, true, 0)
+    override suspend fun sendRequestN(requestN: Int) {
+        sendFrame(RequestNFrame(streamId, requestN))
     }
 
-    suspend fun sendCompletePayload(streamId: Int) {
-        sendFragmented(FrameType.Payload, streamId, Payload.Empty, true, false, 0)
+    override suspend fun sendComplete() {
+        sendFrame(
+            RequestFrame(
+                type = FrameType.Payload,
+                streamId = streamId,
+                follows = false,
+                complete = true,
+                next = false,
+                initialRequest = 0,
+                payload = Payload.Empty
+            )
+        )
     }
 
-    private suspend fun sendFragmented(
-        type: FrameType,
-        streamId: Int,
-        payload: Payload,
-        complete: Boolean,
-        next: Boolean,
-        initialRequest: Int
-    ) {
-        //TODO release on fail ?
+    override suspend fun sendNext(payload: Payload, complete: Boolean) {
+        sendRequestPayload(FrameType.Payload, payload, complete, initialRequest = 0)
+    }
+
+    override suspend fun sendRequest(type: RSocketOperationType, payload: Payload, complete: Boolean, initialRequest: Int) {
+        val frameType = when (type) {
+            RSocketOperationType.FireAndForget   -> FrameType.RequestFnF
+            RSocketOperationType.RequestResponse -> FrameType.RequestResponse
+            RSocketOperationType.RequestStream   -> FrameType.RequestStream
+            RSocketOperationType.RequestChannel  -> FrameType.RequestChannel
+        }
+        sendRequestPayload(frameType, payload, complete, initialRequest)
+    }
+
+    private suspend fun sendRequestPayload(type: FrameType, payload: Payload, complete: Boolean, initialRequest: Int) {
+        // TODO rework/simplify later
+        // TODO release on fail ?
         if (!payload.isFragmentable(type.hasInitialRequest)) {
-            prioritizer.send(RequestFrame(type, streamId, false, complete, next, initialRequest, payload))
+            sendFrame(RequestFrame(type, streamId, false, complete, true, initialRequest, payload))
+            if (type.isRequestType) firstRequestFrameSent = true
             return
         }
 
@@ -90,13 +114,13 @@ internal class FrameSender(
                 if (!first) remaining -= lengthSize
                 val length = min(metadata.remaining.toInt(), remaining)
                 remaining -= length
-                metadata.readPacket(pool, length)
+                metadata.readPacket(bufferPool, length)
             } else null
 
             val dataFragment = if (remaining > 0 && data.isNotEmpty) {
                 val length = min(data.remaining.toInt(), remaining)
                 remaining -= length
-                data.readPacket(pool, length)
+                data.readPacket(bufferPool, length)
             } else {
                 ByteReadPacket.Empty
             }
@@ -104,7 +128,7 @@ internal class FrameSender(
             val fType = if (first && type.isRequestType) type else FrameType.Payload
             val fragment = Payload(dataFragment, metadataFragment)
             val follows = metadata != null && metadata.isNotEmpty || data.isNotEmpty
-            prioritizer.send(
+            sendFrame(
                 RequestFrame(
                     type = fType,
                     streamId = streamId,
@@ -115,6 +139,7 @@ internal class FrameSender(
                     payload = fragment
                 )
             )
+            if (first && type.isRequestType) firstRequestFrameSent = true
             first = false
             remaining = fragmentSize
         } while (follows)

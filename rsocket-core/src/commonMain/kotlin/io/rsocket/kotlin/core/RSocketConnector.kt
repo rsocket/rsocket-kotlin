@@ -17,7 +17,7 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.internal.io.*
@@ -61,39 +61,36 @@ public class RSocketConnector internal constructor(
     }
 
     private suspend fun connectOnce(transport: RSocketClientTarget): RSocket {
-        val connection = transport.createSession().logging(frameLogger, bufferPool)
-        check(connection is RSocketTransportSession.Sequential) { "multiplexed is not yet supported" }
-        val connectionConfig = try {
-            connectionConfigProvider()
+        val connectionConfig = connectionConfigProvider()
+        return try {
+            connect(
+                session = transport.createSession().logging(frameLogger, bufferPool),
+                maxFragmentSize = maxFragmentSize,
+                bufferPool = bufferPool,
+                handler = SetupConnection(connectionConfig),
+                acceptor = acceptor,
+                interceptors = interceptors
+            )
         } catch (cause: Throwable) {
-            connection.cancel("Connection config provider failed", cause)
+            connectionConfig.setupPayload.close()
             throw cause
         }
-        val setupFrame = SetupFrame(
+    }
+}
+
+private class SetupConnection(private val connectionConfig: ConnectionConfig) : ConnectionEstablishmentHandler {
+    override val isClient: Boolean get() = true
+
+    override suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig {
+        context.sendSetup(
             version = Version.Current,
             honorLease = false,
             keepAlive = connectionConfig.keepAlive,
             resumeToken = null,
             payloadMimeType = connectionConfig.payloadMimeType,
-            payload = connectionConfig.setupPayload.copy() //copy needed, as it can be used in acceptor
+            // copy needed, as it can be used in acceptor
+            payload = connectionConfig.setupPayload.copy()
         )
-        try {
-            val requester = connect(
-                connection = connection,
-                isServer = false,
-                maxFragmentSize = maxFragmentSize,
-                interceptors = interceptors,
-                connectionConfig = connectionConfig,
-                acceptor = acceptor,
-                bufferPool = bufferPool
-            )
-            connection.sendFrame(bufferPool, setupFrame)
-            return requester
-        } catch (cause: Throwable) {
-            connectionConfig.setupPayload.close()
-            setupFrame.close()
-            connection.cancel("Connection establishment failed", cause)
-            throw cause
-        }
+        return connectionConfig
     }
 }

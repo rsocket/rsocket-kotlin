@@ -17,6 +17,7 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.*
@@ -32,7 +33,6 @@ public class RSocketServer internal constructor(
     private val interceptors: Interceptors,
     private val bufferPool: BufferPool,
 ) {
-
     private val frameLogger = loggerFactory.logger("io.rsocket.kotlin.frame")
 
     @DelicateCoroutinesApi
@@ -45,9 +45,14 @@ public class RSocketServer internal constructor(
         scope: CoroutineScope,
         transport: ServerTransport<T>,
         acceptor: ConnectionAcceptor,
-    ): T = with(transport) {
-        scope.start {
-            interceptors.wrapConnection(it).convert().bind(acceptor).join()
+    ): T {
+        val serverAcceptor = createAcceptor(acceptor)
+        return with(transport) {
+            scope.start {
+                val session = interceptors.wrapConnection(it).convert()
+                serverAcceptor.acceptSession(session)
+                session.coroutineContext.job.join()
+            }
         }
     }
 
@@ -57,46 +62,39 @@ public class RSocketServer internal constructor(
     ): T = transport.startServer(createAcceptor(acceptor))
 
     @RSocketTransportApi
-    public fun createAcceptor(acceptor: ConnectionAcceptor): RSocketServerAcceptor = object : RSocketServerAcceptor {
+    public fun createAcceptor(acceptor: ConnectionAcceptor): RSocketServerAcceptor = Acceptor(acceptor)
+
+    private inner class Acceptor(private val acceptor: ConnectionAcceptor) : RSocketServerAcceptor {
         override suspend fun acceptSession(session: RSocketTransportSession) {
-            session.logging(frameLogger, bufferPool).bind(acceptor)
+            connect(
+                session = session.logging(frameLogger, bufferPool),
+                maxFragmentSize = maxFragmentSize,
+                bufferPool = bufferPool,
+                handler = AcceptConnection,
+                acceptor = acceptor,
+                interceptors = interceptors
+            )
         }
     }
+}
 
-    private suspend fun RSocketTransportSession.bind(acceptor: ConnectionAcceptor): Job {
-        check(this is RSocketTransportSession.Sequential) { "multiplexed is not yet supported" }
+private object AcceptConnection : ConnectionEstablishmentHandler {
+    override val isClient: Boolean get() = false
 
-        return receiveFrame(bufferPool) { setupFrame ->
-            when {
-                setupFrame !is SetupFrame             -> failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
-                setupFrame.version != Version.Current -> failSetup(RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}"))
-                setupFrame.honorLease                 -> failSetup(RSocketError.Setup.Unsupported("Lease is not supported"))
-                setupFrame.resumeToken != null        -> failSetup(RSocketError.Setup.Unsupported("Resume is not supported"))
-                else                                  -> try {
-                    connect(
-                        connection = this,
-                        isServer = true,
-                        maxFragmentSize = maxFragmentSize,
-                        interceptors = interceptors,
-                        connectionConfig = ConnectionConfig(
-                            keepAlive = setupFrame.keepAlive,
-                            payloadMimeType = setupFrame.payloadMimeType,
-                            setupPayload = setupFrame.payload
-                        ),
-                        acceptor = acceptor,
-                        bufferPool = bufferPool
-                    )
-                    coroutineContext.job
-                } catch (e: Throwable) {
-                    failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
-                }
+    override suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig {
+        val setupFrame = context.receiveFrame()
+        return when {
+            setupFrame !is SetupFrame             -> throw RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}")
+            setupFrame.version != Version.Current -> throw RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}")
+            setupFrame.honorLease                 -> throw RSocketError.Setup.Unsupported("Lease is not supported")
+            setupFrame.resumeToken != null        -> throw RSocketError.Setup.Unsupported("Resume is not supported")
+            else                                  -> {
+                ConnectionConfig(
+                    keepAlive = setupFrame.keepAlive,
+                    payloadMimeType = setupFrame.payloadMimeType,
+                    setupPayload = setupFrame.payload
+                )
             }
         }
-    }
-
-    private suspend fun RSocketTransportSession.Sequential.failSetup(error: RSocketError.Setup): Nothing {
-        sendFrame(bufferPool, ErrorFrame(0, error))
-        cancel("Connection establishment failed", error)
-        throw error
     }
 }

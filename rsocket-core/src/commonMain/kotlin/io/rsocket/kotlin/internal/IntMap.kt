@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.internal
 
-import kotlinx.atomicfu.locks.*
 import kotlin.math.*
 
 private fun safeFindNextPositivePowerOfTwo(value: Int): Int = when {
@@ -32,8 +31,8 @@ private fun safeFindNextPositivePowerOfTwo(value: Int): Int = when {
  */
 internal class IntMap<V : Any>(
     initialCapacity: Int = 8,
-    private val loadFactor: Float = 0.5f
-) : SynchronizedObject() {
+    private val loadFactor: Float = 0.5f,
+) {
     init {
         require(loadFactor > 0.0f && loadFactor <= 1.0f) { "loadFactor must be > 0 and <= 1" }
     }

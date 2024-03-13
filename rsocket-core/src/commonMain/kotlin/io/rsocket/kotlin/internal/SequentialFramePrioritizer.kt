@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,29 @@
 
 package io.rsocket.kotlin.internal
 
-import io.rsocket.kotlin.frame.*
+import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.internal.io.*
-import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.selects.*
 
-private val selectFrame: suspend (Frame) -> Frame = { it }
+private val selectFrame: suspend (ByteReadPacket) -> ByteReadPacket = { it }
 
-internal class Prioritizer {
-    private val priorityChannel = channelForCloseable<Frame>(Channel.UNLIMITED)
-    private val commonChannel = channelForCloseable<Frame>(Channel.UNLIMITED)
+internal class SequentialFramePrioritizer {
+    private val priorityChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
+    private val commonChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
 
-    suspend fun send(frame: Frame) {
-        currentCoroutineContext().ensureActive()
-        val channel = if (frame.streamId == 0) priorityChannel else commonChannel
-        channel.send(frame)
-    }
+    private val priorityOnReceive = priorityChannel.onReceive
+    private val commonOnReceive = commonChannel.onReceive
 
-    suspend fun receive(): Frame {
+    suspend fun sendPriority(frame: ByteReadPacket): Unit = priorityChannel.send(frame)
+    suspend fun sendCommon(frame: ByteReadPacket): Unit = commonChannel.send(frame)
+
+    suspend fun receive(): ByteReadPacket {
         priorityChannel.tryReceive().onSuccess { return it }
         commonChannel.tryReceive().onSuccess { return it }
         return select {
-            priorityChannel.onReceive(selectFrame)
-            commonChannel.onReceive(selectFrame)
+            priorityOnReceive(selectFrame)
+            commonOnReceive(selectFrame)
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.rsocket.kotlin.internal
 
 import kotlinx.atomicfu.*
 
-internal class StreamId(streamId: Int) {
+internal class StreamIdGenerator(streamId: Int) {
     private val streamId = atomic(streamId)
 
     fun next(streamIds: IntMap<*>): Int {
@@ -29,13 +29,12 @@ internal class StreamId(streamId: Int) {
         return streamId
     }
 
-    fun isBeforeOrCurrent(streamId: Int): Boolean = this.streamId.value >= streamId && streamId > 0
-
     companion object {
         private const val MASK = 0x7FFFFFFF
-        fun client(): StreamId = StreamId(-1)
-        fun server(): StreamId = StreamId(0)
 
-        operator fun invoke(isServer: Boolean): StreamId = if (isServer) server() else client()
+        fun client(): StreamIdGenerator = StreamIdGenerator(-1)
+        fun server(): StreamIdGenerator = StreamIdGenerator(0)
+
+        operator fun invoke(isClient: Boolean): StreamIdGenerator = if (isClient) client() else server()
     }
 }

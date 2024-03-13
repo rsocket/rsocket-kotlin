@@ -30,7 +30,7 @@ public sealed interface RSocketTransportSession : CoroutineScope {
         public interface Stream : CoroutineScope {
             // value should be positive
             // if underlying transport doesn't support it - no error should be thrown
-            // if underlying transport needs value in range of 0 to 128 - scale on transport level? - TODO
+            // if underlying transport needs value in range of 0 to 128 - scale on transport level
             public fun updatePriority(value: Int)
             public suspend fun sendFrame(frame: ByteReadPacket)
             public suspend fun receiveFrame(): ByteReadPacket

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ internal suspend fun connectWithReconnect(
                 value.rSocket.coroutineContext.job.join() //await for connection completion
                 logger.debug { "Connection closed. Reconnecting..." }
             }
+
             is ReconnectState.Failed    -> child.cancel("Reconnect failed", value.error) //reconnect failed, fail job
             ReconnectState.Connecting   -> Unit //skip, still waiting for new connection
         }
@@ -86,7 +87,14 @@ private class ReconnectableRSocket(
 
     suspend fun currentRSocket(): RSocket = state.value.current() ?: state.mapNotNull { it.current() }.first()
 
-    private suspend fun currentRSocket(closeable: Closeable): RSocket = closeable.closeOnError { currentRSocket() }
+    private suspend fun currentRSocket(closeable: Closeable): RSocket {
+        return try {
+            currentRSocket()
+        } catch (cause: Throwable) {
+            closeable.close()
+            throw cause
+        }
+    }
 
     private fun ReconnectState.current(): RSocket? = when (this) {
         is ReconnectState.Connected -> rSocket.takeIf(RSocket::isActive) //connection is ready to handle requests

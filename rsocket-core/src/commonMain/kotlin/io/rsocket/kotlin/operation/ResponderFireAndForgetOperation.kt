@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.internal
+package io.rsocket.kotlin.operation
 
 import io.ktor.utils.io.core.*
-import kotlinx.coroutines.channels.*
+import io.rsocket.kotlin.*
+import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.payload.*
 
-internal inline fun <T : Closeable, R> T.closeOnError(block: (T) -> R): R {
-    try {
-        return block(this)
-    } catch (e: Throwable) {
-        close()
-        throw e
+internal class ResponderFireAndForgetOperation(
+    private val responder: RSocket,
+) : ResponderOperation() {
+    override val type: RSocketOperationType = RSocketOperationType.FireAndForget
+
+    override suspend fun execute(outbound: OperationOutbound, payload: Payload, complete: Boolean) {
+        payload.use { responder.fireAndForget(it) }
     }
-}
 
-internal fun <E : Closeable> SendChannel<E>.safeTrySend(element: E) {
-    trySend(element).onFailure { element.close() }
+    override fun isFrameExpected(frameType: FrameType): Boolean = false
 }

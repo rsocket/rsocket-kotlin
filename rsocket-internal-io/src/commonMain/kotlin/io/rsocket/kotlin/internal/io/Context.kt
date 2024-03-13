@@ -22,6 +22,9 @@ import kotlin.coroutines.*
 public fun CoroutineContext.supervisorContext(): CoroutineContext = plus(SupervisorJob(get(Job)))
 public fun CoroutineContext.childContext(): CoroutineContext = plus(Job(get(Job)))
 
+public fun CoroutineScope.supervisorScope(): CoroutineScope = CoroutineScope(coroutineContext.supervisorContext())
+public fun CoroutineScope.childScope(): CoroutineScope = CoroutineScope(coroutineContext.childContext())
+
 public inline fun CoroutineScope.invokeOnCancellation(
     context: CoroutineContext = EmptyCoroutineContext,
     crossinline block: suspend () -> Unit,

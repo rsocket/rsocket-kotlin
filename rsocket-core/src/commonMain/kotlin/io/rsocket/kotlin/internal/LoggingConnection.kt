@@ -30,8 +30,8 @@ internal fun RSocketTransportSession.logging(logger: Logger, bufferPool: BufferP
     if (!logger.isLoggable(LoggingLevel.DEBUG)) return this
 
     return when (this) {
-        is RSocketTransportSession.Sequential -> SequentialLoggingConnection(this, logger, bufferPool)
-        else                                  -> TODO("not yet supported")
+        is RSocketTransportSession.Sequential  -> SequentialLoggingConnection(this, logger, bufferPool)
+        is RSocketTransportSession.Multiplexed -> MultiplexedLoggingConnection(this, logger, bufferPool)
     }
 }
 
@@ -47,6 +47,54 @@ private class SequentialLoggingConnection(
     private fun ByteReadPacket.dumpFrameToString(): String {
         val length = remaining
         return copy().use { it.readFrame(bufferPool).use { it.dump(length) } }
+    }
+
+    override suspend fun sendFrame(frame: ByteReadPacket) {
+        logger.debug { "Send:    ${frame.dumpFrameToString()}" }
+        delegate.sendFrame(frame)
+    }
+
+    override suspend fun receiveFrame(): ByteReadPacket {
+        val frame = delegate.receiveFrame()
+        logger.debug { "Receive: ${frame.dumpFrameToString()}" }
+        return frame
+    }
+}
+
+@RSocketLoggingApi
+@RSocketTransportApi
+private class MultiplexedLoggingConnection(
+    private val delegate: RSocketTransportSession.Multiplexed,
+    private val logger: Logger,
+    private val bufferPool: BufferPool,
+) : RSocketTransportSession.Multiplexed {
+    override val coroutineContext: CoroutineContext get() = delegate.coroutineContext
+
+    override suspend fun createStream(): RSocketTransportSession.Multiplexed.Stream {
+        return MultiplexedLoggingStream(delegate.createStream(), logger, bufferPool)
+    }
+
+    override suspend fun awaitStream(): RSocketTransportSession.Multiplexed.Stream {
+        return MultiplexedLoggingStream(delegate.awaitStream(), logger, bufferPool)
+    }
+}
+
+@RSocketLoggingApi
+@RSocketTransportApi
+private class MultiplexedLoggingStream(
+    private val delegate: RSocketTransportSession.Multiplexed.Stream,
+    private val logger: Logger,
+    private val bufferPool: BufferPool,
+) : RSocketTransportSession.Multiplexed.Stream {
+    override val coroutineContext: CoroutineContext get() = delegate.coroutineContext
+
+    private fun ByteReadPacket.dumpFrameToString(): String {
+        val length = remaining
+        return copy().use { it.readFrame(bufferPool).use { it.dump(length) } }
+    }
+
+    override fun updatePriority(value: Int) {
+        delegate.updatePriority(value)
     }
 
     override suspend fun sendFrame(frame: ByteReadPacket) {

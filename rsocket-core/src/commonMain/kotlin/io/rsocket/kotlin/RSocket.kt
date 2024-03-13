@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
+// for responder: metadata/payload is only accessible during execution of a function, or until Flow is consumed
 public interface RSocket : CoroutineScope {
 
     public suspend fun metadataPush(metadata: ByteReadPacket) {

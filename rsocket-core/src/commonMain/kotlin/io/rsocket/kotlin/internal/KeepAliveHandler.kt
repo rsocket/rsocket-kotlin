@@ -18,31 +18,48 @@ package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.connection.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.keepalive.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlin.time.*
 
 internal class KeepAliveHandler(
     private val keepAlive: KeepAlive,
-    private val sender: FrameSender,
 ) {
     private val initial = TimeSource.Monotonic.markNow()
     private fun currentDelayMillis() = initial.elapsedNow().inWholeMilliseconds
 
     private val lastMark = atomic(currentDelayMillis()) // mark initial timestamp for keepalive
 
-    suspend fun mark(frame: KeepAliveFrame) {
+    // TODO: is it fine it's unlimited?
+    //  check later, if it's fine to have queue here
+    private val respondQueue = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
+
+    fun receive(data: ByteReadPacket, respond: Boolean) {
         lastMark.value = currentDelayMillis()
-        if (frame.respond) sender.sendKeepAlive(false, 0, frame.data)
+        if (respond) respondQueue.trySend(data)
     }
 
-    suspend fun tick() {
-        delay(keepAlive.intervalMillis.toLong())
-        if (currentDelayMillis() - lastMark.value >= keepAlive.maxLifetimeMillis)
-            throw RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetimeMillis} ms")
+    fun startIn(
+        scope: CoroutineScope,
+        outbound: ConnectionOutbound,
+    ) {
+        scope.launch {
+            while (true) {
+                delay(keepAlive.intervalMillis.toLong())
+                if (currentDelayMillis() - lastMark.value >= keepAlive.maxLifetimeMillis)
+                    throw RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetimeMillis} ms")
 
-        sender.sendKeepAlive(true, 0, ByteReadPacket.Empty)
+                outbound.sendKeepAlive(true, ByteReadPacket.Empty, 0)
+            }
+        }
+        scope.launch {
+            respondQueue.consumeEach { data ->
+                outbound.sendKeepAlive(false, data, 0)
+            }
+        }
     }
 }
