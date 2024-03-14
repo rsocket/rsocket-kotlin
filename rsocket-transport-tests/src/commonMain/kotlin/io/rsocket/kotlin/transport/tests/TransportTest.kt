@@ -61,25 +61,25 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun fireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(payload(it)) } }.awaitAll()
-        delay(100) // TODO: leak check
+        delay(1000) // TODO: leak check
     }
 
     @Test
     open fun largePayloadFireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(requesterLargePayload) } }.awaitAll()
-        delay(100) // TODO: leak check
+        delay(1000) // TODO: leak check
     }
 
     @Test
     fun metadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterData)) } }.awaitAll()
-        delay(100) // TODO: leak check
+        delay(1000) // TODO: leak check
     }
 
     @Test
     open fun largePayloadMetadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterLargeData)) } }.awaitAll()
-        delay(100) // TODO: leak check
+        delay(1000) // TODO: leak check
     }
 
     @Test
