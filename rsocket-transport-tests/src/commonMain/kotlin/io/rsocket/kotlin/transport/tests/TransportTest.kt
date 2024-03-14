@@ -33,7 +33,7 @@ import kotlin.time.Duration.Companion.seconds
 //TODO: need to somehow rework those tests, as now they are super flaky
 // there is some issue in K/N tcp...
 abstract class TransportTest : SuspendTest, TestWithLeakCheck {
-    override val testTimeout: Duration = 5.minutes
+    override val testTimeout: Duration = 1.minutes
 
     private val testJob = SupervisorJob()
     protected val testContext = testJob + TestExceptionHandler
@@ -54,7 +54,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         SERVER.start(serverTransport, ACCEPTOR)
 
     override suspend fun after() {
-        client.coroutineContext.job.cancelAndJoin()
+        //client.coroutineContext.job.cancelAndJoin()
         testJob.cancelAndJoin()
     }
 

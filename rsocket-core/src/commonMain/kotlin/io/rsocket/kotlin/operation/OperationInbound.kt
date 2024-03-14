@@ -52,7 +52,10 @@ internal class OperationFrameHandler(private val inbound: OperationInbound) : Cl
     }
 
     fun handleFrame(frame: Frame) {
-        if (!inbound.isFrameExpected(frame.type)) return frame.close()
+        if (!inbound.isFrameExpected(frame.type)) {
+            println("unexpected frame: $frame")
+            return frame.close()
+        }
 
         when (frame) {
             is CancelFrame   -> inbound.receiveCancel()
