@@ -19,6 +19,7 @@ package io.rsocket.kotlin.operation
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 
 internal abstract class ResponderOperation : OperationInbound {
@@ -58,7 +59,7 @@ private class WrappedResponderOperation(
     private val outbound: OperationOutbound,
 ) : OperationInbound {
 
-    private var requestJob: Job? = null
+    private var requestJob: Job? by atomic(null)
 
     override fun isFrameExpected(frameType: FrameType): Boolean {
         val requestJob = requestJob

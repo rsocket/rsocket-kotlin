@@ -51,9 +51,9 @@ internal class OperationFrameHandler(private val inbound: OperationInbound) : Cl
         inbound.receiveProcessingError(cause)
     }
 
-    fun handleFrame(frame: Frame) {
+    fun handleFrame(frame: Frame, isClient: Boolean) {
         if (!inbound.isFrameExpected(frame.type)) {
-            println("unexpected frame: $frame")
+            println("unexpected frame[isClient=$isClient]: $frame")
             return frame.close()
         }
 

@@ -47,7 +47,7 @@ private class SequentialConnectionEstablishmentContext(
 
 @OptIn(RSocketTransportApi::class)
 private class SequentialConnection(
-    isClient: Boolean,
+    private val isClient: Boolean,
     private val maxFragmentSize: Int,
     private val bufferPool: BufferPool,
     override val config: ConnectionConfig,
@@ -107,7 +107,7 @@ private class SequentialConnection(
             return frameHandler
         }
 
-        getHandler()?.handleFrame(frame) ?: return frame.close()
+        getHandler()?.handleFrame(frame, isClient) ?: return frame.close()
     }
 }
 

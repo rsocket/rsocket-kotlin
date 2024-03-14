@@ -51,7 +51,7 @@ private class MultiplexedConnectionEstablishmentContext(
 
 @OptIn(RSocketTransportApi::class)
 private class MultiplexedConnection(
-    isClient: Boolean,
+    private val isClient: Boolean,
     private val maxFragmentSize: Int,
     private val bufferPool: BufferPool,
     override val config: ConnectionConfig,
@@ -64,7 +64,7 @@ private class MultiplexedConnection(
         MultiplexedConnectionOutbound(bufferPool, connectionStream)
 
     override val requesterOperationFactory: RequesterOperationFactory =
-        MultiplexedRequesterOperationFactory(maxFragmentSize, bufferPool, storage, session)
+        MultiplexedRequesterOperationFactory(isClient, maxFragmentSize, bufferPool, storage, session)
 
     init {
         session.coroutineContext.job.invokeOnCompletion { _ ->
@@ -103,11 +103,11 @@ private class MultiplexedConnection(
 
         if (!storage.isValidForAccept(streamId)) error("invalid stream id")
 
-        val outbound = MultiplexedOperationOutbound(streamId, maxFragmentSize, bufferPool, storage, stream)
+        val outbound = MultiplexedOperationOutbound(isClient, streamId, maxFragmentSize, bufferPool, storage, stream)
         val frameHandler = responderWrapper.operationFrameHandler(requestFrame.type, outbound)
         if (!storage.acceptStream(streamId, Unit)) error("invalid stream id")
 
-        frameHandler.handleFrame(requestFrame)
+        frameHandler.handleFrame(requestFrame, isClient)
         outbound.receiveFrames(frameHandler)
     }
 }
@@ -123,6 +123,7 @@ private class MultiplexedConnectionOutbound(
 
 @OptIn(RSocketTransportApi::class)
 private class MultiplexedOperationOutbound(
+    private val isClient: Boolean,
     streamId: Int,
     maxFragmentSize: Int,
     bufferPool: BufferPool,
@@ -140,13 +141,14 @@ private class MultiplexedOperationOutbound(
         while (true) {
             val frame = stream.receiveFrame().readFrame(bufferPool)
             check(frame.streamId == streamId) { "wrong stream id" }
-            handler.handleFrame(frame)
+            handler.handleFrame(frame, isClient)
         }
     }
 }
 
 @OptIn(RSocketTransportApi::class)
 private class MultiplexedRequesterOperationFactory(
+    private val isClient: Boolean,
     private val maxFragmentSize: Int,
     private val bufferPool: BufferPool,
     private val storage: OperationStateStorage<Unit>,
@@ -155,6 +157,7 @@ private class MultiplexedRequesterOperationFactory(
     override suspend fun createRequest(type: RSocketOperationType, handler: OperationFrameHandler): OperationOutbound {
         val stream = session.createStream()
         val outbound = MultiplexedOperationOutbound(
+            isClient = isClient,
             streamId = storage.createStream(Unit),
             maxFragmentSize = maxFragmentSize,
             bufferPool = bufferPool,

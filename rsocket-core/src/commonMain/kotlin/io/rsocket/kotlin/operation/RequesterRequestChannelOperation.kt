@@ -20,6 +20,7 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
@@ -32,7 +33,7 @@ internal class RequesterRequestChannelOperation(
     override val type: RSocketOperationType get() = RSocketOperationType.RequestChannel
 
     private val limiter = Limiter(0)
-    private var senderJob: Job? = null
+    private var senderJob: Job? by atomic(null)
     override var needCancelling = true
         private set
 
@@ -62,8 +63,9 @@ internal class RequesterRequestChannelOperation(
         !responsePayloads.isClosedForSend -> frameType == FrameType.Payload || frameType == FrameType.Error
         else                              -> false
     } || when {
-        senderJob?.isActive == true -> frameType == FrameType.RequestN || frameType == FrameType.Cancel
-        else                        -> false
+        // TODO: handle cancel, when `senderJob` is not started
+        senderJob == null || senderJob?.isActive == true -> frameType == FrameType.RequestN || frameType == FrameType.Cancel
+        else                                             -> false
     }
 
     override fun receiveRequestN(requestN: Int) {

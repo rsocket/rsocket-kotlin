@@ -54,7 +54,7 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         SERVER.start(serverTransport, ACCEPTOR)
 
     override suspend fun after() {
-        //client.coroutineContext.job.cancelAndJoin()
+        client.coroutineContext.job.cancelAndJoin()
         testJob.cancelAndJoin()
     }
 
