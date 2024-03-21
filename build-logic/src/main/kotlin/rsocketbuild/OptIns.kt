@@ -18,6 +18,7 @@ package rsocketbuild
 
 @Suppress("ConstPropertyName")
 object OptIns {
+    const val ExperimentalSubclassOptIn = "kotlin.ExperimentalSubclassOptIn"
     const val ExperimentalStdlibApi = "kotlin.ExperimentalStdlibApi"
     const val ExperimentalCoroutinesApi = "kotlinx.coroutines.ExperimentalCoroutinesApi"
     const val DelicateCoroutinesApi = "kotlinx.coroutines.DelicateCoroutinesApi"

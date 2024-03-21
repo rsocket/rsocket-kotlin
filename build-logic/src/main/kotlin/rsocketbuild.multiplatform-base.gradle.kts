@@ -35,6 +35,10 @@ kotlin {
         // allWarningsAsErrors.set(true)
         progressiveMode.set(true)
         freeCompilerArgs.add("-Xrender-internal-diagnostic-names")
+        optIn.addAll(
+            OptIns.RSocketTransportApi, // TODO: remove
+            OptIns.ExperimentalSubclassOptIn
+        )
     }
 
     sourceSets.configureEach {
@@ -55,8 +59,10 @@ kotlin {
 
     targets.withType<KotlinJvmTarget>().configureEach {
         compilations.configureEach {
-            compilerOptions.configure {
-                freeCompilerArgs.add("-Xjvm-default=all")
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.add("-Xjvm-default=all")
+                }
             }
         }
     }
