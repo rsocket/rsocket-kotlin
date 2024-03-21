@@ -58,6 +58,7 @@ internal suspend fun HttpClient.connectRSocket(request: HttpRequestBuilder.() ->
     return config.connector.connect(RSocketSupportTarget(this, request))
 }
 
+@OptIn(RSocketTransportApi::class)
 private class RSocketSupportTarget(
     private val client: HttpClient,
     private val request: HttpRequestBuilder.() -> Unit,

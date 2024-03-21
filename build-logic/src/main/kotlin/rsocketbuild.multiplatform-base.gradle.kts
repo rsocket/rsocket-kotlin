@@ -32,16 +32,22 @@ plugins {
 @OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
     compilerOptions {
-        // because of https://youtrack.jetbrains.com/issue/KT-64115/KGP-JVM-JS-WASM-The-same-library-can-be-passed-twice-to-the-compiler
-        // allWarningsAsErrors.set(true)
+        // because of INVISIBLE_REFERENCE suppression - will be removed after migration to kotlinx.io
+        if (project.name != "rsocket-test") {
+            allWarningsAsErrors.set(true)
+        }
         progressiveMode.set(true)
         freeCompilerArgs.add("-Xrender-internal-diagnostic-names")
+        optIn.addAll(OptIns.ExperimentalSubclassOptIn)
     }
 
     sourceSets.configureEach {
         languageSettings {
             if (name.contains("test", ignoreCase = true)) {
+                // for hex API
                 optIn(OptIns.ExperimentalStdlibApi)
+                // for channel.isClosedForSend - need to be replaced by testing via turbine or optIn in place
+                // and GlobalScope - need to be dropped
                 optIn(OptIns.DelicateCoroutinesApi)
 
                 // rsocket related
@@ -54,10 +60,8 @@ kotlin {
     }
 
     targets.withType<KotlinJvmTarget>().configureEach {
-        compilations.configureEach {
-            compilerOptions.configure {
-                freeCompilerArgs.add("-Xjvm-default=all")
-            }
+        compilerOptions {
+            freeCompilerArgs.add("-Xjvm-default=all")
         }
     }
 

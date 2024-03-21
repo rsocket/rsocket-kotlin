@@ -21,6 +21,7 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface LocalClientTransport : RSocketTransport {
     public fun target(serverName: String): RSocketClientTarget
 
@@ -28,6 +29,7 @@ public sealed interface LocalClientTransport : RSocketTransport {
         RSocketTransportFactory<LocalClientTransport, LocalClientTransportBuilder>(::LocalClientTransportBuilderImpl)
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface LocalClientTransportBuilder : RSocketTransportBuilder<LocalClientTransport> {
     public fun dispatcher(context: CoroutineContext)
     public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
@@ -56,6 +58,7 @@ private class LocalClientTransportImpl(
     )
 }
 
+@OptIn(RSocketTransportApi::class)
 private class LocalClientTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val server: LocalServerInstanceImpl,

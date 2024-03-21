@@ -23,6 +23,7 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface KtorTcpClientTransport : RSocketTransport {
     public fun target(remoteAddress: SocketAddress): RSocketClientTarget
     public fun target(host: String, port: Int): RSocketClientTarget
@@ -31,6 +32,7 @@ public sealed interface KtorTcpClientTransport : RSocketTransport {
         RSocketTransportFactory<KtorTcpClientTransport, KtorTcpClientTransportBuilder>(::KtorTcpClientTransportBuilderImpl)
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface KtorTcpClientTransportBuilder : RSocketTransportBuilder<KtorTcpClientTransport> {
     public fun dispatcher(context: CoroutineContext)
     public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
@@ -92,6 +94,7 @@ private class KtorTcpClientTransportImpl(
     override fun target(host: String, port: Int): RSocketClientTarget = target(InetSocketAddress(host, port))
 }
 
+@OptIn(RSocketTransportApi::class)
 private class KtorTcpClientTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val socketOptions: SocketOptions.TCPClientSocketOptions.() -> Unit,

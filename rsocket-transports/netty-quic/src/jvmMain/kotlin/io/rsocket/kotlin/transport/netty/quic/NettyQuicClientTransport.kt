@@ -31,6 +31,7 @@ import java.net.*
 import kotlin.coroutines.*
 import kotlin.reflect.*
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NettyQuicClientTransport : RSocketTransport {
     public fun target(remoteAddress: InetSocketAddress): RSocketClientTarget
     public fun target(host: String, port: Int): RSocketClientTarget
@@ -39,6 +40,7 @@ public sealed interface NettyQuicClientTransport : RSocketTransport {
         RSocketTransportFactory<NettyQuicClientTransport, NettyQuicClientTransportBuilder>(::NettyQuicClientTransportBuilderImpl)
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NettyQuicClientTransportBuilder : RSocketTransportBuilder<NettyQuicClientTransport> {
     public fun channel(cls: KClass<out DatagramChannel>)
     public fun channelFactory(factory: ChannelFactory<out DatagramChannel>)
@@ -137,6 +139,7 @@ private class NettyQuicClientTransportImpl(
     override fun target(host: String, port: Int): RSocketClientTarget = target(InetSocketAddress(host, port))
 }
 
+@OptIn(RSocketTransportApi::class)
 private class NettyQuicClientTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: Bootstrap,

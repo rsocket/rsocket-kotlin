@@ -24,10 +24,12 @@ import kotlin.coroutines.*
 import kotlin.random.*
 
 // TODO: rename to inprocess and more to another module/package later
+@OptIn(RSocketTransportApi::class)
 public sealed interface LocalServerInstance : RSocketServerInstance {
     public val serverName: String
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface LocalServerTransport : RSocketTransport {
     public fun target(): RSocketServerTarget<LocalServerInstance>
     public fun target(serverName: String): RSocketServerTarget<LocalServerInstance>
@@ -36,6 +38,7 @@ public sealed interface LocalServerTransport : RSocketTransport {
         RSocketTransportFactory<LocalServerTransport, LocalServerTransportBuilder>(::LocalServerTransportBuilderImpl)
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface LocalServerTransportBuilder : RSocketTransportBuilder<LocalServerTransport> {
     public fun dispatcher(context: CoroutineContext)
     public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
@@ -90,6 +93,7 @@ private class LocalServerTransportImpl(
     )
 }
 
+@OptIn(RSocketTransportApi::class)
 private class LocalServerTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val serverName: String,

@@ -6,6 +6,7 @@ syntax: glob
 !/.idea/codeStyles
 *.iml
 
+.kotlin
 .gradle
 classes
 build/

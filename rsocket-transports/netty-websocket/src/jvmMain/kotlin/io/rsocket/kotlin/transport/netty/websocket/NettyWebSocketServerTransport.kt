@@ -33,11 +33,13 @@ import javax.net.ssl.*
 import kotlin.coroutines.*
 import kotlin.reflect.*
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NettyWebSocketServerInstance : RSocketServerInstance {
     public val localAddress: InetSocketAddress
     public val webSocketProtocolConfig: WebSocketServerProtocolConfig
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NettyWebSocketServerTransport : RSocketTransport {
 
     public fun target(
@@ -57,6 +59,7 @@ public sealed interface NettyWebSocketServerTransport : RSocketTransport {
         RSocketTransportFactory<NettyWebSocketServerTransport, NettyWebSocketServerTransportBuilder>(::NettyWebSocketServerTransportBuilderImpl)
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NettyWebSocketServerTransportBuilder : RSocketTransportBuilder<NettyWebSocketServerTransport> {
     public fun channel(cls: KClass<out ServerChannel>)
     public fun channelFactory(factory: ChannelFactory<out ServerChannel>)
@@ -168,6 +171,7 @@ private class NettyWebSocketServerTransportImpl(
         target(InetSocketAddress(host, port), path, protocol)
 }
 
+@OptIn(RSocketTransportApi::class)
 private class NettyWebSocketServerTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: ServerBootstrap,

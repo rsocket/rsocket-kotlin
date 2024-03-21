@@ -22,11 +22,13 @@ import io.rsocket.kotlin.transport.nodejs.tcp.internal.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NodejsTcpServerInstance : RSocketServerInstance {
     public val host: String
     public val port: Int
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NodejsTcpServerTransport : RSocketTransport {
     public fun target(host: String, port: Int): RSocketServerTarget<NodejsTcpServerInstance>
 
@@ -34,6 +36,7 @@ public sealed interface NodejsTcpServerTransport : RSocketTransport {
         RSocketTransportFactory<NodejsTcpServerTransport, NodejsTcpServerTransportBuilder>({ NodejsTcpServerTransportBuilderImpl })
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NodejsTcpServerTransportBuilder : RSocketTransportBuilder<NodejsTcpServerTransport> {
     public fun dispatcher(context: CoroutineContext)
     public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
@@ -63,6 +66,7 @@ private class NodejsTcpServerTransportImpl(
     )
 }
 
+@OptIn(RSocketTransportApi::class)
 private class NodejsTcpServerTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val host: String,

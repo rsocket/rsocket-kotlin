@@ -33,6 +33,7 @@ import java.net.*
 import kotlin.coroutines.*
 import kotlin.reflect.*
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NettyWebSocketClientTransport : RSocketTransport {
     public fun target(configure: WebSocketClientProtocolConfig.Builder.() -> Unit): RSocketClientTarget
     public fun target(uri: URI, configure: WebSocketClientProtocolConfig.Builder.() -> Unit = {}): RSocketClientTarget
@@ -49,6 +50,7 @@ public sealed interface NettyWebSocketClientTransport : RSocketTransport {
         RSocketTransportFactory<NettyWebSocketClientTransport, NettyWebSocketClientTransportBuilder>(::NettyWebSocketClientTransportBuilderImpl)
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NettyWebSocketClientTransportBuilder : RSocketTransportBuilder<NettyWebSocketClientTransport> {
     public fun channel(cls: KClass<out DuplexChannel>)
     public fun channelFactory(factory: ChannelFactory<out DuplexChannel>)
@@ -174,6 +176,7 @@ private class NettyWebSocketClientTransportImpl(
     }
 }
 
+@OptIn(RSocketTransportApi::class)
 private class NettyWebSocketClientTransportTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: Bootstrap,

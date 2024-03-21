@@ -27,6 +27,7 @@ import io.rsocket.kotlin.transport.ktor.websocket.internal.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface KtorWebSocketClientTransport : RSocketTransport {
     public fun target(request: HttpRequestBuilder.() -> Unit): RSocketClientTarget
     public fun target(urlString: String, request: HttpRequestBuilder.() -> Unit = {}): RSocketClientTarget
@@ -43,6 +44,7 @@ public sealed interface KtorWebSocketClientTransport : RSocketTransport {
         RSocketTransportFactory<KtorWebSocketClientTransport, KtorWebSocketClientTransportBuilder>(::KtorWebSocketClientTransportBuilderImpl)
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface KtorWebSocketClientTransportBuilder : RSocketTransportBuilder<KtorWebSocketClientTransport> {
     public fun httpEngine(configure: HttpClientEngineConfig.() -> Unit)
     public fun httpEngine(engine: HttpClientEngine, configure: HttpClientEngineConfig.() -> Unit = {})
@@ -128,6 +130,7 @@ private class KtorWebSocketClientTransportImpl(
     }
 }
 
+@OptIn(RSocketTransportApi::class)
 private class KtorWebSocketClientTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val httpClient: HttpClient,

@@ -32,10 +32,12 @@ import javax.net.ssl.*
 import kotlin.coroutines.*
 import kotlin.reflect.*
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NettyQuicServerInstance : RSocketServerInstance {
     public val localAddress: InetSocketAddress
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NettyQuicServerTransport : RSocketTransport {
     public fun target(localAddress: InetSocketAddress? = null): RSocketServerTarget<NettyQuicServerInstance>
     public fun target(host: String = "127.0.0.1", port: Int = 0): RSocketServerTarget<NettyQuicServerInstance>
@@ -44,6 +46,7 @@ public sealed interface NettyQuicServerTransport : RSocketTransport {
         RSocketTransportFactory<NettyQuicServerTransport, NettyQuicServerTransportBuilder>(::NettyQuicServerTransportBuilderImpl)
 }
 
+@OptIn(RSocketTransportApi::class)
 public sealed interface NettyQuicServerTransportBuilder : RSocketTransportBuilder<NettyQuicServerTransport> {
     public fun channel(cls: KClass<out DatagramChannel>)
     public fun channelFactory(factory: ChannelFactory<out DatagramChannel>)
@@ -137,6 +140,7 @@ private class NettyQuicServerTransportImpl(
         target(InetSocketAddress(host, port))
 }
 
+@OptIn(RSocketTransportApi::class)
 private class NettyQuicServerTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: Bootstrap,
