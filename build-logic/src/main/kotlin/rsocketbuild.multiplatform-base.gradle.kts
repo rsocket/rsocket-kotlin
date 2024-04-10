@@ -46,6 +46,7 @@ kotlin {
 
                 // rsocket related
                 optIn(OptIns.TransportApi)
+                optIn(OptIns.RSocketTransportApi)
                 optIn(OptIns.ExperimentalMetadataApi)
                 optIn(OptIns.ExperimentalStreamsApi)
                 optIn(OptIns.RSocketLoggingApi)

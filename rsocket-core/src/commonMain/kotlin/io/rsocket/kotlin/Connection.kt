@@ -17,9 +17,6 @@
 package io.rsocket.kotlin
 
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.frame.*
-import io.rsocket.kotlin.internal.*
-import io.rsocket.kotlin.internal.io.*
 import kotlinx.coroutines.*
 
 /**
@@ -29,13 +26,4 @@ import kotlinx.coroutines.*
 public interface Connection : CoroutineScope {
     public suspend fun send(packet: ByteReadPacket)
     public suspend fun receive(): ByteReadPacket
-}
-
-@OptIn(TransportApi::class)
-internal suspend inline fun <T> Connection.receiveFrame(pool: BufferPool, block: (frame: Frame) -> T): T =
-    receive().readFrame(pool).closeOnError(block)
-
-@OptIn(TransportApi::class)
-internal suspend fun Connection.sendFrame(pool: BufferPool, frame: Frame) {
-    frame.toPacket(pool).closeOnError { send(it) }
 }

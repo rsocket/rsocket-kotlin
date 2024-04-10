@@ -30,27 +30,33 @@ import kotlin.test.*
 import kotlin.time.*
 import kotlin.time.Duration.Companion.seconds
 
-class TestConnection : Connection, ClientTransport {
-    override val coroutineContext: CoroutineContext =
-        Job() + Dispatchers.Unconfined + TestExceptionHandler
+class TestConnection : RSocketSequentialConnection, RSocketClientTarget {
+    private val job = Job()
+    override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined + TestExceptionHandler
 
     private val sendChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
     private val receiveChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
 
     init {
         coroutineContext.job.invokeOnCompletion {
-            sendChannel.close(it)
+            sendChannel.cancelWithCause(it)
             receiveChannel.cancelWithCause(it)
         }
     }
 
-    override suspend fun connect(): Connection = this
-
-    override suspend fun send(packet: ByteReadPacket) {
-        sendChannel.send(packet)
+    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
+        handler.handleConnection(this@TestConnection)
+    }.onCompletion {
+        if (it != null) job.completeExceptionally(it)
     }
 
-    override suspend fun receive(): ByteReadPacket {
+    override val isClosedForSend: Boolean get() = sendChannel.isClosedForSend
+
+    override suspend fun sendFrame(streamId: Int, frame: ByteReadPacket) {
+        sendChannel.send(frame)
+    }
+
+    override suspend fun receiveFrame(): ByteReadPacket {
         return receiveChannel.receive()
     }
 
