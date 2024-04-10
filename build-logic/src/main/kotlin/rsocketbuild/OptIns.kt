@@ -18,11 +18,13 @@ package rsocketbuild
 
 @Suppress("ConstPropertyName")
 object OptIns {
+    const val ExperimentalSubclassOptIn = "kotlin.ExperimentalSubclassOptIn"
     const val ExperimentalStdlibApi = "kotlin.ExperimentalStdlibApi"
     const val ExperimentalCoroutinesApi = "kotlinx.coroutines.ExperimentalCoroutinesApi"
     const val DelicateCoroutinesApi = "kotlinx.coroutines.DelicateCoroutinesApi"
 
     const val TransportApi = "io.rsocket.kotlin.TransportApi"
+    const val RSocketTransportApi = "io.rsocket.kotlin.transport.RSocketTransportApi"
     const val ExperimentalMetadataApi = "io.rsocket.kotlin.ExperimentalMetadataApi"
     const val ExperimentalStreamsApi = "io.rsocket.kotlin.ExperimentalStreamsApi"
     const val RSocketLoggingApi = "io.rsocket.kotlin.RSocketLoggingApi"

@@ -21,8 +21,7 @@ import io.rsocket.kotlin.transport.tests.*
 
 class TcpTransportTest : TransportTest() {
     override suspend fun before() {
-        val address = InetSocketAddress("0.0.0.0", PortProvider.next())
-        startServer(TcpServerTransport(address)).serverSocket.await()
-        client = connectClient(TcpClientTransport(address, testContext))
+        val serverSocket = startServer(TcpServerTransport()).serverSocket.await()
+        client = connectClient(TcpClientTransport(serverSocket.localAddress as InetSocketAddress, testContext))
     }
 }

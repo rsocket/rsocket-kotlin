@@ -26,7 +26,9 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
+import kotlin.js.*
 
+@JsName("LocalServerTransport2") // for compatibility with new API
 public fun LocalServerTransport(): ServerTransport<LocalServer> = ServerTransport { accept ->
     val connections = Channel<Connection>()
     val handlerJob = launch {

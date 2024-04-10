@@ -17,10 +17,42 @@
 package io.rsocket.kotlin.transport.local
 
 import io.rsocket.kotlin.transport.tests.*
+import kotlinx.coroutines.channels.*
 
-class LocalTransportTest : TransportTest() {
+class OldLocalTransportTest : TransportTest() {
     override suspend fun before() {
         val server = startServer(LocalServerTransport())
         client = connectClient(server)
     }
 }
+
+abstract class LocalTransportTest(
+    private val configure: LocalServerTransportBuilder.() -> Unit,
+) : TransportTest() {
+    override suspend fun before() {
+        val server = startServer(LocalServerTransport(testContext, configure).target())
+        client = connectClient(LocalClientTransport(testContext).target(server.serverName))
+    }
+}
+
+class SequentialBufferedLocalTransportTest : LocalTransportTest({
+    sequential(prioritizationQueueBuffersCapacity = Channel.BUFFERED)
+})
+
+class SequentialUnlimitedLocalTransportTest : LocalTransportTest({
+    sequential(prioritizationQueueBuffersCapacity = Channel.UNLIMITED)
+})
+
+class MultiplexedBufferedLocalTransportTest : LocalTransportTest({
+    multiplexed(
+        streamsQueueCapacity = Channel.BUFFERED,
+        streamBufferCapacity = Channel.BUFFERED
+    )
+})
+
+class MultiplexedUnlimitedLocalTransportTest : LocalTransportTest({
+    multiplexed(
+        streamsQueueCapacity = Channel.UNLIMITED,
+        streamBufferCapacity = Channel.UNLIMITED
+    )
+})

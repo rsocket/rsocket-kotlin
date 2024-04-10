@@ -194,6 +194,7 @@ public abstract interface class io/rsocket/kotlin/core/MimeTypeWithName : io/rso
 
 public final class io/rsocket/kotlin/core/RSocketConnector {
 	public final fun connect (Lio/rsocket/kotlin/transport/ClientTransport;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun connect (Lio/rsocket/kotlin/transport/RSocketClientTarget;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/rsocket/kotlin/core/RSocketConnectorBuilder {
@@ -228,6 +229,8 @@ public final class io/rsocket/kotlin/core/RSocketConnectorBuilderKt {
 public final class io/rsocket/kotlin/core/RSocketServer {
 	public final fun bind (Lio/rsocket/kotlin/transport/ServerTransport;Lio/rsocket/kotlin/ConnectionAcceptor;)Ljava/lang/Object;
 	public final fun bindIn (Lkotlinx/coroutines/CoroutineScope;Lio/rsocket/kotlin/transport/ServerTransport;Lio/rsocket/kotlin/ConnectionAcceptor;)Ljava/lang/Object;
+	public final fun createHandler (Lio/rsocket/kotlin/ConnectionAcceptor;)Lio/rsocket/kotlin/transport/RSocketConnectionHandler;
+	public final fun startServer (Lio/rsocket/kotlin/transport/RSocketServerTarget;Lio/rsocket/kotlin/ConnectionAcceptor;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class io/rsocket/kotlin/core/RSocketServerBuilder {
@@ -779,7 +782,71 @@ public final class io/rsocket/kotlin/transport/ClientTransportKt {
 	public static final fun ClientTransport (Lkotlin/coroutines/CoroutineContext;Lio/rsocket/kotlin/transport/ClientTransport;)Lio/rsocket/kotlin/transport/ClientTransport;
 }
 
+public abstract interface class io/rsocket/kotlin/transport/RSocketClientTarget : kotlinx/coroutines/CoroutineScope {
+	public abstract fun connectClient (Lio/rsocket/kotlin/transport/RSocketConnectionHandler;)Lkotlinx/coroutines/Job;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/RSocketConnection {
+}
+
+public abstract interface class io/rsocket/kotlin/transport/RSocketConnectionHandler {
+	public abstract fun handleConnection (Lio/rsocket/kotlin/transport/RSocketConnection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/RSocketMultiplexedConnection : io/rsocket/kotlin/transport/RSocketConnection {
+	public abstract fun acceptStream (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun createStream (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/RSocketMultiplexedConnection$Stream : java/io/Closeable {
+	public abstract fun close ()V
+	public abstract fun isClosedForSend ()Z
+	public abstract fun receiveFrame (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun sendFrame (Lio/ktor/utils/io/core/ByteReadPacket;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun setSendPriority (I)V
+}
+
+public abstract interface class io/rsocket/kotlin/transport/RSocketSequentialConnection : io/rsocket/kotlin/transport/RSocketConnection {
+	public abstract fun isClosedForSend ()Z
+	public abstract fun receiveFrame (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public abstract fun sendFrame (ILio/ktor/utils/io/core/ByteReadPacket;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/RSocketServerInstance : kotlinx/coroutines/CoroutineScope {
+}
+
+public abstract interface class io/rsocket/kotlin/transport/RSocketServerTarget : kotlinx/coroutines/CoroutineScope {
+	public abstract fun startServer (Lio/rsocket/kotlin/transport/RSocketConnectionHandler;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/RSocketTransport : kotlinx/coroutines/CoroutineScope {
+}
+
+public abstract interface annotation class io/rsocket/kotlin/transport/RSocketTransportApi : java/lang/annotation/Annotation {
+}
+
+public abstract interface class io/rsocket/kotlin/transport/RSocketTransportBuilder {
+	public abstract fun buildTransport (Lkotlin/coroutines/CoroutineContext;)Lio/rsocket/kotlin/transport/RSocketTransport;
+}
+
+public abstract class io/rsocket/kotlin/transport/RSocketTransportFactory {
+	public fun <init> (Lkotlin/jvm/functions/Function0;)V
+	public final fun getCreateBuilder ()Lkotlin/jvm/functions/Function0;
+	public final fun invoke (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/transport/RSocketTransport;
+	public static synthetic fun invoke$default (Lio/rsocket/kotlin/transport/RSocketTransportFactory;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/rsocket/kotlin/transport/RSocketTransport;
+}
+
 public abstract interface class io/rsocket/kotlin/transport/ServerTransport {
 	public abstract fun start (Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function3;)Ljava/lang/Object;
+}
+
+public final class io/rsocket/kotlin/transport/internal/PrioritizationFrameQueue {
+	public fun <init> (I)V
+	public final fun cancel ()V
+	public final fun close ()V
+	public final fun dequeueFrame (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun enqueueFrame (ILio/ktor/utils/io/core/ByteReadPacket;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun isClosedForSend ()Z
+	public final fun tryDequeueFrame ()Lio/ktor/utils/io/core/ByteReadPacket;
 }
 
