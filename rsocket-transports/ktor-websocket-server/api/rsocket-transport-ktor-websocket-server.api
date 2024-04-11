@@ -1,3 +1,30 @@
+public abstract interface class io/rsocket/kotlin/transport/ktor/websocket/server/KtorWebSocketServerInstance : io/rsocket/kotlin/transport/RSocketServerInstance {
+	public abstract fun getConnectors ()Ljava/util/List;
+	public abstract fun getPath ()Ljava/lang/String;
+	public abstract fun getProtocol ()Ljava/lang/String;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/ktor/websocket/server/KtorWebSocketServerTransport : io/rsocket/kotlin/transport/RSocketTransport {
+	public static final field Factory Lio/rsocket/kotlin/transport/ktor/websocket/server/KtorWebSocketServerTransport$Factory;
+	public abstract fun target (Lio/ktor/server/engine/EngineConnectorConfig;Ljava/lang/String;Ljava/lang/String;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public abstract fun target (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public abstract fun target (Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public abstract fun target (Ljava/util/List;Ljava/lang/String;Ljava/lang/String;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public static synthetic fun target$default (Lio/rsocket/kotlin/transport/ktor/websocket/server/KtorWebSocketServerTransport;Lio/ktor/server/engine/EngineConnectorConfig;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public static synthetic fun target$default (Lio/rsocket/kotlin/transport/ktor/websocket/server/KtorWebSocketServerTransport;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public static synthetic fun target$default (Lio/rsocket/kotlin/transport/ktor/websocket/server/KtorWebSocketServerTransport;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public static synthetic fun target$default (Lio/rsocket/kotlin/transport/ktor/websocket/server/KtorWebSocketServerTransport;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+}
+
+public final class io/rsocket/kotlin/transport/ktor/websocket/server/KtorWebSocketServerTransport$Factory : io/rsocket/kotlin/transport/RSocketTransportFactory {
+}
+
+public abstract interface class io/rsocket/kotlin/transport/ktor/websocket/server/KtorWebSocketServerTransportBuilder : io/rsocket/kotlin/transport/RSocketTransportBuilder {
+	public abstract fun httpEngine (Lio/ktor/server/engine/ApplicationEngineFactory;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun httpEngine$default (Lio/rsocket/kotlin/transport/ktor/websocket/server/KtorWebSocketServerTransportBuilder;Lio/ktor/server/engine/ApplicationEngineFactory;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public abstract fun webSocketsConfig (Lkotlin/jvm/functions/Function1;)V
+}
+
 public final class io/rsocket/kotlin/transport/ktor/websocket/server/WebSocketServerTransportKt {
 	public static final fun WebSocketServerTransport (Lio/ktor/server/engine/ApplicationEngineFactory;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/transport/ServerTransport;
 	public static final fun WebSocketServerTransport (Lio/ktor/server/engine/ApplicationEngineFactory;[Lio/ktor/server/engine/EngineConnectorConfig;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lio/rsocket/kotlin/transport/ServerTransport;
