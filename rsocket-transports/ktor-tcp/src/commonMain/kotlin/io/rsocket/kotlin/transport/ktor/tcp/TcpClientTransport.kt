@@ -26,11 +26,6 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
-//TODO user should close ClientTransport manually if there is no job provided in context
-
-//this dispatcher will be used, if no dispatcher were provided by user in client and server
-internal expect val defaultDispatcher: CoroutineDispatcher
-
 public fun TcpClientTransport(
     hostname: String, port: Int,
     context: CoroutineContext = EmptyCoroutineContext,
@@ -42,10 +37,10 @@ public fun TcpClientTransport(
     remoteAddress: InetSocketAddress,
     context: CoroutineContext = EmptyCoroutineContext,
     intercept: (Socket) -> Socket = { it }, //f.e. for tls, which is currently supported by ktor only on JVM
-    configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {}
+    configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {},
 ): ClientTransport {
     val transportJob = SupervisorJob(context[Job])
-    val transportContext = defaultDispatcher + context + transportJob + CoroutineName("rSocket-tcp-client")
+    val transportContext = Dispatchers.IO + context + transportJob + CoroutineName("rSocket-tcp-client")
     val selector = SelectorManager(transportContext)
     Job(transportJob).invokeOnCompletion { selector.close() }
     return ClientTransport(transportContext) {

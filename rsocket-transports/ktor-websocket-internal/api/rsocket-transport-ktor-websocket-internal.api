@@ -1,3 +1,7 @@
+public final class io/rsocket/kotlin/transport/ktor/websocket/internal/KtorWebSocketConnectionKt {
+	public static final fun handleKtorWebSocketConnection (Lio/rsocket/kotlin/transport/RSocketConnectionHandler;Lio/ktor/websocket/WebSocketSession;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class io/rsocket/kotlin/transport/ktor/websocket/internal/WebSocketConnection : io/rsocket/kotlin/Connection, kotlinx/coroutines/CoroutineScope {
 	public fun <init> (Lio/ktor/websocket/WebSocketSession;)V
 	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;

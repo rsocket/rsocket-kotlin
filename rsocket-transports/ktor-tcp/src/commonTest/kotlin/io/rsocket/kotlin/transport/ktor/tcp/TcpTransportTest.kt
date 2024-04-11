@@ -16,12 +16,36 @@
 
 package io.rsocket.kotlin.transport.ktor.tcp
 
+import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.rsocket.kotlin.transport.tests.*
+import kotlinx.coroutines.*
 
 class TcpTransportTest : TransportTest() {
     override suspend fun before() {
         val serverSocket = startServer(TcpServerTransport()).serverSocket.await()
         client = connectClient(TcpClientTransport(serverSocket.localAddress as InetSocketAddress, testContext))
+    }
+}
+
+class KtorTcpTransportTest : TransportTest() {
+    // a single SelectorManager for both client and server works much better in K/N
+    // in user code in most of the cases, only one SelectorManager will be created
+    private val selector = SelectorManager(Dispatchers.IO)
+    override suspend fun before() {
+        val server = startServer(KtorTcpServerTransport(testContext) {
+            selectorManager(selector, false)
+        }.target())
+        client = connectClient(KtorTcpClientTransport(testContext) {
+            selectorManager(selector, false)
+        }.target(server.localAddress))
+    }
+
+    override suspend fun after() {
+        try {
+            super.after()
+        } finally {
+            selector.close()
+        }
     }
 }

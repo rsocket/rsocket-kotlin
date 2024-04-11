@@ -24,8 +24,6 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.internal.*
 
-//TODO: will be reworked later with transport API rework
-
 @Suppress("FunctionName")
 public fun <A : ApplicationEngine, T : ApplicationEngine.Configuration> WebSocketServerTransport(
     engineFactory: ApplicationEngineFactory<A, T>,

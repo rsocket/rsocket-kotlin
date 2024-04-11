@@ -24,10 +24,18 @@ internal fun ByteReadPacket.withLength(): ByteReadPacket = buildPacket {
     writePacket(this@withLength)
 }
 
-internal class FrameWithLengthAssembler(private val onFrame: (frame: ByteReadPacket) -> Unit) {
-    private var expectedFrameLength = 0 //TODO atomic for native
+internal class FrameWithLengthAssembler(private val onFrame: (frame: ByteReadPacket) -> Unit) : Closeable {
+    private var closed = false
+    private var expectedFrameLength = 0
     private val packetBuilder: BytePacketBuilder = BytePacketBuilder()
+
+    override fun close() {
+        packetBuilder.close()
+        closed = true
+    }
+
     inline fun write(write: BytePacketBuilder.() -> Unit) {
+        if (closed) return
         packetBuilder.write()
         loop()
     }
@@ -39,6 +47,7 @@ internal class FrameWithLengthAssembler(private val onFrame: (frame: ByteReadPac
                 expectedFrameLength = it.readInt24()
                 if (it.remaining >= expectedFrameLength) build(it) // if has length and frame
             }
+
             packetBuilder.size < expectedFrameLength           -> return // not enough bytes to read frame
             else                                               -> withTemp { build(it) } // enough bytes to read frame
         }

@@ -27,3 +27,11 @@ class OkHttpClientWebSocketTransportTest : WebSocketTransportTest(OkHttp, Server
 class NettyServerWebSocketTransportTest : WebSocketTransportTest(ClientCIO, Netty)
 
 class JettyServerWebSocketTransportTest : WebSocketTransportTest(ClientCIO, Jetty)
+
+
+
+class OkHttpClientKtorWebSocketTransportTest : KtorWebSocketTransportTest(OkHttp, ServerCIO)
+
+class NettyServerKtorWebSocketTransportTest : KtorWebSocketTransportTest(ClientCIO, Netty)
+
+class JettyServerKtorWebSocketTransportTest : KtorWebSocketTransportTest(ClientCIO, Jetty)
