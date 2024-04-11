@@ -35,3 +35,22 @@ abstract class WebSocketTransportTest(
         )
     }
 }
+
+abstract class KtorWebSocketTransportTest(
+    private val clientEngine: HttpClientEngineFactory<*>,
+    private val serverEngine: ApplicationEngineFactory<*, *>,
+) : TransportTest() {
+    override suspend fun before() {
+        val server = startServer(
+            KtorWebSocketServerTransport(testContext) {
+                httpEngine(serverEngine)
+            }.target(port = 0)
+        )
+        val port = server.connectors.single().port
+        client = connectClient(
+            KtorWebSocketClientTransport(testContext) {
+                httpEngine(clientEngine)
+            }.target(port = port)
+        )
+    }
+}

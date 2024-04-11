@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.transport.ktor.tcp
 
-import io.ktor.network.sockets.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
@@ -25,11 +24,9 @@ import kotlin.test.*
 class TcpServerTest : SuspendTest, TestWithLeakCheck {
     private val testJob = Job()
     private val testContext = testJob + TestExceptionHandler
-    private val serverTransport = TcpServerTransport()
-    private suspend fun clientTransport(server: TcpServer) = TcpClientTransport(
-        server.serverSocket.await().localAddress as InetSocketAddress,
-        testContext
-    )
+    private val serverTransport = KtorTcpServerTransport(testContext).target()
+    private fun KtorTcpServerInstance.clientTransport() =
+        KtorTcpClientTransport(testContext).target(localAddress)
 
     override suspend fun after() {
         testJob.cancelAndJoin()
@@ -37,13 +34,13 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
 
     @Test
     fun testFailedConnection() = test {
-        val server = TestServer().bindIn(CoroutineScope(testContext), serverTransport) {
+        val server = TestServer().startServer(serverTransport) {
             if (config.setupPayload.data.readText() == "ok") {
                 RSocketRequestHandler {
                     requestResponse { it }
                 }
             } else error("FAILED")
-        }.also { it.serverSocket.await() }
+        }
 
         suspend fun newClient(text: String) = TestConnector {
             connectionConfig {
@@ -51,7 +48,7 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
                     payload(text)
                 }
             }
-        }.connect(clientTransport(server))
+        }.connect(server.clientTransport())
 
         val client1 = newClient("ok")
         client1.requestResponse(payload("ok")).close()
@@ -70,8 +67,7 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
         assertFalse(client2.isActive)
         assertTrue(client3.isActive)
 
-        assertTrue(server.serverSocket.await().socketContext.isActive)
-        assertTrue(server.handlerJob.isActive)
+        assertTrue(server.isActive)
 
         client1.coroutineContext.job.cancelAndJoin()
         client2.coroutineContext.job.cancelAndJoin()
@@ -81,13 +77,13 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testFailedHandler() = test {
         val handlers = mutableListOf<RSocket>()
-        val server = TestServer().bindIn(CoroutineScope(testContext), serverTransport) {
+        val server = TestServer().startServer(serverTransport) {
             RSocketRequestHandler {
                 requestResponse { it }
             }.also { handlers += it }
-        }.also { it.serverSocket.await() }
+        }
 
-        suspend fun newClient() = TestConnector().connect(clientTransport(server))
+        suspend fun newClient() = TestConnector().connect(server.clientTransport())
 
         val client1 = newClient()
 
@@ -118,8 +114,7 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
         assertFalse(client2.isActive)
         assertTrue(client3.isActive)
 
-        assertTrue(server.serverSocket.await().socketContext.isActive)
-        assertTrue(server.handlerJob.isActive)
+        assertTrue(server.isActive)
 
         client1.coroutineContext.job.cancelAndJoin()
         client2.coroutineContext.job.cancelAndJoin()

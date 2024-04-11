@@ -34,3 +34,11 @@ class TcpTransportTest : TransportTest() {
         server.close()
     }
 }
+
+class NodejsTcpTransportTest : TransportTest() {
+    override suspend fun before() {
+        val port = PortProvider.next()
+        startServer(NodejsTcpServerTransport(testContext).target("127.0.0.1", port))
+        client = connectClient(NodejsTcpClientTransport(testContext).target("127.0.0.1", port))
+    }
+}
