@@ -1,0 +1,43 @@
+public abstract interface class io/rsocket/kotlin/transport/netty/quic/NettyQuicClientTransport : io/rsocket/kotlin/transport/RSocketTransport {
+	public static final field Factory Lio/rsocket/kotlin/transport/netty/quic/NettyQuicClientTransport$Factory;
+	public abstract fun target (Ljava/lang/String;I)Lio/rsocket/kotlin/transport/RSocketClientTarget;
+	public abstract fun target (Ljava/net/InetSocketAddress;)Lio/rsocket/kotlin/transport/RSocketClientTarget;
+}
+
+public final class io/rsocket/kotlin/transport/netty/quic/NettyQuicClientTransport$Factory : io/rsocket/kotlin/transport/RSocketTransportFactory {
+}
+
+public abstract interface class io/rsocket/kotlin/transport/netty/quic/NettyQuicClientTransportBuilder : io/rsocket/kotlin/transport/RSocketTransportBuilder {
+	public abstract fun bootstrap (Lkotlin/jvm/functions/Function1;)V
+	public abstract fun channel (Lkotlin/reflect/KClass;)V
+	public abstract fun channelFactory (Lio/netty/channel/ChannelFactory;)V
+	public abstract fun codec (Lkotlin/jvm/functions/Function1;)V
+	public abstract fun eventLoopGroup (Lio/netty/channel/EventLoopGroup;Z)V
+	public abstract fun quicBootstrap (Lkotlin/jvm/functions/Function1;)V
+	public abstract fun ssl (Lkotlin/jvm/functions/Function1;)V
+}
+
+public abstract interface class io/rsocket/kotlin/transport/netty/quic/NettyQuicServerInstance : io/rsocket/kotlin/transport/RSocketServerInstance {
+	public abstract fun getLocalAddress ()Ljava/net/InetSocketAddress;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/netty/quic/NettyQuicServerTransport : io/rsocket/kotlin/transport/RSocketTransport {
+	public static final field Factory Lio/rsocket/kotlin/transport/netty/quic/NettyQuicServerTransport$Factory;
+	public abstract fun target (Ljava/lang/String;I)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public abstract fun target (Ljava/net/InetSocketAddress;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public static synthetic fun target$default (Lio/rsocket/kotlin/transport/netty/quic/NettyQuicServerTransport;Ljava/lang/String;IILjava/lang/Object;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public static synthetic fun target$default (Lio/rsocket/kotlin/transport/netty/quic/NettyQuicServerTransport;Ljava/net/InetSocketAddress;ILjava/lang/Object;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+}
+
+public final class io/rsocket/kotlin/transport/netty/quic/NettyQuicServerTransport$Factory : io/rsocket/kotlin/transport/RSocketTransportFactory {
+}
+
+public abstract interface class io/rsocket/kotlin/transport/netty/quic/NettyQuicServerTransportBuilder : io/rsocket/kotlin/transport/RSocketTransportBuilder {
+	public abstract fun bootstrap (Lkotlin/jvm/functions/Function1;)V
+	public abstract fun channel (Lkotlin/reflect/KClass;)V
+	public abstract fun channelFactory (Lio/netty/channel/ChannelFactory;)V
+	public abstract fun codec (Lkotlin/jvm/functions/Function1;)V
+	public abstract fun eventLoopGroup (Lio/netty/channel/EventLoopGroup;Z)V
+	public abstract fun ssl (Lkotlin/jvm/functions/Function1;)V
+}
+
