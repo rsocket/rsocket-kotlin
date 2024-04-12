@@ -41,6 +41,11 @@ projects("rsocket-kotlin") {
         module("ktor-websocket-internal")
         module("ktor-websocket-client")
         module("ktor-websocket-server")
+
+        module("netty-internal")
+        module("netty-tcp")
+        module("netty-websocket")
+        module("netty-quic")
     }
 
     //deep ktor integration module
