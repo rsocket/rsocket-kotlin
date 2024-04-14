@@ -48,8 +48,11 @@ projects("rsocket-kotlin") {
         module("netty-quic")
     }
 
-    //deep ktor integration module
-    module("rsocket-ktor", prefix = null) {
+    // ktor integration plugins
+    folder("ktor-plugins", null) {
+        module("ktor-client-rsocket")
+        module("ktor-server-rsocket")
+        // for migration from old names
         module("rsocket-ktor-client")
         module("rsocket-ktor-server")
     }
