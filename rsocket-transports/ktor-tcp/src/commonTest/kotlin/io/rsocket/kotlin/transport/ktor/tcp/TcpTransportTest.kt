@@ -21,6 +21,7 @@ import io.ktor.network.sockets.*
 import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
 
+@Suppress("DEPRECATION_ERROR")
 class TcpTransportTest : TransportTest() {
     override suspend fun before() {
         val serverSocket = startServer(TcpServerTransport()).serverSocket.await()

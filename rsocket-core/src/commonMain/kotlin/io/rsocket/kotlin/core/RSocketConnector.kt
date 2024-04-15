@@ -27,7 +27,7 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
-@OptIn(TransportApi::class, RSocketTransportApi::class, RSocketLoggingApi::class)
+@OptIn(RSocketTransportApi::class, RSocketLoggingApi::class)
 public class RSocketConnector internal constructor(
     loggerFactory: LoggerFactory,
     private val maxFragmentSize: Int,
@@ -40,6 +40,8 @@ public class RSocketConnector internal constructor(
     private val connectionLogger = loggerFactory.logger("io.rsocket.kotlin.connection")
     private val frameLogger = loggerFactory.logger("io.rsocket.kotlin.frame")
 
+    @Suppress("DEPRECATION_ERROR")
+    @Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API")
     public suspend fun connect(transport: ClientTransport): RSocket = connect(object : RSocketClientTarget {
         override val coroutineContext: CoroutineContext get() = transport.coroutineContext
         override fun connectClient(handler: RSocketConnectionHandler): Job = launch {

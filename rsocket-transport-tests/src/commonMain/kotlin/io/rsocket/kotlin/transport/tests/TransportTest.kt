@@ -40,9 +40,11 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
 
     protected lateinit var client: RSocket
 
+    @Suppress("DEPRECATION_ERROR")
     protected suspend fun connectClient(clientTransport: ClientTransport): RSocket =
         CONNECTOR.connect(clientTransport)
 
+    @Suppress("DEPRECATION_ERROR")
     protected fun <T> startServer(serverTransport: ServerTransport<T>): T =
         SERVER.bindIn(testScope, serverTransport, ACCEPTOR)
 

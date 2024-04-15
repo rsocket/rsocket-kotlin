@@ -20,17 +20,15 @@ import io.ktor.network.sockets.*
 import io.ktor.util.cio.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.*
-import io.rsocket.kotlin.Connection
 import io.rsocket.kotlin.internal.io.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
-@TransportApi
+@Suppress("DEPRECATION_ERROR")
 internal class TcpConnection(
     socket: Socket,
     override val coroutineContext: CoroutineContext,
-) : Connection {
+) : io.rsocket.kotlin.Connection {
     private val socketConnection = socket.connection()
 
     private val sendChannel = channelForCloseable<ByteReadPacket>(8)
