@@ -23,7 +23,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
-import io.rsocket.kotlin.transport.ktor.websocket.*
+import io.rsocket.kotlin.transport.ktor.websocket.internal.*
 import kotlin.coroutines.*
 
 public suspend fun HttpClient.rSocket(

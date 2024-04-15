@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-import rsocketbuild.*
+package io.rsocket.kotlin.transport.ktor.websocket.server
 
-plugins {
-    id("rsocketbuild.multiplatform-library")
-}
+import io.ktor.client.engine.okhttp.*
+import io.ktor.server.jetty.*
+import io.ktor.server.netty.*
+import io.ktor.client.engine.cio.CIO as ClientCIO
+import io.ktor.server.cio.CIO as ServerCIO
 
-description = "rsocket-kotlin ktor integration"
+class OkHttpClientWebSocketTransportTest : WebSocketTransportTest(OkHttp, ServerCIO)
 
-kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
+class NettyServerWebSocketTransportTest : WebSocketTransportTest(ClientCIO, Netty)
 
-    sourceSets {
-        commonMain.dependencies {
-            api(projects.rsocketCore)
-            api(projects.rsocketTransportKtorWebsocketInternal)
-            //TODO ContentNegotiation will be here later
-        }
-    }
-}
+class JettyServerWebSocketTransportTest : WebSocketTransportTest(ClientCIO, Jetty)

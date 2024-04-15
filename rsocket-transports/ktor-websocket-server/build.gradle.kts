@@ -20,18 +20,30 @@ plugins {
     id("rsocketbuild.multiplatform-library")
 }
 
-description = "rsocket-kotlin ktor integration"
+description = "rsocket-kotlin ktor WebSocket server transport implementation"
 
 kotlin {
     jvmTarget()
-    jsTarget()
-    nativeTargets()
+    nixTargets()
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.rsocketTransportKtorWebsocketInternal)
             api(projects.rsocketCore)
-            api(projects.rsocketTransportKtorWebsocketInternal)
-            //TODO ContentNegotiation will be here later
+            api(libs.ktor.server.host.common)
+            api(libs.ktor.server.websockets)
+        }
+        commonTest.dependencies {
+            implementation(projects.rsocketTransportTests)
+            implementation(projects.rsocketTransportKtorWebsocketClient)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.server.cio)
+        }
+        jvmTest.dependencies {
+            implementation(libs.ktor.client.okhttp)
+
+            implementation(libs.ktor.server.netty)
+            implementation(libs.ktor.server.jetty)
         }
     }
 }
