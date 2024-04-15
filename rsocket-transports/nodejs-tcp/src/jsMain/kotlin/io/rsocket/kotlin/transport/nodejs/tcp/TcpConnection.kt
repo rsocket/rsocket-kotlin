@@ -26,7 +26,7 @@ import kotlinx.coroutines.channels.*
 import org.khronos.webgl.*
 import kotlin.coroutines.*
 
-@TransportApi
+@Suppress("DEPRECATION_ERROR")
 internal class TcpConnection(
     override val coroutineContext: CoroutineContext,
     private val socket: Socket,
