@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-@file:OptIn(TransportApi::class)
 @file:Suppress("FunctionName")
 
 package io.rsocket.kotlin.transport.ktor.tcp
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
-import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
+@Suppress("DEPRECATION_ERROR")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use KtorTcpClientTransport")
 public fun TcpClientTransport(
     hostname: String, port: Int,
     context: CoroutineContext = EmptyCoroutineContext,
@@ -33,6 +33,8 @@ public fun TcpClientTransport(
     configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {},
 ): ClientTransport = TcpClientTransport(InetSocketAddress(hostname, port), context, intercept, configure)
 
+@Suppress("DEPRECATION_ERROR")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use KtorTcpClientTransport")
 public fun TcpClientTransport(
     remoteAddress: InetSocketAddress,
     context: CoroutineContext = EmptyCoroutineContext,

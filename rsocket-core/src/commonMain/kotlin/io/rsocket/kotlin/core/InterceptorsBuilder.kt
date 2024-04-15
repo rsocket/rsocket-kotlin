@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(TransportApi::class)
 
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
 
+@Suppress("DEPRECATION_ERROR")
 public class InterceptorsBuilder internal constructor() {
     private val requesters = mutableListOf<Interceptor<RSocket>>()
     private val responders = mutableListOf<Interceptor<RSocket>>()
@@ -33,7 +33,7 @@ public class InterceptorsBuilder internal constructor() {
         responders += interceptor
     }
 
-    @TransportApi
+    @Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated without replacement")
     public fun forConnection(interceptor: Interceptor<Connection>) {
         connections += interceptor
     }
@@ -45,6 +45,7 @@ public class InterceptorsBuilder internal constructor() {
     internal fun build(): Interceptors = Interceptors(requesters, responders, connections, acceptors)
 }
 
+@Suppress("DEPRECATION_ERROR")
 internal class Interceptors(
     private val requesters: List<Interceptor<RSocket>>,
     private val responders: List<Interceptor<RSocket>>,

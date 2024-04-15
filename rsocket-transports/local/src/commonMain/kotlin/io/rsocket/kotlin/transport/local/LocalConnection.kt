@@ -21,7 +21,7 @@ import io.rsocket.kotlin.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
-@TransportApi
+@Suppress("DEPRECATION_ERROR")
 internal class LocalConnection(
     private val sender: SendChannel<ByteReadPacket>,
     private val receiver: ReceiveChannel<ByteReadPacket>,

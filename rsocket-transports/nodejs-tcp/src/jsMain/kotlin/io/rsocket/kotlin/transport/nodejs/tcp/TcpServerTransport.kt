@@ -22,6 +22,7 @@ import io.rsocket.kotlin.transport.nodejs.tcp.internal.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use NodejsTcpServerInstance")
 public class TcpServer internal constructor(
     public val job: Job, private val server: Server
 ) {
@@ -30,10 +31,11 @@ public class TcpServer internal constructor(
     }
 }
 
+@Suppress("DEPRECATION_ERROR")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use NodejsTcpServerTransport")
 public class TcpServerTransport(
     private val port: Int, private val hostname: String,
 ) : ServerTransport<TcpServer> {
-    @TransportApi
     override fun CoroutineScope.start(accept: suspend CoroutineScope.(Connection) -> Unit): TcpServer {
         val supervisorJob = SupervisorJob(coroutineContext[Job])
         val server = createServer(port, hostname, { supervisorJob.cancel() }) {

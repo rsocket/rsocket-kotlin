@@ -30,6 +30,7 @@ import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.Duration.Companion.seconds
 
+@Suppress("DEPRECATION_ERROR")
 class OldLocalRSocketTest : RSocketTest({ context, acceptor ->
     val localServer = TestServer().bindIn(
         CoroutineScope(context),

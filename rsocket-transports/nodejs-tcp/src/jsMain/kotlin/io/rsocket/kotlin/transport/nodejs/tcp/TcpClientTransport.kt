@@ -22,15 +22,16 @@ import io.rsocket.kotlin.transport.nodejs.tcp.internal.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
+@Suppress("DEPRECATION_ERROR")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use NodejsTcpClientTransport")
 public class TcpClientTransport(
     private val port: Int,
     private val hostname: String,
-    coroutineContext: CoroutineContext = EmptyCoroutineContext
+    coroutineContext: CoroutineContext = EmptyCoroutineContext,
 ) : ClientTransport {
 
     override val coroutineContext: CoroutineContext = coroutineContext + SupervisorJob(coroutineContext[Job])
 
-    @TransportApi
     override suspend fun connect(): Connection {
         val socket = connect(port, hostname)
         return TcpConnection(coroutineContext, socket)

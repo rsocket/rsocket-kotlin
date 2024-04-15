@@ -19,6 +19,7 @@ package io.rsocket.kotlin.transport.local
 import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.channels.*
 
+@Suppress("DEPRECATION_ERROR")
 class OldLocalTransportTest : TransportTest() {
     override suspend fun before() {
         val server = startServer(LocalServerTransport())
