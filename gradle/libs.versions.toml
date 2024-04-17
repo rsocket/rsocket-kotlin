@@ -1,20 +1,20 @@
 [versions]
-kotlin = "1.9.22"
+kotlin = "1.9.24"
 
-kotlinx-atomicfu = "0.23.2"
-kotlinx-coroutines = "1.8.0"
+kotlinx-atomicfu = "0.24.0"
+kotlinx-coroutines = "1.8.1"
 kotlinx-benchmark = "0.4.8"
 kotlinx-bcv = "0.14.0"
 
-ktor = "2.3.8"
+ktor = "2.3.11"
 
 netty = "4.1.109.Final"
 netty-quic = "0.0.62.Final"
 
 # for netty TLS tests
-bouncycastle = "1.78"
+bouncycastle = "1.78.1"
 
-turbine = "1.0.0"
+turbine = "1.1.0"
 
 rsocket-java = "1.1.3"
 
