@@ -1,14 +1,14 @@
 [versions]
-kotlin = "1.9.22"
+kotlin = "1.9.24"
 
-kotlinx-atomicfu = "0.23.2"
-kotlinx-coroutines = "1.8.0"
+kotlinx-atomicfu = "0.24.0"
+kotlinx-coroutines = "1.8.1"
 kotlinx-benchmark = "0.4.8"
 kotlinx-bcv = "0.14.0"
 
-ktor = "2.3.8"
+ktor = "2.3.11"
 
-turbine = "1.0.0"
+turbine = "1.1.0"
 
 rsocket-java = "1.1.3"
 
