@@ -16,27 +16,8 @@
 
 import org.jetbrains.kotlin.gradle.targets.js.yarn.*
 
-buildscript {
-    dependencies {
-        // kotlinx.atomicfu should be on classpath
-        //  it's an implementation detail of kotlinx.atomicfu gradle plugin
-        classpath(libs.kotlin.gradle.plugin)
-        classpath(libs.kotlinx.atomicfu.gradle.plugin)
-    }
-}
-
 plugins {
-    // for now BCV uses `allProjects` internally, so we can't apply it just to specific subprojects
-    alias(libs.plugins.kotlinx.bcv)
-}
-
-apiValidation {
-    ignoredProjects.addAll(
-        listOf(
-            "rsocket-test",
-            "rsocket-transport-tests"
-        )
-    )
+    alias(libs.plugins.kotlin.multiplatform) apply false
 }
 
 plugins.withType<YarnPlugin> {
