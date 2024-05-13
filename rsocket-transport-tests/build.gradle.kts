@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,78 +14,29 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.*
+import rsocketbuild.*
+
 plugins {
-    id("rsocket.template.test")
-    id("rsocket.target.all")
+    id("rsocketbuild.multiplatform-base")
     id("kotlinx-atomicfu")
 }
 
+@OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
+    jvmTarget()
+    jsTarget()
+    nativeTargets()
+
+    compilerOptions {
+        optIn.addAll(
+            OptIns.ExperimentalStreamsApi,
+        )
+    }
+
     sourceSets {
-        commonMain {
-            dependencies {
-                api(projects.rsocketTest)
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation(projects.rsocketTransportKtor.rsocketTransportKtorTcp)
-                implementation(projects.rsocketTransportKtor.rsocketTransportKtorWebsocketServer)
-                implementation(libs.ktor.server.cio)
-            }
+        commonMain.dependencies {
+            api(projects.rsocketTest)
         }
     }
 }
-
-//open class StartTransportTestServer : DefaultTask() {
-//    @Internal
-//    var server: Closeable? = null
-//        private set
-//
-//    @Internal
-//    lateinit var classpath: FileCollection
-//
-//    @TaskAction
-//    fun exec() {
-//        try {
-//            println("[TransportTestServer] start")
-//            server = URLClassLoader(
-//                classpath.map { it.toURI().toURL() }.toTypedArray(),
-//                ClassLoader.getSystemClassLoader()
-//            )
-//                .loadClass("io.rsocket.kotlin.transport.tests.server.AppKt")
-//                .getMethod("start")
-//                .invoke(null) as Closeable
-//            println("[TransportTestServer] started")
-//        } catch (cause: Throwable) {
-//            println("[TransportTestServer] failed to start: ${cause.message}")
-//            cause.printStackTrace()
-//        }
-//    }
-//}
-//
-//val startTransportTestServer by tasks.registering(StartTransportTestServer::class) {
-//    dependsOn(tasks["jvmTest"]) //TODO?
-//    classpath = (kotlin.targets["jvm"].compilations["test"] as KotlinJvmCompilation).runtimeDependencyFiles
-//}
-//
-//rootProject.allprojects {
-//    if (name == "rsocket-transport-ktor-websocket-client") {
-//        val names = setOf(
-//            "jsLegacyNodeTest",
-//            "jsIrNodeTest",
-//            "jsLegacyBrowserTest",
-//            "jsIrBrowserTest",
-//        )
-//        tasks.all {
-//            if (name in names) dependsOn(startTransportTestServer)
-//        }
-//    }
-//}
-//
-//gradle.buildFinished {
-//    startTransportTestServer.get().server?.run {
-//        close()
-//        println("[TransportTestServer] stopped")
-//    }
-//}

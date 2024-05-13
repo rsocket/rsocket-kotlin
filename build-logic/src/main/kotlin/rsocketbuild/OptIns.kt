@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-import rsocketbuild.*
+package rsocketbuild
 
-plugins {
-    id("rsocketbuild.multiplatform-library")
-}
+@Suppress("ConstPropertyName")
+object OptIns {
+    const val ExperimentalStdlibApi = "kotlin.ExperimentalStdlibApi"
+    const val ExperimentalCoroutinesApi = "kotlinx.coroutines.ExperimentalCoroutinesApi"
+    const val DelicateCoroutinesApi = "kotlinx.coroutines.DelicateCoroutinesApi"
 
-description = "rsocket-kotlin ktor transport utilities"
-
-kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
-
-    sourceSets {
-        commonMain.dependencies {
-            api(projects.rsocketCore)
-        }
-    }
+    const val TransportApi = "io.rsocket.kotlin.TransportApi"
+    const val ExperimentalMetadataApi = "io.rsocket.kotlin.ExperimentalMetadataApi"
+    const val ExperimentalStreamsApi = "io.rsocket.kotlin.ExperimentalStreamsApi"
+    const val RSocketLoggingApi = "io.rsocket.kotlin.RSocketLoggingApi"
 }

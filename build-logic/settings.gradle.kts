@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-import rsocketbuild.*
-
-plugins {
-    id("rsocketbuild.multiplatform-library")
+pluginManagement {
+    includeBuild("../build-settings")
 }
 
-description = "rsocket-kotlin ktor transport utilities"
+plugins {
+    id("rsocketsettings.default")
+}
 
-kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
-
-    sourceSets {
-        commonMain.dependencies {
-            api(projects.rsocketCore)
+dependencyResolutionManagement {
+    versionCatalogs {
+        create("libs") {
+            from(files("../gradle/libs.versions.toml"))
         }
     }
 }
+
+rootProject.name = "build-logic"

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,15 @@
 import org.jetbrains.kotlin.gradle.targets.js.yarn.*
 
 buildscript {
-    repositories {
-        mavenCentral()
-    }
-
     dependencies {
         // kotlinx.atomicfu should be on classpath
         //  it's an implementation detail of kotlinx.atomicfu gradle plugin
-        classpath(kotlinLibs.gradle.plugin)
-        classpath(libs.build.kotlinx.atomicfu)
+        classpath(libs.kotlin.gradle.plugin)
+        classpath(libs.kotlinx.atomicfu.gradle.plugin)
     }
 }
 
 plugins {
-    id("build-parameters")
     // for now BCV uses `allProjects` internally, so we can't apply it just to specific subprojects
     alias(libs.plugins.kotlinx.bcv)
 }

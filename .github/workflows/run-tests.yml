@@ -16,7 +16,7 @@ jobs:
             jvmTest
             jvm11Test
             jvm17Test
-            jvm20Test
+            jvm21Test
             --scan
             --info
             --continue
@@ -120,4 +120,4 @@ jobs:
             --scan
             --info
             --continue
-            -Pskip.test
+            -Prsocketbuild.skipTests=true

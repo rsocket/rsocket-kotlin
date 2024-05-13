@@ -14,22 +14,11 @@
  * limitations under the License.
  */
 
-import rsocketbuild.*
-
 plugins {
-    id("rsocketbuild.multiplatform-library")
+    id("rsocketbuild.multiplatform-base")
+    id("rsocketbuild.publication")
 }
 
-description = "rsocket-kotlin ktor transport utilities"
-
 kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
-
-    sourceSets {
-        commonMain.dependencies {
-            api(projects.rsocketCore)
-        }
-    }
+    explicitApi()
 }

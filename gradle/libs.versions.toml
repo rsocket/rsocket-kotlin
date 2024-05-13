@@ -1,4 +1,6 @@
 [versions]
+kotlin = "1.9.22"
+
 kotlinx-atomicfu = "0.23.2"
 kotlinx-coroutines = "1.8.0"
 kotlinx-benchmark = "0.4.8"
@@ -17,7 +19,6 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
 
-kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "kotlinx-atomicfu" }
 kotlinx-benchmark = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinx-benchmark" }
 
 ktor-io = { module = "io.ktor:ktor-io", version.ref = "ktor" }
@@ -41,8 +42,12 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 rsocket-java-core = { module = 'io.rsocket:rsocket-core', version.ref = "rsocket-java" }
 rsocket-java-transport-local = { module = 'io.rsocket:rsocket-transport-local', version.ref = "rsocket-java" }
 
-build-kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu-gradle-plugin", version.ref = "kotlinx-atomicfu" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlinx-atomicfu-gradle-plugin = { module = "org.jetbrains.kotlinx:atomicfu-gradle-plugin", version.ref = "kotlinx-atomicfu" }
 
 [plugins]
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+
+
 kotlinx-benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotlinx-benchmark" }
 kotlinx-bcv = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlinx-bcv" }

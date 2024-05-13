@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-import rsocketbuild.*
-
 plugins {
-    id("rsocketbuild.multiplatform-library")
+    id("com.gradle.enterprise")
+    id("com.gradle.common-custom-user-data-gradle-plugin")
+    id("org.gradle.toolchains.foojay-resolver-convention")
 }
 
-description = "rsocket-kotlin ktor transport utilities"
-
-kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
-
-    sourceSets {
-        commonMain.dependencies {
-            api(projects.rsocketCore)
-        }
+gradleEnterprise {
+    buildScan {
+        publishAlwaysIf(System.getenv("CI").toBoolean())
     }
 }
+
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

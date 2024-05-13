@@ -15,39 +15,48 @@
  */
 
 import org.jetbrains.kotlin.gradle.*
+import rsocketbuild.*
 
 plugins {
-    id("rsocket.template.test")
-    id("rsocket.target.all")
+    id("rsocketbuild.multiplatform-base")
     id("kotlinx-atomicfu")
 }
 
 @OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
+    jvmTarget()
+    jsTarget()
+    nativeTargets()
+
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
+        optIn.addAll(
+            OptIns.ExperimentalStdlibApi,
+            OptIns.ExperimentalCoroutinesApi,
+            OptIns.DelicateCoroutinesApi,
+
+            OptIns.RSocketLoggingApi,
+        )
     }
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api(kotlin("test"))
-                api(projects.rsocketCore)
-                implementation(projects.rsocketInternalIo)
+        commonMain.dependencies {
+            implementation(projects.rsocketInternalIo)
+            api(projects.rsocketCore)
 
-                api(libs.kotlinx.coroutines.test)
-                api(libs.turbine)
-            }
+            api(libs.kotlinx.coroutines.test)
+            api(libs.turbine)
         }
-        jvmMain {
-            dependencies {
-                api(kotlin("test-junit"))
-            }
+
+        // expose kotlin-test
+        commonMain.dependencies {
+            api(kotlin("test"))
         }
-        jsMain {
-            dependencies {
-                api(kotlin("test-js"))
-            }
+        jvmMain.dependencies {
+            api(kotlin("test-junit"))
+        }
+        jsMain.dependencies {
+            api(kotlin("test-js"))
         }
     }
 }
