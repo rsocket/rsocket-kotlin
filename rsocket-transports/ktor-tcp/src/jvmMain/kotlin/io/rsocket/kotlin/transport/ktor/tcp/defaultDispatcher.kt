@@ -14,24 +14,8 @@
  * limitations under the License.
  */
 
-import rsocketbuild.*
+package io.rsocket.kotlin.transport.ktor.tcp
 
-plugins {
-    id("rsocketbuild.multiplatform-library")
-}
+import kotlinx.coroutines.*
 
-description = "rsocket-kotlin ktor integration"
-
-kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
-
-    sourceSets {
-        commonMain.dependencies {
-            api(projects.rsocketCore)
-            api(projects.rsocketTransportKtorWebsocketInternal)
-            //TODO ContentNegotiation will be here later
-        }
-    }
-}
+internal actual val defaultDispatcher: CoroutineDispatcher get() = Dispatchers.IO

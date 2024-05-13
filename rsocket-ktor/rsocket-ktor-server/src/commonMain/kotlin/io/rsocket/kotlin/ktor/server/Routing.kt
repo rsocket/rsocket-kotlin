@@ -21,7 +21,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
-import io.rsocket.kotlin.transport.ktor.websocket.*
+import io.rsocket.kotlin.transport.ktor.websocket.internal.*
 import kotlinx.coroutines.*
 
 public fun Route.rSocket(

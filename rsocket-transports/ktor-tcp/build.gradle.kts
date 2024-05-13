@@ -20,18 +20,20 @@ plugins {
     id("rsocketbuild.multiplatform-library")
 }
 
-description = "rsocket-kotlin ktor integration"
+description = "rsocket-kotlin ktor TCP client/server transport implementation"
 
 kotlin {
     jvmTarget()
-    jsTarget()
-    nativeTargets()
+    nixTargets()
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.rsocketInternalIo)
             api(projects.rsocketCore)
-            api(projects.rsocketTransportKtorWebsocketInternal)
-            //TODO ContentNegotiation will be here later
+            api(libs.ktor.network)
+        }
+        commonTest.dependencies {
+            implementation(projects.rsocketTransportTests)
         }
     }
 }

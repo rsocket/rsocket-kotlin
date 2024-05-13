@@ -14,24 +14,12 @@
  * limitations under the License.
  */
 
-import rsocketbuild.*
+package io.rsocket.kotlin.transport.ktor.websocket.client
 
-plugins {
-    id("rsocketbuild.multiplatform-library")
-}
-
-description = "rsocket-kotlin ktor integration"
-
-kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
-
-    sourceSets {
-        commonMain.dependencies {
-            api(projects.rsocketCore)
-            api(projects.rsocketTransportKtorWebsocketInternal)
-            //TODO ContentNegotiation will be here later
-        }
-    }
-}
+//class ClientWebSocketTransportTest : TransportTest() {
+//    override suspend fun before() {
+//        client = connectClient(
+//            WebSocketClientTransport(Js, port = 9000, context = testContext, pool = InUseTrackingPool)
+//        )
+//    }
+//}

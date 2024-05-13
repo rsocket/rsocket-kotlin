@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-import rsocketbuild.*
+package io.rsocket.kotlin.transport.ktor.websocket.internal
 
-plugins {
-    id("rsocketbuild.multiplatform-library")
-}
+import io.ktor.utils.io.core.*
+import io.ktor.websocket.*
+import io.rsocket.kotlin.*
+import kotlinx.coroutines.*
 
-description = "rsocket-kotlin ktor integration"
-
-kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
-
-    sourceSets {
-        commonMain.dependencies {
-            api(projects.rsocketCore)
-            api(projects.rsocketTransportKtorWebsocketInternal)
-            //TODO ContentNegotiation will be here later
-        }
+@TransportApi
+public class WebSocketConnection(
+    private val session: WebSocketSession,
+) : Connection, CoroutineScope by session {
+    override suspend fun send(packet: ByteReadPacket) {
+        session.send(packet.readBytes())
     }
+
+    override suspend fun receive(): ByteReadPacket {
+        val frame = session.incoming.receive()
+        return ByteReadPacket(frame.data)
+    }
+
 }

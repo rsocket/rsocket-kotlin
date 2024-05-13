@@ -20,7 +20,7 @@ plugins {
     id("rsocketbuild.multiplatform-library")
 }
 
-description = "rsocket-kotlin ktor integration"
+description = "rsocket-kotlin ktor WebSocket transport utilities"
 
 kotlin {
     jvmTarget()
@@ -29,9 +29,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.rsocketInternalIo)
             api(projects.rsocketCore)
-            api(projects.rsocketTransportKtorWebsocketInternal)
-            //TODO ContentNegotiation will be here later
+            api(libs.ktor.websockets)
         }
     }
 }

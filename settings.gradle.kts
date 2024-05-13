@@ -28,18 +28,19 @@ plugins {
 projects("rsocket-kotlin") {
     module("rsocket-internal-io")
     module("rsocket-core")
+
     module("rsocket-test")
-
     module("rsocket-transport-tests")
-    module("rsocket-transport-local")
-    module("rsocket-transport-nodejs-tcp")
 
-    //ktor transport modules
-    module("rsocket-transport-ktor", prefix = null) {
-        module("rsocket-transport-ktor-tcp")
-        module("rsocket-transport-ktor-websocket")
-        module("rsocket-transport-ktor-websocket-client")
-        module("rsocket-transport-ktor-websocket-server")
+    // transports
+    folder("rsocket-transports", "rsocket-transport") {
+        module("local")
+        module("nodejs-tcp")
+
+        module("ktor-tcp")
+        module("ktor-websocket-internal")
+        module("ktor-websocket-client")
+        module("ktor-websocket-server")
     }
 
     //deep ktor integration module
