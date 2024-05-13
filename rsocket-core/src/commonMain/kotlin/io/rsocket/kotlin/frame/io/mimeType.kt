@@ -47,8 +47,13 @@ internal fun ByteReadPacket.readAuthType(): AuthType = readType(
 
 private fun BytePacketBuilder.writeTextWithLength(text: String) {
     val typeBytes = text.encodeToByteArray()
-    writeByte(typeBytes.size.toByte()) //write length
-    writeFully(typeBytes) //write mime type
+    // The first byte indicates MIME type encoding:
+    // - Values 0x00 to 0x7F represent predefined "well-known" MIME types, directly using the byte as the type ID.
+    // - Values 0x80 to 0xFF denote custom MIME types, where the byte represents the length of the MIME type name that follows.
+    // For custom types, the length stored (byte value minus 0x80) is adjusted by -1 when writing, and adjusted by +1 when reading,
+    // mapping to an effective range of 1 to 128 characters for the MIME type name length.
+    writeByte((typeBytes.size - 1).toByte())
+    writeFully(typeBytes)
 }
 
 private const val KnownTypeFlag: Byte = Byte.MIN_VALUE
@@ -66,7 +71,12 @@ private inline fun <T> ByteReadPacket.readType(
         val identifier = byte xor KnownTypeFlag
         fromIdentifier(identifier)
     } else {
-        val stringType = readTextExactBytes(byte.toInt())
+        // The first byte indicates MIME type encoding:
+        // - Values 0x00 to 0x7F represent predefined "well-known" MIME types, directly using the byte as the type ID.
+        // - Values 0x80 to 0xFF denote custom MIME types, where the byte represents the length of the MIME type name that follows.
+        // For custom types, the length stored (byte value minus 0x80) is adjusted by -1 when writing, and adjusted by +1 when reading,
+        // mapping to an effective range of 1 to 128 characters for the MIME type name length.
+        val stringType = readTextExactBytes(byte.toInt() + 1)
         fromText(stringType)
     }
 }
