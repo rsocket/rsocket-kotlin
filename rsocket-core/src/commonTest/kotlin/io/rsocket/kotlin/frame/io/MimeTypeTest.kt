@@ -22,6 +22,12 @@ import kotlin.test.*
 
 class MimeTypeTest : TestWithLeakCheck {
 
+    private val asciiChars = '!'..'~'
+
+    private fun randomAsciiString(length: Int): String {
+        return (1..length).joinToString(separator = "") { asciiChars.random().toString() }
+    }
+
     @Test
     fun customMimeTypeSerialization() {
         testCustomMimeType("message/x.foo")
