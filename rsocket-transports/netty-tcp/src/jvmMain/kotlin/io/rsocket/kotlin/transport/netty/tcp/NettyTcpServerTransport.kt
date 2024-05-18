@@ -105,7 +105,7 @@ private class NettyTcpServerTransportBuilderImpl : NettyTcpServerTransportBuilde
         }
 
         return NettyTcpServerTransportImpl(
-            coroutineContext = context.supervisorContext() + bootstrap.config().childGroup().asCoroutineDispatcher(),
+            coroutineContext = context.supervisorContext() + Dispatchers.Default, //bootstrap.config().childGroup().asCoroutineDispatcher(),
             bootstrap = bootstrap,
             sslContext = sslContext,
             manageBootstrap = manageEventLoopGroup
