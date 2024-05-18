@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-plugins {
-    `kotlin-dsl`
-}
+package io.rsocket.kotlin.benchmarks.java
 
-dependencies {
-    implementation(libs.kotlin.gradle.plugin)
-    implementation(libs.kotlin.allopen.gradle.plugin)
-    implementation(libs.kotlinx.bcv.gradle.plugin)
-    implementation(libs.kotlinx.benchmark.gradle.plugin)
-    implementation(libs.maven.publish.gradle.plugin)
+import io.rsocket.transport.*
+import io.rsocket.transport.netty.client.*
+import io.rsocket.transport.netty.server.*
+
+class TcpRSocketJavaBenchmark : RSocketJavaBenchmark() {
+    override val serverTransport: ServerTransport<*> = TcpServerTransport.create(9000)
+    override val clientTransport: ClientTransport = TcpClientTransport.create(9000)
 }
