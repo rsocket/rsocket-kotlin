@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-plugins {
-    `kotlin-dsl`
-}
+package io.rsocket.kotlin.benchmarks.java
 
-dependencies {
-    implementation(libs.kotlin.gradle.plugin)
-    implementation(libs.kotlin.allopen.gradle.plugin)
-    implementation(libs.kotlinx.bcv.gradle.plugin)
-    implementation(libs.kotlinx.benchmark.gradle.plugin)
-    implementation(libs.maven.publish.gradle.plugin)
+import io.rsocket.transport.*
+import io.rsocket.transport.local.*
+
+class LocalRSocketJavaBenchmark : RSocketJavaBenchmark() {
+    override val serverTransport: ServerTransport<*> = LocalServerTransport.create("local")
+    override val clientTransport: ClientTransport = LocalClientTransport.create("local")
 }

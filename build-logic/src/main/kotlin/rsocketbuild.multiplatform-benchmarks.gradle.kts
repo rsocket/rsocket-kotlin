@@ -15,13 +15,11 @@
  */
 
 plugins {
-    `kotlin-dsl`
+    id("rsocketbuild.multiplatform-base")
+    kotlin("plugin.allopen")
+    id("org.jetbrains.kotlinx.benchmark")
 }
 
-dependencies {
-    implementation(libs.kotlin.gradle.plugin)
-    implementation(libs.kotlin.allopen.gradle.plugin)
-    implementation(libs.kotlinx.bcv.gradle.plugin)
-    implementation(libs.kotlinx.benchmark.gradle.plugin)
-    implementation(libs.maven.publish.gradle.plugin)
+allOpen {
+    annotation("org.openjdk.jmh.annotations.State")
 }

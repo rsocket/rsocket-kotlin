@@ -4,7 +4,7 @@ kotlin = "2.1.0"
 kotlinx-io = "0.6.0"
 kotlinx-atomicfu = "0.26.0"
 kotlinx-coroutines = "1.9.0"
-kotlinx-benchmark = "0.4.8"
+kotlinx-benchmark = "0.4.13"
 kotlinx-bcv = "0.16.3"
 
 ktor = "3.0.2"
@@ -17,9 +17,9 @@ bouncycastle = "1.79"
 
 turbine = "1.2.0"
 
-rsocket-java = "1.1.3"
+rsocket-java = "1.1.4"
 
-jmh = "1.36"
+jmh = "1.37"
 
 maven-publish = "0.30.0"
 
@@ -57,13 +57,17 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 rsocket-java-core = { module = 'io.rsocket:rsocket-core', version.ref = "rsocket-java" }
 rsocket-java-transport-local = { module = 'io.rsocket:rsocket-transport-local', version.ref = "rsocket-java" }
+rsocket-java-transport-netty = { module = 'io.rsocket:rsocket-transport-netty', version.ref = "rsocket-java" }
 
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-allopen-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin" }
 kotlinx-atomicfu-gradle-plugin = { module = "org.jetbrains.kotlinx:atomicfu-gradle-plugin", version.ref = "kotlinx-atomicfu" }
 kotlinx-bcv-gradle-plugin = { module = "org.jetbrains.kotlinx:binary-compatibility-validator", version.ref = "kotlinx-bcv" }
+kotlinx-benchmark-gradle-plugin = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-plugin", version.ref = "kotlinx-benchmark" }
 maven-publish-gradle-plugin = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "maven-publish" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-plugin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
 kotlinx-benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotlinx-benchmark" }
 kotlinx-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "kotlinx-atomicfu" }

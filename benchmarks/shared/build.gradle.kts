@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
+import rsocketbuild.*
+
 plugins {
-    `kotlin-dsl`
+    id("rsocketbuild.multiplatform-base")
 }
 
-dependencies {
-    implementation(libs.kotlin.gradle.plugin)
-    implementation(libs.kotlin.allopen.gradle.plugin)
-    implementation(libs.kotlinx.bcv.gradle.plugin)
-    implementation(libs.kotlinx.benchmark.gradle.plugin)
-    implementation(libs.maven.publish.gradle.plugin)
+kotlin {
+    jvmTarget()
+
+    // no mingw because of cio
+    macosX64()
+    macosArm64()
+    linuxX64()
+
+    sourceSets {
+        commonMain.dependencies {
+            api(libs.kotlinx.coroutines.core)
+            api(libs.kotlinx.benchmark)
+        }
+    }
 }

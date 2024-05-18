@@ -1,0 +1,37 @@
+name: Benchmarks CI
+on:
+  push:
+
+jobs:
+  benchmark:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-gradle
+      - run: ./gradlew assembleBenchmarks
+
+      - run: >
+          ./gradlew
+          FastCsvLocalRequestChannelBenchmark
+          FastCsvLocalRequestResponseBenchmark
+          FastCsvLocalRequestStreamBenchmark
+          --dry-run
+
+      - run: >
+          ./gradlew
+          FastCsvLocalRequestChannelBenchmark
+          FastCsvLocalRequestResponseBenchmark
+          FastCsvLocalRequestStreamBenchmark
+          --no-parallel
+          --max-workers=1
+
+      - if: always() && !cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-reports-${{ matrix.os }}
+          path: "benchmarks/**/build/reports/benchmarks/**/*.csv"
+          retention-days: 1
