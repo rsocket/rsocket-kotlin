@@ -56,4 +56,11 @@ projects("rsocket-kotlin") {
         module("rsocket-ktor-client")
         module("rsocket-ktor-server")
     }
+
+    folder("benchmarks") {
+        module("shared")
+        module("rsocket-kotlin-old")
+        module("rsocket-kotlin")
+        module("rsocket-java")
+    }
 }
