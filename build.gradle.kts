@@ -14,34 +14,18 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.gradle.targets.js.yarn.*
-
-buildscript {
-    dependencies {
-        // kotlinx.atomicfu should be on classpath
-        //  it's an implementation detail of kotlinx.atomicfu gradle plugin
-        classpath(libs.kotlin.gradle.plugin)
-        classpath(libs.kotlinx.atomicfu.gradle.plugin)
-    }
-}
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
+import org.jetbrains.kotlin.gradle.targets.js.npm.*
 
 plugins {
-    // for now BCV uses `allProjects` internally, so we can't apply it just to specific subprojects
-    alias(libs.plugins.kotlinx.bcv)
+    alias(libs.plugins.kotlin.multiplatform) apply false
 }
 
-apiValidation {
-    ignoredProjects.addAll(
-        listOf(
-            "rsocket-test",
-            "rsocket-transport-tests"
-        )
-    )
-}
-
-plugins.withType<YarnPlugin> {
-    yarn.apply {
-        lockFileDirectory = file("gradle/js/yarn")
-        yarnLockMismatchReport = YarnLockMismatchReport.WARNING
+plugins.withType<NodeJsRootPlugin> {
+    // ignore package lock
+    extensions.configure<NpmExtension> {
+        lockFileDirectory.set(layout.buildDirectory.dir("kotlin-js-store"))
+        packageLockMismatchReport.set(LockFileMismatchReport.NONE)
+        packageLockAutoReplace.set(true)
     }
 }

@@ -17,6 +17,7 @@
 plugins {
     id("rsocketbuild.multiplatform-base")
     id("rsocketbuild.publication")
+    id("org.jetbrains.kotlinx.binary-compatibility-validator")
 }
 
 kotlin {

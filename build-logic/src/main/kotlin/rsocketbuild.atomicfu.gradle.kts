@@ -14,29 +14,7 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.gradle.*
-import rsocketbuild.*
-
+// this convention plugin will be not needed after https://github.com/Kotlin/kotlinx-atomicfu/issues/56
 plugins {
-    id("rsocketbuild.multiplatform-base")
-    id("rsocketbuild.atomicfu")
-}
-
-@OptIn(ExperimentalKotlinGradlePluginApi::class)
-kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
-
-    compilerOptions {
-        optIn.addAll(
-            OptIns.ExperimentalStreamsApi,
-        )
-    }
-
-    sourceSets {
-        commonMain.dependencies {
-            api(projects.rsocketTest)
-        }
-    }
+    id("kotlinx-atomicfu")
 }
