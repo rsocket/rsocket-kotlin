@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.internal.io
+package io.rsocket.kotlin.internal
 
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*

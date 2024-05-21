@@ -17,7 +17,7 @@
 package io.rsocket.kotlin.frame.io
 
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.internal.io.*
+import io.rsocket.kotlin.internal.*
 
 internal fun ByteReadPacket.readResumeToken(pool: BufferPool): ByteReadPacket {
     val length = readShort().toInt() and 0xFFFF

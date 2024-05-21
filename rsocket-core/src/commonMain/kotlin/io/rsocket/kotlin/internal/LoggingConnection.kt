@@ -21,7 +21,6 @@ package io.rsocket.kotlin.internal
 import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
-import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.logging.*
 
 internal fun Connection.logging(logger: Logger, bufferPool: BufferPool): Connection =
