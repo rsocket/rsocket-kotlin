@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.rsocket.kotlin.frame.io
 
-import io.ktor.utils.io.core.*
+import kotlinx.io.*
 
 internal class Version(val major: Int, val minor: Int) {
     val intValue: Int get() = (major shl 16) or (minor and 0xFFFF)
@@ -30,7 +30,7 @@ internal class Version(val major: Int, val minor: Int) {
     }
 }
 
-internal fun ByteReadPacket.readVersion(): Version {
+internal fun Source.readVersion(): Version {
     val value = readInt()
     return Version(
         major = value shr 16 and 0xFFFF,
@@ -38,6 +38,6 @@ internal fun ByteReadPacket.readVersion(): Version {
     )
 }
 
-internal fun BytePacketBuilder.writeVersion(version: Version) {
+internal fun Sink.writeVersion(version: Version) {
     writeInt(version.intValue)
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,35 @@
 
 package io.rsocket.kotlin.payload
 
-import io.ktor.utils.io.core.*
+import kotlinx.io.*
 
-public fun Payload(data: ByteReadPacket, metadata: ByteReadPacket? = null): Payload = DefaultPayload(data, metadata)
+public fun Payload(data: Source, metadata: Source? = null): Payload = DefaultPayload(data, metadata)
 
-public sealed interface Payload : Closeable {
-    public val data: ByteReadPacket
-    public val metadata: ByteReadPacket?
+public sealed interface Payload : AutoCloseable {
+    public val data: Source
+    public val metadata: Source?
 
-    public fun copy(): Payload = DefaultPayload(data.copy(), metadata?.copy())
+    public companion object {
+        public val Empty: Payload = Payload(EmptySource)
+    }
+}
 
+public sealed interface CopyablePayload : Payload {
+    public override val data: Buffer
+    public override val metadata: Buffer?
+    public fun copy(): CopyablePayload
+}
+
+public fun Payload.copyable(): CopyablePayload = TODO()
+
+private class DefaultPayload(
+    override val data: Source,
+    override val metadata: Source?,
+) : Payload {
     override fun close() {
         data.close()
         metadata?.close()
     }
-
-    public companion object {
-        public val Empty: Payload = Payload(ByteReadPacket.Empty)
-    }
 }
 
-private class DefaultPayload(
-    override val data: ByteReadPacket,
-    override val metadata: ByteReadPacket?,
-) : Payload
+internal val EmptySource: Source = Buffer()

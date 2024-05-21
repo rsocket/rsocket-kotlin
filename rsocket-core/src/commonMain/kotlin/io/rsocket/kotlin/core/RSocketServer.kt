@@ -20,7 +20,6 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
@@ -30,7 +29,6 @@ public class RSocketServer internal constructor(
     loggerFactory: LoggerFactory,
     private val maxFragmentSize: Int,
     private val interceptors: Interceptors,
-    private val bufferPool: BufferPool,
 ) {
     private val frameLogger = loggerFactory.logger("io.rsocket.kotlin.frame")
 
@@ -64,11 +62,11 @@ public class RSocketServer internal constructor(
 
     @RSocketTransportApi
     public fun createHandler(acceptor: ConnectionAcceptor): RSocketConnectionHandler =
-        AcceptConnection(acceptor).logging(frameLogger, bufferPool)
+        AcceptConnection(acceptor).logging(frameLogger)
 
     private inner class AcceptConnection(acceptor: ConnectionAcceptor) : ConnectionEstablishmentHandler(
         isClient = false,
-        frameCodec = FrameCodec(bufferPool, maxFragmentSize),
+        frameCodec = FrameCodec(maxFragmentSize),
         connectionAcceptor = acceptor,
         interceptors = interceptors,
         requesterDeferred = null

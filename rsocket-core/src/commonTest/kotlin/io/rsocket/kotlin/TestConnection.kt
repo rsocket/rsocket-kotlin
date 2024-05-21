@@ -66,7 +66,7 @@ class TestConnection : RSocketSequentialConnection, RSocketClientTarget {
 
     internal suspend fun sendToReceiver(vararg frames: Frame) {
         frames.forEach {
-            val packet = it.toPacket(InUseTrackingPool)
+            val packet = it.toSource(InUseTrackingPool)
             receiveChannel.send(packet)
         }
     }

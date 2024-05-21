@@ -16,28 +16,26 @@
 
 package io.rsocket.kotlin.internal
 
-import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 
 // TODO: make metadata should be fully transmitted before data
-internal class PayloadAssembler : Closeable {
+internal class PayloadAssembler : AutoCloseable {
     // TODO: better name
     var hasPayload: Boolean = false
         private set
     private var hasMetadata: Boolean = false
 
-    private val data = BytePacketBuilder(NoPool)
-    private val metadata = BytePacketBuilder(NoPool)
+    private val data = Buffer()
+    private val metadata = Buffer()
 
     fun appendFragment(fragment: Payload) {
         hasPayload = true
-        data.writePacket(fragment.data)
+        fragment.data.transferTo(data)
 
         val meta = fragment.metadata ?: return
         hasMetadata = true
-        metadata.writePacket(meta)
+        meta.transferTo(metadata)
     }
 
     fun assemblePayload(fragment: Payload): Payload {
@@ -46,9 +44,9 @@ internal class PayloadAssembler : Closeable {
         appendFragment(fragment)
 
         val payload = Payload(
-            data = data.build(),
+            data = Buffer().also(data::transferTo),
             metadata = when {
-                hasMetadata -> metadata.build()
+                hasMetadata -> Buffer().also(metadata::transferTo)
                 else        -> null
             }
         )
@@ -60,22 +58,5 @@ internal class PayloadAssembler : Closeable {
     override fun close() {
         data.close()
         metadata.close()
-    }
-
-    @Suppress("DEPRECATION")
-    private object NoPool : ObjectPool<ChunkBuffer> {
-        override val capacity: Int get() = error("should not be called")
-
-        override fun borrow(): ChunkBuffer {
-            error("should not be called")
-        }
-
-        override fun dispose() {
-            error("should not be called")
-        }
-
-        override fun recycle(instance: ChunkBuffer) {
-            error("should not be called")
-        }
     }
 }

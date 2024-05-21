@@ -16,17 +16,16 @@
 
 package io.rsocket.kotlin.metadata
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
 @ExperimentalMetadataApi
 public class PerStreamDataMimeTypeMetadata(public val type: MimeType) : Metadata {
     override val mimeType: MimeType get() = Reader.mimeType
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         writeMimeType(type)
     }
 
@@ -34,7 +33,7 @@ public class PerStreamDataMimeTypeMetadata(public val type: MimeType) : Metadata
 
     public companion object Reader : MetadataReader<PerStreamDataMimeTypeMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketMimeType
-        override fun ByteReadPacket.read(pool: BufferPool): PerStreamDataMimeTypeMetadata =
+        override fun Source.read(): PerStreamDataMimeTypeMetadata =
             PerStreamDataMimeTypeMetadata(readMimeType())
     }
 }

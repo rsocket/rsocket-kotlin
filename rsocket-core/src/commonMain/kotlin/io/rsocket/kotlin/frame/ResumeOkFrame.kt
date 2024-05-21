@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
+import kotlinx.io.*
 
 internal class ResumeOkFrame(
     val lastReceivedClientPosition: Long,
@@ -27,7 +27,7 @@ internal class ResumeOkFrame(
 
     override fun close(): Unit = Unit
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         writeLong(lastReceivedClientPosition)
     }
 
@@ -38,4 +38,4 @@ internal class ResumeOkFrame(
     }
 }
 
-internal fun ByteReadPacket.readResumeOk(): ResumeOkFrame = ResumeOkFrame(readLong())
+internal fun Source.readResumeOk(): ResumeOkFrame = ResumeOkFrame(readLong())

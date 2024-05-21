@@ -16,21 +16,20 @@
 
 package io.rsocket.kotlin.metadata.security
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.metadata.*
+import kotlinx.io.*
 
 @ExperimentalMetadataApi
 public sealed interface AuthMetadata : Metadata {
     public val type: AuthType
-    public fun BytePacketBuilder.writeContent()
+    public fun Sink.writeContent()
 
     override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketAuthentication
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         writeAuthType(type)
         writeContent()
     }
@@ -38,11 +37,11 @@ public sealed interface AuthMetadata : Metadata {
 
 @ExperimentalMetadataApi
 public sealed interface AuthMetadataReader<AM : AuthMetadata> : MetadataReader<AM> {
-    public fun ByteReadPacket.readContent(type: AuthType, pool: BufferPool): AM
+    public fun Source.readContent(type: AuthType): AM
 
     override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketAuthentication
-    override fun ByteReadPacket.read(pool: BufferPool): AM {
+    override fun Source.read(): AM {
         val type = readAuthType()
-        return readContent(type, pool)
+        return readContent(type)
     }
 }

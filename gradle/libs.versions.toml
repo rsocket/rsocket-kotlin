@@ -1,6 +1,7 @@
 [versions]
 kotlin = "2.0.0"
 
+kotlinx-io = "0.3.5"
 kotlinx-atomicfu = "0.24.0"
 kotlinx-coroutines = "1.8.1"
 kotlinx-benchmark = "0.4.8"
@@ -23,14 +24,15 @@ jmh = "1.36"
 maven-publish = "0.28.0"
 
 [libraries]
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
+
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }
 
 kotlinx-benchmark = { module = "org.jetbrains.kotlinx:kotlinx-benchmark-runtime", version.ref = "kotlinx-benchmark" }
 
-ktor-io = { module = "io.ktor:ktor-io", version.ref = "ktor" }
-ktor-utils = { module = "io.ktor:ktor-utils", version.ref = "ktor" }
+
 ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktor" }
 ktor-websockets = { module = "io.ktor:ktor-websockets", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }

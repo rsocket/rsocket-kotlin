@@ -20,6 +20,7 @@ import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 import kotlin.math.*
 
 private const val lengthSize = 3
@@ -36,7 +37,7 @@ internal abstract class OperationOutbound(
 
     abstract val isClosed: Boolean
 
-    protected abstract suspend fun sendFrame(frame: ByteReadPacket)
+    protected abstract suspend fun sendFrame(frame: Source)
     private suspend fun sendFrame(frame: Frame): Unit = sendFrame(frameCodec.encodeFrame(frame))
 
     suspend fun sendError(cause: Throwable) {
@@ -90,7 +91,7 @@ internal abstract class OperationOutbound(
         if (metadata != null) remaining -= lengthSize
 
         do {
-            val metadataFragment = if (metadata != null && metadata.isNotEmpty) {
+            val metadataFragment = if (metadata != null && !metadata.exhausted()) {
                 if (!first) remaining -= lengthSize
                 val length = min(metadata.remaining.toInt(), remaining)
                 remaining -= length

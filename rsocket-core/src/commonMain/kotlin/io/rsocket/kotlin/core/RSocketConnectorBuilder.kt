@@ -35,9 +35,6 @@ public class RSocketConnectorBuilder internal constructor() {
             field = value
         }
 
-    @Deprecated("Only for tests in rsocket", level = DeprecationLevel.ERROR)
-    public var bufferPool: BufferPool = BufferPool.Default
-
     private val connectionConfig: ConnectionConfigBuilder = ConnectionConfigBuilder()
     private val interceptors: InterceptorsBuilder = InterceptorsBuilder()
     private var acceptor: ConnectionAcceptor? = null
@@ -88,7 +85,7 @@ public class RSocketConnectorBuilder internal constructor() {
             setupPayload = block
         }
 
-        public fun setupPayload(payload: Payload): Unit = setupPayload { payload.copy() }
+        public fun setupPayload(payload: Payload): Unit = setupPayload { payload.copy() } // TODO
 
         internal fun producer(): () -> ConnectionConfig {
             val keepAlive = this.keepAlive
@@ -111,8 +108,7 @@ public class RSocketConnectorBuilder internal constructor() {
         interceptors.build(),
         connectionConfig.producer(),
         acceptor ?: defaultAcceptor,
-        reconnectPredicate,
-        @Suppress("DEPRECATION_ERROR") bufferPool
+        reconnectPredicate
     )
 
     private companion object {

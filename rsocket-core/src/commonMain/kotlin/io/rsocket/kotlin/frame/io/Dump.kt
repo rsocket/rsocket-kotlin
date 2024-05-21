@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package io.rsocket.kotlin.frame.io
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 
 private val digits = "0123456789abcdef".toCharArray()
 
@@ -34,7 +34,7 @@ private const val header = """
 //|00000000| 74 65 73 74 2d 64 61 74 61 20 74 65 73 74 2d 64 |test-data test-d|
 //|00000001| 61 74 61 20 74 65 73 74 2d 64 61 74 61          |ata test-data   |
 //+--------+-------------------------------------------------+----------------+
-internal fun StringBuilder.appendPacket(packet: ByteReadPacket) {
+private fun StringBuilder.appendBuffer(buffer: Buffer) {
 
     var rowIndex = 0
     var byteIndex = 0
@@ -63,9 +63,8 @@ internal fun StringBuilder.appendPacket(packet: ByteReadPacket) {
 
     appendRowIndex()
 
-    val copy = packet.copy()
-    while (copy.isNotEmpty) {
-        val byte = copy.readByte()
+    while (!buffer.exhausted()) {
+        val byte = buffer.readByte()
         val b = byte.toInt() and 0xff
 
         bytes[byteIndex++] = byte
@@ -88,20 +87,19 @@ internal fun StringBuilder.appendPacket(packet: ByteReadPacket) {
     append(divider)
 }
 
-internal fun StringBuilder.appendPacket(tag: String, packet: ByteReadPacket) {
+internal fun StringBuilder.appendSource(tag: String, source: Source) {
+    val buffer = Buffer().also(source::transferTo)
     append("\n").append(tag)
-    if (packet.remaining > 0) {
-        append("(length=").append(packet.remaining).append("):")
-        appendPacket(packet)
-    } else {
-        append(": Empty")
+    append("(length=${buffer.size})")
+    if (!buffer.exhausted()) {
+        appendBuffer(buffer)
     }
 }
 
 internal fun StringBuilder.appendPayload(payload: Payload) {
     val metadata = payload.metadata
-    if (metadata != null) appendPacket("Metadata", metadata)
-    appendPacket("Data", payload.data)
+    if (metadata != null) appendSource("Metadata", metadata)
+    appendSource("Data", payload.data)
 }
 
 internal fun Int.toBinaryString(): String {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
+import kotlinx.io.*
 
 internal class CancelFrame(
     override val streamId: Int
@@ -26,7 +26,7 @@ internal class CancelFrame(
 
     override fun close(): Unit = Unit
 
-    override fun BytePacketBuilder.writeSelf(): Unit = Unit
+    override fun Sink.writeSelf(): Unit = Unit
 
     override fun StringBuilder.appendFlags(): Unit = Unit
     override fun StringBuilder.appendSelf(): Unit = Unit

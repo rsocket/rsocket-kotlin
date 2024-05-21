@@ -16,36 +16,30 @@
 
 package io.rsocket.kotlin.metadata
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 
 @ExperimentalMetadataApi
-public interface Metadata : Closeable {
+public interface Metadata : AutoCloseable {
     public val mimeType: MimeType
-    public fun BytePacketBuilder.writeSelf()
+    public fun Sink.writeSelf()
 }
 
 @ExperimentalMetadataApi
 public interface MetadataReader<M : Metadata> {
     public val mimeType: MimeType
-    public fun ByteReadPacket.read(pool: BufferPool): M
-}
-
-
-@ExperimentalMetadataApi
-public fun PayloadBuilder.metadata(metadata: Metadata): Unit = metadata(metadata.toPacket())
-
-@ExperimentalMetadataApi
-public fun <M : Metadata> ByteReadPacket.read(
-    reader: MetadataReader<M>,
-    pool: BufferPool = BufferPool.Default,
-): M = use {
-    with(reader) { read(pool) }
+    public fun Source.read(): M
 }
 
 @ExperimentalMetadataApi
-public fun Metadata.toPacket(pool: BufferPool = BufferPool.Default): ByteReadPacket =
-    pool.buildPacket { writeSelf() }
+public fun PayloadBuilder.metadata(metadata: Metadata): Unit = metadata(metadata.toSource())
+
+@ExperimentalMetadataApi
+public fun <M : Metadata> Source.read(reader: MetadataReader<M>): M = use {
+    with(reader) { read() }
+}
+
+@ExperimentalMetadataApi
+public fun Metadata.toSource(): Source = Buffer().apply { writeSelf() }

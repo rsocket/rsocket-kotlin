@@ -16,10 +16,9 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 
 internal class ExtensionFrame(
     override val streamId: Int,
@@ -33,7 +32,7 @@ internal class ExtensionFrame(
         payload.close()
     }
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         writeInt(extendedType)
         writePayload(payload)
     }
@@ -48,8 +47,8 @@ internal class ExtensionFrame(
     }
 }
 
-internal fun ByteReadPacket.readExtension(pool: BufferPool, streamId: Int, flags: Int): ExtensionFrame {
+internal fun Source.readExtension(streamId: Int, flags: Int): ExtensionFrame {
     val extendedType = readInt()
-    val payload = readPayload(pool, flags)
+    val payload = readPayload(flags)
     return ExtensionFrame(streamId, extendedType, payload)
 }

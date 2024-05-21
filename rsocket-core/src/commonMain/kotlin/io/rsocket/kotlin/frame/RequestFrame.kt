@@ -18,10 +18,9 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 
 internal class RequestFrame(
     override val type: FrameType,
@@ -46,7 +45,7 @@ internal class RequestFrame(
         payload.close()
     }
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         if (initialRequest > 0) writeInt(initialRequest)
         writePayload(payload)
     }
@@ -64,8 +63,7 @@ internal class RequestFrame(
     }
 }
 
-internal fun ByteReadPacket.readRequest(
-    pool: BufferPool,
+internal fun Source.readRequest(
     type: FrameType,
     streamId: Int,
     flags: Int,
@@ -76,7 +74,7 @@ internal fun ByteReadPacket.readRequest(
     val next = flags check Flags.Next
 
     val initialRequest = if (withInitial) readInt() else 0
-    val payload = readPayload(pool, flags)
+    val payload = readPayload(flags)
     return RequestFrame(type, streamId, fragmentFollows, complete, next, initialRequest, payload)
 }
 

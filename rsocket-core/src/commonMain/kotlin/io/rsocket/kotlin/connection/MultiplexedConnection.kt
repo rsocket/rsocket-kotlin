@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.connection
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
@@ -24,6 +23,7 @@ import io.rsocket.kotlin.operation.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
+import kotlinx.io.*
 import kotlin.coroutines.*
 
 @RSocketTransportApi
@@ -45,8 +45,8 @@ internal class MultiplexedConnection(
     }
 
     private inner class EstablishmentContext : ConnectionEstablishmentContext(frameCodec) {
-        override suspend fun sendFrame(frame: ByteReadPacket): Unit = initialStream.sendFrame(frame)
-        override suspend fun receiveFrameRaw(): ByteReadPacket? = initialStream.receiveFrame()
+        override suspend fun sendFrame(frame: Source): Unit = initialStream.sendFrame(frame)
+        override suspend fun receiveFrameRaw(): Source? = initialStream.receiveFrame()
     }
 
     override suspend fun handleConnection(inbound: ConnectionInbound) = coroutineScope {
@@ -63,7 +63,7 @@ internal class MultiplexedConnection(
         while (true) if (!acceptRequest(inbound)) break
     }
 
-    override suspend fun sendConnectionFrame(frame: ByteReadPacket) {
+    override suspend fun sendConnectionFrame(frame: Source) {
         initialStream.sendFrame(frame)
     }
 
@@ -227,7 +227,7 @@ internal class MultiplexedConnection(
         private val stream: RSocketMultiplexedConnection.Stream,
     ) : OperationOutbound(streamId, frameCodec) {
         override val isClosed: Boolean get() = stream.isClosedForSend
-        override suspend fun sendFrame(frame: ByteReadPacket): Unit = stream.sendFrame(frame)
+        override suspend fun sendFrame(frame: Source): Unit = stream.sendFrame(frame)
     }
 
 }

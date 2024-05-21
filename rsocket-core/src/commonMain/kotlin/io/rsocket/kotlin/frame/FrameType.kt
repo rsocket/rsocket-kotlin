@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,9 +74,9 @@ internal enum class FrameType(val encodedType: Int, flags: Int = Flags.Empty) {
         private val encodedTypes: Array<FrameType?>
 
         init {
-            val maximumEncodedType = values().map(FrameType::encodedType).maxOrNull() ?: 0
+            val maximumEncodedType = entries.maxOfOrNull(FrameType::encodedType) ?: 0
             encodedTypes = arrayOfNulls(maximumEncodedType + 1)
-            values().forEach { encodedTypes[it.encodedType] = it }
+            entries.forEach { encodedTypes[it.encodedType] = it }
         }
 
         operator fun invoke(encodedType: Int): FrameType =

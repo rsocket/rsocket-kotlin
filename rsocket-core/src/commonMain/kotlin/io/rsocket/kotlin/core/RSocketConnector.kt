@@ -35,7 +35,6 @@ public class RSocketConnector internal constructor(
     private val connectionConfigProvider: () -> ConnectionConfig,
     private val acceptor: ConnectionAcceptor,
     private val reconnectPredicate: ReconnectPredicate?,
-    private val bufferPool: BufferPool,
 ) {
     private val connectionLogger = loggerFactory.logger("io.rsocket.kotlin.connection")
     private val frameLogger = loggerFactory.logger("io.rsocket.kotlin.frame")
@@ -62,7 +61,7 @@ public class RSocketConnector internal constructor(
     private suspend fun connectOnce(transport: RSocketClientTarget): RSocket {
         val requesterDeferred = CompletableDeferred<RSocket>()
         val connectJob = transport.connectClient(
-            SetupConnection(requesterDeferred).logging(frameLogger, bufferPool)
+            SetupConnection(requesterDeferred).logging(frameLogger)
         ).onCompletion { if (it != null) requesterDeferred.completeExceptionally(it) }
         return try {
             requesterDeferred.await()
@@ -74,7 +73,7 @@ public class RSocketConnector internal constructor(
 
     private inner class SetupConnection(requesterDeferred: CompletableDeferred<RSocket>) : ConnectionEstablishmentHandler(
         isClient = true,
-        frameCodec = FrameCodec(bufferPool, maxFragmentSize),
+        frameCodec = FrameCodec(maxFragmentSize),
         connectionAcceptor = acceptor,
         interceptors = interceptors,
         requesterDeferred = requesterDeferred
@@ -89,7 +88,7 @@ public class RSocketConnector internal constructor(
                     resumeToken = null,
                     payloadMimeType = connectionConfig.payloadMimeType,
                     // copy needed, as it can be used in acceptor
-                    payload = connectionConfig.setupPayload.copy()
+                    payload = connectionConfig.setupPayload.copy() // TODO!!!
                 )
             } catch (cause: Throwable) {
                 connectionConfig.setupPayload.close()

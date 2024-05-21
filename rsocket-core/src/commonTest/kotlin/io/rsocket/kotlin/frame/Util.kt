@@ -22,7 +22,7 @@ import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
 internal fun Frame.toPacketWithLength(): ByteReadPacket = InUseTrackingPool.buildPacket {
-    val packet = toPacket(InUseTrackingPool)
+    val packet = toSource(InUseTrackingPool)
     writeInt24(packet.remaining.toInt())
     writePacket(packet)
 }
@@ -33,4 +33,4 @@ internal fun ByteReadPacket.toFrameWithLength(): Frame {
     return readFrame(InUseTrackingPool)
 }
 
-internal fun Frame.loopFrame(): Frame = toPacket(InUseTrackingPool).readFrame(InUseTrackingPool)
+internal fun Frame.loopFrame(): Frame = toSource(InUseTrackingPool).readFrame(InUseTrackingPool)

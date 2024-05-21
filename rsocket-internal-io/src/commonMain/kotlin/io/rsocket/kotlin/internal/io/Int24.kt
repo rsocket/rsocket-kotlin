@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
 
 package io.rsocket.kotlin.internal.io
 
-import io.ktor.utils.io.core.*
+import kotlinx.io.*
 
 private const val lengthMask: Int = 0xFFFFFF.inv()
 
-public fun ByteReadPacket.readInt24(): Int {
+public fun Source.readInt24(): Int {
     val b = readByte().toInt() and 0xFF shl 16
     val b1 = readByte().toInt() and 0xFF shl 8
     val b2 = readByte().toInt() and 0xFF
     return b or b1 or b2
 }
 
-public fun BytePacketBuilder.writeInt24(length: Int) {
+public fun Sink.writeInt24(length: Int) {
     require(length and lengthMask == 0) { "Length is larger than 24 bits" }
     writeByte((length shr 16).toByte())
     writeByte((length shr 8).toByte())
