@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import org.jetbrains.kotlin.konan.target.*
 
 plugins {
     kotlin("multiplatform")
@@ -30,19 +28,14 @@ kotlin {
         browser()
         nodejs()
     }
-    when {
-        HostManager.hostIsLinux -> linuxX64("native")
-        HostManager.hostIsMingw -> null //no native support for TCP in ktor mingwX64("native")
-        HostManager.hostIsMac   -> macosX64("native")
-        else                    -> null
-    }
+    linuxX64()
+    macosX64()
+    macosArm64()
 
     sourceSets {
-        commonMain {
-            dependencies {
-                api("io.rsocket.kotlin:rsocket-core:$rsocketVersion")
-                api("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
-            }
+        commonMain.dependencies {
+            api("io.rsocket.kotlin:rsocket-core:$rsocketVersion")
+            api("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:$kotlinxSerializationVersion")
         }
     }
 }

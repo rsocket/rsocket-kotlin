@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.samples.chat.client
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
+import org.jetbrains.kotlin.gradle.targets.js.npm.*
 
-import io.rsocket.kotlin.samples.chat.api.*
-import kotlinx.coroutines.*
+plugins {
+    kotlin("multiplatform") apply false
+}
 
-suspend fun main() {
-    coroutineScope {
-        //only WS is supported on browser JS
-        // native WS server is incompatible with js WS client
-        (Servers.WS - Servers.Native.WS).forEach {
-            val client = ApiClient(it, "Yuri")
-            launch {
-                client.use(it, "RSocket is awesome! (from browser)")
-            }
-        }
+plugins.withType<NodeJsRootPlugin> {
+    // ignore package lock
+    extensions.configure<NpmExtension> {
+        lockFileDirectory.set(layout.buildDirectory.dir("kotlin-js-store"))
+        packageLockMismatchReport.set(LockFileMismatchReport.NONE)
+        packageLockAutoReplace.set(true)
     }
 }

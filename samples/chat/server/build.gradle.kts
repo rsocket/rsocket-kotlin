@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.konan.target.*
+import org.jetbrains.kotlin.gradle.*
+import org.jetbrains.kotlin.gradle.plugin.mpp.*
 
 plugins {
     kotlin("multiplatform")
@@ -30,51 +31,46 @@ application {
 }
 
 kotlin {
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
     jvm {
         withJava()
     }
     js {
-        nodejs {
-            binaries.executable()
-        }
+        nodejs()
+        binaries.executable()
     }
-    when {
-        HostManager.hostIsLinux -> linuxX64("native")
-        HostManager.hostIsMingw -> null //no native support for TCP in ktor mingwX64("clientNative")
-        HostManager.hostIsMac   -> macosX64("native")
-        else                    -> null
-    }?.binaries {
-        executable {
-            entryPoint = "io.rsocket.kotlin.samples.chat.server.main"
+    linuxX64()
+    macosX64()
+    macosArm64()
+    targets.withType<KotlinNativeTarget>().configureEach {
+        binaries {
+            executable {
+                entryPoint = "io.rsocket.kotlin.samples.chat.server.main"
+            }
         }
     }
 
     sourceSets {
-        commonMain {
-            dependencies {
-                implementation(project(":api"))
+        commonMain.dependencies {
+            implementation(project(":api"))
 
-                implementation("io.ktor:ktor-utils:$ktorVersion") //for concurrent map implementation and shared list
-            }
+            implementation("io.ktor:ktor-utils:$ktorVersion") //for concurrent map implementation and shared list
         }
-        val jvmMain by getting {
-            dependencies {
-                implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
-                implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:$rsocketVersion")
-                implementation("io.ktor:ktor-server-cio:$ktorVersion")
-            }
+        jvmMain.dependencies {
+            implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
+            implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:$rsocketVersion")
+            implementation("io.ktor:ktor-server-cio:$ktorVersion")
         }
-        findByName("nativeMain")?.apply {
-            dependencies {
-                implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
-                implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:$rsocketVersion")
-                implementation("io.ktor:ktor-server-cio:$ktorVersion")
-            }
+        nativeMain.dependencies {
+            implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
+            implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:$rsocketVersion")
+            implementation("io.ktor:ktor-server-cio:$ktorVersion")
         }
-        val jsMain by getting {
-            dependencies {
-                implementation("io.rsocket.kotlin:rsocket-transport-nodejs-tcp:$rsocketVersion")
-            }
+        jsMain.dependencies {
+            implementation("io.rsocket.kotlin:rsocket-transport-nodejs-tcp:$rsocketVersion")
         }
     }
 }
