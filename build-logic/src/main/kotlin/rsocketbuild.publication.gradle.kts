@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-import com.vanniktech.maven.publish.*
-
 plugins {
     id("com.vanniktech.maven.publish.base")
 }
 
 mavenPublishing {
-    publishToMavenCentral(SonatypeHost.S01)
+    publishToMavenCentral()
     signAllPublications()
 
     pom {
