@@ -17,7 +17,7 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.internal.io.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.logging.*
 
 public class RSocketServerBuilder internal constructor() {

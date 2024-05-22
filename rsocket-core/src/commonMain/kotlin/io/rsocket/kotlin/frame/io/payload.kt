@@ -17,6 +17,7 @@
 package io.rsocket.kotlin.frame.io
 
 import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.payload.*
 

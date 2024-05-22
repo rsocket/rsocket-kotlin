@@ -20,7 +20,7 @@ import io.ktor.utils.io.bits.*
 import io.ktor.utils.io.core.*
 import io.ktor.utils.io.core.internal.*
 import io.ktor.utils.io.pool.*
-import io.rsocket.kotlin.internal.io.*
+import io.rsocket.kotlin.internal.*
 import kotlinx.atomicfu.locks.*
 import kotlin.test.*
 
