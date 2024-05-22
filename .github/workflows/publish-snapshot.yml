@@ -27,8 +27,10 @@ jobs:
           branch_name="${ref_name////-}"
           echo "::set-output name=version-suffix::$branch_name"
 
-      - name: Publish to Maven Local (prepare packages)
-        run: ./gradlew publishToMavenLocal -PversionSuffix=${{ steps.set-version.outputs.version-suffix }} -PgithubUsername=${{ github.actor }} -PgithubPassword=${{ github.token }} --no-configuration-cache
-
-      - name: Publish snapshot to Github Packages (version x.y.z-${{ steps.set-version.outputs.version-suffix }}-SNAPSHOT)
-        run: ./gradlew publishAllPublicationsToGithubRepository -PversionSuffix=${{ steps.set-version.outputs.version-suffix }} -PgithubUsername=${{ github.actor }} -PgithubPassword=${{ github.token }} --no-configuration-cache
+      - name: Publish snapshot to Maven Central
+        run: ./gradlew publishToMavenCentral -Pversion=0.16.0-${{ steps.set-version.outputs.version-suffix }}-SNAPSHOT --no-configuration-cache
+        env:
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{secrets.signingKey}}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{secrets.signingPassword}}
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{secrets.sonatypeUsername}}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{secrets.sonatypePassword}}
