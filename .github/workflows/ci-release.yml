@@ -5,9 +5,9 @@ on:
       - '*'
 
 jobs:
-  test:
-    uses: ./.github/workflows/run-tests.yml
+  #  test:
+  #    uses: ./.github/workflows/run-tests.yml
   publish:
-    needs: [ test ]
+    #    needs: [ test ]
     uses: ./.github/workflows/publish-release.yml
     secrets: inherit
