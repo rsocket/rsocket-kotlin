@@ -39,9 +39,7 @@ So it depends on `ktor` client/server engines for available transports and platf
 
 ## Using in your projects
 
-rsocket-kotlin is available on [Maven Central](https://mvnrepository.com/artifact/io.rsocket.kotlin)
-
-Make sure, that you use Kotlin 1.6.20+, ktor 2.0.0+ and have `mavenCentral()` in the list of repositories:
+rsocket-kotlin is available on [Maven Central](https://mvnrepository.com/artifact/io.rsocket.kotlin):
 
 ```kotlin
 repositories {
@@ -59,10 +57,10 @@ Dependencies:
 ```kotlin
 dependencies {
     //for client
-    implementation("io.rsocket.kotlin:rsocket-ktor-client:0.15.4")
+    implementation("io.rsocket.kotlin:rsocket-ktor-client:0.16.0")
 
     //for server
-    implementation("io.rsocket.kotlin:rsocket-ktor-server:0.15.4")
+    implementation("io.rsocket.kotlin:rsocket-ktor-server:0.16.0")
 }
 ```
 
@@ -183,19 +181,19 @@ Dependencies:
 
 ```kotlin
 dependencies {
-    implementation("io.rsocket.kotlin:rsocket-core:0.15.4")
+    implementation("io.rsocket.kotlin:rsocket-core:0.16.0")
 
     // TCP ktor client/server transport
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:0.15.4")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:0.16.0")
 
     // WS ktor client transport
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-client:0.15.4")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-client:0.16.0")
 
     // WS ktor server transport
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:0.15.4")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:0.16.0")
 
     // TCP nodeJS client/server transport
-    implementation("io.rsocket.kotlin:rsocket-transport-nodejs-tcp:0.15.4")
+    implementation("io.rsocket.kotlin:rsocket-transport-nodejs-tcp:0.16.0")
 }
 ```
 
@@ -279,7 +277,7 @@ For bugs, questions and discussions please use the [Github Issues](https://githu
 
 ## LICENSE
 
-Copyright 2015-2022 the original author or authors.
+Copyright 2015-2024 the original author or authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
