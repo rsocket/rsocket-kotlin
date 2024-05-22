@@ -41,8 +41,8 @@ if (versionSuffix != null) {
 val javadocJar by tasks.registering(Jar::class) { archiveClassifier.set("javadoc") }
 
 // this is somewhat a hack because we have a single javadoc artifact which is used for all publications
-tasks.withType<Sign>().configureEach { mustRunAfter(javadocJar) }
-tasks.withType<AbstractPublishToMaven>().configureEach { mustRunAfter(tasks.withType<Sign>()) }
+tasks.withType<Sign>().configureEach { dependsOn(javadocJar) }
+tasks.withType<AbstractPublishToMaven>().configureEach { dependsOn(tasks.withType<Sign>()) }
 
 publishing {
     publications.withType<MavenPublication> {
