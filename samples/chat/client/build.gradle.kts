@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.konan.target.*
+import org.jetbrains.kotlin.gradle.plugin.mpp.*
 
 plugins {
     kotlin("multiplatform")
@@ -33,56 +33,37 @@ kotlin {
     jvm {
         withJava()
     }
-    js("browser") {
-        browser {
-            binaries.executable()
-        }
+    js {
+        browser()
+        nodejs()
+        binaries.executable()
     }
-    js("nodejs") {
-        nodejs {
-            binaries.executable()
-        }
-    }
-    when {
-        HostManager.hostIsLinux -> linuxX64("native")
-        HostManager.hostIsMingw -> null //no native support for TCP in ktor mingwX64("clientNative")
-        HostManager.hostIsMac   -> macosX64("native")
-        else                    -> null
-    }?.binaries {
-        executable {
-            entryPoint = "io.rsocket.kotlin.samples.chat.client.main"
+    linuxX64()
+    macosX64()
+    macosArm64()
+    targets.withType<KotlinNativeTarget>().configureEach {
+        binaries {
+            executable {
+                entryPoint = "io.rsocket.kotlin.samples.chat.client.main"
+            }
         }
     }
 
     sourceSets {
-        commonMain {
-            dependencies {
-                implementation(project(":api"))
-                implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-client:$rsocketVersion")
-            }
+        commonMain.dependencies {
+            implementation(project(":api"))
+            implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-client:$rsocketVersion")
         }
-        val jvmMain by getting {
-            dependencies {
-                implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
-                implementation("io.ktor:ktor-client-cio:$ktorVersion")
-            }
+        jvmMain.dependencies {
+            implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
+            implementation("io.ktor:ktor-client-cio:$ktorVersion")
         }
-        findByName("nativeMain")?.apply {
-            dependencies {
-                implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
-                implementation("io.ktor:ktor-client-cio:$ktorVersion")
-            }
+        nativeMain.dependencies {
+            implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
+            implementation("io.ktor:ktor-client-cio:$ktorVersion")
         }
-        val browserMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-js:$ktorVersion")
-            }
-        }
-        val nodejsMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-js:$ktorVersion")
-                implementation("io.rsocket.kotlin:rsocket-transport-nodejs-tcp:$rsocketVersion")
-            }
+        jsMain.dependencies {
+            implementation("io.ktor:ktor-client-js:$ktorVersion")
         }
     }
 }

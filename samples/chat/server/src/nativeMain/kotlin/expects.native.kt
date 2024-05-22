@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.rsocket.kotlin.samples.chat.server
 
-import kotlin.native.concurrent.*
+import kotlin.concurrent.*
 import kotlin.system.*
 
 actual class Counter {
@@ -24,4 +24,5 @@ actual class Counter {
     actual fun next(): Int = atomic.addAndGet(1)
 }
 
+@Suppress("DEPRECATION")
 actual fun currentMillis(): Long = getTimeMillis()
