@@ -32,3 +32,13 @@ public inline fun CoroutineContext.ensureActive(onInactive: () -> Unit) {
     onInactive() // should not throw
     ensureActive() // will throw
 }
+
+@Suppress("SuspendFunctionOnCoroutineScope")
+public suspend inline fun <T> CoroutineScope.launchCoroutine(
+    context: CoroutineContext = EmptyCoroutineContext,
+    crossinline block: suspend (CancellableContinuation<T>) -> Unit,
+): T = suspendCancellableCoroutine { cont ->
+    val job = launch(context) { block(cont) }
+    job.invokeOnCompletion { if (it != null && cont.isActive) cont.resumeWithException(it) }
+    cont.invokeOnCancellation { job.cancel("launchCoroutine was cancelled", it) }
+}

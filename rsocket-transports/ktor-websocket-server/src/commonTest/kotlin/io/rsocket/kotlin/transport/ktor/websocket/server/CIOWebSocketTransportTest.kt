@@ -20,3 +20,5 @@ import io.ktor.client.engine.cio.CIO as ClientCIO
 import io.ktor.server.cio.CIO as ServerCIO
 
 class CIOWebSocketTransportTest : WebSocketTransportTest(ClientCIO, ServerCIO)
+
+class CIOKtorWebSocketTransportTest : KtorWebSocketTransportTest(ClientCIO, ServerCIO)
