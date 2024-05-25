@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(TransportApi::class)
 @file:Suppress("FunctionName")
 
 package io.rsocket.kotlin.transport.local
@@ -28,6 +27,8 @@ import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 import kotlin.js.*
 
+@Suppress("DEPRECATION_ERROR")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use LocalServerTransport with parameters")
 @JsName("LocalServerTransport2") // for compatibility with new API
 public fun LocalServerTransport(): ServerTransport<LocalServer> = ServerTransport { accept ->
     val connections = Channel<Connection>()
@@ -41,6 +42,8 @@ public fun LocalServerTransport(): ServerTransport<LocalServer> = ServerTranspor
     LocalServer(connections, coroutineContext + SupervisorJob(handlerJob))
 }
 
+@Suppress("DEPRECATION_ERROR")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use LocalServerInstance")
 public class LocalServer internal constructor(
     private val connections: Channel<Connection>,
     override val coroutineContext: CoroutineContext,

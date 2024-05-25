@@ -24,7 +24,7 @@ import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 
-@TransportApi
+@Suppress("DEPRECATION_ERROR")
 @RSocketTransportApi
 internal suspend fun RSocketConnectionHandler.handleConnection(connection: Connection): Unit = coroutineScope {
     val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
@@ -43,7 +43,7 @@ internal suspend fun RSocketConnectionHandler.handleConnection(connection: Conne
     }
 }
 
-@TransportApi
+@Suppress("DEPRECATION_ERROR")
 @RSocketTransportApi
 private class OldConnection(
     private val outboundQueue: PrioritizationFrameQueue,

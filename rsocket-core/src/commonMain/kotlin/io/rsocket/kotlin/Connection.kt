@@ -19,10 +19,7 @@ package io.rsocket.kotlin
 import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
 
-/**
- * That interface isn't stable for inheritance.
- */
-@TransportApi
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API")
 public interface Connection : CoroutineScope {
     public suspend fun send(packet: ByteReadPacket)
     public suspend fun receive(): ByteReadPacket

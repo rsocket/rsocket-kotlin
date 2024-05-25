@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(TransportApi::class)
 @file:Suppress("FunctionName")
 
 package io.rsocket.kotlin.transport.ktor.tcp
@@ -22,20 +21,24 @@ package io.rsocket.kotlin.transport.ktor.tcp
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use KtorTcpServerInstance")
 public class TcpServer internal constructor(
     public val handlerJob: Job,
     public val serverSocket: Deferred<ServerSocket>
 )
 
+@Suppress("DEPRECATION_ERROR")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use KtorTcpServerTransport")
 public fun TcpServerTransport(
     hostname: String = "0.0.0.0", port: Int = 0,
     configure: SocketOptions.AcceptorOptions.() -> Unit = {},
 ): ServerTransport<TcpServer> = TcpServerTransport(InetSocketAddress(hostname, port), configure)
 
+@Suppress("DEPRECATION_ERROR")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use KtorTcpServerTransport")
 public fun TcpServerTransport(
     localAddress: InetSocketAddress? = null,
     configure: SocketOptions.AcceptorOptions.() -> Unit = {},

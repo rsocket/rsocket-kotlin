@@ -25,7 +25,7 @@ import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 
-@OptIn(TransportApi::class, RSocketTransportApi::class, RSocketLoggingApi::class)
+@OptIn(RSocketTransportApi::class, RSocketLoggingApi::class)
 public class RSocketServer internal constructor(
     loggerFactory: LoggerFactory,
     private val maxFragmentSize: Int,
@@ -34,12 +34,16 @@ public class RSocketServer internal constructor(
 ) {
     private val frameLogger = loggerFactory.logger("io.rsocket.kotlin.frame")
 
+    @Suppress("DEPRECATION_ERROR")
+    @Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API")
     @DelicateCoroutinesApi
     public fun <T> bind(
         transport: ServerTransport<T>,
         acceptor: ConnectionAcceptor,
     ): T = bindIn(GlobalScope, transport, acceptor)
 
+    @Suppress("DEPRECATION_ERROR")
+    @Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API")
     public fun <T> bindIn(
         scope: CoroutineScope,
         transport: ServerTransport<T>,

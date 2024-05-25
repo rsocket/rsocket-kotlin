@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(TransportApi::class)
 @file:Suppress("FunctionName")
 
 package io.rsocket.kotlin.transport.ktor.websocket.client
@@ -24,14 +23,13 @@ import io.ktor.client.engine.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.internal.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
-//TODO: will be reworked later with transport API rework
-
+@Suppress("DEPRECATION_ERROR")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use KtorWebSocketClientTransport")
 public fun <T : HttpClientEngineConfig> WebSocketClientTransport(
     engineFactory: HttpClientEngineFactory<T>,
     context: CoroutineContext = EmptyCoroutineContext,
@@ -61,6 +59,8 @@ public fun <T : HttpClientEngineConfig> WebSocketClientTransport(
     }
 }
 
+@Suppress("DEPRECATION_ERROR")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use KtorWebSocketClientTransport")
 public fun <T : HttpClientEngineConfig> WebSocketClientTransport(
     engineFactory: HttpClientEngineFactory<T>,
     urlString: String, secure: Boolean = false,
@@ -77,6 +77,8 @@ public fun <T : HttpClientEngineConfig> WebSocketClientTransport(
     request()
 }
 
+@Suppress("DEPRECATION_ERROR")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use KtorWebSocketClientTransport")
 public fun <T : HttpClientEngineConfig> WebSocketClientTransport(
     engineFactory: HttpClientEngineFactory<T>,
     host: String? = null,

@@ -21,7 +21,8 @@ import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import kotlinx.coroutines.*
 
-@TransportApi
+@Suppress("DEPRECATION_ERROR")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API")
 public class WebSocketConnection(
     private val session: WebSocketSession,
 ) : Connection, CoroutineScope by session {

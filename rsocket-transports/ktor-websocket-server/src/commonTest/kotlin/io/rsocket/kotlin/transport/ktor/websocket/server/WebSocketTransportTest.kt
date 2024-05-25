@@ -21,6 +21,7 @@ import io.ktor.server.engine.*
 import io.rsocket.kotlin.transport.ktor.websocket.client.*
 import io.rsocket.kotlin.transport.tests.*
 
+@Suppress("DEPRECATION_ERROR")
 abstract class WebSocketTransportTest(
     private val clientEngine: HttpClientEngineFactory<*>,
     private val serverEngine: ApplicationEngineFactory<*, *>,
