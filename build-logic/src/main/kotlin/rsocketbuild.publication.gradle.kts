@@ -15,6 +15,7 @@
  */
 
 plugins {
+    signing
     id("com.vanniktech.maven.publish.base")
 }
 
@@ -55,6 +56,12 @@ mavenPublishing {
         }
     }
 }
+
+// we ignore the singing requirement because:
+// * we should be able to run `publishToMavenLocal` without signing;
+// * signing is needed to Maven Central only, and it will anyway validate that the signature is present;
+// * failure because of absent signature will anyway fail only on CI during publishing release;
+signing.isRequired = false
 
 // javadocJar setup
 // we have a single javadoc artifact which is used for all publications,
