@@ -1,0 +1,17 @@
+public final class io/rsocket/kotlin/ktor/client/BuildersKt {
+	public static final fun rSocket (Lio/ktor/client/HttpClient;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun rSocket (Lio/ktor/client/HttpClient;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun rSocket (Lio/ktor/client/HttpClient;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun rSocket$default (Lio/ktor/client/HttpClient;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun rSocket$default (Lio/ktor/client/HttpClient;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class io/rsocket/kotlin/ktor/client/RSocketSupportConfig {
+	public final fun connector (Lio/rsocket/kotlin/core/RSocketConnector;)V
+	public final fun connector (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class io/rsocket/kotlin/ktor/client/RSocketSupportKt {
+	public static final fun getRSocketSupport ()Lio/ktor/client/plugins/api/ClientPlugin;
+}
+

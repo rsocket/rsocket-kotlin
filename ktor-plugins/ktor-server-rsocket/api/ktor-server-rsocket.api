@@ -1,0 +1,16 @@
+public final class io/rsocket/kotlin/ktor/server/RSocketSupportConfig {
+	public final fun server (Lio/rsocket/kotlin/core/RSocketServer;)V
+	public final fun server (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class io/rsocket/kotlin/ktor/server/RSocketSupportKt {
+	public static final fun getRSocketSupport ()Lio/ktor/server/application/ApplicationPlugin;
+}
+
+public final class io/rsocket/kotlin/ktor/server/RoutingKt {
+	public static final fun rSocket (Lio/ktor/server/routing/Route;Ljava/lang/String;Lio/rsocket/kotlin/ConnectionAcceptor;)V
+	public static final fun rSocket (Lio/ktor/server/routing/Route;Ljava/lang/String;Ljava/lang/String;Lio/rsocket/kotlin/ConnectionAcceptor;)V
+	public static synthetic fun rSocket$default (Lio/ktor/server/routing/Route;Ljava/lang/String;Lio/rsocket/kotlin/ConnectionAcceptor;ILjava/lang/Object;)V
+	public static synthetic fun rSocket$default (Lio/ktor/server/routing/Route;Ljava/lang/String;Ljava/lang/String;Lio/rsocket/kotlin/ConnectionAcceptor;ILjava/lang/Object;)V
+}
+
