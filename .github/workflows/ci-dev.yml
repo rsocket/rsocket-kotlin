@@ -12,5 +12,6 @@ jobs:
   publish:
     needs: [ test ]
     uses: ./.github/workflows/publish-snapshot.yml
+    secrets: inherit
     with:
       add-branch-suffix: true
