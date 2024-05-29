@@ -12,16 +12,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ 'ubuntu-latest', 'macos-14', 'windows-latest' ]
+        os: [ 'ubuntu-latest', 'macos-latest', 'windows-latest' ]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-gradle
         with:
-          cache-read-only: ${{ github.ref_name != 'main' }}
+          cache-read-only: ${{ github.ref_name != 'master' }}
 
       - run: ./gradlew build publishToMavenLocal --continue -Prsocketbuild.skipTests=true
 
   run-tests:
+    needs: [ build-project ]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -29,13 +30,13 @@ jobs:
         os: [ 'ubuntu-latest' ]
         target: [ 'jvm', 'jvm11', 'jvm17', 'jvm21', 'js', 'native' ]
         include:
-          - os: 'macos-14'
+          - os: 'macos-latest'
             target: 'macos'
-          - os: 'macos-14'
+          - os: 'macos-latest'
             target: 'ios'
-          - os: 'macos-14'
+          - os: 'macos-latest'
             target: 'watchos'
-          - os: 'macos-14'
+          - os: 'macos-latest'
             target: 'tvos'
           - os: 'windows-latest'
             target: 'native'

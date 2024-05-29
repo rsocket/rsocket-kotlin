@@ -1,34 +1,22 @@
-name: Publish SNAPSHOT to Github Packages
-on:
-  workflow_call:
-    inputs:
-      add-branch-suffix:
-        type: boolean
-        required: true
+name: Publish SNAPSHOT to Maven Central
+on: [ workflow_call ]
 
 concurrency:
-  group: publish-snapshot-${{ github.ref_name }}
+  group: publish-snapshot
   cancel-in-progress: false
 
 jobs:
   publish:
     if: github.repository == 'rsocket/rsocket-kotlin'
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-gradle
         with:
-          cache-read-only: true
-
-      - if: inputs.add-branch-suffix
-        id: set-version
-        run: |
-          ref_name=${{ github.ref_name }}
-          branch_name="${ref_name////-}"
-          echo "::set-output name=version-suffix::$branch_name"
+          cache-disabled: true
 
       - name: Publish snapshot to Maven Central
-        run: ./gradlew publishToMavenCentral -Pversion=0.16.0-${{ steps.set-version.outputs.version-suffix }}-SNAPSHOT --no-configuration-cache
+        run: ./gradlew publishToMavenCentral -Pversion=0.17.0-SNAPSHOT --no-configuration-cache
         env:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{secrets.signingKey}}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{secrets.signingPassword}}

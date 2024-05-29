@@ -1,9 +1,0 @@
-name: Pull Request CI
-on:
-  pull_request:
-    paths-ignore:
-      - samples/**
-
-jobs:
-  test:
-    uses: ./.github/workflows/run-tests.yml

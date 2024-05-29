@@ -1,6 +1,5 @@
 name: Publish RELEASE to Maven Central
-on:
-  workflow_call:
+on: [ workflow_call ]
 
 concurrency:
   group: publish-release
@@ -9,7 +8,7 @@ concurrency:
 jobs:
   publish:
     if: github.repository == 'rsocket/rsocket-kotlin'
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-gradle

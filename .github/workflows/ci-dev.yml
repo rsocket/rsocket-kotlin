@@ -1,17 +1,14 @@
 name: Dev CI
 on:
+  pull_request:
+    paths-ignore:
+      - samples/**
   push:
     paths-ignore:
       - samples/**
-    branches-ignore:
-      - master
+    branches:
+      - ci/**
 
 jobs:
   test:
     uses: ./.github/workflows/run-tests.yml
-  publish:
-    needs: [ test ]
-    uses: ./.github/workflows/publish-snapshot.yml
-    secrets: inherit
-    with:
-      add-branch-suffix: true
