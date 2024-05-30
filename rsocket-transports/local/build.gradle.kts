@@ -18,6 +18,7 @@ import rsocketbuild.*
 
 plugins {
     id("rsocketbuild.multiplatform-library")
+    id("rsocketbuild.atomicfu")
 }
 
 description = "rsocket-kotlin Local transport implementation"

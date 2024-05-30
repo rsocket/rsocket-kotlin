@@ -19,16 +19,17 @@ package io.rsocket.kotlin.transport.ktor.tcp
 import io.ktor.network.sockets.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.test.*
-import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
 import kotlin.test.*
 
 class TcpServerTest : SuspendTest, TestWithLeakCheck {
     private val testJob = Job()
     private val testContext = testJob + TestExceptionHandler
-    private val address = InetSocketAddress("0.0.0.0", PortProvider.next())
-    private val serverTransport = TcpServerTransport(address)
-    private val clientTransport = TcpClientTransport(address, testContext)
+    private val serverTransport = TcpServerTransport()
+    private suspend fun clientTransport(server: TcpServer) = TcpClientTransport(
+        server.serverSocket.await().localAddress as InetSocketAddress,
+        testContext
+    )
 
     override suspend fun after() {
         testJob.cancelAndJoin()
@@ -50,7 +51,7 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
                     payload(text)
                 }
             }
-        }.connect(clientTransport)
+        }.connect(clientTransport(server))
 
         val client1 = newClient("ok")
         client1.requestResponse(payload("ok")).close()
@@ -86,7 +87,7 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
             }.also { handlers += it }
         }.also { it.serverSocket.await() }
 
-        suspend fun newClient() = TestConnector().connect(clientTransport)
+        suspend fun newClient() = TestConnector().connect(clientTransport(server))
 
         val client1 = newClient()
 

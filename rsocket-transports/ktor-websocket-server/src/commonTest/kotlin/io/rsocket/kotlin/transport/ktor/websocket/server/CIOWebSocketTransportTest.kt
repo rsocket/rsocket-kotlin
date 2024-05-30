@@ -16,31 +16,7 @@
 
 package io.rsocket.kotlin.transport.ktor.websocket.server
 
-import io.rsocket.kotlin.test.*
-import kotlin.test.*
-import kotlin.time.*
-import kotlin.time.Duration.Companion.minutes
 import io.ktor.client.engine.cio.CIO as ClientCIO
 import io.ktor.server.cio.CIO as ServerCIO
 
-class CIOWebSocketTransportTest : WebSocketTransportTest(ClientCIO, ServerCIO) {
-    //on native we need more time here
-    override val testTimeout: Duration = 5.minutes
-
-    //tests are ignored, because current CIO:native websockets implementation is unstable when working with large frames
-    @Test
-    @IgnoreNative
-    override fun largePayloadFireAndForget10() = super.largePayloadFireAndForget10()
-
-    @Test
-    @IgnoreNative
-    override fun largePayloadMetadataPush10() = super.largePayloadMetadataPush10()
-
-    @Test
-    @IgnoreNative
-    override fun largePayloadRequestChannel200() = super.largePayloadRequestChannel200()
-
-    @Test
-    @IgnoreNative
-    override fun largePayloadRequestResponse100() = super.largePayloadRequestResponse100()
-}
+class CIOWebSocketTransportTest : WebSocketTransportTest(ClientCIO, ServerCIO)

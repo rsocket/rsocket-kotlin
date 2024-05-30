@@ -17,16 +17,19 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
-@OptIn(TransportApi::class, RSocketLoggingApi::class)
+@OptIn(TransportApi::class, RSocketTransportApi::class, RSocketLoggingApi::class)
 public class RSocketConnector internal constructor(
-    private val loggerFactory: LoggerFactory,
+    loggerFactory: LoggerFactory,
     private val maxFragmentSize: Int,
     private val interceptors: Interceptors,
     private val connectionConfigProvider: () -> ConnectionConfig,
@@ -34,55 +37,63 @@ public class RSocketConnector internal constructor(
     private val reconnectPredicate: ReconnectPredicate?,
     private val bufferPool: BufferPool,
 ) {
+    private val connectionLogger = loggerFactory.logger("io.rsocket.kotlin.connection")
+    private val frameLogger = loggerFactory.logger("io.rsocket.kotlin.frame")
 
-    public suspend fun connect(transport: ClientTransport): RSocket = when (reconnectPredicate) {
-        //TODO current coroutineContext job is overriden by transport coroutineContext jov
-        null -> withContext(transport.coroutineContext) { connectOnce(transport) }
+    public suspend fun connect(transport: ClientTransport): RSocket = connect(object : RSocketClientTarget {
+        override val coroutineContext: CoroutineContext get() = transport.coroutineContext
+        override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
+            handler.handleConnection(interceptors.wrapConnection(transport.connect()))
+        }
+    })
+
+    public suspend fun connect(transport: RSocketClientTarget): RSocket = when (reconnectPredicate) {
+        null -> connectOnce(transport)
         else -> connectWithReconnect(
             transport.coroutineContext,
-            loggerFactory.logger("io.rsocket.kotlin.connection"),
+            connectionLogger,
             { connectOnce(transport) },
             reconnectPredicate,
         )
     }
 
-    private suspend fun connectOnce(transport: ClientTransport): RSocket {
-        val connection = transport.connect().wrapConnection()
-        val connectionConfig = try {
-            connectionConfigProvider()
+    private suspend fun connectOnce(transport: RSocketClientTarget): RSocket {
+        val requesterDeferred = CompletableDeferred<RSocket>()
+        val connectJob = transport.connectClient(
+            SetupConnection(requesterDeferred).logging(frameLogger, bufferPool)
+        ).onCompletion { if (it != null) requesterDeferred.completeExceptionally(it) }
+        return try {
+            requesterDeferred.await()
         } catch (cause: Throwable) {
-            connection.cancel("Connection config provider failed", cause)
-            throw cause
-        }
-        val setupFrame = SetupFrame(
-            version = Version.Current,
-            honorLease = false,
-            keepAlive = connectionConfig.keepAlive,
-            resumeToken = null,
-            payloadMimeType = connectionConfig.payloadMimeType,
-            payload = connectionConfig.setupPayload.copy() //copy needed, as it can be used in acceptor
-        )
-        try {
-            val requester = connect(
-                connection = connection,
-                isServer = false,
-                maxFragmentSize = maxFragmentSize,
-                interceptors = interceptors,
-                connectionConfig = connectionConfig,
-                acceptor = acceptor,
-                bufferPool = bufferPool
-            )
-            connection.sendFrame(bufferPool, setupFrame)
-            return requester
-        } catch (cause: Throwable) {
-            connectionConfig.setupPayload.close()
-            setupFrame.close()
-            connection.cancel("Connection establishment failed", cause)
+            connectJob.cancel("RSocketConnector.connect was cancelled", cause)
             throw cause
         }
     }
 
-    private fun Connection.wrapConnection(): Connection =
-        interceptors.wrapConnection(this)
-            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"), bufferPool)
+    private inner class SetupConnection(requesterDeferred: CompletableDeferred<RSocket>) : ConnectionEstablishmentHandler(
+        isClient = true,
+        frameCodec = FrameCodec(bufferPool, maxFragmentSize),
+        connectionAcceptor = acceptor,
+        interceptors = interceptors,
+        requesterDeferred = requesterDeferred
+    ) {
+        override suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig {
+            val connectionConfig = connectionConfigProvider()
+            try {
+                context.sendSetup(
+                    version = Version.Current,
+                    honorLease = false,
+                    keepAlive = connectionConfig.keepAlive,
+                    resumeToken = null,
+                    payloadMimeType = connectionConfig.payloadMimeType,
+                    // copy needed, as it can be used in acceptor
+                    payload = connectionConfig.setupPayload.copy()
+                )
+            } catch (cause: Throwable) {
+                connectionConfig.setupPayload.close()
+                throw cause
+            }
+            return connectionConfig
+        }
+    }
 }

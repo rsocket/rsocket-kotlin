@@ -38,6 +38,7 @@ kotlin {
         }
         progressiveMode.set(true)
         freeCompilerArgs.add("-Xrender-internal-diagnostic-names")
+        optIn.addAll(OptIns.ExperimentalSubclassOptIn)
     }
 
     sourceSets.configureEach {
@@ -51,6 +52,7 @@ kotlin {
 
                 // rsocket related
                 optIn(OptIns.TransportApi)
+                optIn(OptIns.RSocketTransportApi)
                 optIn(OptIns.ExperimentalMetadataApi)
                 optIn(OptIns.ExperimentalStreamsApi)
                 optIn(OptIns.RSocketLoggingApi)
