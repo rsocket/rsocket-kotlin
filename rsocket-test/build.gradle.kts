@@ -29,7 +29,11 @@ kotlin {
     nativeTargets()
 
     compilerOptions {
-        freeCompilerArgs.add("-Xexpect-actual-classes")
+        freeCompilerArgs.addAll(
+            "-Xexpect-actual-classes",
+            // because of INVISIBLE_REFERENCE suppression - will be removed after migration to kotlinx.io
+            "-Xdont-warn-on-error-suppression"
+        )
         optIn.addAll(
             OptIns.ExperimentalStdlibApi,
             OptIns.ExperimentalCoroutinesApi,
