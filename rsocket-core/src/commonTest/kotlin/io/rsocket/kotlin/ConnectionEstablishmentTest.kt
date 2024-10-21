@@ -24,9 +24,26 @@ import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
+import kotlin.coroutines.*
 import kotlin.test.*
 
 class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
+
+    private class TestInstance(val deferred: Deferred<Unit>) : RSocketServerInstance {
+        override val coroutineContext: CoroutineContext get() = deferred
+    }
+
+    private class TestServer(
+        override val coroutineContext: CoroutineContext,
+        private val connection: RSocketConnection,
+    ) : RSocketServerTarget<TestInstance> {
+        override suspend fun startServer(handler: RSocketConnectionHandler): TestInstance {
+            return TestInstance(async {
+                handler.handleConnection(connection)
+            })
+        }
+    }
+
     @Ignore // it will be rewritten anyway
     @Test
     fun responderRejectSetup() = test {
@@ -35,14 +52,12 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
 
         val connection = TestConnection()
 
-        val serverTransport = ServerTransport { accept ->
-            GlobalScope.async { accept(connection) }
-        }
+        val serverTransport = TestServer(Dispatchers.Unconfined, connection)
 
-        val deferred = TestServer().bind(serverTransport) {
+        val deferred = TestServer().startServer(serverTransport) {
             sendingRSocket.complete(requester)
             error(errorMessage)
-        }
+        }.deferred
 
         connection.sendToReceiver(
             SetupFrame(

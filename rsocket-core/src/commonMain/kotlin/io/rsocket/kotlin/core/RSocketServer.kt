@@ -17,6 +17,7 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.*
@@ -24,13 +25,14 @@ import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 
-@OptIn(TransportApi::class, RSocketLoggingApi::class)
+@OptIn(TransportApi::class, RSocketTransportApi::class, RSocketLoggingApi::class)
 public class RSocketServer internal constructor(
-    private val loggerFactory: LoggerFactory,
+    loggerFactory: LoggerFactory,
     private val maxFragmentSize: Int,
     private val interceptors: Interceptors,
     private val bufferPool: BufferPool,
 ) {
+    private val frameLogger = loggerFactory.logger("io.rsocket.kotlin.frame")
 
     @DelicateCoroutinesApi
     public fun <T> bind(
@@ -42,48 +44,51 @@ public class RSocketServer internal constructor(
         scope: CoroutineScope,
         transport: ServerTransport<T>,
         acceptor: ConnectionAcceptor,
-    ): T = with(transport) {
-        scope.start {
-            it.wrapConnection().bind(acceptor).join()
-        }
-    }
-
-    private suspend fun Connection.bind(acceptor: ConnectionAcceptor): Job = receiveFrame(bufferPool) { setupFrame ->
-        when {
-            setupFrame !is SetupFrame             -> failSetup(RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}"))
-            setupFrame.version != Version.Current -> failSetup(RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}"))
-            setupFrame.honorLease                 -> failSetup(RSocketError.Setup.Unsupported("Lease is not supported"))
-            setupFrame.resumeToken != null        -> failSetup(RSocketError.Setup.Unsupported("Resume is not supported"))
-            else                                  -> try {
-                connect(
-                    connection = this,
-                    isServer = true,
-                    maxFragmentSize = maxFragmentSize,
-                    interceptors = interceptors,
-                    connectionConfig = ConnectionConfig(
-                        keepAlive = setupFrame.keepAlive,
-                        payloadMimeType = setupFrame.payloadMimeType,
-                        setupPayload = setupFrame.payload
-                    ),
-                    acceptor = acceptor,
-                    bufferPool = bufferPool
-                )
-                coroutineContext.job
-            } catch (e: Throwable) {
-                failSetup(RSocketError.Setup.Rejected(e.message ?: "Rejected by server acceptor"))
+    ): T {
+        val handler = createHandler(acceptor)
+        return with(transport) {
+            scope.start {
+                handler.handleConnection(interceptors.wrapConnection(it))
             }
         }
     }
 
-    @Suppress("SuspendFunctionOnCoroutineScope")
-    private suspend fun Connection.failSetup(error: RSocketError.Setup): Nothing {
-        sendFrame(bufferPool, ErrorFrame(0, error))
-        cancel("Connection establishment failed", error)
-        throw error
+    public suspend fun <T : RSocketServerInstance> startServer(
+        transport: RSocketServerTarget<T>,
+        acceptor: ConnectionAcceptor,
+    ): T = transport.startServer(createHandler(acceptor))
+
+    @RSocketTransportApi
+    public fun createHandler(acceptor: ConnectionAcceptor): RSocketConnectionHandler =
+        AcceptConnection(acceptor).logging(frameLogger, bufferPool)
+
+    private inner class AcceptConnection(acceptor: ConnectionAcceptor) : ConnectionEstablishmentHandler(
+        isClient = false,
+        frameCodec = FrameCodec(bufferPool, maxFragmentSize),
+        connectionAcceptor = acceptor,
+        interceptors = interceptors,
+        requesterDeferred = null
+    ) {
+        override suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig {
+            val setupFrame = context.receiveFrame()
+            return try {
+                when {
+                    setupFrame !is SetupFrame             -> throw RSocketError.Setup.Invalid("Invalid setup frame: ${setupFrame.type}")
+                    setupFrame.version != Version.Current -> throw RSocketError.Setup.Unsupported("Unsupported version: ${setupFrame.version}")
+                    setupFrame.honorLease                 -> throw RSocketError.Setup.Unsupported("Lease is not supported")
+                    setupFrame.resumeToken != null        -> throw RSocketError.Setup.Unsupported("Resume is not supported")
+                    else                                  -> {
+                        ConnectionConfig(
+                            keepAlive = setupFrame.keepAlive,
+                            payloadMimeType = setupFrame.payloadMimeType,
+                            setupPayload = setupFrame.payload
+                        )
+                    }
+                }
+            } catch (cause: Throwable) {
+                setupFrame.close()
+                throw cause
+            }
+        }
     }
-
-    private fun Connection.wrapConnection(): Connection =
-        interceptors.wrapConnection(this)
-            .logging(loggerFactory.logger("io.rsocket.kotlin.frame"), bufferPool)
-
 }

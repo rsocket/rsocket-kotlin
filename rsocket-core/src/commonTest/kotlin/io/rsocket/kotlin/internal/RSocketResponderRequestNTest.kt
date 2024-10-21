@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,19 +27,31 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
+import kotlin.coroutines.*
 import kotlin.test.*
 
 class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
     private val testJob: Job = Job()
 
-    private suspend fun start(handler: RSocket) {
-        val serverTransport = ServerTransport { accept ->
-            GlobalScope.async { accept(connection) }
-        }
+    private class TestInstance(val deferred: Deferred<Unit>) : RSocketServerInstance {
+        override val coroutineContext: CoroutineContext get() = deferred
+    }
 
-        val scope = CoroutineScope(Dispatchers.Unconfined + testJob + TestExceptionHandler)
-        @Suppress("DeferredResultUnused")
-        TestServer().bindIn(scope, serverTransport) {
+    private class TestServer(
+        override val coroutineContext: CoroutineContext,
+        private val connection: RSocketConnection,
+    ) : RSocketServerTarget<TestInstance> {
+        override suspend fun startServer(handler: RSocketConnectionHandler): TestInstance {
+            return TestInstance(async {
+                handler.handleConnection(connection)
+            })
+        }
+    }
+
+    private suspend fun start(handler: RSocket) {
+        TestServer().startServer(
+            TestServer(Dispatchers.Unconfined + testJob + TestExceptionHandler, connection)
+        ) {
             config.setupPayload.close()
             handler
         }
