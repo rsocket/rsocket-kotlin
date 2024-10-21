@@ -1,0 +1,41 @@
+public abstract interface class io/rsocket/kotlin/transport/netty/tcp/NettyTcpClientTransport : io/rsocket/kotlin/transport/RSocketTransport {
+	public static final field Factory Lio/rsocket/kotlin/transport/netty/tcp/NettyTcpClientTransport$Factory;
+	public abstract fun target (Ljava/lang/String;I)Lio/rsocket/kotlin/transport/RSocketClientTarget;
+	public abstract fun target (Ljava/net/SocketAddress;)Lio/rsocket/kotlin/transport/RSocketClientTarget;
+}
+
+public final class io/rsocket/kotlin/transport/netty/tcp/NettyTcpClientTransport$Factory : io/rsocket/kotlin/transport/RSocketTransportFactory {
+}
+
+public abstract interface class io/rsocket/kotlin/transport/netty/tcp/NettyTcpClientTransportBuilder : io/rsocket/kotlin/transport/RSocketTransportBuilder {
+	public abstract fun bootstrap (Lkotlin/jvm/functions/Function1;)V
+	public abstract fun channel (Lkotlin/reflect/KClass;)V
+	public abstract fun channelFactory (Lio/netty/channel/ChannelFactory;)V
+	public abstract fun eventLoopGroup (Lio/netty/channel/EventLoopGroup;Z)V
+	public abstract fun ssl (Lkotlin/jvm/functions/Function1;)V
+}
+
+public abstract interface class io/rsocket/kotlin/transport/netty/tcp/NettyTcpServerInstance : io/rsocket/kotlin/transport/RSocketServerInstance {
+	public abstract fun getLocalAddress ()Ljava/net/SocketAddress;
+}
+
+public abstract interface class io/rsocket/kotlin/transport/netty/tcp/NettyTcpServerTransport : io/rsocket/kotlin/transport/RSocketTransport {
+	public static final field Factory Lio/rsocket/kotlin/transport/netty/tcp/NettyTcpServerTransport$Factory;
+	public abstract fun target (Ljava/lang/String;I)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public abstract fun target (Ljava/net/SocketAddress;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public static synthetic fun target$default (Lio/rsocket/kotlin/transport/netty/tcp/NettyTcpServerTransport;Ljava/lang/String;IILjava/lang/Object;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+	public static synthetic fun target$default (Lio/rsocket/kotlin/transport/netty/tcp/NettyTcpServerTransport;Ljava/net/SocketAddress;ILjava/lang/Object;)Lio/rsocket/kotlin/transport/RSocketServerTarget;
+}
+
+public final class io/rsocket/kotlin/transport/netty/tcp/NettyTcpServerTransport$Factory : io/rsocket/kotlin/transport/RSocketTransportFactory {
+}
+
+public abstract interface class io/rsocket/kotlin/transport/netty/tcp/NettyTcpServerTransportBuilder : io/rsocket/kotlin/transport/RSocketTransportBuilder {
+	public abstract fun bootstrap (Lkotlin/jvm/functions/Function1;)V
+	public abstract fun channel (Lkotlin/reflect/KClass;)V
+	public abstract fun channelFactory (Lio/netty/channel/ChannelFactory;)V
+	public abstract fun eventLoopGroup (Lio/netty/channel/EventLoopGroup;Lio/netty/channel/EventLoopGroup;Z)V
+	public abstract fun eventLoopGroup (Lio/netty/channel/EventLoopGroup;Z)V
+	public abstract fun ssl (Lkotlin/jvm/functions/Function1;)V
+}
+
