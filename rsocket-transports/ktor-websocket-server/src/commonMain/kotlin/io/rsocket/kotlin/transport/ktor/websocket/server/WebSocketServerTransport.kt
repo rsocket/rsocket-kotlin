@@ -20,11 +20,11 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
-import io.rsocket.kotlin.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.internal.*
 
-@Suppress("FunctionName")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use KtorWebSocketServerTransport")
+@Suppress("DEPRECATION_ERROR", "FunctionName")
 public fun <A : ApplicationEngine, T : ApplicationEngine.Configuration> WebSocketServerTransport(
     engineFactory: ApplicationEngineFactory<A, T>,
     port: Int = 80, host: String = "0.0.0.0",
@@ -43,8 +43,8 @@ public fun <A : ApplicationEngine, T : ApplicationEngine.Configuration> WebSocke
     webSockets = webSockets,
 )
 
-@Suppress("FunctionName")
-@OptIn(TransportApi::class)
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use KtorWebSocketServerTransport")
+@Suppress("DEPRECATION_ERROR", "FunctionName")
 public fun <A : ApplicationEngine, T : ApplicationEngine.Configuration> WebSocketServerTransport(
     engineFactory: ApplicationEngineFactory<A, T>,
     vararg connectors: EngineConnectorConfig,
