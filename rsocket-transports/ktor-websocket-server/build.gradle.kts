@@ -29,6 +29,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.rsocketTransportKtorWebsocketInternal)
+            implementation(projects.rsocketInternalIo)
             api(projects.rsocketCore)
             api(libs.ktor.server.host.common)
             api(libs.ktor.server.websockets)

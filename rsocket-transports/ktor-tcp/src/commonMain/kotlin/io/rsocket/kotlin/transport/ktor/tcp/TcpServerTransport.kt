@@ -41,7 +41,7 @@ public fun TcpServerTransport(
     configure: SocketOptions.AcceptorOptions.() -> Unit = {},
 ): ServerTransport<TcpServer> = ServerTransport { accept ->
     val serverSocketDeferred = CompletableDeferred<ServerSocket>()
-    val handlerJob = launch(defaultDispatcher + coroutineContext) {
+    val handlerJob = launch(Dispatchers.IO + coroutineContext) {
         SelectorManager(coroutineContext).use { selector ->
             aSocket(selector).tcp().bind(localAddress, configure).use { serverSocket ->
                 serverSocketDeferred.complete(serverSocket)
