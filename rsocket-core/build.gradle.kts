@@ -18,7 +18,7 @@ import rsocketbuild.*
 
 plugins {
     id("rsocketbuild.multiplatform-library")
-    id("rsocketbuild.atomicfu")
+    alias(libs.plugins.kotlinx.atomicfu)
 }
 
 description = "rsocket-kotlin core functionality"

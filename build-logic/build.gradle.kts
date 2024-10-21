@@ -21,6 +21,5 @@ plugins {
 dependencies {
     implementation(libs.kotlin.gradle.plugin)
     implementation(libs.kotlinx.bcv.gradle.plugin)
-    implementation(libs.kotlinx.atomicfu.gradle.plugin)
     implementation(libs.maven.publish.gradle.plugin)
 }

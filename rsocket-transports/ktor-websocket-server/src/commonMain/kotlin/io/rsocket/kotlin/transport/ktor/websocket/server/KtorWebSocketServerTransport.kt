@@ -189,9 +189,9 @@ private class KtorWebSocketServerTargetImpl(
         applicationEngine: ApplicationEngine,
     ): List<EngineConnectorConfig> = launchCoroutine { cont ->
         applicationEngine.start().stopServerOnCancellation()
-        cont.resume(applicationEngine.resolvedConnectors()) {
+        cont.resume(applicationEngine.resolvedConnectors()) { cause, _, _ ->
             // will cause stopping of the server
-            applicationEngine.environment.parentCoroutineContext.job.cancel("Cancelled", it)
+            applicationEngine.environment.parentCoroutineContext.job.cancel("Cancelled", cause)
         }
     }
 }

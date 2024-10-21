@@ -19,7 +19,7 @@ import rsocketbuild.*
 
 plugins {
     id("rsocketbuild.multiplatform-base")
-    id("rsocketbuild.atomicfu")
+    alias(libs.plugins.kotlinx.atomicfu)
 }
 
 @OptIn(ExperimentalKotlinGradlePluginApi::class)

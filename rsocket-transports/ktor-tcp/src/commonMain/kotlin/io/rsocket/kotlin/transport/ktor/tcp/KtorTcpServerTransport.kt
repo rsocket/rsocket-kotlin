@@ -112,10 +112,9 @@ private class KtorTcpServerTargetImpl(
         return startKtorTcpServer(this, bindSocket(), handler)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun bindSocket(): ServerSocket = launchCoroutine { cont ->
         val socket = aSocket(selectorManager).tcp().bind(localAddress, socketOptions)
-        cont.resume(socket) { socket.close() }
+        cont.resume(socket) { _, value, _ -> value.close() }
     }
 }
 
