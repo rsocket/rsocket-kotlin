@@ -17,7 +17,6 @@
 package io.rsocket.kotlin
 
 import app.cash.turbine.*
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.test.*
@@ -25,6 +24,7 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
+import kotlinx.io.*
 import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.*
@@ -34,8 +34,8 @@ class TestConnection : RSocketSequentialConnection, RSocketClientTarget {
     private val job = Job()
     override val coroutineContext: CoroutineContext = job + Dispatchers.Unconfined + TestExceptionHandler
 
-    private val sendChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
-    private val receiveChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
+    private val sendChannel = bufferChannel(Channel.UNLIMITED)
+    private val receiveChannel = bufferChannel(Channel.UNLIMITED)
 
     init {
         coroutineContext.job.invokeOnCompletion {
@@ -52,28 +52,28 @@ class TestConnection : RSocketSequentialConnection, RSocketClientTarget {
 
     override val isClosedForSend: Boolean get() = sendChannel.isClosedForSend
 
-    override suspend fun sendFrame(streamId: Int, frame: ByteReadPacket) {
+    override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         sendChannel.send(frame)
     }
 
-    override suspend fun receiveFrame(): ByteReadPacket {
+    override suspend fun receiveFrame(): Buffer? {
         return receiveChannel.receive()
     }
 
     suspend fun ignoreSetupFrame() {
-        assertEquals(FrameType.Setup, sendChannel.receive().readFrame(InUseTrackingPool).type)
+        assertEquals(FrameType.Setup, sendChannel.receive().readFrame().type)
     }
 
     internal suspend fun sendToReceiver(vararg frames: Frame) {
         frames.forEach {
-            val packet = it.toPacket(InUseTrackingPool)
+            val packet = it.toBuffer()
             receiveChannel.send(packet)
         }
     }
 
     internal suspend fun test(validate: suspend ReceiveTurbine<Frame>.() -> Unit) {
         sendChannel.consumeAsFlow().map {
-            it.readFrame(InUseTrackingPool)
+            it.readFrame()
         }.test(5.seconds, validate = validate)
     }
 }

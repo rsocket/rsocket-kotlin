@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.connection
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
@@ -26,6 +25,7 @@ import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.io.*
 import kotlin.coroutines.*
 
 // TODO: rename to just `Connection` after root `Connection` will be dropped
@@ -34,7 +34,7 @@ internal abstract class Connection2(
     protected val frameCodec: FrameCodec,
     // requestContext
     final override val coroutineContext: CoroutineContext,
-) : RSocket, Closeable {
+) : RSocket, AutoCloseable {
 
     // connection establishment part
 
@@ -45,30 +45,30 @@ internal abstract class Connection2(
 
     // connection part
 
-    protected abstract suspend fun sendConnectionFrame(frame: ByteReadPacket)
+    protected abstract suspend fun sendConnectionFrame(frame: Buffer)
     private suspend fun sendConnectionFrame(frame: Frame): Unit = sendConnectionFrame(frameCodec.encodeFrame(frame))
 
     suspend fun sendError(cause: Throwable) {
         sendConnectionFrame(ErrorFrame(0, cause))
     }
 
-    private suspend fun sendMetadataPush(metadata: ByteReadPacket) {
+    private suspend fun sendMetadataPush(metadata: Buffer) {
         sendConnectionFrame(MetadataPushFrame(metadata))
     }
 
-    suspend fun sendKeepAlive(respond: Boolean, data: ByteReadPacket, lastPosition: Long) {
+    suspend fun sendKeepAlive(respond: Boolean, data: Buffer, lastPosition: Long) {
         sendConnectionFrame(KeepAliveFrame(respond, lastPosition, data))
     }
 
     // operations part
 
     protected abstract fun launchRequest(requestPayload: Payload, operation: RequesterOperation): Job
-    private suspend fun ensureActiveOrClose(closeable: Closeable) {
+    private suspend fun ensureActiveOrClose(closeable: AutoCloseable) {
         currentCoroutineContext().ensureActive { closeable.close() }
         coroutineContext.ensureActive { closeable.close() }
     }
 
-    final override suspend fun metadataPush(metadata: ByteReadPacket) {
+    final override suspend fun metadataPush(metadata: Buffer) {
         ensureActiveOrClose(metadata)
         sendMetadataPush(metadata)
     }

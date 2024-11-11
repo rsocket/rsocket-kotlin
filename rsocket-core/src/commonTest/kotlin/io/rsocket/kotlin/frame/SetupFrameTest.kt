@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 import kotlin.time.Duration.Companion.seconds
 
-class SetupFrameTest : TestWithLeakCheck {
+class SetupFrameTest {
 
     private val version = Version.Current
     private val keepAlive = KeepAlive(10.seconds, 500.seconds)
@@ -45,7 +45,7 @@ class SetupFrameTest : TestWithLeakCheck {
         assertNull(decodedFrame.resumeToken)
         assertEquals(payloadMimeType.data, decodedFrame.payloadMimeType.data)
         assertEquals(payloadMimeType.metadata, decodedFrame.payloadMimeType.metadata)
-        assertEquals(0, decodedFrame.payload.data.remaining)
+        assertTrue(decodedFrame.payload.data.exhausted())
         assertNull(decodedFrame.payload.metadata)
     }
 
@@ -64,8 +64,8 @@ class SetupFrameTest : TestWithLeakCheck {
         assertNull(decodedFrame.resumeToken)
         assertEquals(payloadMimeType.data, decodedFrame.payloadMimeType.data)
         assertEquals(payloadMimeType.metadata, decodedFrame.payloadMimeType.metadata)
-        assertBytesEquals(ByteArray(30000) { 1 }, decodedFrame.payload.data.readBytes())
-        assertBytesEquals(ByteArray(20000) { 5 }, decodedFrame.payload.metadata?.readBytes())
+        assertBytesEquals(ByteArray(30000) { 1 }, decodedFrame.payload.data.readByteArray())
+        assertBytesEquals(ByteArray(20000) { 5 }, decodedFrame.payload.metadata?.readByteArray())
     }
 
     @Test
@@ -80,10 +80,10 @@ class SetupFrameTest : TestWithLeakCheck {
         assertTrue(decodedFrame.honorLease)
         assertEquals(keepAlive.intervalMillis, decodedFrame.keepAlive.intervalMillis)
         assertEquals(keepAlive.maxLifetimeMillis, decodedFrame.keepAlive.maxLifetimeMillis)
-        assertBytesEquals(ByteArray(65000) { 5 }, decodedFrame.resumeToken?.readBytes())
+        assertBytesEquals(ByteArray(65000) { 5 }, decodedFrame.resumeToken?.readByteArray())
         assertEquals(payloadMimeType.data, decodedFrame.payloadMimeType.data)
         assertEquals(payloadMimeType.metadata, decodedFrame.payloadMimeType.metadata)
-        assertEquals(0, decodedFrame.payload.data.remaining)
+        assertTrue(decodedFrame.payload.data.exhausted())
         assertNull(decodedFrame.payload.metadata)
     }
 
@@ -100,11 +100,11 @@ class SetupFrameTest : TestWithLeakCheck {
         assertTrue(decodedFrame.honorLease)
         assertEquals(keepAlive.intervalMillis, decodedFrame.keepAlive.intervalMillis)
         assertEquals(keepAlive.maxLifetimeMillis, decodedFrame.keepAlive.maxLifetimeMillis)
-        assertBytesEquals(ByteArray(65000) { 5 }, decodedFrame.resumeToken?.readBytes())
+        assertBytesEquals(ByteArray(65000) { 5 }, decodedFrame.resumeToken?.readByteArray())
         assertEquals(payloadMimeType.data, decodedFrame.payloadMimeType.data)
         assertEquals(payloadMimeType.metadata, decodedFrame.payloadMimeType.metadata)
-        assertBytesEquals(ByteArray(30000) { 1 }, decodedFrame.payload.data.readBytes())
-        assertBytesEquals(ByteArray(20000) { 5 }, decodedFrame.payload.metadata?.readBytes())
+        assertBytesEquals(ByteArray(30000) { 1 }, decodedFrame.payload.data.readByteArray())
+        assertBytesEquals(ByteArray(20000) { 5 }, decodedFrame.payload.metadata?.readByteArray())
     }
 
 }

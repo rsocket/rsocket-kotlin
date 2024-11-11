@@ -20,7 +20,7 @@ import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.test.*
 import kotlin.test.*
 
-class MimeTypeTest : TestWithLeakCheck {
+class MimeTypeTest {
 
     private val asciiChars = '!'..'~'
 
@@ -41,7 +41,7 @@ class MimeTypeTest : TestWithLeakCheck {
         val packet = packet {
             writeMimeType(mimeType)
         }
-        assertEquals(name.length - 1, packet.tryPeek())
+        assertEquals(name.length - 1, packet.peek().readByte().toInt())
         assertEquals(mimeType, packet.readMimeType())
     }
 }

@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.transport.netty.tcp
 
-import io.ktor.utils.io.core.*
 import io.netty.buffer.*
 import io.netty.channel.*
 import io.netty.channel.socket.*
@@ -27,6 +26,7 @@ import io.rsocket.kotlin.transport.netty.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.io.*
 import io.netty.channel.socket.DuplexChannel as NettyDuplexChannel
 
 @RSocketTransportApi
@@ -35,7 +35,7 @@ internal class NettyTcpConnectionHandler(
     private val handler: RSocketConnectionHandler,
     scope: CoroutineScope,
 ) : ChannelInboundHandlerAdapter() {
-    private val inbound = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
+    private val inbound = bufferChannel(Channel.UNLIMITED)
 
     private val handlerJob = scope.launch(start = CoroutineStart.LAZY) {
         val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
@@ -47,8 +47,8 @@ internal class NettyTcpConnectionHandler(
                     // in this case, if there are several buffered frames we can send them in one go
                     // avoiding unnecessary flushes
                     // TODO: could be optimized to avoid allocation of not-needed promises
-                    var lastWriteFuture = channel.write(outboundQueue.dequeueFrame()?.toByteBuf() ?: break)
-                    while (true) lastWriteFuture = channel.write(outboundQueue.tryDequeueFrame()?.toByteBuf() ?: break)
+                    var lastWriteFuture = channel.write(outboundQueue.dequeueFrame()?.toByteBuf(channel.alloc()) ?: break)
+                    while (true) lastWriteFuture = channel.write(outboundQueue.tryDequeueFrame()?.toByteBuf(channel.alloc()) ?: break)
                     channel.flush()
                     // await writing to respect transport backpressure
                     lastWriteFuture.awaitFuture()
@@ -94,14 +94,14 @@ internal class NettyTcpConnectionHandler(
 
 // TODO: implement support for isAutoRead=false to support `inbound` backpressure
 private class NettyTcpConnectionInboundHandler(
-    private val inbound: SendChannel<ByteReadPacket>,
+    private val inbound: SendChannel<Buffer>,
 ) : ChannelInboundHandlerAdapter() {
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
         msg as ByteBuf
         try {
-            val frame = msg.toByteReadPacket()
+            val frame = msg.toBuffer()
             if (inbound.trySend(frame).isFailure) {
-                frame.close()
+                frame.clear()
                 error("inbound is closed")
             }
         } finally {
@@ -120,14 +120,14 @@ private class NettyTcpConnectionInboundHandler(
 @RSocketTransportApi
 private class NettyTcpConnection(
     private val outboundQueue: PrioritizationFrameQueue,
-    private val inbound: ReceiveChannel<ByteReadPacket>,
+    private val inbound: ReceiveChannel<Buffer>,
 ) : RSocketSequentialConnection {
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
-    override suspend fun sendFrame(streamId: Int, frame: ByteReadPacket) {
+    override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         return outboundQueue.enqueueFrame(streamId, frame)
     }
 
-    override suspend fun receiveFrame(): ByteReadPacket? {
+    override suspend fun receiveFrame(): Buffer? {
         return inbound.receiveCatching().getOrNull()
     }
 }

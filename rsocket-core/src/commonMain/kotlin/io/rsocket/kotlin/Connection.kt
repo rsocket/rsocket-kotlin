@@ -16,11 +16,11 @@
 
 package io.rsocket.kotlin
 
-import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
+import kotlinx.io.*
 
 @Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API")
 public interface Connection : CoroutineScope {
-    public suspend fun send(packet: ByteReadPacket)
-    public suspend fun receive(): ByteReadPacket
+    public suspend fun send(packet: Buffer)
+    public suspend fun receive(): Buffer
 }

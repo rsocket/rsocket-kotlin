@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 
 package io.rsocket.kotlin.payload
 
-import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.frame.io.*
+import kotlinx.io.*
 
-public sealed interface PayloadBuilder : Closeable {
-    public fun data(value: ByteReadPacket)
-    public fun metadata(value: ByteReadPacket)
+public sealed interface PayloadBuilder : AutoCloseable {
+    public fun data(value: Buffer)
+    public fun metadata(value: Buffer)
 }
 
 public inline fun buildPayload(block: PayloadBuilder.() -> Unit): Payload {
@@ -34,15 +35,14 @@ public inline fun buildPayload(block: PayloadBuilder.() -> Unit): Payload {
     }
 }
 
-public inline fun PayloadBuilder.data(block: BytePacketBuilder.() -> Unit): Unit = data(buildPacket(block = block))
-public fun PayloadBuilder.data(value: String): Unit = data { writeText(value) }
-public fun PayloadBuilder.data(value: ByteArray): Unit = data { writeFully(value) }
+public inline fun PayloadBuilder.data(block: Sink.() -> Unit): Unit = data(Buffer().apply(block))
+public fun PayloadBuilder.data(value: String): Unit = data { writeString(value) }
+public fun PayloadBuilder.data(value: ByteArray): Unit = data { write(value) }
 
-public inline fun PayloadBuilder.metadata(block: BytePacketBuilder.() -> Unit): Unit =
-    metadata(buildPacket(block = block))
+public inline fun PayloadBuilder.metadata(block: Sink.() -> Unit): Unit = metadata(Buffer().apply(block))
 
-public fun PayloadBuilder.metadata(value: String): Unit = metadata { writeText(value) }
-public fun PayloadBuilder.metadata(value: ByteArray): Unit = metadata { writeFully(value) }
+public fun PayloadBuilder.metadata(value: String): Unit = metadata { writeString(value) }
+public fun PayloadBuilder.metadata(value: ByteArray): Unit = metadata { write(value) }
 
 
 @PublishedApi
@@ -50,12 +50,12 @@ internal class PayloadFromBuilder : PayloadBuilder, Payload {
     private var hasData = false
     private var hasMetadata = false
 
-    override var data: ByteReadPacket = ByteReadPacket.Empty
+    override var data: Buffer = EmptyBuffer
         private set
-    override var metadata: ByteReadPacket? = null
+    override var metadata: Buffer? = null
         private set
 
-    override fun data(value: ByteReadPacket) {
+    override fun data(value: Buffer) {
         if (hasData) {
             value.close()
             error("Data already provided")
@@ -64,7 +64,7 @@ internal class PayloadFromBuilder : PayloadBuilder, Payload {
         hasData = true
     }
 
-    override fun metadata(value: ByteReadPacket) {
+    override fun metadata(value: Buffer) {
         if (hasMetadata) {
             value.close()
             error("Metadata already provided")

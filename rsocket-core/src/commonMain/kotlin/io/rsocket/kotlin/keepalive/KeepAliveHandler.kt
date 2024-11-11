@@ -16,12 +16,13 @@
 
 package io.rsocket.kotlin.keepalive
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
+import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
+import kotlinx.io.*
 import kotlin.time.*
 
 @RSocketTransportApi
@@ -43,12 +44,12 @@ internal class KeepAliveHandler(
                 if (currentDelayMillis() - lastMark.value >= keepAlive.maxLifetimeMillis)
                     throw RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetimeMillis} ms")
 
-                connection2.sendKeepAlive(true, ByteReadPacket.Empty, 0)
+                connection2.sendKeepAlive(true, EmptyBuffer, 0)
             }
         }
     }
 
-    fun receive(data: ByteReadPacket, respond: Boolean) {
+    fun receive(data: Buffer, respond: Boolean) {
         lastMark.value = currentDelayMillis()
         // in most cases it will be possible to not suspend at all
         if (respond) connectionScope.launch(start = CoroutineStart.UNDISPATCHED) {

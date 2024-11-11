@@ -16,23 +16,23 @@
 
 package io.rsocket.kotlin.transport.ktor.websocket.internal
 
-import io.ktor.utils.io.core.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.*
 import kotlinx.coroutines.*
+import kotlinx.io.*
 
 @Suppress("DEPRECATION_ERROR")
 @Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API")
 public class WebSocketConnection(
     private val session: WebSocketSession,
 ) : Connection, CoroutineScope by session {
-    override suspend fun send(packet: ByteReadPacket) {
-        session.send(packet.readBytes())
+    override suspend fun send(packet: Buffer) {
+        session.send(packet.readByteArray())
     }
 
-    override suspend fun receive(): ByteReadPacket {
+    override suspend fun receive(): Buffer {
         val frame = session.incoming.receive()
-        return ByteReadPacket(frame.data)
+        return Buffer().apply { write(frame.data) }
     }
 
 }

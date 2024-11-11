@@ -16,16 +16,16 @@
 
 package io.rsocket.kotlin.keepalive
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
+import kotlinx.io.*
 import kotlin.test.*
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
+class KeepAliveTest : TestWithConnection() {
 
     private suspend fun requester(
         keepAlive: KeepAlive = KeepAlive(100.milliseconds, 1.seconds),
@@ -56,7 +56,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
         connection.launch {
             repeat(50) {
                 delay(100.milliseconds)
-                connection.sendToReceiver(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
+                connection.sendToReceiver(KeepAliveFrame(true, 0, Buffer()))
             }
         }
         delay(1.5.seconds)
@@ -74,7 +74,7 @@ class KeepAliveTest : TestWithConnection(), TestWithLeakCheck {
         connection.launch {
             while (isActive) {
                 delay(100.milliseconds)
-                connection.sendToReceiver(KeepAliveFrame(true, 0, ByteReadPacket.Empty))
+                connection.sendToReceiver(KeepAliveFrame(true, 0, Buffer()))
             }
         }
 

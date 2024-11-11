@@ -16,13 +16,12 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
 internal class ResumeFrame(
     val version: Version,
-    val resumeToken: ByteReadPacket,
+    val resumeToken: Buffer,
     val lastReceivedServerPosition: Long,
     val firstAvailableClientPosition: Long,
 ) : Frame() {
@@ -32,7 +31,7 @@ internal class ResumeFrame(
 
     override fun close(): Unit = Unit
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         writeVersion(version)
         writeResumeToken(resumeToken)
         writeLong(lastReceivedServerPosition)
@@ -45,13 +44,13 @@ internal class ResumeFrame(
         append("\nVersion: ").append(version.toString()).append("\n")
         append("Last received server position: ").append(lastReceivedServerPosition).append("\n")
         append("First available client position: ").append(firstAvailableClientPosition)
-        appendPacket("Resume token", resumeToken)
+        appendBuffer("Resume token", resumeToken)
     }
 }
 
-internal fun ByteReadPacket.readResume(pool: BufferPool): ResumeFrame {
+internal fun Source.readResume(): ResumeFrame {
     val version = readVersion()
-    val resumeToken = readResumeToken(pool)
+    val resumeToken = readResumeToken()
     val lastReceivedServerPosition = readLong()
     val firstAvailableClientPosition = readLong()
     return ResumeFrame(

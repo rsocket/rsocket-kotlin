@@ -24,10 +24,11 @@ import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
+import kotlinx.io.*
 import kotlin.test.*
 import kotlin.time.Duration.Companion.seconds
 
-class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
+class RSocketRequesterTest : TestWithConnection() {
     private lateinit var requester: RSocket
 
     override suspend fun before() {
@@ -369,7 +370,7 @@ class RSocketRequesterTest : TestWithConnection(), TestWithLeakCheck {
                 assertTrue(frame is RequestFrame)
                 assertEquals(FrameType.RequestChannel, frame.type)
                 assertEquals(Int.MAX_VALUE, frame.initialRequest)
-                assertEquals("INIT", frame.payload.data.readText())
+                assertEquals("INIT", frame.payload.data.readString())
             }
             expectNoEventsIn(200)
             delay.complete()

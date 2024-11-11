@@ -16,25 +16,24 @@
 
 package io.rsocket.kotlin.metadata.security
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
 @ExperimentalMetadataApi
 public class BearerAuthMetadata(
     public val token: String,
 ) : AuthMetadata {
     override val type: AuthType get() = WellKnowAuthType.Bearer
-    override fun BytePacketBuilder.writeContent() {
-        writeText(token)
+    override fun Sink.writeContent() {
+        writeString(token)
     }
 
     override fun close(): Unit = Unit
 
     public companion object Reader : AuthMetadataReader<BearerAuthMetadata> {
-        override fun ByteReadPacket.readContent(type: AuthType, pool: BufferPool): BearerAuthMetadata {
+        override fun Source.readContent(type: AuthType): BearerAuthMetadata {
             require(type == WellKnowAuthType.Bearer) { "Metadata auth type should be 'bearer'" }
-            val token = readText()
+            val token = readString()
             return BearerAuthMetadata(token)
         }
     }

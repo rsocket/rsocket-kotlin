@@ -31,7 +31,7 @@ public fun <A : ApplicationEngine, T : ApplicationEngine.Configuration> WebSocke
     path: String? = null, protocol: String? = null,
     engine: T.() -> Unit = {},
     webSockets: WebSockets.WebSocketOptions.() -> Unit = {},
-): ServerTransport<A> = WebSocketServerTransport(
+): ServerTransport<EmbeddedServer<A, T>> = WebSocketServerTransport(
     engineFactory,
     EngineConnectorBuilder().apply {
         this.port = port
@@ -51,20 +51,27 @@ public fun <A : ApplicationEngine, T : ApplicationEngine.Configuration> WebSocke
     path: String? = null, protocol: String? = null,
     engine: T.() -> Unit = {},
     webSockets: WebSockets.WebSocketOptions.() -> Unit = {},
-): ServerTransport<A> = ServerTransport { acceptor ->
+): ServerTransport<EmbeddedServer<A, T>> = ServerTransport { acceptor ->
     val handler: suspend DefaultWebSocketServerSession.() -> Unit = {
         val connection = WebSocketConnection(this)
         acceptor(connection)
     }
-    embeddedServer(engineFactory, *connectors, configure = engine) {
-        install(WebSockets, webSockets)
-        routing {
-            when (path) {
-                null -> webSocket(protocol, handler)
-                else -> webSocket(path, protocol, handler)
+    embeddedServer(engineFactory, serverConfig {
+        this.parentCoroutineContext = coroutineContext
+        module {
+            install(WebSockets, webSockets)
+            routing {
+                when (path) {
+                    null -> webSocket(protocol, handler)
+                    else -> webSocket(path, protocol, handler)
+                }
             }
         }
+    }) {
+        this.connectors.addAll(connectors)
+        engine()
     }.also {
         it.start(wait = false)
+        it.engine.stopServerOnCancellation(it.application)
     }
 }

@@ -16,23 +16,22 @@
 
 package io.rsocket.kotlin.connection
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
+import kotlinx.io.*
 
 @RSocketLoggingApi
 @RSocketTransportApi
-internal fun RSocketConnectionHandler.logging(logger: Logger, bufferPool: BufferPool): RSocketConnectionHandler {
+internal fun RSocketConnectionHandler.logging(logger: Logger): RSocketConnectionHandler {
     if (!logger.isLoggable(LoggingLevel.DEBUG)) return this
 
     return RSocketConnectionHandler {
         handleConnection(
             when (it) {
-                is RSocketSequentialConnection  -> SequentialLoggingConnection(it, logger, bufferPool)
-                is RSocketMultiplexedConnection -> MultiplexedLoggingConnection(it, logger, bufferPool)
+                is RSocketSequentialConnection  -> SequentialLoggingConnection(it, logger)
+                is RSocketMultiplexedConnection -> MultiplexedLoggingConnection(it, logger)
             }
         )
     }
@@ -43,26 +42,25 @@ internal fun RSocketConnectionHandler.logging(logger: Logger, bufferPool: Buffer
 private class SequentialLoggingConnection(
     private val delegate: RSocketSequentialConnection,
     private val logger: Logger,
-    private val bufferPool: BufferPool,
 ) : RSocketSequentialConnection {
     override val isClosedForSend: Boolean get() = delegate.isClosedForSend
 
-    override suspend fun sendFrame(streamId: Int, frame: ByteReadPacket) {
-        logger.debug { "Send:    ${dumpFrameToString(frame, bufferPool)}" }
+    override suspend fun sendFrame(streamId: Int, frame: Buffer) {
+        logger.debug { "Send:    ${dumpFrameToString(frame)}" }
         delegate.sendFrame(streamId, frame)
     }
 
-    override suspend fun receiveFrame(): ByteReadPacket? {
+    override suspend fun receiveFrame(): Buffer? {
         return delegate.receiveFrame()?.also { frame ->
-            logger.debug { "Receive: ${dumpFrameToString(frame, bufferPool)}" }
+            logger.debug { "Receive: ${dumpFrameToString(frame)}" }
         }
     }
 
 }
 
-private fun dumpFrameToString(frame: ByteReadPacket, bufferPool: BufferPool): String {
-    val length = frame.remaining
-    return frame.copy().use { it.readFrame(bufferPool).use { it.dump(length) } }
+private fun dumpFrameToString(frame: Buffer): String {
+    val length = frame.size
+    return frame.copy().readFrame().use { it.dump(length) }
 }
 
 @RSocketLoggingApi
@@ -70,15 +68,14 @@ private fun dumpFrameToString(frame: ByteReadPacket, bufferPool: BufferPool): St
 private class MultiplexedLoggingConnection(
     private val delegate: RSocketMultiplexedConnection,
     private val logger: Logger,
-    private val bufferPool: BufferPool,
 ) : RSocketMultiplexedConnection {
     override suspend fun createStream(): RSocketMultiplexedConnection.Stream {
-        return MultiplexedLoggingStream(delegate.createStream(), logger, bufferPool)
+        return MultiplexedLoggingStream(delegate.createStream(), logger)
     }
 
     override suspend fun acceptStream(): RSocketMultiplexedConnection.Stream? {
         return delegate.acceptStream()?.let {
-            MultiplexedLoggingStream(it, logger, bufferPool)
+            MultiplexedLoggingStream(it, logger)
         }
     }
 }
@@ -88,7 +85,6 @@ private class MultiplexedLoggingConnection(
 private class MultiplexedLoggingStream(
     private val delegate: RSocketMultiplexedConnection.Stream,
     private val logger: Logger,
-    private val bufferPool: BufferPool,
 ) : RSocketMultiplexedConnection.Stream {
     override val isClosedForSend: Boolean get() = delegate.isClosedForSend
 
@@ -96,14 +92,14 @@ private class MultiplexedLoggingStream(
         delegate.setSendPriority(priority)
     }
 
-    override suspend fun sendFrame(frame: ByteReadPacket) {
-        logger.debug { "Send:    ${dumpFrameToString(frame, bufferPool)}" }
+    override suspend fun sendFrame(frame: Buffer) {
+        logger.debug { "Send:    ${dumpFrameToString(frame)}" }
         delegate.sendFrame(frame)
     }
 
-    override suspend fun receiveFrame(): ByteReadPacket? {
+    override suspend fun receiveFrame(): Buffer? {
         return delegate.receiveFrame()?.also { frame ->
-            logger.debug { "Receive: ${dumpFrameToString(frame, bufferPool)}" }
+            logger.debug { "Receive: ${dumpFrameToString(frame)}" }
         }
     }
 

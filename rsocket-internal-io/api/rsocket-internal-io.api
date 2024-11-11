@@ -1,4 +1,5 @@
 public final class io/rsocket/kotlin/internal/io/ChannelsKt {
+	public static final fun bufferChannel (I)Lkotlinx/coroutines/channels/Channel;
 	public static final fun cancelWithCause (Lkotlinx/coroutines/channels/Channel;Ljava/lang/Throwable;)V
 	public static final fun channelForCloseable (I)Lkotlinx/coroutines/channels/Channel;
 }
@@ -13,7 +14,7 @@ public final class io/rsocket/kotlin/internal/io/ContextKt {
 }
 
 public final class io/rsocket/kotlin/internal/io/Int24Kt {
-	public static final fun readInt24 (Lio/ktor/utils/io/core/ByteReadPacket;)I
-	public static final fun writeInt24 (Lio/ktor/utils/io/core/BytePacketBuilder;I)V
+	public static final fun readInt24 (Lkotlinx/io/Source;)I
+	public static final fun writeInt24 (Lkotlinx/io/Sink;I)V
 }
 

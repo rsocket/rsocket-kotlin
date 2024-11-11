@@ -16,18 +16,19 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class RequestStreamFrameTest : TestWithLeakCheck {
+class RequestStreamFrameTest {
 
     @Test
     fun testEncoding() {
         val dump = "000010000000011900000000010000026d6464"
         val frame = RequestStreamFrame(1, 1, payload("d", "md"))
-        val bytes = frame.toPacketWithLength().readBytes()
+        val bytes = frame.toBufferWithLength().readByteArray()
 
         assertEquals(dump, bytes.toHexString())
     }
@@ -44,15 +45,15 @@ class RequestStreamFrameTest : TestWithLeakCheck {
         assertFalse(frame.complete)
         assertFalse(frame.next)
         assertEquals(1, frame.initialRequest)
-        assertEquals("d", frame.payload.data.readText())
-        assertEquals("md", frame.payload.metadata?.readText())
+        assertEquals("d", frame.payload.data.readString())
+        assertEquals("md", frame.payload.metadata?.readString())
     }
 
     @Test
     fun testEncodingWithEmptyMetadata() {
         val dump = "00000e0000000119000000000100000064"
-        val frame = RequestStreamFrame(1, 1, Payload(packet("d"), ByteReadPacket.Empty))
-        val bytes = frame.toPacketWithLength().readBytes()
+        val frame = RequestStreamFrame(1, 1, Payload(packet("d"), Buffer()))
+        val bytes = frame.toBufferWithLength().readByteArray()
 
         assertEquals(dump, bytes.toHexString())
     }
@@ -69,15 +70,15 @@ class RequestStreamFrameTest : TestWithLeakCheck {
         assertFalse(frame.complete)
         assertFalse(frame.next)
         assertEquals(1, frame.initialRequest)
-        assertEquals("d", frame.payload.data.readText())
-        assertEquals(0, frame.payload.metadata?.remaining)
+        assertEquals("d", frame.payload.data.readString())
+        assertTrue(frame.payload.metadata?.exhausted() ?: false)
     }
 
     @Test
     fun testEncodingWithNullMetadata() {
         val dump = "00000b0000000118000000000164"
         val frame = RequestStreamFrame(1, 1, payload("d"))
-        val bytes = frame.toPacketWithLength().readBytes()
+        val bytes = frame.toBufferWithLength().readByteArray()
 
         assertEquals(dump, bytes.toHexString())
     }
@@ -94,13 +95,13 @@ class RequestStreamFrameTest : TestWithLeakCheck {
         assertFalse(frame.complete)
         assertFalse(frame.next)
         assertEquals(1, frame.initialRequest)
-        assertEquals("d", frame.payload.data.readText())
+        assertEquals("d", frame.payload.data.readString())
         assertNull(frame.payload.metadata)
     }
 
     @Test
     fun testEmptyData() {
-        val frame = RequestStreamFrame(3, 10, Payload(ByteReadPacket.Empty, packet("md")))
+        val frame = RequestStreamFrame(3, 10, Payload(EmptyBuffer, packet("md")))
         val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
@@ -110,13 +111,13 @@ class RequestStreamFrameTest : TestWithLeakCheck {
         assertFalse(decodedFrame.complete)
         assertFalse(decodedFrame.next)
         assertEquals(10, decodedFrame.initialRequest)
-        assertEquals(0, decodedFrame.payload.data.remaining)
-        assertEquals("md", decodedFrame.payload.metadata?.readText())
+        assertTrue(decodedFrame.payload.data.exhausted())
+        assertEquals("md", decodedFrame.payload.metadata?.readString())
     }
 
     @Test
     fun testEmptyPayload() {
-        val frame = RequestStreamFrame(3, 10, Payload(ByteReadPacket.Empty, ByteReadPacket.Empty))
+        val frame = RequestStreamFrame(3, 10, Payload(EmptyBuffer, Buffer()))
         val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
@@ -126,8 +127,8 @@ class RequestStreamFrameTest : TestWithLeakCheck {
         assertFalse(decodedFrame.complete)
         assertFalse(decodedFrame.next)
         assertEquals(10, decodedFrame.initialRequest)
-        assertEquals(0, decodedFrame.payload.data.remaining)
-        assertEquals(0, decodedFrame.payload.metadata?.remaining)
+        assertTrue(decodedFrame.payload.data.exhausted())
+        assertTrue(decodedFrame.payload.metadata?.exhausted() ?: false)
     }
 
     @Test
@@ -142,8 +143,8 @@ class RequestStreamFrameTest : TestWithLeakCheck {
         assertFalse(decodedFrame.complete)
         assertFalse(decodedFrame.next)
         assertEquals(Int.MAX_VALUE, decodedFrame.initialRequest)
-        assertEquals("d", decodedFrame.payload.data.readText())
-        assertEquals("md", decodedFrame.payload.metadata?.readText())
+        assertEquals("d", decodedFrame.payload.data.readString())
+        assertEquals("md", decodedFrame.payload.metadata?.readString())
     }
 
 }

@@ -30,7 +30,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(libs.kotlinx.coroutines.core)
-            api(libs.ktor.io)
+            api(libs.kotlinx.io.core)
         }
     }
 }

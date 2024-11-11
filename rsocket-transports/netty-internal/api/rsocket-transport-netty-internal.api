@@ -2,7 +2,10 @@ public final class io/rsocket/kotlin/transport/netty/internal/CoroutinesKt {
 	public static final fun awaitChannel (Lio/netty/channel/ChannelFuture;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun awaitFuture (Lio/netty/util/concurrent/Future;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun callOnCancellation (Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function1;)V
-	public static final fun toByteBuf (Lio/ktor/utils/io/core/ByteReadPacket;)Lio/netty/buffer/ByteBuf;
-	public static final fun toByteReadPacket (Lio/netty/buffer/ByteBuf;)Lio/ktor/utils/io/core/ByteReadPacket;
+}
+
+public final class io/rsocket/kotlin/transport/netty/internal/IoKt {
+	public static final fun toBuffer (Lio/netty/buffer/ByteBuf;)Lkotlinx/io/Buffer;
+	public static final fun toByteBuf (Lkotlinx/io/Buffer;Lio/netty/buffer/ByteBufAllocator;)Lio/netty/buffer/ByteBuf;
 }
 

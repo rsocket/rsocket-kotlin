@@ -1,12 +1,13 @@
 [versions]
 kotlin = "2.1.0"
 
+kotlinx-io = "0.6.0"
 kotlinx-atomicfu = "0.26.0"
 kotlinx-coroutines = "1.9.0"
 kotlinx-benchmark = "0.4.8"
 kotlinx-bcv = "0.16.3"
 
-ktor = "2.3.12"
+ktor = "3.0.1"
 
 netty = "4.1.115.Final"
 netty-quic = "0.0.69.Final"
@@ -23,6 +24,7 @@ jmh = "1.36"
 maven-publish = "0.30.0"
 
 [libraries]
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinx-coroutines" }

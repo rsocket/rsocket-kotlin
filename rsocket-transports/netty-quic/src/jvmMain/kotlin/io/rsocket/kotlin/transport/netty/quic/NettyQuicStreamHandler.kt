@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.transport.netty.quic
 
-import io.ktor.utils.io.core.*
 import io.netty.buffer.*
 import io.netty.channel.*
 import io.netty.channel.socket.*
@@ -27,6 +26,7 @@ import io.rsocket.kotlin.transport.netty.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.io.*
 
 // TODO: first stream is a hack to initiate first stream because of buffering
 //  quic streams could be received unordered by server, so f.e we could receive first stream with id 4 and then with id 0
@@ -35,8 +35,8 @@ import kotlinx.coroutines.channels.Channel
 @RSocketTransportApi
 internal class NettyQuicStreamState(val startMarker: CompletableJob?) {
     val closeMarker: CompletableJob = Job()
-    val outbound = channelForCloseable<ByteReadPacket>(Channel.BUFFERED)
-    val inbound = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
+    val outbound = bufferChannel(Channel.BUFFERED)
+    val inbound = bufferChannel(Channel.UNLIMITED)
 
     fun wrapStream(stream: QuicStreamChannel): RSocketMultiplexedConnection.Stream =
         NettyQuicStream(stream, outbound, inbound, closeMarker)
@@ -60,8 +60,8 @@ internal class NettyQuicStreamHandler(
                     // avoiding unnecessary flushes
                     // TODO: could be optimized to avoid allocation of not-needed promises
 
-                    var lastWriteFuture = channel.write(outbound.receiveCatching().getOrNull()?.toByteBuf() ?: break)
-                    while (true) lastWriteFuture = channel.write(outbound.tryReceive().getOrNull()?.toByteBuf() ?: break)
+                    var lastWriteFuture = channel.write(outbound.receiveCatching().getOrNull()?.toByteBuf(channel.alloc()) ?: break)
+                    while (true) lastWriteFuture = channel.write(outbound.tryReceive().getOrNull()?.toByteBuf(channel.alloc()) ?: break)
                     //println("FLUSH: $isClient: ${channel.streamId()}")
                     channel.flush()
                     // await writing to respect transport backpressure
@@ -108,12 +108,12 @@ internal class NettyQuicStreamHandler(
 }
 
 private class NettyQuicStreamInboundHandler(
-    private val inbound: SendChannel<ByteReadPacket>,
+    private val inbound: SendChannel<Buffer>,
 ) : ChannelInboundHandlerAdapter() {
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
         msg as ByteBuf
         try {
-            val frame = msg.toByteReadPacket()
+            val frame = msg.toBuffer()
             if (inbound.trySend(frame).isFailure) {
                 frame.close()
             }
@@ -134,8 +134,8 @@ private class NettyQuicStreamInboundHandler(
 private class NettyQuicStream(
     // for priority
     private val stream: QuicStreamChannel,
-    private val outbound: SendChannel<ByteReadPacket>,
-    private val inbound: ReceiveChannel<ByteReadPacket>,
+    private val outbound: SendChannel<Buffer>,
+    private val inbound: ReceiveChannel<Buffer>,
     private val closeMarker: CompletableJob,
 ) : RSocketMultiplexedConnection.Stream {
 
@@ -146,11 +146,11 @@ private class NettyQuicStream(
         stream.updatePriority(QuicStreamPriority(priority, false))
     }
 
-    override suspend fun sendFrame(frame: ByteReadPacket) {
+    override suspend fun sendFrame(frame: Buffer) {
         outbound.send(frame)
     }
 
-    override suspend fun receiveFrame(): ByteReadPacket? {
+    override suspend fun receiveFrame(): Buffer? {
         return inbound.receiveCatching().getOrNull()
     }
 

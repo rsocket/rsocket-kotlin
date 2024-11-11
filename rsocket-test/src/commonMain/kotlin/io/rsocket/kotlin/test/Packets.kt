@@ -16,15 +16,15 @@
 
 package io.rsocket.kotlin.test
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 import kotlin.test.*
 
-fun packet(block: BytePacketBuilder.() -> Unit): ByteReadPacket = InUseTrackingPool.buildPacket(block)
+fun packet(block: Sink.() -> Unit): Buffer = Buffer().apply(block)
 
-fun packet(text: String): ByteReadPacket = InUseTrackingPool.buildPacket { writeText(text) }
+fun packet(text: String): Buffer = packet { writeString(text) }
 
-fun packet(array: ByteArray): ByteReadPacket = InUseTrackingPool.buildPacket { writeFully(array) }
+fun packet(array: ByteArray): Buffer = packet { write(array) }
 
 fun payload(data: ByteArray, metadata: ByteArray? = null): Payload = Payload(packet(data), metadata?.let(::packet))
 

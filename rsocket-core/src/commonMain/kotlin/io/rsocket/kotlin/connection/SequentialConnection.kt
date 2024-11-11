@@ -16,13 +16,13 @@
 
 package io.rsocket.kotlin.connection
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.operation.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
+import kotlinx.io.*
 import kotlin.coroutines.*
 
 @RSocketTransportApi
@@ -43,8 +43,8 @@ internal class SequentialConnection(
     }
 
     private inner class EstablishmentContext : ConnectionEstablishmentContext(frameCodec) {
-        override suspend fun sendFrame(frame: ByteReadPacket): Unit = connection.sendFrame(streamId = 0, frame)
-        override suspend fun receiveFrameRaw(): ByteReadPacket? = connection.receiveFrame()
+        override suspend fun sendFrame(frame: Buffer): Unit = connection.sendFrame(streamId = 0, frame)
+        override suspend fun receiveFrameRaw(): Buffer? = connection.receiveFrame()
     }
 
     override suspend fun handleConnection(inbound: ConnectionInbound) {
@@ -59,11 +59,11 @@ internal class SequentialConnection(
         }
     }
 
-    override suspend fun sendConnectionFrame(frame: ByteReadPacket) {
+    override suspend fun sendConnectionFrame(frame: Buffer) {
         connection.sendFrame(0, frame)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(DelicateCoroutinesApi::class)
     override fun launchRequest(
         requestPayload: Payload,
         operation: RequesterOperation,
@@ -79,7 +79,7 @@ internal class SequentialConnection(
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(DelicateCoroutinesApi::class)
     private fun acceptRequest(
         connectionInbound: ConnectionInbound,
         operationData: ResponderOperationData,
@@ -145,7 +145,7 @@ internal class SequentialConnection(
 
     private inner class Outbound(streamId: Int) : OperationOutbound(streamId, frameCodec) {
         override val isClosed: Boolean get() = !isActive || connection.isClosedForSend
-        override suspend fun sendFrame(frame: ByteReadPacket): Unit = connection.sendFrame(streamId, frame)
+        override suspend fun sendFrame(frame: Buffer): Unit = connection.sendFrame(streamId, frame)
     }
 
     private inner class ResponderInboundWrapper(

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class ExtensionFrameTest : TestWithLeakCheck {
+class ExtensionFrameTest {
 
     private val streamId = 1
     private val extendedType = 1
@@ -37,19 +38,19 @@ class ExtensionFrameTest : TestWithLeakCheck {
         assertEquals(streamId, decodedFrame.streamId)
         assertEquals(extendedType, decodedFrame.extendedType)
         assertNull(decodedFrame.payload.metadata)
-        assertEquals(data, decodedFrame.payload.data.readText())
+        assertEquals(data, decodedFrame.payload.data.readString())
     }
 
     @Test
     fun testMetadata() {
-        val frame = ExtensionFrame(1, extendedType, Payload(ByteReadPacket.Empty, packet(metadata)))
+        val frame = ExtensionFrame(1, extendedType, Payload(EmptyBuffer, packet(metadata)))
         val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is ExtensionFrame)
         assertEquals(streamId, decodedFrame.streamId)
         assertEquals(extendedType, decodedFrame.extendedType)
-        assertEquals(metadata, decodedFrame.payload.metadata?.readText())
-        assertEquals(0, decodedFrame.payload.data.remaining)
+        assertEquals(metadata, decodedFrame.payload.metadata?.readString())
+        assertTrue(decodedFrame.payload.data.exhausted())
     }
 
     @Test
@@ -60,7 +61,7 @@ class ExtensionFrameTest : TestWithLeakCheck {
         assertTrue(decodedFrame is ExtensionFrame)
         assertEquals(streamId, decodedFrame.streamId)
         assertEquals(extendedType, decodedFrame.extendedType)
-        assertEquals(metadata, decodedFrame.payload.metadata?.readText())
-        assertEquals(data, decodedFrame.payload.data.readText())
+        assertEquals(metadata, decodedFrame.payload.metadata?.readString())
+        assertEquals(data, decodedFrame.payload.data.readString())
     }
 }

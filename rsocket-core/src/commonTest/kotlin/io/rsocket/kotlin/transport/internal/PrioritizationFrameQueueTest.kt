@@ -16,13 +16,13 @@
 
 package io.rsocket.kotlin.transport.internal
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class PrioritizationFrameQueueTest : SuspendTest, TestWithLeakCheck {
+class PrioritizationFrameQueueTest : SuspendTest {
     private val queue = PrioritizationFrameQueue(Channel.BUFFERED)
 
     @Test
@@ -31,9 +31,9 @@ class PrioritizationFrameQueueTest : SuspendTest, TestWithLeakCheck {
         queue.enqueueFrame(2, packet("2"))
         queue.enqueueFrame(3, packet("3"))
 
-        assertEquals("1", queue.dequeueFrame()?.readText())
-        assertEquals("2", queue.dequeueFrame()?.readText())
-        assertEquals("3", queue.dequeueFrame()?.readText())
+        assertEquals("1", queue.dequeueFrame()?.readString())
+        assertEquals("2", queue.dequeueFrame()?.readString())
+        assertEquals("3", queue.dequeueFrame()?.readString())
     }
 
     @Test
@@ -41,8 +41,8 @@ class PrioritizationFrameQueueTest : SuspendTest, TestWithLeakCheck {
         queue.enqueueFrame(0, packet("1"))
         queue.enqueueFrame(0, packet("2"))
 
-        assertEquals("1", queue.dequeueFrame()?.readText())
-        assertEquals("2", queue.dequeueFrame()?.readText())
+        assertEquals("1", queue.dequeueFrame()?.readString())
+        assertEquals("2", queue.dequeueFrame()?.readString())
     }
 
     @Test
@@ -52,22 +52,22 @@ class PrioritizationFrameQueueTest : SuspendTest, TestWithLeakCheck {
         queue.enqueueFrame(1, packet("3"))
         queue.enqueueFrame(0, packet("4"))
 
-        assertEquals("2", queue.dequeueFrame()?.readText())
-        assertEquals("4", queue.dequeueFrame()?.readText())
+        assertEquals("2", queue.dequeueFrame()?.readString())
+        assertEquals("4", queue.dequeueFrame()?.readString())
 
-        assertEquals("1", queue.dequeueFrame()?.readText())
-        assertEquals("3", queue.dequeueFrame()?.readText())
+        assertEquals("1", queue.dequeueFrame()?.readString())
+        assertEquals("3", queue.dequeueFrame()?.readString())
     }
 
     @Test
     fun testAsyncReceive() = test {
-        val deferred = CompletableDeferred<ByteReadPacket?>()
+        val deferred = CompletableDeferred<Source?>()
         launch(anotherDispatcher) {
             deferred.complete(queue.dequeueFrame())
         }
         delay(100)
         queue.enqueueFrame(5, packet("1"))
-        assertEquals("1", deferred.await()?.readText())
+        assertEquals("1", deferred.await()?.readString())
     }
 
     @Test
@@ -77,17 +77,17 @@ class PrioritizationFrameQueueTest : SuspendTest, TestWithLeakCheck {
         queue.enqueueFrame(0, p1)
         queue.enqueueFrame(1, p2)
 
-        assertTrue(p1.isNotEmpty)
-        assertTrue(p2.isNotEmpty)
+        assertTrue(!p1.exhausted())
+        assertTrue(!p2.exhausted())
 
         queue.close()
 
-        assertTrue(p1.isNotEmpty)
-        assertTrue(p2.isNotEmpty)
+        assertTrue(!p1.exhausted())
+        assertTrue(!p2.exhausted())
 
         queue.cancel()
 
-        assertTrue(p1.isEmpty)
-        assertTrue(p2.isEmpty)
+        assertTrue(p1.exhausted())
+        assertTrue(p2.exhausted())
     }
 }

@@ -18,7 +18,6 @@
 
 package io.rsocket.kotlin.transport.local
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
@@ -49,8 +48,8 @@ public class LocalServer internal constructor(
     override val coroutineContext: CoroutineContext,
 ) : ClientTransport {
     override suspend fun connect(): Connection {
-        val clientChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
-        val serverChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
+        val clientChannel = bufferChannel(Channel.UNLIMITED)
+        val serverChannel = bufferChannel(Channel.UNLIMITED)
         val connectionJob = Job(coroutineContext[Job])
         connectionJob.invokeOnCompletion {
             clientChannel.cancelWithCause(it)

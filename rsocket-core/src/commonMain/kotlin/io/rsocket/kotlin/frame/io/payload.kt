@@ -16,30 +16,29 @@
 
 package io.rsocket.kotlin.frame.io
 
-import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 
-internal fun ByteReadPacket.readMetadata(pool: BufferPool): ByteReadPacket {
+internal fun Source.readMetadata(): Buffer {
     val length = readInt24()
-    return readPacket(pool, length)
+    return readBuffer(length)
 }
 
-internal fun BytePacketBuilder.writeMetadata(metadata: ByteReadPacket?) {
+internal fun Sink.writeMetadata(metadata: Buffer?) {
     metadata?.let {
-        writeInt24(it.remaining.toInt())
-        writePacket(it)
+        writeInt24(it.size.toInt())
+        transferFrom(it)
     }
 }
 
-internal fun ByteReadPacket.readPayload(pool: BufferPool, flags: Int): Payload {
-    val metadata = if (flags check Flags.Metadata) readMetadata(pool) else null
-    val data = readPacket(pool)
+internal fun Source.readPayload(flags: Int): Payload {
+    val metadata = if (flags check Flags.Metadata) readMetadata() else null
+    val data = readBuffer()
     return Payload(data = data, metadata = metadata)
 }
 
-internal fun BytePacketBuilder.writePayload(payload: Payload) {
+internal fun Sink.writePayload(payload: Payload) {
     writeMetadata(payload.metadata)
-    writePacket(payload.data)
+    transferFrom(payload.data)
 }

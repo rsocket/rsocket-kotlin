@@ -16,11 +16,10 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 
 private const val HonorLeaseFlag = 64
 private const val ResumeEnabledFlag = 128
@@ -29,7 +28,7 @@ internal class SetupFrame(
     val version: Version, //TODO check
     val honorLease: Boolean,
     val keepAlive: KeepAlive,
-    val resumeToken: ByteReadPacket?,
+    val resumeToken: Buffer?,
     val payloadMimeType: PayloadMimeType,
     val payload: Payload,
 ) : Frame() {
@@ -49,7 +48,7 @@ internal class SetupFrame(
         payload.close()
     }
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         writeVersion(version)
         writeInt(keepAlive.intervalMillis)
         writeInt(keepAlive.maxLifetimeMillis)
@@ -75,20 +74,20 @@ internal class SetupFrame(
     }
 }
 
-internal fun ByteReadPacket.readSetup(pool: BufferPool, flags: Int): SetupFrame {
+internal fun Source.readSetup(flags: Int): SetupFrame {
     val version = readVersion()
     val keepAlive = run {
         val interval = readInt()
         val maxLifetime = readInt()
         KeepAlive(intervalMillis = interval, maxLifetimeMillis = maxLifetime)
     }
-    val resumeToken = if (flags check ResumeEnabledFlag) readResumeToken(pool) else null
+    val resumeToken = if (flags check ResumeEnabledFlag) readResumeToken() else null
     val payloadMimeType = run {
         val metadata = readStringMimeType()
         val data = readStringMimeType()
         PayloadMimeType(data = data, metadata = metadata)
     }
-    val payload = readPayload(pool, flags)
+    val payload = readPayload(flags)
     return SetupFrame(
         version = version,
         honorLease = flags check HonorLeaseFlag,
@@ -99,13 +98,13 @@ internal fun ByteReadPacket.readSetup(pool: BufferPool, flags: Int): SetupFrame 
     )
 }
 
-private fun ByteReadPacket.readStringMimeType(): String {
-    val length = readByte().toInt()
-    return readTextExactBytes(length)
+private fun Source.readStringMimeType(): String {
+    val length = readByte().toLong()
+    return readString(length)
 }
 
-private fun BytePacketBuilder.writeStringMimeType(mimeType: String) {
+private fun Sink.writeStringMimeType(mimeType: String) {
     val bytes = mimeType.encodeToByteArray() //TODO check
     writeByte(bytes.size.toByte())
-    writeFully(bytes)
+    write(bytes)
 }

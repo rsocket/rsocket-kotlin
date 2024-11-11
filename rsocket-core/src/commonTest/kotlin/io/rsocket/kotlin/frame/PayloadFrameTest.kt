@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class PayloadFrameTest : TestWithLeakCheck {
+class PayloadFrameTest {
 
     @Test
     fun testNextCompleteDataMetadata() {
@@ -34,8 +35,8 @@ class PayloadFrameTest : TestWithLeakCheck {
         assertFalse(decodedFrame.follows)
         assertTrue(decodedFrame.complete)
         assertTrue(decodedFrame.next)
-        assertEquals("d", decodedFrame.payload.data.readText())
-        assertEquals("md", decodedFrame.payload.metadata?.readText())
+        assertEquals("d", decodedFrame.payload.data.readString())
+        assertEquals("md", decodedFrame.payload.metadata?.readString())
     }
 
     @Test
@@ -49,13 +50,13 @@ class PayloadFrameTest : TestWithLeakCheck {
         assertFalse(decodedFrame.follows)
         assertTrue(decodedFrame.complete)
         assertTrue(decodedFrame.next)
-        assertEquals("d", decodedFrame.payload.data.readText())
+        assertEquals("d", decodedFrame.payload.data.readString())
         assertNull(decodedFrame.payload.metadata)
     }
 
     @Test
     fun testNextCompleteMetadata() {
-        val frame = NextCompletePayloadFrame(3, Payload(ByteReadPacket.Empty, packet("md")))
+        val frame = NextCompletePayloadFrame(3, Payload(EmptyBuffer, packet("md")))
         val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
@@ -64,8 +65,8 @@ class PayloadFrameTest : TestWithLeakCheck {
         assertFalse(decodedFrame.follows)
         assertTrue(decodedFrame.complete)
         assertTrue(decodedFrame.next)
-        assertEquals(0, decodedFrame.payload.data.remaining)
-        assertEquals("md", decodedFrame.payload.metadata?.readText())
+        assertTrue(decodedFrame.payload.data.exhausted())
+        assertEquals("md", decodedFrame.payload.metadata?.readString())
     }
 
     @Test
@@ -79,8 +80,8 @@ class PayloadFrameTest : TestWithLeakCheck {
         assertFalse(decodedFrame.follows)
         assertFalse(decodedFrame.complete)
         assertTrue(decodedFrame.next)
-        assertEquals("d", decodedFrame.payload.data.readText())
-        assertEquals("md", decodedFrame.payload.metadata?.readText())
+        assertEquals("d", decodedFrame.payload.data.readString())
+        assertEquals("md", decodedFrame.payload.metadata?.readString())
     }
 
     @Test
@@ -94,13 +95,13 @@ class PayloadFrameTest : TestWithLeakCheck {
         assertFalse(decodedFrame.follows)
         assertFalse(decodedFrame.complete)
         assertTrue(decodedFrame.next)
-        assertEquals("d", decodedFrame.payload.data.readText())
+        assertEquals("d", decodedFrame.payload.data.readString())
         assertNull(decodedFrame.payload.metadata)
     }
 
     @Test
     fun testNextDataEmptyMetadata() {
-        val frame = NextPayloadFrame(3, Payload(packet("d"), ByteReadPacket.Empty))
+        val frame = NextPayloadFrame(3, Payload(packet("d"), Buffer()))
         val decodedFrame = frame.loopFrame()
 
         assertTrue(decodedFrame is RequestFrame)
@@ -109,8 +110,8 @@ class PayloadFrameTest : TestWithLeakCheck {
         assertFalse(decodedFrame.follows)
         assertFalse(decodedFrame.complete)
         assertTrue(decodedFrame.next)
-        assertEquals("d", decodedFrame.payload.data.readText())
-        assertEquals(0, decodedFrame.payload.metadata?.remaining)
+        assertEquals("d", decodedFrame.payload.data.readString())
+        assertTrue(decodedFrame.payload.metadata?.exhausted() ?: false)
     }
 
 }

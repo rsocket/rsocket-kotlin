@@ -117,7 +117,7 @@ val stream: Flow<Payload> = rSocket.requestStream(
 
 //take 5 values and print response
 stream.take(5).collect { payload: Payload ->
-    println(payload.data.readText())
+    println(payload.data.readString())
 }
 ```
 
@@ -143,12 +143,12 @@ embeddedServer(CIO) {
     routing {
         //configure route `/rsocket`
         rSocket("rsocket") {
-            println(config.setupPayload.data.readText()) //print setup payload data
+            println(config.setupPayload.data.readString()) //print setup payload data
 
             RSocketRequestHandler {
                 //handler for request/response
                 requestResponse { request: Payload ->
-                    println(request.data.readText()) //print request payload data
+                    println(request.data.readString()) //print request payload data
                     delay(500) // work emulation
                     buildPayload {
                         data("""{ "data": "Server response" }""")
@@ -156,7 +156,7 @@ embeddedServer(CIO) {
                 }
                 //handler for request/stream      
                 requestStream { request: Payload ->
-                    println(request.data.readText()) //print request payload data
+                    println(request.data.readString()) //print request payload data
                     flow {
                         repeat(10) { i ->
                             emit(
@@ -208,7 +208,7 @@ val connector = RSocketConnector {
 val rsocket: RSocket = connector.connect(transport)
 //use rsocket to do request
 val response = rsocket.requestResponse(buildPayload { data("""{ "data": "hello world" }""") })
-println(response.data.readText())
+println(response.data.readString())
 ```
 
 Example of usage standalone server transport:
@@ -223,7 +223,7 @@ val server: TcpServer = server.bind(transport) {
     RSocketRequestHandler {
         //handler for request/response
         requestResponse { request: Payload ->
-            println(request.data.readText()) //print request payload data
+            println(request.data.readString()) //print request payload data
             delay(500) // work emulation
             buildPayload {
                 data("""{ "data": "Server response" }""")
@@ -267,7 +267,7 @@ val stream: Flow<Payload> = client.requestStream(Payload("data"))
 //so on call `collect`, requestStream frame with requestN will be sent, and then, after 5 elements will be collected
 //new requestN with 5 will be sent, so collect will be smooth 
 stream.flowOn(PrefetchStrategy(requestSize = 10, requestOn = 5)).collect { payload: Payload ->
-    println(payload.data.readText())
+    println(payload.data.readString())
 }
 ```
 

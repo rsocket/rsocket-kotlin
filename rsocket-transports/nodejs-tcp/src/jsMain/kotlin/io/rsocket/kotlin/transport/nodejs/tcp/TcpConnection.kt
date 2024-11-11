@@ -16,14 +16,12 @@
 
 package io.rsocket.kotlin.transport.nodejs.tcp
 
-import io.ktor.utils.io.core.*
-import io.ktor.utils.io.js.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.nodejs.tcp.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
-import org.khronos.webgl.*
+import kotlinx.io.*
 import kotlin.coroutines.*
 
 @Suppress("DEPRECATION_ERROR")
@@ -32,14 +30,12 @@ internal class TcpConnection(
     private val socket: Socket,
 ) : Connection {
 
-    private val sendChannel = channelForCloseable<ByteReadPacket>(8)
-    private val receiveChannel = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
+    private val sendChannel = bufferChannel(8)
+    private val receiveChannel = bufferChannel(Channel.UNLIMITED)
 
     init {
         launch {
-            sendChannel.consumeEach { packet ->
-                socket.write(Uint8Array(packet.withLength().readArrayBuffer()))
-            }
+            sendChannel.consumeEach(socket::writeFrame)
         }
 
         coroutineContext.job.invokeOnCompletion {
@@ -51,17 +47,17 @@ internal class TcpConnection(
 
         val frameAssembler = FrameWithLengthAssembler { receiveChannel.trySend(it) } //TODO
         socket.on(
-            onData = { frameAssembler.write { writeFully(it.buffer) } },
+            onData = frameAssembler::write,
             onError = { coroutineContext.job.cancel("Socket error", it) },
             onClose = { if (!it) coroutineContext.job.cancel("Socket closed") }
         )
     }
 
-    override suspend fun send(packet: ByteReadPacket) {
+    override suspend fun send(packet: Buffer) {
         sendChannel.send(packet)
     }
 
-    override suspend fun receive(): ByteReadPacket {
+    override suspend fun receive(): Buffer {
         return receiveChannel.receive()
     }
 }

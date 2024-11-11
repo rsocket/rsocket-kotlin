@@ -16,16 +16,15 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
 private const val RespondFlag = 128
 
 internal class KeepAliveFrame(
     val respond: Boolean,
     val lastPosition: Long,
-    val data: ByteReadPacket,
+    val data: Buffer,
 ) : Frame() {
     override val type: FrameType get() = FrameType.KeepAlive
     override val streamId: Int get() = 0
@@ -35,9 +34,9 @@ internal class KeepAliveFrame(
         data.close()
     }
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         writeLong(lastPosition.coerceAtLeast(0))
-        writePacket(data)
+        transferFrom(data)
     }
 
     override fun StringBuilder.appendFlags() {
@@ -46,13 +45,13 @@ internal class KeepAliveFrame(
 
     override fun StringBuilder.appendSelf() {
         append("\nLast position: ").append(lastPosition)
-        appendPacket("Data", data)
+        appendBuffer("Data", data)
     }
 }
 
-internal fun ByteReadPacket.readKeepAlive(pool: BufferPool, flags: Int): KeepAliveFrame {
+internal fun Source.readKeepAlive(flags: Int): KeepAliveFrame {
     val respond = flags check RespondFlag
     val lastPosition = readLong()
-    val data = readPacket(pool)
+    val data = readBuffer()
     return KeepAliveFrame(respond, lastPosition, data)
 }

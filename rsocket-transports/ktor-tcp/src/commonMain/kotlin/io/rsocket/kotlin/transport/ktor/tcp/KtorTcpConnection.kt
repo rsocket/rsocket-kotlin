@@ -18,17 +18,17 @@ package io.rsocket.kotlin.transport.ktor.tcp
 
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.*
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.io.*
 
 @RSocketTransportApi
 internal suspend fun RSocketConnectionHandler.handleKtorTcpConnection(socket: Socket): Unit = coroutineScope {
     val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
-    val inbound = channelForCloseable<ByteReadPacket>(Channel.BUFFERED)
+    val inbound = bufferChannel(Channel.BUFFERED)
 
     val readerJob = launch {
         val input = socket.openReadChannel()
@@ -79,33 +79,31 @@ internal suspend fun RSocketConnectionHandler.handleKtorTcpConnection(socket: So
 @RSocketTransportApi
 private class KtorTcpConnection(
     private val outboundQueue: PrioritizationFrameQueue,
-    private val inbound: ReceiveChannel<ByteReadPacket>,
+    private val inbound: ReceiveChannel<Buffer>,
 ) : RSocketSequentialConnection {
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
-    override suspend fun sendFrame(streamId: Int, frame: ByteReadPacket) {
+    override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         return outboundQueue.enqueueFrame(streamId, frame)
     }
 
-    override suspend fun receiveFrame(): ByteReadPacket? {
+    override suspend fun receiveFrame(): Buffer? {
         return inbound.receiveCatching().getOrNull()
     }
 }
 
-private suspend fun ByteWriteChannel.writeFrame(frame: ByteReadPacket) {
-    val packet = buildPacket {
-        writeInt24(frame.remaining.toInt())
-        writePacket(frame)
-    }
-    try {
-        writePacket(packet)
-    } catch (cause: Throwable) {
-        packet.close()
-        throw cause
-    }
+@OptIn(InternalAPI::class) // TODO?
+private fun ByteWriteChannel.writeFrame(frame: Buffer) {
+    writeBuffer.writeInt24(frame.size.toInt())
+    writeBuffer.transferFrom(frame)
 }
 
-private suspend fun ByteReadChannel.readFrame(): ByteReadPacket? {
-    val lengthPacket = readRemaining(3)
-    if (lengthPacket.remaining == 0L) return null
-    return readPacket(lengthPacket.readInt24())
+@OptIn(InternalAPI::class) // TODO?
+private suspend fun ByteReadChannel.readFrame(): Buffer? {
+    while (availableForRead < 3 && awaitContent(3)) yield()
+    if (availableForRead == 0) return null
+
+    val length = readBuffer.readInt24()
+    return readBuffer(length).also {
+        it.require(length.toLong())
+    }
 }

@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 import kotlin.test.*
 
-class RSocketResponderRequestNTest : TestWithLeakCheck, TestWithConnection() {
+class RSocketResponderRequestNTest : TestWithConnection() {
     private val testJob: Job = Job()
 
     private class TestInstance(val deferred: Deferred<Unit>) : RSocketServerInstance {

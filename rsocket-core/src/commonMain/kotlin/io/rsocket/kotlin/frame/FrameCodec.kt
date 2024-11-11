@@ -16,23 +16,21 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
 internal class FrameCodec(
-    val bufferPool: BufferPool,
     // affects encoding only,
     val maxFragmentSize: Int,
 ) {
-    fun decodeFrame(frame: ByteReadPacket): Frame = frame.readFrame(bufferPool)
-    fun decodeFrame(expectedStreamId: Int, frame: ByteReadPacket): Frame = decodeFrame(frame).also {
+    fun decodeFrame(frame: Buffer): Frame = frame.readFrame()
+    fun decodeFrame(expectedStreamId: Int, frame: Buffer): Frame = decodeFrame(frame).also {
         if (it.streamId != expectedStreamId) {
             it.close()
             error("Invalid stream id, expected '$expectedStreamId', actual '${it.streamId}'")
         }
     }
 
-    fun encodeFrame(frame: Frame): ByteReadPacket = frame.toPacket(bufferPool)
+    fun encodeFrame(frame: Frame): Buffer = frame.toBuffer()
 
     // TODO: move fragmentation logic here or into separate class?
 }

@@ -16,8 +16,6 @@
 
 package io.rsocket.kotlin.transport.netty.internal
 
-import io.ktor.utils.io.core.*
-import io.netty.buffer.*
 import io.netty.channel.*
 import io.netty.util.concurrent.*
 import kotlinx.coroutines.*
@@ -58,7 +56,3 @@ public inline fun CoroutineScope.callOnCancellation(crossinline block: suspend (
         }
     }
 }
-
-// TODO: what to use: this or ByteReadPacket(msg.nioBuffer())
-public fun ByteBuf.toByteReadPacket(): ByteReadPacket = buildPacket { writeFully(nioBuffer()) }
-public fun ByteReadPacket.toByteBuf(): ByteBuf = Unpooled.wrappedBuffer(readByteBuffer())

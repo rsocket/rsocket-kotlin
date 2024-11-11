@@ -16,19 +16,18 @@
 
 package io.rsocket.kotlin.metadata.security
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
 @ExperimentalMetadataApi
 public class RawAuthMetadata(
     public override val type: AuthType,
-    public val content: ByteReadPacket,
+    public val content: Source,
 ) : AuthMetadata {
 
-    override fun BytePacketBuilder.writeContent() {
-        writePacket(content)
+    override fun Sink.writeContent() {
+        transferFrom(content)
     }
 
     override fun close() {
@@ -36,8 +35,8 @@ public class RawAuthMetadata(
     }
 
     public companion object Reader : AuthMetadataReader<RawAuthMetadata> {
-        override fun ByteReadPacket.readContent(type: AuthType, pool: BufferPool): RawAuthMetadata {
-            val content = readPacket(pool)
+        override fun Source.readContent(type: AuthType): RawAuthMetadata {
+            val content = readBuffer()
             return RawAuthMetadata(type, content)
         }
     }
@@ -49,9 +48,8 @@ public fun RawAuthMetadata.hasAuthTypeOf(reader: AuthMetadataReader<*>): Boolean
 @ExperimentalMetadataApi
 public fun <AM : AuthMetadata> RawAuthMetadata.read(
     reader: AuthMetadataReader<AM>,
-    pool: BufferPool = BufferPool.Default,
 ): AM {
-    return readOrNull(reader, pool) ?: run {
+    return readOrNull(reader) ?: run {
         content.close()
         error("Expected auth type '${reader.mimeType}' but was '$mimeType'")
     }
@@ -61,11 +59,10 @@ public fun <AM : AuthMetadata> RawAuthMetadata.read(
 
 public fun <AM : AuthMetadata> RawAuthMetadata.readOrNull(
     reader: AuthMetadataReader<AM>,
-    pool: BufferPool = BufferPool.Default,
 ): AM? {
     if (type != reader.mimeType) return null
 
     with(reader) {
-        return content.use { it.readContent(type, pool) }
+        return content.use { it.readContent(type) }
     }
 }

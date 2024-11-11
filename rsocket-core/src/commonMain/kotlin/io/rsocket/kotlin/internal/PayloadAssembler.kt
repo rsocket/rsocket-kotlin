@@ -16,28 +16,22 @@
 
 package io.rsocket.kotlin.internal
 
-import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
-import io.ktor.utils.io.pool.*
+import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 
 // TODO: make metadata should be fully transmitted before data
-internal class PayloadAssembler : Closeable {
+internal class PayloadAssembler : AutoCloseable {
     // TODO: better name
-    var hasPayload: Boolean = false
-        private set
-    private var hasMetadata: Boolean = false
+    val hasPayload: Boolean
+        get() = data != null
 
-    private val data = BytePacketBuilder(NoPool)
-    private val metadata = BytePacketBuilder(NoPool)
+    private var data: Buffer? = null
+    private var metadata: Buffer? = null
 
     fun appendFragment(fragment: Payload) {
-        hasPayload = true
-        data.writePacket(fragment.data)
-
-        val meta = fragment.metadata ?: return
-        hasMetadata = true
-        metadata.writePacket(meta)
+        fragment.data.transferTo(data ?: Buffer().also { data = it })
+        fragment.metadata?.transferTo(metadata ?: Buffer().also { metadata = it })
     }
 
     fun assemblePayload(fragment: Payload): Payload {
@@ -46,36 +40,18 @@ internal class PayloadAssembler : Closeable {
         appendFragment(fragment)
 
         val payload = Payload(
-            data = data.build(),
-            metadata = when {
-                hasMetadata -> metadata.build()
-                else        -> null
-            }
+            data = data ?: EmptyBuffer, // probably never happens
+            metadata = metadata
         )
-        hasMetadata = false
-        hasPayload = false
+        data = null
+        metadata = null
         return payload
     }
 
     override fun close() {
-        data.close()
-        metadata.close()
-    }
-
-    @Suppress("DEPRECATION")
-    private object NoPool : ObjectPool<ChunkBuffer> {
-        override val capacity: Int get() = error("should not be called")
-
-        override fun borrow(): ChunkBuffer {
-            error("should not be called")
-        }
-
-        override fun dispose() {
-            error("should not be called")
-        }
-
-        override fun recycle(instance: ChunkBuffer) {
-            error("should not be called")
-        }
+        data?.clear()
+        data = null
+        metadata?.clear()
+        metadata = null
     }
 }

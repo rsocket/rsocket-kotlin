@@ -19,9 +19,10 @@ package io.rsocket.kotlin.transport.ktor.tcp
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class TcpServerTest : SuspendTest, TestWithLeakCheck {
+class TcpServerTest : SuspendTest {
     private val testJob = Job()
     private val testContext = testJob + TestExceptionHandler
     private val serverTransport = KtorTcpServerTransport(testContext).target()
@@ -35,7 +36,7 @@ class TcpServerTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun testFailedConnection() = test {
         val server = TestServer().startServer(serverTransport) {
-            if (config.setupPayload.data.readText() == "ok") {
+            if (config.setupPayload.data.readString() == "ok") {
                 RSocketRequestHandler {
                     requestResponse { it }
                 }

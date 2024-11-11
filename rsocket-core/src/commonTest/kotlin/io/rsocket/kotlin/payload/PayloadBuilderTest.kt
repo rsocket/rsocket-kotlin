@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,24 @@
 
 package io.rsocket.kotlin.payload
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class PayloadBuilderTest : TestWithLeakCheck {
+class PayloadBuilderTest {
 
     @Test
     fun payloadCopy() {
         val payload = Payload(packet("data"), packet("metadata"))
         val copy = payload.copy()
 
-        assertTrue(payload.data.isNotEmpty)
-        assertTrue(payload.metadata?.isNotEmpty == true)
-        assertTrue(copy.data.isNotEmpty)
-        assertTrue(copy.metadata?.isNotEmpty == true)
+        assertTrue(!payload.data.exhausted())
+        assertTrue(payload.metadata?.let { !it.exhausted() } == true)
+        assertTrue(!copy.data.exhausted())
+        assertTrue(copy.metadata?.let { !it.exhausted() } == true)
 
-        assertBytesEquals(payload.data.readBytes(), copy.data.readBytes())
-        assertBytesEquals(payload.metadata?.readBytes(), copy.metadata?.readBytes())
+        assertBytesEquals(payload.data.readByteArray(), copy.data.readByteArray())
+        assertBytesEquals(payload.metadata?.readByteArray(), copy.metadata?.readByteArray())
     }
 
     @Test

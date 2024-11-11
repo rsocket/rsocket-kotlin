@@ -16,25 +16,23 @@
 
 package io.rsocket.kotlin.transport.nodejs.tcp
 
-import io.ktor.utils.io.core.*
-import io.ktor.utils.io.js.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.internal.*
 import io.rsocket.kotlin.transport.nodejs.tcp.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
-import org.khronos.webgl.*
+import kotlinx.io.*
 
 @RSocketTransportApi
 internal suspend fun RSocketConnectionHandler.handleNodejsTcpConnection(socket: Socket): Unit = coroutineScope {
     val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
-    val inbound = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
+    val inbound = bufferChannel(Channel.UNLIMITED)
 
     val closed = CompletableDeferred<Unit>()
     val frameAssembler = FrameWithLengthAssembler { inbound.trySend(it) }
     socket.on(
-        onData = { frameAssembler.write { writeFully(it.buffer) } },
+        onData = frameAssembler::write,
         onError = { closed.completeExceptionally(it) },
         onClose = {
             frameAssembler.close()
@@ -64,22 +62,14 @@ internal suspend fun RSocketConnectionHandler.handleNodejsTcpConnection(socket: 
 @RSocketTransportApi
 private class NodejsTcpConnection(
     private val outboundQueue: PrioritizationFrameQueue,
-    private val inbound: ReceiveChannel<ByteReadPacket>,
+    private val inbound: ReceiveChannel<Buffer>,
 ) : RSocketSequentialConnection {
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
-    override suspend fun sendFrame(streamId: Int, frame: ByteReadPacket) {
+    override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         return outboundQueue.enqueueFrame(streamId, frame)
     }
 
-    override suspend fun receiveFrame(): ByteReadPacket? {
+    override suspend fun receiveFrame(): Buffer? {
         return inbound.receiveCatching().getOrNull()
     }
-}
-
-private fun Socket.writeFrame(frame: ByteReadPacket) {
-    val packet = buildPacket {
-        writeInt24(frame.remaining.toInt())
-        writePacket(frame)
-    }
-    write(Uint8Array(packet.readArrayBuffer()))
 }

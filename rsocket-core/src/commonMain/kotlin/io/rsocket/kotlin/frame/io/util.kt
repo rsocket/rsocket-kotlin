@@ -16,32 +16,28 @@
 
 package io.rsocket.kotlin.frame.io
 
-import io.ktor.utils.io.core.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
-internal fun ByteReadPacket.readResumeToken(pool: BufferPool): ByteReadPacket {
+internal fun Source.readResumeToken(): Buffer {
     val length = readShort().toInt() and 0xFFFF
-    return readPacket(pool, length)
+    return readBuffer(length)
 }
 
-internal fun BytePacketBuilder.writeResumeToken(resumeToken: ByteReadPacket?) {
+internal fun Sink.writeResumeToken(resumeToken: Buffer?) {
     resumeToken?.let {
-        val length = it.remaining
-        writeShort(length.toShort())
-        writePacket(it)
+        writeShort(it.size.toShort())
+        transferFrom(it)
     }
 }
 
-internal fun ByteReadPacket.readPacket(pool: BufferPool): ByteReadPacket {
-    if (isEmpty) return ByteReadPacket.Empty
-    return pool.buildPacket {
-        writePacket(this@readPacket)
-    }
+internal fun Source.readBuffer(): Buffer {
+    return Buffer().also(this::transferTo)
 }
 
-internal fun ByteReadPacket.readPacket(pool: BufferPool, length: Int): ByteReadPacket {
-    if (length == 0) return ByteReadPacket.Empty
-    return pool.buildPacket {
-        writePacket(this@readPacket, length)
-    }
+internal fun Source.readBuffer(length: Int): Buffer {
+    val output = Buffer()
+    output.write(this, length.toLong())
+    return output
 }
+
+internal val EmptyBuffer: Buffer = Buffer()

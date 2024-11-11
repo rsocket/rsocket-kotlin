@@ -16,10 +16,10 @@
 
 package io.rsocket.kotlin.operation
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 import kotlin.math.*
 
 private const val lengthSize = 3
@@ -36,7 +36,7 @@ internal abstract class OperationOutbound(
 
     abstract val isClosed: Boolean
 
-    protected abstract suspend fun sendFrame(frame: ByteReadPacket)
+    protected abstract suspend fun sendFrame(frame: Buffer)
     private suspend fun sendFrame(frame: Frame): Unit = sendFrame(frameCodec.encodeFrame(frame))
 
     suspend fun sendError(cause: Throwable) {
@@ -90,24 +90,24 @@ internal abstract class OperationOutbound(
         if (metadata != null) remaining -= lengthSize
 
         do {
-            val metadataFragment = if (metadata != null && metadata.isNotEmpty) {
+            val metadataFragment = if (metadata != null && !metadata.exhausted()) {
                 if (!first) remaining -= lengthSize
-                val length = min(metadata.remaining.toInt(), remaining)
+                val length = min(metadata.size.toInt(), remaining)
                 remaining -= length
-                metadata.readPacket(frameCodec.bufferPool, length)
+                metadata.readBuffer(length)
             } else null
 
-            val dataFragment = if (remaining > 0 && data.isNotEmpty) {
-                val length = min(data.remaining.toInt(), remaining)
+            val dataFragment = if (remaining > 0 && !data.exhausted()) {
+                val length = min(data.size.toInt(), remaining)
                 remaining -= length
-                data.readPacket(frameCodec.bufferPool, length)
+                data.readBuffer(length)
             } else {
-                ByteReadPacket.Empty
+                EmptyBuffer
             }
 
             val fType = if (first && type.isRequestType) type else FrameType.Payload
             val fragment = Payload(dataFragment, metadataFragment)
-            val follows = metadata != null && metadata.isNotEmpty || data.isNotEmpty
+            val follows = metadata != null && !metadata.exhausted() || !data.exhausted()
             sendFrame(
                 RequestFrame(
                     type = fType,
@@ -127,8 +127,8 @@ internal abstract class OperationOutbound(
     private fun Payload.isFragmentable(hasInitialRequest: Boolean) = when (frameCodec.maxFragmentSize) {
         0    -> false
         else -> when (val meta = metadata) {
-            null -> data.remaining > frameCodec.maxFragmentSize - fragmentOffset - (if (hasInitialRequest) Int.SIZE_BYTES else 0)
-            else -> data.remaining + meta.remaining > frameCodec.maxFragmentSize - fragmentOffsetWithMetadata - (if (hasInitialRequest) Int.SIZE_BYTES else 0)
+            null -> data.size > frameCodec.maxFragmentSize - fragmentOffset - (if (hasInitialRequest) Int.SIZE_BYTES else 0)
+            else -> data.size + meta.size > frameCodec.maxFragmentSize - fragmentOffsetWithMetadata - (if (hasInitialRequest) Int.SIZE_BYTES else 0)
         }
     }
 

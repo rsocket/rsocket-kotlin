@@ -16,13 +16,13 @@
 
 package io.rsocket.kotlin.connection
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.io.*
 
 @Suppress("DEPRECATION_ERROR")
 @RSocketTransportApi
@@ -51,11 +51,11 @@ private class OldConnection(
 ) : RSocketSequentialConnection {
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
 
-    override suspend fun sendFrame(streamId: Int, frame: ByteReadPacket) {
+    override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         return outboundQueue.enqueueFrame(streamId, frame)
     }
 
-    override suspend fun receiveFrame(): ByteReadPacket? = try {
+    override suspend fun receiveFrame(): Buffer? = try {
         connection.receive()
     } catch (cause: Throwable) {
         currentCoroutineContext().ensureActive()

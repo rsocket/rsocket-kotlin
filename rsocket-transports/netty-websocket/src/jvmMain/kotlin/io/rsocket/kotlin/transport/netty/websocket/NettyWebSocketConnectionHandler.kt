@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.transport.netty.websocket
 
-import io.ktor.utils.io.core.*
 import io.netty.channel.*
 import io.netty.channel.socket.*
 import io.netty.handler.codec.http.websocketx.*
@@ -27,6 +26,7 @@ import io.rsocket.kotlin.transport.netty.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.io.*
 
 @RSocketTransportApi
 internal class NettyWebSocketConnectionHandler(
@@ -34,7 +34,7 @@ internal class NettyWebSocketConnectionHandler(
     private val handler: RSocketConnectionHandler,
     scope: CoroutineScope,
 ) : ChannelInboundHandlerAdapter() {
-    private val inbound = channelForCloseable<ByteReadPacket>(Channel.UNLIMITED)
+    private val inbound = bufferChannel(Channel.UNLIMITED)
 
     private val handlerJob = scope.launch(start = CoroutineStart.LAZY) {
         val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
@@ -46,9 +46,10 @@ internal class NettyWebSocketConnectionHandler(
                     // in this case, if there are several buffered frames we can send them in one go
                     // avoiding unnecessary flushes
                     // TODO: could be optimized to avoid allocation of not-needed promises
-                    var lastWriteFuture = channel.write(BinaryWebSocketFrame(outboundQueue.dequeueFrame()?.toByteBuf() ?: break))
+                    var lastWriteFuture =
+                        channel.write(BinaryWebSocketFrame(outboundQueue.dequeueFrame()?.toByteBuf(channel.alloc()) ?: break))
                     while (true) lastWriteFuture =
-                        channel.write(BinaryWebSocketFrame(outboundQueue.tryDequeueFrame()?.toByteBuf() ?: break))
+                        channel.write(BinaryWebSocketFrame(outboundQueue.tryDequeueFrame()?.toByteBuf(channel.alloc()) ?: break))
                     channel.flush()
                     // await writing to respect transport backpressure
                     lastWriteFuture.awaitFuture()
@@ -100,13 +101,13 @@ internal class NettyWebSocketConnectionHandler(
 
 // TODO: implement support for isAutoRead=false to support `inbound` backpressure
 private class NettyWebSocketConnectionInboundHandler(
-    private val inbound: SendChannel<ByteReadPacket>,
+    private val inbound: SendChannel<Buffer>,
 ) : ChannelInboundHandlerAdapter() {
 
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
         msg as WebSocketFrame
         try {
-            val frame = msg.content().toByteReadPacket()
+            val frame = msg.content().toBuffer()
             if (inbound.trySend(frame).isFailure) {
                 frame.close()
                 error("inbound is closed")
@@ -127,14 +128,14 @@ private class NettyWebSocketConnectionInboundHandler(
 @RSocketTransportApi
 private class NettyWebSocketConnection(
     private val outboundQueue: PrioritizationFrameQueue,
-    private val inbound: ReceiveChannel<ByteReadPacket>,
+    private val inbound: ReceiveChannel<Buffer>,
 ) : RSocketSequentialConnection {
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
-    override suspend fun sendFrame(streamId: Int, frame: ByteReadPacket) {
+    override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         return outboundQueue.enqueueFrame(streamId, frame)
     }
 
-    override suspend fun receiveFrame(): ByteReadPacket? {
+    override suspend fun receiveFrame(): Buffer? {
         return inbound.receiveCatching().getOrNull()
     }
 }

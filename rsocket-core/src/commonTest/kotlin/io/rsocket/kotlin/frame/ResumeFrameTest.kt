@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class ResumeFrameTest : TestWithLeakCheck {
+class ResumeFrameTest {
 
     private val version = Version.Current
     private val lastReceivedServerPosition = 21L
@@ -36,7 +36,7 @@ class ResumeFrameTest : TestWithLeakCheck {
         assertTrue(decodedFrame is ResumeFrame)
         assertEquals(0, decodedFrame.streamId)
         assertEquals(version, decodedFrame.version)
-        assertBytesEquals(token, decodedFrame.resumeToken.readBytes())
+        assertBytesEquals(token, decodedFrame.resumeToken.readByteArray())
         assertEquals(lastReceivedServerPosition, decodedFrame.lastReceivedServerPosition)
         assertEquals(firstAvailableClientPosition, decodedFrame.firstAvailableClientPosition)
     }
@@ -51,7 +51,7 @@ class ResumeFrameTest : TestWithLeakCheck {
         assertTrue(decodedFrame is ResumeFrame)
         assertEquals(0, decodedFrame.streamId)
         assertEquals(version, decodedFrame.version)
-        assertBytesEquals(token, decodedFrame.resumeToken.readBytes())
+        assertBytesEquals(token, decodedFrame.resumeToken.readByteArray())
         assertEquals(lastReceivedServerPosition, decodedFrame.lastReceivedServerPosition)
         assertEquals(firstAvailableClientPosition, decodedFrame.firstAvailableClientPosition)
     }
@@ -65,7 +65,7 @@ class ResumeFrameTest : TestWithLeakCheck {
         assertTrue(decodedFrame is ResumeFrame)
         assertEquals(0, decodedFrame.streamId)
         assertEquals(version, decodedFrame.version)
-        assertBytesEquals(token, decodedFrame.resumeToken.readBytes())
+        assertBytesEquals(token, decodedFrame.resumeToken.readByteArray())
         assertEquals(lastReceivedServerPosition, decodedFrame.lastReceivedServerPosition)
         assertEquals(firstAvailableClientPosition, decodedFrame.firstAvailableClientPosition)
     }

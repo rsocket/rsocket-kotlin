@@ -16,10 +16,9 @@
 
 package io.rsocket.kotlin.metadata
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
 @ExperimentalMetadataApi
 public fun CompositeMetadata.Entry.hasMimeTypeOf(reader: MetadataReader<*>): Boolean = mimeType == reader.mimeType
@@ -27,9 +26,8 @@ public fun CompositeMetadata.Entry.hasMimeTypeOf(reader: MetadataReader<*>): Boo
 @ExperimentalMetadataApi
 public fun <M : Metadata> CompositeMetadata.Entry.read(
     reader: MetadataReader<M>,
-    pool: BufferPool = BufferPool.Default,
 ): M {
-    if (mimeType == reader.mimeType) return content.read(reader, pool)
+    if (mimeType == reader.mimeType) return content.read(reader)
 
     content.close()
     error("Expected mimeType '${reader.mimeType}' but was '$mimeType'")
@@ -38,9 +36,8 @@ public fun <M : Metadata> CompositeMetadata.Entry.read(
 @ExperimentalMetadataApi
 public fun <M : Metadata> CompositeMetadata.Entry.readOrNull(
     reader: MetadataReader<M>,
-    pool: BufferPool = BufferPool.Default,
 ): M? {
-    return if (mimeType == reader.mimeType) content.read(reader, pool) else null
+    return if (mimeType == reader.mimeType) content.read(reader) else null
 }
 
 
@@ -50,17 +47,17 @@ public operator fun CompositeMetadata.contains(mimeType: MimeType): Boolean {
 }
 
 @ExperimentalMetadataApi
-public operator fun CompositeMetadata.get(mimeType: MimeType): ByteReadPacket {
+public operator fun CompositeMetadata.get(mimeType: MimeType): Source {
     return entries.first { it.mimeType == mimeType }.content
 }
 
 @ExperimentalMetadataApi
-public fun CompositeMetadata.getOrNull(mimeType: MimeType): ByteReadPacket? {
+public fun CompositeMetadata.getOrNull(mimeType: MimeType): Source? {
     return entries.find { it.mimeType == mimeType }?.content
 }
 
 @ExperimentalMetadataApi
-public fun CompositeMetadata.list(mimeType: MimeType): List<ByteReadPacket> {
+public fun CompositeMetadata.list(mimeType: MimeType): List<Source> {
     return entries.mapNotNull { if (it.mimeType == mimeType) it.content else null }
 }
 

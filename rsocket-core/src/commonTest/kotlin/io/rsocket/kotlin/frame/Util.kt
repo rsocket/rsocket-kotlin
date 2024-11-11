@@ -16,21 +16,20 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.internal.io.*
-import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 
-internal fun Frame.toPacketWithLength(): ByteReadPacket = InUseTrackingPool.buildPacket {
-    val packet = toPacket(InUseTrackingPool)
-    writeInt24(packet.remaining.toInt())
-    writePacket(packet)
+internal fun Frame.toBufferWithLength(): Buffer = Buffer().apply {
+    val packet = Buffer()
+    writeInt24(packet.transferFrom(toBuffer()).toInt())
+    transferFrom(packet)
 }
 
-internal fun ByteReadPacket.toFrameWithLength(): Frame {
+internal fun Buffer.toFrameWithLength(): Frame {
     val length = readInt24()
-    assertEquals(length, remaining.toInt())
-    return readFrame(InUseTrackingPool)
+    assertEquals(length, size.toInt())
+    return readFrame()
 }
 
-internal fun Frame.loopFrame(): Frame = toPacket(InUseTrackingPool).readFrame(InUseTrackingPool)
+internal fun Frame.loopFrame(): Frame = toBuffer().readFrame()

@@ -25,8 +25,6 @@ fun TestServer(
     logging: Boolean = true,
     block: RSocketServerBuilder.() -> Unit = {}
 ): RSocketServer = RSocketServer {
-    @Suppress("DEPRECATION_ERROR")
-    bufferPool = InUseTrackingPool
     loggerFactory = if (logging) {
         LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("SERVER   |$it") }
     } else {
@@ -39,8 +37,6 @@ fun TestConnector(
     logging: Boolean = true,
     block: RSocketConnectorBuilder.() -> Unit = {}
 ): RSocketConnector = RSocketConnector {
-    @Suppress("DEPRECATION_ERROR")
-    bufferPool = InUseTrackingPool
     loggerFactory = if (logging) {
         LoggerFactory { PrintLogger.withLevel(LoggingLevel.DEBUG).logger("CLIENT   |$it") }
     } else {

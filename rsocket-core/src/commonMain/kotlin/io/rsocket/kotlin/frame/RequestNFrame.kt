@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
+import kotlinx.io.*
 
 internal class RequestNFrame(
     override val streamId: Int,
@@ -27,7 +27,7 @@ internal class RequestNFrame(
 
     override fun close(): Unit = Unit
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         writeInt(requestN)
     }
 
@@ -38,7 +38,7 @@ internal class RequestNFrame(
     }
 }
 
-internal fun ByteReadPacket.readRequestN(streamId: Int): RequestNFrame {
+internal fun Source.readRequestN(streamId: Int): RequestNFrame {
     val requestN = readInt()
     return RequestNFrame(streamId, requestN)
 }
