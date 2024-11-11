@@ -24,7 +24,7 @@ description = "OLD ARTIFACT - migrate to ktor-server-rsocket"
 
 kotlin {
     jvmTarget()
-    nixTargets()
+    nativeTargets()
 
     sourceSets {
         commonMain.dependencies {
