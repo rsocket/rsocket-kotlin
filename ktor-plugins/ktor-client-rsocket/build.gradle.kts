@@ -25,6 +25,7 @@ description = "rsocket-kotlin ktor client plugin"
 kotlin {
     jvmTarget()
     jsTarget()
+    wasmJsTarget()
     nativeTargets()
 
     sourceSets {
