@@ -14,27 +14,14 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.gradle.*
-import rsocketbuild.*
+package io.rsocket.kotlin.test
 
-plugins {
-    id("rsocketbuild.multiplatform-base")
-    alias(libs.plugins.kotlinx.atomicfu)
-}
+import kotlinx.coroutines.*
 
-@OptIn(ExperimentalKotlinGradlePluginApi::class)
-kotlin {
-    allTargets()
+actual annotation class IgnoreJs
+actual annotation class IgnoreJvm
+actual annotation class IgnoreNative
 
-    compilerOptions {
-        optIn.addAll(
-            OptIns.ExperimentalStreamsApi,
-        )
-    }
+actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.Default
 
-    sourceSets {
-        commonMain.dependencies {
-            api(projects.rsocketTest)
-        }
-    }
-}
+actual fun identityHashCode(instance: Any): Int = instance.hashCode()

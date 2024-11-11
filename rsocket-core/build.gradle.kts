@@ -24,9 +24,7 @@ plugins {
 description = "rsocket-kotlin core functionality"
 
 kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
+    allTargets()
 
     sourceSets {
         commonMain.dependencies {

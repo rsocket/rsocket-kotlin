@@ -18,7 +18,16 @@ package rsocketbuild
 
 import org.gradle.jvm.toolchain.*
 import org.gradle.kotlin.dsl.*
+import org.jetbrains.kotlin.gradle.*
 import org.jetbrains.kotlin.gradle.dsl.*
+
+fun KotlinMultiplatformExtension.allTargets() {
+    jvmTarget()
+    jsTarget()
+    wasmJsTarget()
+    wasmWasiTarget()
+    nativeTargets()
+}
 
 fun KotlinMultiplatformExtension.appleTargets() {
     macosX64()
@@ -60,6 +69,24 @@ fun KotlinMultiplatformExtension.jsTarget(
     js {
         if (supportsNode) nodejs()
         if (supportsBrowser) browser()
+    }
+}
+
+@OptIn(ExperimentalWasmDsl::class)
+fun KotlinMultiplatformExtension.wasmJsTarget(
+    supportsNode: Boolean = true,
+    supportsBrowser: Boolean = true,
+) {
+    wasmJs {
+        if (supportsNode) nodejs()
+        if (supportsBrowser) browser()
+    }
+}
+
+@OptIn(ExperimentalWasmDsl::class)
+fun KotlinMultiplatformExtension.wasmWasiTarget() {
+    wasmWasi {
+        nodejs()
     }
 }
 

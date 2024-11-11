@@ -41,6 +41,17 @@ kotlin {
         optIn.addAll(OptIns.ExperimentalSubclassOptIn)
     }
 
+    applyDefaultHierarchyTemplate {
+        common {
+            group("nonJvm") {
+                withJs()
+                withWasmJs()
+                withWasmWasi()
+                group("native")
+            }
+        }
+    }
+
     sourceSets.configureEach {
         languageSettings {
             if (name.contains("test", ignoreCase = true)) {
