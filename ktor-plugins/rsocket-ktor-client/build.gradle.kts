@@ -25,6 +25,7 @@ description = "OLD ARTIFACT - migrate to ktor-client-rsocket"
 kotlin {
     jvmTarget()
     jsTarget()
+    wasmJsTarget()
     nativeTargets()
 
     sourceSets {

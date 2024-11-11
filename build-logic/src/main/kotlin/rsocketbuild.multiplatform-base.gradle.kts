@@ -32,10 +32,7 @@ plugins {
 @OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
     compilerOptions {
-        // because of INVISIBLE_REFERENCE suppression - will be removed after migration to kotlinx.io
-        if (project.name != "rsocket-test") {
-            allWarningsAsErrors.set(true)
-        }
+        allWarningsAsErrors.set(true)
         progressiveMode.set(true)
         freeCompilerArgs.add("-Xrender-internal-diagnostic-names")
         optIn.addAll(OptIns.ExperimentalSubclassOptIn)
