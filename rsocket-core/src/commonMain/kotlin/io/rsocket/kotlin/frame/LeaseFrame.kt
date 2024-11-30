@@ -16,14 +16,13 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
 internal class LeaseFrame(
     val ttl: Int,
     val numberOfRequests: Int,
-    val metadata: ByteReadPacket?,
+    val metadata: Buffer?,
 ) : Frame() {
     override val type: FrameType get() = FrameType.Lease
     override val streamId: Int get() = 0
@@ -33,7 +32,7 @@ internal class LeaseFrame(
         metadata?.close()
     }
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         writeInt(ttl)
         writeInt(numberOfRequests)
         writeMetadata(metadata)
@@ -45,13 +44,13 @@ internal class LeaseFrame(
 
     override fun StringBuilder.appendSelf() {
         append("\nNumber of requests: ").append(numberOfRequests)
-        if (metadata != null) appendPacket("Metadata", metadata)
+        if (metadata != null) appendBuffer("Metadata", metadata)
     }
 }
 
-internal fun ByteReadPacket.readLease(pool: BufferPool, flags: Int): LeaseFrame {
+internal fun Source.readLease(flags: Int): LeaseFrame {
     val ttl = readInt()
     val numberOfRequests = readInt()
-    val metadata = if (flags check Flags.Metadata) readMetadata(pool) else null
+    val metadata = if (flags check Flags.Metadata) readMetadata() else null
     return LeaseFrame(ttl, numberOfRequests, metadata)
 }

@@ -16,10 +16,9 @@
 
 package io.rsocket.kotlin.metadata
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
 @ExperimentalMetadataApi
 public fun RoutingMetadata(vararg tags: String): RoutingMetadata = RoutingMetadata(tags.toList())
@@ -34,11 +33,11 @@ public class RoutingMetadata(public val tags: List<String>) : Metadata {
 
     override val mimeType: MimeType get() = Reader.mimeType
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         tags.forEach {
             val bytes = it.encodeToByteArray()
             writeByte(bytes.size.toByte())
-            writeFully(bytes)
+            write(bytes)
         }
     }
 
@@ -46,11 +45,11 @@ public class RoutingMetadata(public val tags: List<String>) : Metadata {
 
     public companion object Reader : MetadataReader<RoutingMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketRouting
-        override fun ByteReadPacket.read(pool: BufferPool): RoutingMetadata {
+        override fun Source.read(): RoutingMetadata {
             val list = mutableListOf<String>()
-            while (isNotEmpty) {
-                val length = readByte().toInt() and 0xFF
-                list.add(readTextExactBytes(length))
+            while (!exhausted()) {
+                val length = readByte().toLong() and 0xFF
+                list.add(readString(length))
             }
             return RoutingMetadata(list.toList())
         }

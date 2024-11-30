@@ -16,12 +16,12 @@
 
 package io.rsocket.kotlin.transport.local
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.io.*
 
 internal sealed class LocalServerConnector {
     @RSocketTransportApi
@@ -70,11 +70,11 @@ internal sealed class LocalServerConnector {
         ) : RSocketSequentialConnection {
             override val isClosedForSend: Boolean get() = outbound.isClosedForSend
 
-            override suspend fun sendFrame(streamId: Int, frame: ByteReadPacket) {
+            override suspend fun sendFrame(streamId: Int, frame: Buffer) {
                 return outbound.enqueueFrame(streamId, frame)
             }
 
-            override suspend fun receiveFrame(): ByteReadPacket? {
+            override suspend fun receiveFrame(): Buffer? {
                 return inbound.dequeueFrame()
             }
         }
@@ -92,7 +92,7 @@ internal sealed class LocalServerConnector {
             serverScope: CoroutineScope,
             serverHandler: RSocketConnectionHandler,
         ): Job {
-            val streams = Channels<Channels<ByteReadPacket>>(streamsQueueCapacity)
+            val streams = Streams(streamsQueueCapacity)
 
             launchLocalConnection(serverScope, streams.serverToClient, streams.clientToServer, serverHandler)
             return launchLocalConnection(clientScope, streams.clientToServer, streams.serverToClient, clientHandler)
@@ -101,8 +101,8 @@ internal sealed class LocalServerConnector {
         @RSocketTransportApi
         private fun launchLocalConnection(
             scope: CoroutineScope,
-            outbound: SendChannel<Channels<ByteReadPacket>>,
-            inbound: ReceiveChannel<Channels<ByteReadPacket>>,
+            outbound: SendChannel<Frames>,
+            inbound: ReceiveChannel<Frames>,
             handler: RSocketConnectionHandler,
         ): Job = scope.launch {
             handler.handleConnection(Connection(SupervisorJob(coroutineContext.job), outbound, inbound, streamBufferCapacity))
@@ -114,12 +114,12 @@ internal sealed class LocalServerConnector {
         @RSocketTransportApi
         private class Connection(
             private val streamsJob: Job,
-            private val outbound: SendChannel<Channels<ByteReadPacket>>,
-            private val inbound: ReceiveChannel<Channels<ByteReadPacket>>,
+            private val outbound: SendChannel<Frames>,
+            private val inbound: ReceiveChannel<Frames>,
             private val streamBufferCapacity: Int,
         ) : RSocketMultiplexedConnection {
             override suspend fun createStream(): RSocketMultiplexedConnection.Stream {
-                val frames = Channels<ByteReadPacket>(streamBufferCapacity)
+                val frames = Frames(streamBufferCapacity)
 
                 outbound.send(frames)
 
@@ -144,8 +144,8 @@ internal sealed class LocalServerConnector {
         @RSocketTransportApi
         private class Stream(
             parentJob: Job,
-            private val outbound: SendChannel<ByteReadPacket>,
-            private val inbound: ReceiveChannel<ByteReadPacket>,
+            private val outbound: SendChannel<Buffer>,
+            private val inbound: ReceiveChannel<Buffer>,
         ) : RSocketMultiplexedConnection.Stream {
             private val streamJob = Job(parentJob).onCompletion {
                 outbound.close()
@@ -161,18 +161,29 @@ internal sealed class LocalServerConnector {
 
             override fun setSendPriority(priority: Int) {}
 
-            override suspend fun sendFrame(frame: ByteReadPacket) {
+            override suspend fun sendFrame(frame: Buffer) {
                 return outbound.send(frame)
             }
 
-            override suspend fun receiveFrame(): ByteReadPacket? {
+            override suspend fun receiveFrame(): Buffer? {
                 return inbound.receiveCatching().getOrNull()
             }
         }
 
-        private class Channels<T : Closeable>(bufferCapacity: Int) : Closeable {
-            val clientToServer = channelForCloseable<T>(bufferCapacity)
-            val serverToClient = channelForCloseable<T>(bufferCapacity)
+        private class Streams(bufferCapacity: Int) : AutoCloseable {
+            val clientToServer = channelForCloseable<Frames>(bufferCapacity)
+            val serverToClient = channelForCloseable<Frames>(bufferCapacity)
+
+            // only for undelivered element case
+            override fun close() {
+                clientToServer.cancel()
+                serverToClient.cancel()
+            }
+        }
+
+        private class Frames(bufferCapacity: Int) : AutoCloseable {
+            val clientToServer = bufferChannel(bufferCapacity)
+            val serverToClient = bufferChannel(bufferCapacity)
 
             // only for undelivered element case
             override fun close() {

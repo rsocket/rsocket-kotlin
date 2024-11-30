@@ -16,19 +16,19 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class ErrorFrameTest : TestWithLeakCheck {
+class ErrorFrameTest {
 
     private val dump = "00000b000000012c000000020164"
 
     @Test
     fun testEncoding() {
         val frame = ErrorFrame(1, RSocketError.ApplicationError("d"))
-        val bytes = frame.toPacketWithLength().readBytes()
+        val bytes = frame.toBufferWithLength().readByteArray()
 
         assertEquals(dump, bytes.toHexString())
     }

@@ -16,7 +16,7 @@
 
 package io.rsocket.kotlin.transport
 
-import io.ktor.utils.io.core.*
+import kotlinx.io.*
 
 // all methods can be called from any thread/context at any time
 // should be accessed only internally
@@ -36,10 +36,10 @@ public interface RSocketSequentialConnection : RSocketConnection {
 
     // throws if frame not sent
     // streamId=0 should be sent earlier
-    public suspend fun sendFrame(streamId: Int, frame: ByteReadPacket)
+    public suspend fun sendFrame(streamId: Int, frame: Buffer)
 
     // null if no more frames could be received
-    public suspend fun receiveFrame(): ByteReadPacket?
+    public suspend fun receiveFrame(): Buffer?
 }
 
 @RSocketTransportApi
@@ -47,7 +47,7 @@ public interface RSocketMultiplexedConnection : RSocketConnection {
     public suspend fun createStream(): Stream
     public suspend fun acceptStream(): Stream?
 
-    public interface Stream : Closeable {
+    public interface Stream : AutoCloseable {
         public val isClosedForSend: Boolean
 
         // 0 - highest priority
@@ -55,10 +55,10 @@ public interface RSocketMultiplexedConnection : RSocketConnection {
         public fun setSendPriority(priority: Int)
 
         // throws if frame not sent
-        public suspend fun sendFrame(frame: ByteReadPacket)
+        public suspend fun sendFrame(frame: Buffer)
 
         // null if no more frames could be received
-        public suspend fun receiveFrame(): ByteReadPacket?
+        public suspend fun receiveFrame(): Buffer?
 
         // closing stream will send buffered frames (if needed)
         // sending/receiving frames will be not possible after it

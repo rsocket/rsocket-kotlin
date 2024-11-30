@@ -36,7 +36,7 @@ import io.ktor.server.websocket.WebSockets as ServerWebSockets
 import io.rsocket.kotlin.ktor.client.RSocketSupport as ClientRSocketSupport
 import io.rsocket.kotlin.ktor.server.RSocketSupport as ServerRSocketSupport
 
-class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
+class WebSocketConnectionTest : SuspendTest {
     private val client = HttpClient(ClientCIO) {
         install(ClientWebSockets)
         install(ClientRSocketSupport) {
@@ -57,7 +57,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
         install(ServerRSocketSupport) {
             server(TestServer())
         }
-        install(Routing) {
+        routing {
             rSocket {
                 RSocketRequestHandler {
                     requestStream {
@@ -87,7 +87,7 @@ class WebSocketConnectionTest : SuspendTest, TestWithLeakCheck {
 
     @Test
     fun testWorks() = test {
-        val port = server.resolvedConnectors().single().port
+        val port = server.engine.resolvedConnectors().single().port
         val rSocket = client.rSocket(port = port)
         val requesterJob = rSocket.coroutineContext.job
 

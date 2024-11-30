@@ -16,20 +16,20 @@
 
 package io.rsocket.kotlin.transport.ktor.websocket.internal
 
-import io.ktor.utils.io.core.*
 import io.ktor.websocket.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.io.*
 
 @RSocketTransportApi
 public suspend fun RSocketConnectionHandler.handleKtorWebSocketConnection(webSocketSession: WebSocketSession): Unit = coroutineScope {
     val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
 
     val senderJob = launch {
-        while (true) webSocketSession.send(outboundQueue.dequeueFrame()?.readBytes() ?: break)
+        while (true) webSocketSession.send(outboundQueue.dequeueFrame()?.readByteArray() ?: break)
     }.onCompletion { outboundQueue.cancel() }
 
     try {
@@ -52,12 +52,12 @@ private class KtorWebSocketConnection(
 ) : RSocketSequentialConnection {
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
 
-    override suspend fun sendFrame(streamId: Int, frame: ByteReadPacket) {
+    override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         return outboundQueue.enqueueFrame(streamId, frame)
     }
 
-    override suspend fun receiveFrame(): ByteReadPacket? {
+    override suspend fun receiveFrame(): Buffer? {
         val frame = inbound.receiveCatching().getOrNull() ?: return null
-        return ByteReadPacket(frame.data)
+        return Buffer().apply { write(frame.data) }
     }
 }

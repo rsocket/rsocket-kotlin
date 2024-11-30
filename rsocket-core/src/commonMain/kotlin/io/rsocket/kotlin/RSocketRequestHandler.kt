@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,21 @@
 
 package io.rsocket.kotlin
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.io.*
 import kotlin.coroutines.*
 
 public class RSocketRequestHandlerBuilder internal constructor() {
-    private var metadataPush: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)? = null
+    private var metadataPush: (suspend RSocket.(metadata: Buffer) -> Unit)? = null
     private var fireAndForget: (suspend RSocket.(payload: Payload) -> Unit)? = null
     private var requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null
     private var requestStream: (suspend RSocket.(payload: Payload) -> Flow<Payload>)? = null
     private var requestChannel: (suspend RSocket.(initPayload: Payload, payloads: Flow<Payload>) -> Flow<Payload>)? =
         null
 
-    public fun metadataPush(block: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)) {
+    public fun metadataPush(block: (suspend RSocket.(metadata: Source) -> Unit)) {
         check(metadataPush == null) { "Metadata Push handler already configured" }
         metadataPush = block
     }
@@ -78,13 +78,13 @@ public fun RSocketRequestHandler(
 
 private class RSocketRequestHandler(
     override val coroutineContext: CoroutineContext,
-    private val metadataPush: (suspend RSocket.(metadata: ByteReadPacket) -> Unit)? = null,
+    private val metadataPush: (suspend RSocket.(metadata: Buffer) -> Unit)? = null,
     private val fireAndForget: (suspend RSocket.(payload: Payload) -> Unit)? = null,
     private val requestResponse: (suspend RSocket.(payload: Payload) -> Payload)? = null,
     private val requestStream: (suspend RSocket.(payload: Payload) -> Flow<Payload>)? = null,
     private val requestChannel: (suspend RSocket.(initPayload: Payload, payloads: Flow<Payload>) -> Flow<Payload>)? = null,
 ) : RSocket {
-    override suspend fun metadataPush(metadata: ByteReadPacket): Unit =
+    override suspend fun metadataPush(metadata: Buffer): Unit =
         metadataPush?.invoke(this, metadata) ?: super.metadataPush(metadata)
 
     override suspend fun fireAndForget(payload: Payload): Unit =

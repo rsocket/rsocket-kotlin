@@ -155,11 +155,12 @@ private class KtorWebSocketServerTargetImpl(
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
-        val engine = createServerEngine(handler)
-        val resolvedConnectors = startServerEngine(engine)
+        val serverContext = coroutineContext.childContext()
+        val embeddedServer = createServer(handler, serverContext)
+        val resolvedConnectors = startServer(embeddedServer, serverContext)
 
         return KtorWebSocketServerInstanceImpl(
-            coroutineContext = engine.environment.parentCoroutineContext,
+            coroutineContext = serverContext,
             connectors = resolvedConnectors,
             path = path,
             protocol = protocol
@@ -168,11 +169,13 @@ private class KtorWebSocketServerTargetImpl(
 
     // parentCoroutineContext is the context of server instance
     @RSocketTransportApi
-    private fun createServerEngine(handler: RSocketConnectionHandler): ApplicationEngine = factory.createServer(
-        applicationEngineEnvironment {
+    private fun createServer(
+        handler: RSocketConnectionHandler,
+        serverContext: CoroutineContext,
+    ): EmbeddedServer<*, *> {
+        val config = serverConfig {
             val target = this@KtorWebSocketServerTargetImpl
-            parentCoroutineContext = target.coroutineContext.childContext()
-            connectors.addAll(target.connectors)
+            parentCoroutineContext = serverContext
             module {
                 install(WebSockets, webSocketsConfig)
                 routing {
@@ -182,16 +185,26 @@ private class KtorWebSocketServerTargetImpl(
                 }
             }
         }
-    )
+        return factory.createServer(config, connectors)
+    }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private suspend fun startServerEngine(
-        applicationEngine: ApplicationEngine,
-    ): List<EngineConnectorConfig> = launchCoroutine { cont ->
-        applicationEngine.start().stopServerOnCancellation()
-        cont.resume(applicationEngine.resolvedConnectors()) { cause, _, _ ->
+    private suspend fun startServer(
+        embeddedServer: EmbeddedServer<*, *>,
+        serverContext: CoroutineContext,
+    ): List<EngineConnectorConfig> = launchCoroutine(serverContext + Dispatchers.IO) { cont ->
+        embeddedServer.start()
+        launch(serverContext + Dispatchers.IO) {
+            try {
+                awaitCancellation()
+            } finally {
+                withContext(NonCancellable) {
+                    embeddedServer.stop()
+                }
+            }
+        }
+        cont.resume(embeddedServer.engine.resolvedConnectors()) { cause, _, _ ->
             // will cause stopping of the server
-            applicationEngine.environment.parentCoroutineContext.job.cancel("Cancelled", cause)
+            serverContext.job.cancel("Cancelled", cause)
         }
     }
 }
@@ -207,8 +220,11 @@ private class HttpServerFactory<A : ApplicationEngine, T : ApplicationEngine.Con
     private val factory: ApplicationEngineFactory<A, T>,
     private val configure: T.() -> Unit = {},
 ) {
-    @RSocketTransportApi
-    fun createServer(environment: ApplicationEngineEnvironment): ApplicationEngine {
-        return factory.create(environment, configure)
+    fun createServer(
+        config: ServerConfig,
+        connectors: List<EngineConnectorConfig>,
+    ): EmbeddedServer<A, T> = embeddedServer(factory, config) {
+        this.connectors.addAll(connectors)
+        this.configure()
     }
 }

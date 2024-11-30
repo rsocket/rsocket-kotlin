@@ -16,19 +16,18 @@
 
 package io.rsocket.kotlin.metadata
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
 @ExperimentalMetadataApi
 public class RawMetadata(
     override val mimeType: MimeType,
-    public val content: ByteReadPacket,
+    public val content: Source,
 ) : Metadata {
-    override fun BytePacketBuilder.writeSelf() {
-        writePacket(content)
+    override fun Sink.writeSelf() {
+        transferFrom(content)
     }
 
     override fun close() {
@@ -36,8 +35,8 @@ public class RawMetadata(
     }
 
     private class Reader(override val mimeType: MimeType) : MetadataReader<RawMetadata> {
-        override fun ByteReadPacket.read(pool: BufferPool): RawMetadata =
-            RawMetadata(mimeType, readPacket(pool))
+        override fun Source.read(): RawMetadata =
+            RawMetadata(mimeType, readBuffer())
     }
 
     public companion object {

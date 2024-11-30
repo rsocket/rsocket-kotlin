@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,19 @@
 
 package io.rsocket.kotlin.internal.io
 
-import io.ktor.utils.io.core.*
 import kotlinx.coroutines.channels.*
+import kotlinx.io.*
 
-private val onUndeliveredCloseable: (Closeable) -> Unit = Closeable::close
+private val onUndeliveredCloseable: (AutoCloseable) -> Unit = AutoCloseable::close
+private val onUndeliveredBuffer: (Buffer) -> Unit = Buffer::clear
 
-public fun <E : Closeable> channelForCloseable(capacity: Int): Channel<E> =
+public fun bufferChannel(capacity: Int): Channel<Buffer> = Channel(capacity, onUndeliveredElement = onUndeliveredBuffer)
+
+// TODO: may be drop it?
+public fun <E : AutoCloseable> channelForCloseable(capacity: Int): Channel<E> =
     Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
 
-public fun Channel<out Closeable>.cancelWithCause(cause: Throwable?) {
+public fun Channel<out AutoCloseable>.cancelWithCause(cause: Throwable?) {
     close(cause) // close channel to provide right cause
     cancel() // force call of onUndeliveredElement to release buffered elements
 }

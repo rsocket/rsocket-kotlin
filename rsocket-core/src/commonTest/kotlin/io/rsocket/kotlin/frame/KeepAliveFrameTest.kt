@@ -16,17 +16,17 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class KeepAliveFrameTest : TestWithLeakCheck {
+class KeepAliveFrameTest {
     private val dump = "00000f000000000c80000000000000000064"
 
     @Test
     fun testEncoding() {
         val frame = KeepAliveFrame(true, 0, packet("d"))
-        val bytes = frame.toPacketWithLength().readBytes()
+        val bytes = frame.toBufferWithLength().readByteArray()
 
         assertEquals(dump, bytes.toHexString())
     }
@@ -40,6 +40,6 @@ class KeepAliveFrameTest : TestWithLeakCheck {
         assertEquals(0, frame.streamId)
         assertTrue(frame.respond)
         assertEquals(0, frame.lastPosition)
-        assertEquals("d", frame.data.readText())
+        assertEquals("d", frame.data.readString())
     }
 }

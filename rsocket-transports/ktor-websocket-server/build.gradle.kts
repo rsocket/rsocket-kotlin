@@ -42,9 +42,7 @@ kotlin {
         }
         jvmTest.dependencies {
             implementation(libs.ktor.client.okhttp)
-
             implementation(libs.ktor.server.netty)
-            implementation(libs.ktor.server.jetty)
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 
 package io.rsocket.kotlin.metadata
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class CompositeMetadataTest : TestWithLeakCheck {
+class CompositeMetadataTest {
 
     @Test
     fun decodeEntryHasNoContent() {
         val cm = buildCompositeMetadata {
-            add(CustomMimeType("w"), ByteReadPacket.Empty)
+            add(CustomMimeType("w"), Buffer())
         }
 
         val decoded = cm.readLoop(CompositeMetadata)
@@ -34,7 +34,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
         assertEquals(1, decoded.entries.size)
         val entry = decoded.entries.first()
         assertEquals(CustomMimeType("w"), entry.mimeType)
-        assertEquals(0, entry.content.remaining)
+        assertTrue(entry.content.exhausted())
     }
 
     @Test
@@ -49,15 +49,15 @@ class CompositeMetadataTest : TestWithLeakCheck {
         assertEquals(3, decoded.entries.size)
         decoded.entries[0].let { custom ->
             assertEquals(CustomMimeType("custom"), custom.mimeType)
-            assertEquals("custom metadata", custom.content.readText())
+            assertEquals("custom metadata", custom.content.readString())
         }
         decoded.entries[1].let { reserved ->
             assertEquals(ReservedMimeType(120), reserved.mimeType)
-            assertEquals("reserved metadata", reserved.content.readText())
+            assertEquals("reserved metadata", reserved.content.readString())
         }
         decoded.entries[2].let { known ->
             assertEquals(WellKnownMimeType.ApplicationAvro, known.mimeType)
-            assertEquals("avro metadata", known.content.readText())
+            assertEquals("avro metadata", known.content.readString())
         }
     }
 
@@ -67,7 +67,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
             writeByte(120)
         }
         assertFails {
-            packet.read(CompositeMetadata, InUseTrackingPool)
+            packet.read(CompositeMetadata)
         }
     }
 
@@ -101,9 +101,9 @@ class CompositeMetadataTest : TestWithLeakCheck {
         }
         val decoded = cm.readLoop(CompositeMetadata)
 
-        assertEquals("custom metadata", decoded[CustomMimeType("custom")].readText())
-        assertEquals("reserved metadata", decoded[ReservedMimeType(120)].readText())
-        assertEquals("avro metadata", decoded[WellKnownMimeType.ApplicationAvro].readText())
+        assertEquals("custom metadata", decoded[CustomMimeType("custom")].readString())
+        assertEquals("reserved metadata", decoded[ReservedMimeType(120)].readString())
+        assertEquals("avro metadata", decoded[WellKnownMimeType.ApplicationAvro].readString())
     }
 
     @Test
@@ -119,9 +119,9 @@ class CompositeMetadataTest : TestWithLeakCheck {
         assertNull(decoded.getOrNull(CustomMimeType("custom2")))
         assertNull(decoded.getOrNull(WellKnownMimeType.MessageRSocketRouting))
 
-        assertEquals("custom metadata", decoded.getOrNull(CustomMimeType("custom"))?.readText())
-        assertEquals("reserved metadata", decoded.getOrNull(ReservedMimeType(120))?.readText())
-        assertEquals("avro metadata", decoded.getOrNull(WellKnownMimeType.ApplicationAvro)?.readText())
+        assertEquals("custom metadata", decoded.getOrNull(CustomMimeType("custom"))?.readString())
+        assertEquals("reserved metadata", decoded.getOrNull(ReservedMimeType(120))?.readString())
+        assertEquals("avro metadata", decoded.getOrNull(WellKnownMimeType.ApplicationAvro)?.readString())
     }
 
     @Test
@@ -151,19 +151,19 @@ class CompositeMetadataTest : TestWithLeakCheck {
 
         decoded.list(WellKnownMimeType.MessageRSocketRouting).let {
             assertEquals(1, it.size)
-            assertEquals("routing metadata", it[0].readText())
+            assertEquals("routing metadata", it[0].readString())
         }
 
         decoded.list(CustomMimeType("custom")).let {
             assertEquals(2, it.size)
-            assertEquals("custom metadata - 1", it[0].readText())
-            assertEquals("custom metadata - 2", it[1].readText())
+            assertEquals("custom metadata - 1", it[0].readString())
+            assertEquals("custom metadata - 2", it[1].readString())
         }
 
         decoded.list(ReservedMimeType(120)).let {
             assertEquals(2, it.size)
-            assertEquals("reserved metadata - 1", it[0].readText())
-            assertEquals("reserved metadata - 2", it[1].readText())
+            assertEquals("reserved metadata - 1", it[0].readString())
+            assertEquals("reserved metadata - 2", it[1].readString())
         }
     }
 
@@ -176,7 +176,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
                 error("")
             }
         }
-        assertTrue(packet.isEmpty)
+        assertTrue(packet.exhausted())
     }
 
     @Test
@@ -205,7 +205,7 @@ class CompositeMetadataTest : TestWithLeakCheck {
             ),
             decoded[PerStreamAcceptableDataMimeTypesMetadata].types
         )
-        assertEquals("{}", decoded[WellKnownMimeType.ApplicationJson].readText())
+        assertEquals("{}", decoded[WellKnownMimeType.ApplicationJson].readString())
     }
 
     @Test

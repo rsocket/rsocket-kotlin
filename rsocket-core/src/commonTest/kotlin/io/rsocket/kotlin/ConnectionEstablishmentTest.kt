@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.keepalive.*
@@ -27,7 +26,7 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.test.*
 
-class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
+class ConnectionEstablishmentTest : SuspendTest {
 
     private class TestInstance(val deferred: Deferred<Unit>) : RSocketServerInstance {
         override val coroutineContext: CoroutineContext get() = deferred
@@ -101,14 +100,14 @@ class ConnectionEstablishmentTest : SuspendTest, TestWithLeakCheck {
                     setupPayload { p }
                 }
                 acceptor {
-                    assertTrue(config.setupPayload.data.isNotEmpty)
-                    assertTrue(p.data.isNotEmpty)
+                    assertTrue(!config.setupPayload.data.exhausted())
+                    assertTrue(!p.data.exhausted())
                     error("failed")
                 }
             }.connect(connection)
         }
         connection.coroutineContext.job.join()
-        assertTrue(p.data.isEmpty)
+        assertTrue(p.data.exhausted())
     }
 
 }

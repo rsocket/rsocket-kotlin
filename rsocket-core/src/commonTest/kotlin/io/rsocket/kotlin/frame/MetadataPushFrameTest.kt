@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class MetadataPushFrameTest : TestWithLeakCheck {
+class MetadataPushFrameTest {
 
     private val metadata = ByteArray(65000) { 6 }
 
@@ -31,7 +31,7 @@ class MetadataPushFrameTest : TestWithLeakCheck {
 
         assertTrue(decodedFrame is MetadataPushFrame)
         assertEquals(0, decodedFrame.streamId)
-        assertBytesEquals(metadata, decodedFrame.metadata.readBytes())
+        assertBytesEquals(metadata, decodedFrame.metadata.readByteArray())
     }
 
 }

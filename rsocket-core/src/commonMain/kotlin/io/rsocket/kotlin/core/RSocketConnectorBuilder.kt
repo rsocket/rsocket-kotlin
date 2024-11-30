@@ -17,7 +17,6 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
@@ -34,9 +33,6 @@ public class RSocketConnectorBuilder internal constructor() {
             }
             field = value
         }
-
-    @Deprecated("Only for tests in rsocket", level = DeprecationLevel.ERROR)
-    public var bufferPool: BufferPool = BufferPool.Default
 
     private val connectionConfig: ConnectionConfigBuilder = ConnectionConfigBuilder()
     private val interceptors: InterceptorsBuilder = InterceptorsBuilder()
@@ -112,7 +108,6 @@ public class RSocketConnectorBuilder internal constructor() {
         connectionConfig.producer(),
         acceptor ?: defaultAcceptor,
         reconnectPredicate,
-        @Suppress("DEPRECATION_ERROR") bufferPool
     )
 
     private companion object {

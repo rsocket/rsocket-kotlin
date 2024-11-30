@@ -16,23 +16,23 @@
 
 package io.rsocket.kotlin.transport.local
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import kotlinx.coroutines.channels.*
+import kotlinx.io.*
 import kotlin.coroutines.*
 
 @Suppress("DEPRECATION_ERROR")
 internal class LocalConnection(
-    private val sender: SendChannel<ByteReadPacket>,
-    private val receiver: ReceiveChannel<ByteReadPacket>,
-    override val coroutineContext: CoroutineContext
+    private val sender: SendChannel<Buffer>,
+    private val receiver: ReceiveChannel<Buffer>,
+    override val coroutineContext: CoroutineContext,
 ) : Connection {
 
-    override suspend fun send(packet: ByteReadPacket) {
+    override suspend fun send(packet: Buffer) {
         sender.send(packet)
     }
 
-    override suspend fun receive(): ByteReadPacket {
+    override suspend fun receive(): Buffer {
         return receiver.receive()
     }
 }

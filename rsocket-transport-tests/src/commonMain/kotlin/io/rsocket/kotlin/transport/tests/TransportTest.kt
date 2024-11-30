@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.transport.tests
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
@@ -24,6 +23,7 @@ import io.rsocket.kotlin.test.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.io.*
 import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.*
@@ -31,7 +31,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 //TODO: need to somehow rework those tests, as now they are super flaky
-abstract class TransportTest : SuspendTest, TestWithLeakCheck {
+abstract class TransportTest : SuspendTest {
     override val testTimeout: Duration = 3.minutes
 
     private val testJob = SupervisorJob()
@@ -62,25 +62,21 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
     @Test
     fun fireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(payload(it)) } }.awaitAll()
-        delay(1000) //TODO: leak check
     }
 
     @Test
     open fun largePayloadFireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(requesterLargePayload) } }.awaitAll()
-        delay(1000) //TODO: leak check
     }
 
     @Test
     fun metadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterData)) } }.awaitAll()
-        delay(1000) //TODO: leak check
     }
 
     @Test
     open fun largePayloadMetadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterLargeData)) } }.awaitAll()
-        delay(1000) //TODO: leak check
     }
 
     @Test
@@ -131,8 +127,8 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
             repeat(20_000) { emit(payload(7)) }
         }
         val count = client.requestChannel(payload(7), request).flowOn(PrefetchStrategy(Int.MAX_VALUE, 0)).onEach {
-            assertEquals(requesterData, it.data.readText())
-            assertEquals(requesterMetadata, it.metadata?.readText())
+            assertEquals(requesterData, it.data.readString())
+            assertEquals(requesterMetadata, it.metadata?.readString())
         }.count()
         assertEquals(20_000, count)
     }
@@ -217,8 +213,8 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
                 .flowOn(PrefetchStrategy(Int.MAX_VALUE, 0))
                 .take(500)
                 .onEach {
-                    assertEquals(requesterData, it.data.readText())
-                    assertEquals(requesterMetadata, it.metadata?.readText())
+                    assertEquals(requesterData, it.data.readString())
+                    assertEquals(requesterMetadata, it.metadata?.readString())
                 }
                 .count()
         assertEquals(500, count)
@@ -312,15 +308,15 @@ abstract class TransportTest : SuspendTest, TestWithLeakCheck {
         }
 
         fun checkPayload(payload: Payload) {
-            assertEquals(responderData, payload.data.readText())
-            assertEquals(responderMetadata, payload.metadata?.readText())
+            assertEquals(responderData, payload.data.readString())
+            assertEquals(responderMetadata, payload.metadata?.readString())
         }
     }
 
     private class ResponderRSocket : RSocket {
         override val coroutineContext: CoroutineContext = Job()
 
-        override suspend fun metadataPush(metadata: ByteReadPacket): Unit = metadata.close()
+        override suspend fun metadataPush(metadata: Buffer): Unit = metadata.close()
 
         override suspend fun fireAndForget(payload: Payload): Unit = payload.close()
 

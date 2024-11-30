@@ -17,7 +17,6 @@
 package io.rsocket.kotlin.core
 
 import app.cash.turbine.*
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
@@ -26,6 +25,7 @@ import io.rsocket.kotlin.transport.local.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
+import kotlinx.io.*
 import kotlin.coroutines.*
 import kotlin.test.*
 import kotlin.time.Duration.Companion.seconds
@@ -80,7 +80,7 @@ abstract class RSocketTest(
         context: CoroutineContext,
         acceptor: ConnectionAcceptor,
     ) -> RSocket,
-) : SuspendTest, TestWithLeakCheck {
+) : SuspendTest {
 
     private val testJob: Job = Job()
 
@@ -150,7 +150,7 @@ abstract class RSocketTest(
         val requester = start(RSocketRequestHandler {
             requestStream {
                 //copy payload, for some specific usage, and don't release original payload
-                val text = it.copy().use { it.data.readText() }
+                val text = it.copy().use { it.data.readString() }
                 p = it
                 //don't use payload
                 flow {
@@ -171,7 +171,7 @@ abstract class RSocketTest(
             assertEquals("FAIL", error.message)
         }
         delay(100) //async cancellation
-        assertEquals(0, p?.data?.remaining)
+        assertTrue(p?.data?.exhausted() ?: false)
     }
 
     @Test
@@ -514,8 +514,8 @@ abstract class RSocketTest(
 
     private suspend fun ReceiveChannel<Payload>.checkReceived(otherPayload: Payload) {
         val payload = receive()
-        assertEquals(payload.metadata?.readText(), otherPayload.metadata?.readText())
-        assertEquals(payload.data.readText(), otherPayload.data.readText())
+        assertEquals(payload.metadata?.readString(), otherPayload.metadata?.readString())
+        assertEquals(payload.data.readString(), otherPayload.data.readString())
     }
 
 }

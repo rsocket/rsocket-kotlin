@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 package io.rsocket.kotlin.frame
 
 import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class RequestFireAndForgetFrameTest : TestWithLeakCheck {
+class RequestFireAndForgetFrameTest {
 
     @Test
     fun testData() {
@@ -32,7 +33,7 @@ class RequestFireAndForgetFrameTest : TestWithLeakCheck {
         assertFalse(decodedFrame.follows)
         assertFalse(decodedFrame.complete)
         assertFalse(decodedFrame.next)
-        assertEquals("d", decodedFrame.payload.data.readText())
+        assertEquals("d", decodedFrame.payload.data.readString())
         assertEquals(null, decodedFrame.payload.metadata)
     }
 
@@ -47,8 +48,8 @@ class RequestFireAndForgetFrameTest : TestWithLeakCheck {
         assertFalse(decodedFrame.follows)
         assertFalse(decodedFrame.complete)
         assertFalse(decodedFrame.next)
-        assertEquals("d", decodedFrame.payload.data.readText())
-        assertEquals("md", decodedFrame.payload.metadata?.readText())
+        assertEquals("d", decodedFrame.payload.data.readString())
+        assertEquals("md", decodedFrame.payload.metadata?.readString())
     }
 
 }

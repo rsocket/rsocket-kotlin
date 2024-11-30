@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
+import kotlinx.io.*
 
 internal class ErrorFrame(
     override val streamId: Int,
@@ -29,9 +29,9 @@ internal class ErrorFrame(
 
     override fun close(): Unit = Unit
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         writeInt(errorCode)
-        writeText(throwable.message ?: "")
+        writeString(throwable.message ?: "")
     }
 
     override fun StringBuilder.appendFlags(): Unit = Unit
@@ -41,8 +41,8 @@ internal class ErrorFrame(
     }
 }
 
-internal fun ByteReadPacket.readError(streamId: Int): ErrorFrame {
+internal fun Source.readError(streamId: Int): ErrorFrame {
     val errorCode = readInt()
-    val message = readText()
+    val message = readString()
     return ErrorFrame(streamId, RSocketError(streamId, errorCode, message))
 }

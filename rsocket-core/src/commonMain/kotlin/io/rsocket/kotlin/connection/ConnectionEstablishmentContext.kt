@@ -16,20 +16,20 @@
 
 package io.rsocket.kotlin.connection
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.*
+import kotlinx.io.*
 
 // send/receive setup, resume, resume ok, lease, error
 @RSocketTransportApi
 internal abstract class ConnectionEstablishmentContext(
     private val frameCodec: FrameCodec,
 ) {
-    protected abstract suspend fun receiveFrameRaw(): ByteReadPacket?
-    protected abstract suspend fun sendFrame(frame: ByteReadPacket)
+    protected abstract suspend fun receiveFrameRaw(): Buffer?
+    protected abstract suspend fun sendFrame(frame: Buffer)
     private suspend fun sendFrame(frame: Frame): Unit = sendFrame(frameCodec.encodeFrame(frame))
 
     // only setup|lease|resume|resume_ok|error frames
@@ -42,7 +42,7 @@ internal abstract class ConnectionEstablishmentContext(
         version: Version,
         honorLease: Boolean,
         keepAlive: KeepAlive,
-        resumeToken: ByteReadPacket?,
+        resumeToken: Buffer?,
         payloadMimeType: PayloadMimeType,
         payload: Payload,
     ): Unit = sendFrame(SetupFrame(version, honorLease, keepAlive, resumeToken, payloadMimeType, payload))

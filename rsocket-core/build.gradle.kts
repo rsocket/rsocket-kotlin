@@ -33,7 +33,7 @@ kotlin {
             implementation(projects.rsocketInternalIo)
 
             api(libs.kotlinx.coroutines.core)
-            api(libs.ktor.io)
+            api(libs.kotlinx.io.core)
         }
         commonTest.dependencies {
             implementation(projects.rsocketTest)

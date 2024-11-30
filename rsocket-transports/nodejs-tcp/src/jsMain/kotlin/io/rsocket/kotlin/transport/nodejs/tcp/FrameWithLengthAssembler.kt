@@ -16,54 +16,59 @@
 
 package io.rsocket.kotlin.transport.nodejs.tcp
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.internal.io.*
+import io.rsocket.kotlin.transport.nodejs.tcp.internal.*
+import kotlinx.io.*
+import org.khronos.webgl.*
 
-internal fun ByteReadPacket.withLength(): ByteReadPacket = buildPacket {
-    writeInt24(this@withLength.remaining.toInt())
-    writePacket(this@withLength)
+private fun ByteArray.toUint8Array(): Uint8Array {
+    val int8Array = unsafeCast<Int8Array>()
+    return Uint8Array(int8Array.buffer, int8Array.byteOffset, int8Array.length)
 }
 
-internal class FrameWithLengthAssembler(private val onFrame: (frame: ByteReadPacket) -> Unit) : Closeable {
+private fun Uint8Array.toByteArray(): ByteArray {
+    return Int8Array(buffer, byteOffset, length).unsafeCast<ByteArray>()
+}
+
+internal fun Socket.writeFrame(frame: Buffer) {
+    val packet = Buffer().apply {
+        writeInt24(frame.size.toInt())
+        transferFrom(frame)
+    }
+    write(packet.readByteArray().toUint8Array())
+}
+
+internal class FrameWithLengthAssembler(private val onFrame: (frame: Buffer) -> Unit) : AutoCloseable {
     private var closed = false
     private var expectedFrameLength = 0
-    private val packetBuilder: BytePacketBuilder = BytePacketBuilder()
+    private val buffer = Buffer()
 
     override fun close() {
-        packetBuilder.close()
+        buffer.clear()
         closed = true
     }
 
-    inline fun write(write: BytePacketBuilder.() -> Unit) {
+    fun write(array: Uint8Array) {
         if (closed) return
-        packetBuilder.write()
+        buffer.write(array.toByteArray())
         loop()
     }
 
     private fun loop() {
         while (true) when {
-            expectedFrameLength == 0 && packetBuilder.size < 3 -> return // no length
-            expectedFrameLength == 0                           -> withTemp { // has length
-                expectedFrameLength = it.readInt24()
-                if (it.remaining >= expectedFrameLength) build(it) // if has length and frame
+            // no length
+            expectedFrameLength == 0 && buffer.size < 3 -> return
+            // has length
+            expectedFrameLength == 0                    -> expectedFrameLength = buffer.readInt24()
+            // not enough bytes to read frame
+            buffer.size < expectedFrameLength           -> return
+            // enough bytes to read frame
+            else                                        -> {
+                val frame = Buffer()
+                buffer.readTo(frame, expectedFrameLength.toLong())
+                expectedFrameLength = 0
+                onFrame(frame)
             }
-
-            packetBuilder.size < expectedFrameLength           -> return // not enough bytes to read frame
-            else                                               -> withTemp { build(it) } // enough bytes to read frame
         }
-    }
-
-    private fun build(from: ByteReadPacket) {
-        val frame = buildPacket {
-            writePacket(from, expectedFrameLength)
-        }
-        expectedFrameLength = 0
-        onFrame(frame)
-    }
-
-    private inline fun withTemp(block: (tempPacket: ByteReadPacket) -> Unit) {
-        val tempPacket = packetBuilder.build()
-        block(tempPacket)
-        packetBuilder.writePacket(tempPacket)
     }
 }

@@ -16,25 +16,24 @@
 
 package io.rsocket.kotlin.frame
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
 private const val FlagsMask: Int = 1023
 private const val FrameTypeShift: Int = 10
 
-internal sealed class Frame : Closeable {
+internal sealed class Frame : AutoCloseable {
     abstract val type: FrameType
     abstract val streamId: Int
     abstract val flags: Int
 
-    protected abstract fun BytePacketBuilder.writeSelf()
+    protected abstract fun Sink.writeSelf()
     protected abstract fun StringBuilder.appendFlags()
     protected abstract fun StringBuilder.appendSelf()
 
-    internal fun toPacket(pool: BufferPool): ByteReadPacket {
+    internal fun toBuffer(): Buffer {
         check(type.canHaveMetadata || !(flags check Flags.Metadata)) { "bad value for metadata flag" }
-        return pool.buildPacket {
+        return Buffer().apply {
             writeInt(streamId)
             writeShort((type.encodedType shl FrameTypeShift or flags).toShort())
             writeSelf()
@@ -53,31 +52,31 @@ internal sealed class Frame : Closeable {
     }
 }
 
-internal fun ByteReadPacket.readFrame(pool: BufferPool): Frame = use {
+internal fun Buffer.readFrame(): Frame = use {
     val streamId = readInt()
     val typeAndFlags = readShort().toInt() and 0xFFFF
     val flags = typeAndFlags and FlagsMask
     when (val type = FrameType(typeAndFlags shr FrameTypeShift)) {
         //stream id = 0
-        FrameType.Setup        -> readSetup(pool, flags)
-        FrameType.Resume       -> readResume(pool)
+        FrameType.Setup        -> readSetup(flags)
+        FrameType.Resume       -> readResume()
         FrameType.ResumeOk     -> readResumeOk()
-        FrameType.MetadataPush -> readMetadataPush(pool)
-        FrameType.Lease        -> readLease(pool, flags)
-        FrameType.KeepAlive    -> readKeepAlive(pool, flags)
+        FrameType.MetadataPush -> readMetadataPush()
+        FrameType.Lease        -> readLease(flags)
+        FrameType.KeepAlive    -> readKeepAlive(flags)
         //stream id != 0
         FrameType.Cancel       -> CancelFrame(streamId)
         FrameType.Error        -> readError(streamId)
         FrameType.RequestN     -> readRequestN(streamId)
-        FrameType.Extension    -> readExtension(pool, streamId, flags)
+        FrameType.Extension    -> readExtension(streamId, flags)
         FrameType.Payload,
         FrameType.RequestFnF,
         FrameType.RequestResponse,
-                               -> readRequest(pool, type, streamId, flags, withInitial = false)
+                               -> readRequest(type, streamId, flags, withInitial = false)
 
         FrameType.RequestStream,
         FrameType.RequestChannel,
-                               -> readRequest(pool, type, streamId, flags, withInitial = true)
+                               -> readRequest(type, streamId, flags, withInitial = true)
 
         FrameType.Reserved     -> error("Reserved")
     }

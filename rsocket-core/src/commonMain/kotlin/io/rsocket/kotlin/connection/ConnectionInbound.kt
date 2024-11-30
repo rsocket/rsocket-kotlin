@@ -16,13 +16,13 @@
 
 package io.rsocket.kotlin.connection
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.operation.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
+import kotlinx.io.*
 import kotlin.coroutines.*
 
 @RSocketTransportApi
@@ -41,19 +41,19 @@ internal class ConnectionInbound(
         else                 -> frame.close()
     }
 
-    private fun receiveMetadataPush(metadata: ByteReadPacket) {
+    private fun receiveMetadataPush(metadata: Buffer) {
         launch {
             responder.metadataPush(metadata)
         }.invokeOnCompletion { metadata.close() }
     }
 
     @Suppress("UNUSED_PARAMETER") // will be used later
-    private fun receiveKeepAlive(respond: Boolean, data: ByteReadPacket, lastPosition: Long) {
+    private fun receiveKeepAlive(respond: Boolean, data: Buffer, lastPosition: Long) {
         keepAliveHandler.receive(data, respond)
     }
 
     @Suppress("UNUSED_PARAMETER") // will be used later
-    private fun receiveLease(ttl: Int, numberOfRequests: Int, metadata: ByteReadPacket?) {
+    private fun receiveLease(ttl: Int, numberOfRequests: Int, metadata: Buffer?) {
         metadata?.close()
         error("Lease is not supported")
     }

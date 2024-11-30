@@ -19,9 +19,9 @@ package io.rsocket.kotlin.transport.ktor.tcp
 import io.ktor.network.sockets.*
 import io.ktor.util.cio.*
 import io.ktor.utils.io.*
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.internal.io.*
 import kotlinx.coroutines.*
+import kotlinx.io.*
 import kotlin.coroutines.*
 
 @Suppress("DEPRECATION_ERROR")
@@ -31,20 +31,19 @@ internal class TcpConnection(
 ) : io.rsocket.kotlin.Connection {
     private val socketConnection = socket.connection()
 
-    private val sendChannel = channelForCloseable<ByteReadPacket>(8)
-    private val receiveChannel = channelForCloseable<ByteReadPacket>(8)
+    private val sendChannel = bufferChannel(8)
+    private val receiveChannel = bufferChannel(8)
 
     init {
         launch {
             socketConnection.output.use {
                 while (isActive) {
                     val packet = sendChannel.receive()
-                    val length = packet.remaining.toInt()
+                    val temp = Buffer().also(packet::transferTo)
+                    val length = temp.size.toInt()
                     try {
-                        writePacket {
-                            writeInt24(length)
-                            writePacket(packet)
-                        }
+                        writeBuffer(Buffer().apply { writeInt24(length) })
+                        writeBuffer(temp)
                         flush()
                     } catch (e: Throwable) {
                         packet.close()
@@ -57,7 +56,7 @@ internal class TcpConnection(
             socketConnection.input.apply {
                 while (isActive) {
                     val length = readPacket(3).readInt24()
-                    val packet = readPacket(length)
+                    val packet = readBuffer(length)
                     try {
                         receiveChannel.send(packet)
                     } catch (cause: Throwable) {
@@ -76,6 +75,6 @@ internal class TcpConnection(
         }
     }
 
-    override suspend fun send(packet: ByteReadPacket): Unit = sendChannel.send(packet)
-    override suspend fun receive(): ByteReadPacket = receiveChannel.receive()
+    override suspend fun send(packet: Buffer): Unit = sendChannel.send(packet)
+    override suspend fun receive(): Buffer = receiveChannel.receive()
 }

@@ -16,12 +16,12 @@
 
 package io.rsocket.kotlin.core
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.io.*
 import kotlin.coroutines.*
 
 internal typealias ReconnectPredicate = suspend (cause: Throwable, attempt: Long) -> Boolean
@@ -87,11 +87,20 @@ private class ReconnectableRSocket(
 
     suspend fun currentRSocket(): RSocket = state.value.current() ?: state.mapNotNull { it.current() }.first()
 
-    private suspend fun currentRSocket(closeable: Closeable): RSocket {
+    private suspend fun currentRSocket(metadata: Buffer): RSocket {
         return try {
             currentRSocket()
         } catch (cause: Throwable) {
-            closeable.close()
+            metadata.clear()
+            throw cause
+        }
+    }
+
+    private suspend fun currentRSocket(payload: Payload): RSocket {
+        return try {
+            currentRSocket()
+        } catch (cause: Throwable) {
+            payload.close()
             throw cause
         }
     }
@@ -102,7 +111,7 @@ private class ReconnectableRSocket(
         ReconnectState.Connecting   -> null //reconnection
     }
 
-    override suspend fun metadataPush(metadata: ByteReadPacket): Unit =
+    override suspend fun metadataPush(metadata: Buffer): Unit =
         currentRSocket(metadata).metadataPush(metadata)
 
     override suspend fun fireAndForget(payload: Payload): Unit =

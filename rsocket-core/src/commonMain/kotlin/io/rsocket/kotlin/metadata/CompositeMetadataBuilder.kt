@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package io.rsocket.kotlin.metadata
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 
 @ExperimentalMetadataApi
-public sealed interface CompositeMetadataBuilder : Closeable {
-    public fun add(mimeType: MimeType, metadata: ByteReadPacket)
+public sealed interface CompositeMetadataBuilder : AutoCloseable {
+    public fun add(mimeType: MimeType, metadata: Buffer)
     public fun add(metadata: Metadata)
 }
 
@@ -50,7 +50,7 @@ internal class CompositeMetadataFromBuilder : CompositeMetadataBuilder, Composit
 
     override val entries: List<CompositeMetadata.Entry> get() = _entries
 
-    override fun add(mimeType: MimeType, metadata: ByteReadPacket) {
+    override fun add(mimeType: MimeType, metadata: Buffer) {
         _entries += CompositeMetadata.Entry(mimeType, metadata)
     }
 

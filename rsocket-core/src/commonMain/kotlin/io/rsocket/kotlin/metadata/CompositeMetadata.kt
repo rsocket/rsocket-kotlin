@@ -16,12 +16,11 @@
 
 package io.rsocket.kotlin.metadata
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.internal.io.*
+import kotlinx.io.*
 
 @ExperimentalMetadataApi
 public fun CompositeMetadata(vararg entries: Metadata): CompositeMetadata =
@@ -36,30 +35,30 @@ public sealed interface CompositeMetadata : Metadata {
     public val entries: List<Entry>
     override val mimeType: MimeType get() = Reader.mimeType
 
-    override fun BytePacketBuilder.writeSelf() {
+    override fun Sink.writeSelf() {
         entries.forEach {
             writeMimeType(it.mimeType)
-            writeInt24(it.content.remaining.toInt()) //write metadata length
-            writePacket(it.content) //write metadata content
+            writeInt24(it.content.size.toInt()) //write metadata length
+            transferFrom(it.content) //write metadata content
         }
     }
 
     override fun close() {
-        entries.forEach { it.content.close() }
+        entries.forEach { it.content.clear() }
     }
 
-    public class Entry(public val mimeType: MimeType, public val content: ByteReadPacket) {
-        public constructor(metadata: Metadata) : this(metadata.mimeType, metadata.toPacket())
+    public class Entry(public val mimeType: MimeType, public val content: Buffer) {
+        public constructor(metadata: Metadata) : this(metadata.mimeType, metadata.toBuffer())
     }
 
     public companion object Reader : MetadataReader<CompositeMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketCompositeMetadata
-        override fun ByteReadPacket.read(pool: BufferPool): CompositeMetadata {
+        override fun Source.read(): CompositeMetadata {
             val list = mutableListOf<Entry>()
-            while (isNotEmpty) {
+            while (!exhausted()) {
                 val type = readMimeType()
                 val length = readInt24()
-                val packet = readPacket(pool, length)
+                val packet = readBuffer(length)
                 list.add(Entry(type, packet))
             }
             return DefaultCompositeMetadata(list.toList())

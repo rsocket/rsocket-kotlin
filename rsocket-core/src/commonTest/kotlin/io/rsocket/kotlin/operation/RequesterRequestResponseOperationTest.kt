@@ -21,10 +21,11 @@ import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
+import kotlinx.io.*
 import kotlin.test.*
 
 // TODO: write better tests
-class RequesterRequestResponseOperationTest : SuspendTest, TestWithLeakCheck {
+class RequesterRequestResponseOperationTest : SuspendTest {
     private val deferred = CompletableDeferred<Payload>()
     private val operation = RequesterRequestResponseOperation(deferred)
     private val handler = OperationFrameHandler(operation)
@@ -33,7 +34,7 @@ class RequesterRequestResponseOperationTest : SuspendTest, TestWithLeakCheck {
     fun testCompleteOnPayloadReceive() = test {
         handler.handleFrame(RequestFrame(FrameType.Payload, 1, false, false, true, 0, payload("hello")))
         assertTrue(deferred.isCompleted)
-        assertEquals("hello", deferred.await().data.readText())
+        assertEquals("hello", deferred.await().data.readString())
     }
 
     @Test
@@ -56,6 +57,6 @@ class RequesterRequestResponseOperationTest : SuspendTest, TestWithLeakCheck {
         assertFalse(deferred.isCompleted)
         handler.handleFrame(RequestFrame(FrameType.Payload, 1, false, false, true, 0, payload(" world")))
         assertTrue(deferred.isCompleted)
-        assertEquals("hello world", deferred.await().data.readText())
+        assertEquals("hello world", deferred.await().data.readString())
     }
 }

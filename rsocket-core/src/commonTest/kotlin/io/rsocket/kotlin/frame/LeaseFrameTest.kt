@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 package io.rsocket.kotlin.frame
 
 import io.rsocket.kotlin.test.*
+import kotlinx.io.*
 import kotlin.test.*
 
-class LeaseFrameTest : TestWithLeakCheck {
+class LeaseFrameTest {
 
     private val ttl = 1
     private val numberOfRequests = 42
@@ -34,7 +35,7 @@ class LeaseFrameTest : TestWithLeakCheck {
         assertEquals(0, decodedFrame.streamId)
         assertEquals(ttl, decodedFrame.ttl)
         assertEquals(numberOfRequests, decodedFrame.numberOfRequests)
-        assertEquals(metadata, decodedFrame.metadata?.readText())
+        assertEquals(metadata, decodedFrame.metadata?.readString())
     }
 
     @Test

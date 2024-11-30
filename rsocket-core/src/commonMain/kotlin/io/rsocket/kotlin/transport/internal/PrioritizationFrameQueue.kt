@@ -16,19 +16,19 @@
 
 package io.rsocket.kotlin.transport.internal
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.selects.*
+import kotlinx.io.*
 
-private val selectFrame: suspend (ChannelResult<ByteReadPacket>) -> ChannelResult<ByteReadPacket> = { it }
+private val selectFrame: suspend (ChannelResult<Buffer>) -> ChannelResult<Buffer> = { it }
 
 @RSocketTransportApi
 public class PrioritizationFrameQueue(buffersCapacity: Int) {
-    private val priorityFrames = channelForCloseable<ByteReadPacket>(buffersCapacity)
-    private val normalFrames = channelForCloseable<ByteReadPacket>(buffersCapacity)
+    private val priorityFrames = bufferChannel(buffersCapacity)
+    private val normalFrames = bufferChannel(buffersCapacity)
 
     private val priorityOnReceive = priorityFrames.onReceiveCatching
     private val normalOnReceive = normalFrames.onReceiveCatching
@@ -37,14 +37,14 @@ public class PrioritizationFrameQueue(buffersCapacity: Int) {
     @OptIn(DelicateCoroutinesApi::class)
     public val isClosedForSend: Boolean get() = priorityFrames.isClosedForSend
 
-    private fun channel(streamId: Int): SendChannel<ByteReadPacket> = when (streamId) {
+    private fun channel(streamId: Int): SendChannel<Buffer> = when (streamId) {
         0    -> priorityFrames
         else -> normalFrames
     }
 
-    public suspend fun enqueueFrame(streamId: Int, frame: ByteReadPacket): Unit = channel(streamId).send(frame)
+    public suspend fun enqueueFrame(streamId: Int, frame: Buffer): Unit = channel(streamId).send(frame)
 
-    public fun tryDequeueFrame(): ByteReadPacket? {
+    public fun tryDequeueFrame(): Buffer? {
         // priority is first
         priorityFrames.tryReceive().onSuccess { return it }
         normalFrames.tryReceive().onSuccess { return it }
@@ -52,7 +52,7 @@ public class PrioritizationFrameQueue(buffersCapacity: Int) {
     }
 
     // TODO: recheck, that it works fine in case priority channel is closed, but normal channel has other frames to send
-    public suspend fun dequeueFrame(): ByteReadPacket? {
+    public suspend fun dequeueFrame(): Buffer? {
         tryDequeueFrame()?.let { return it }
         return select {
             priorityOnReceive(selectFrame)

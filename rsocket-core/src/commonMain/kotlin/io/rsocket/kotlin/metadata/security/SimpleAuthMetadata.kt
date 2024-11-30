@@ -16,9 +16,8 @@
 
 package io.rsocket.kotlin.metadata.security
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.internal.*
+import kotlinx.io.*
 
 @ExperimentalMetadataApi
 public class SimpleAuthMetadata(
@@ -32,21 +31,21 @@ public class SimpleAuthMetadata(
 
     override val type: AuthType get() = WellKnowAuthType.Simple
 
-    override fun BytePacketBuilder.writeContent() {
+    override fun Sink.writeContent() {
         val length = username.encodeToByteArray()
         writeShort(length.size.toShort())
-        writeText(username)
-        writeText(password)
+        writeString(username)
+        writeString(password)
     }
 
     override fun close(): Unit = Unit
 
     public companion object Reader : AuthMetadataReader<SimpleAuthMetadata> {
-        override fun ByteReadPacket.readContent(type: AuthType, pool: BufferPool): SimpleAuthMetadata {
+        override fun Source.readContent(type: AuthType): SimpleAuthMetadata {
             require(type == WellKnowAuthType.Simple) { "Metadata auth type should be 'simple'" }
-            val length = readShort().toInt()
-            val username = readTextExactBytes(length)
-            val password = readText()
+            val length = readShort().toLong()
+            val username = readString(length)
+            val password = readString()
             return SimpleAuthMetadata(username, password)
         }
     }

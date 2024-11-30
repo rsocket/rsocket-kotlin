@@ -17,7 +17,6 @@
 package io.rsocket.kotlin.core
 
 import app.cash.turbine.*
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
@@ -28,7 +27,7 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 import kotlin.time.Duration.Companion.seconds
 
-class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
+class ReconnectableRSocketTest : SuspendTest {
 
     //needed for native
     private val fails = atomic(0)
@@ -250,13 +249,13 @@ class ReconnectableRSocketTest : SuspendTest, TestWithLeakCheck {
             assertFails {
                 rSocket.interaction(p) //test release on reconnecting
             }
-            assertTrue(p.data.isEmpty)
+            assertTrue(p.data.exhausted())
 
             val p2 = payload("text")
             assertFails {
                 rSocket.interaction(p2)  //test release on failed
             }
-            assertTrue(p2.data.isEmpty)
+            assertTrue(p2.data.exhausted())
         }
 
     private fun handler(job: Job): RSocket = RSocketRequestHandler(job) {

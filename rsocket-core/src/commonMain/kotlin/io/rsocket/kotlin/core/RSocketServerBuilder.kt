@@ -17,7 +17,6 @@
 package io.rsocket.kotlin.core
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.logging.*
 
 public class RSocketServerBuilder internal constructor() {
@@ -31,9 +30,6 @@ public class RSocketServerBuilder internal constructor() {
             field = value
         }
 
-    @Deprecated("Only for tests in rsocket", level = DeprecationLevel.ERROR)
-    public var bufferPool: BufferPool = BufferPool.Default
-
     private val interceptors: InterceptorsBuilder = InterceptorsBuilder()
 
     public fun interceptors(configure: InterceptorsBuilder.() -> Unit) {
@@ -45,7 +41,6 @@ public class RSocketServerBuilder internal constructor() {
         loggerFactory,
         maxFragmentSize,
         interceptors.build(),
-        @Suppress("DEPRECATION_ERROR") bufferPool
     )
 }
 

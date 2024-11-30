@@ -6,6 +6,6 @@ public final class io/rsocket/kotlin/transport/ktor/websocket/internal/WebSocket
 	public fun <init> (Lio/ktor/websocket/WebSocketSession;)V
 	public fun getCoroutineContext ()Lkotlin/coroutines/CoroutineContext;
 	public fun receive (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public fun send (Lio/ktor/utils/io/core/ByteReadPacket;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public fun send (Lkotlinx/io/Buffer;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
