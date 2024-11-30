@@ -19,6 +19,7 @@ import org.jetbrains.kotlin.gradle.targets.js.npm.*
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
+    alias(libs.plugins.kotlinx.atomicfu) apply false
 }
 
 plugins.withType<NodeJsRootPlugin> {
