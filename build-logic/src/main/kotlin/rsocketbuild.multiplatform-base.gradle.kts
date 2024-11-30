@@ -123,15 +123,14 @@ listOf("ios", "watchos", "tvos", "macos").forEach { targetGroup ->
     )
 }
 
-// on build, link even those binaries, which it's not possible to run
-tasks.build {
+tasks.register("linkAll") {
     dependsOn(tasks.withType<KotlinNativeLink>())
 }
 
-if (providers.gradleProperty("rsocketbuild.skipTests").map(String::toBoolean).getOrElse(false)) {
+if (providers.gradleProperty("rsocketbuild.skipTestTasks").map(String::toBoolean).getOrElse(false)) {
     tasks.withType<AbstractTestTask>().configureEach { onlyIf { false } }
 }
 
-if (providers.gradleProperty("rsocketbuild.skipNativeLink").map(String::toBoolean).getOrElse(false)) {
+if (providers.gradleProperty("rsocketbuild.skipLinkTasks").map(String::toBoolean).getOrElse(false)) {
     tasks.withType<KotlinNativeLink>().configureEach { onlyIf { false } }
 }

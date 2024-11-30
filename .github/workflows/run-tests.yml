@@ -19,7 +19,12 @@ jobs:
         with:
           cache-read-only: ${{ github.ref_name != 'master' }}
 
-      - run: ./gradlew build publishToMavenLocal --continue -Prsocketbuild.skipTests=true
+      - run: >
+          ./gradlew
+          build publishToMavenLocal
+          --continue
+          -Prsocketbuild.skipTestTasks=true
+          -Prsocketbuild.skipLinkTasks=true
 
   run-tests:
     needs: [ build-project ]
@@ -72,3 +77,15 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: test-reports/**/TEST-*.xml
+
+  link-native:
+    needs: [ run-tests ]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ 'ubuntu-latest', 'macos-latest', 'windows-latest' ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-gradle
+      - run: ./gradlew linkAll --continue
