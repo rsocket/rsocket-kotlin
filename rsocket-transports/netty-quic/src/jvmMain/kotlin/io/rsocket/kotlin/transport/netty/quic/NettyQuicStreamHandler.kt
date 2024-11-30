@@ -83,8 +83,6 @@ internal class NettyQuicStreamHandler(
             state.inbound.cancel()
             withContext(NonCancellable) {
                 writerJob.join()
-                // TODO: what is the correct way to properly shutdown stream?
-                channel.shutdownInput().awaitFuture()
                 channel.close().awaitFuture()
             }
         }

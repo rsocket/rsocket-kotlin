@@ -24,7 +24,14 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 val TestExceptionHandler = CoroutineExceptionHandler { c, e ->
-    println("Error in $c -> ${e.stackTraceToString()}")
+    val message = buildString {
+        appendLine("TestExceptionHandler:")
+        appendLine("  context: $c")
+        appendLine("  cause: $e")
+        appendLine("  stackTrace:")
+        e.stackTraceToString().lines().forEach { appendLine("  $it") }
+    }
+    println(message)
 }
 
 interface SuspendTest {
