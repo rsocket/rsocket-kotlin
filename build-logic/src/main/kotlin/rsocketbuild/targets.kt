@@ -56,10 +56,10 @@ fun KotlinMultiplatformExtension.nativeTargets() {
     mingwX64()
 
 // TODO: there are some issues with androidNative targets with Kotlin 2.1.0
-//    androidNativeX64()
-//    androidNativeX86()
-//    androidNativeArm64()
-//    androidNativeArm32()
+    androidNativeX64()
+    androidNativeX86()
+    androidNativeArm64()
+    androidNativeArm32()
 }
 
 fun KotlinMultiplatformExtension.jsTarget(
