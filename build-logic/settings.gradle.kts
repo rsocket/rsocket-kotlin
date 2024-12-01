@@ -24,7 +24,7 @@ plugins {
 
 dependencyResolutionManagement {
     versionCatalogs {
-        create("libs") {
+        named("libs") {
             from(files("../gradle/libs.versions.toml"))
         }
     }
