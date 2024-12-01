@@ -24,7 +24,7 @@ import kotlinx.coroutines.*
 @Suppress("DEPRECATION_ERROR")
 class TcpTransportTest : TransportTest() {
     override suspend fun before() {
-        val serverSocket = startServer(TcpServerTransport()).serverSocket.await()
+        val serverSocket = startServer(TcpServerTransport("127.0.0.1")).serverSocket.await()
         client = connectClient(TcpClientTransport(serverSocket.localAddress as InetSocketAddress, testContext))
     }
 }
@@ -36,7 +36,7 @@ class KtorTcpTransportTest : TransportTest() {
     override suspend fun before() {
         val server = startServer(KtorTcpServerTransport(testContext) {
             selectorManager(selector, false)
-        }.target())
+        }.target("127.0.0.1"))
         client = connectClient(KtorTcpClientTransport(testContext) {
             selectorManager(selector, false)
         }.target(server.localAddress))
