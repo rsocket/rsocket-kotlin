@@ -91,13 +91,13 @@ private class KtorTcpConnection(
     }
 }
 
-@OptIn(InternalAPI::class) // TODO?
+@OptIn(InternalAPI::class)
 private fun ByteWriteChannel.writeFrame(frame: Buffer) {
     writeBuffer.writeInt24(frame.size.toInt())
     writeBuffer.transferFrom(frame)
 }
 
-@OptIn(InternalAPI::class) // TODO?
+@OptIn(InternalAPI::class)
 private suspend fun ByteReadChannel.readFrame(): Buffer? {
     while (availableForRead < 3 && awaitContent(3)) yield()
     if (availableForRead == 0) return null
