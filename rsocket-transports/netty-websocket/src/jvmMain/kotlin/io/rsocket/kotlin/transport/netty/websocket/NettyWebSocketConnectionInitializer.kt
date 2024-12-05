@@ -29,7 +29,7 @@ import kotlin.coroutines.*
 internal abstract class NettyWebSocketConnectionInitializer(
     private val sslContext: SslContext?,
     private val remoteAddress: InetSocketAddress?,
-    private val handler: RSocketConnectionHandler,
+    private val handler: RSocketConnectionInbound,
     final override val coroutineContext: CoroutineContext,
 ) : ChannelInitializer<DuplexChannel>(), CoroutineScope {
     protected abstract fun createHttpHandler(): ChannelHandler

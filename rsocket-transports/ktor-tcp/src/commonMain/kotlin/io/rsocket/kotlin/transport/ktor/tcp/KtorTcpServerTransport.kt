@@ -106,7 +106,12 @@ private class KtorTcpServerTargetImpl(
 ) : RSocketServerTarget<KtorTcpServerInstance> {
 
     @RSocketTransportApi
-    override suspend fun startServer(handler: RSocketConnectionHandler): KtorTcpServerInstance {
+    override suspend fun startServer(inbound: RSocketServerInstanceInbound): KtorTcpServerInstance {
+        TODO("Not yet implemented")
+    }
+
+    @RSocketTransportApi
+    override suspend fun startServer(handler: RSocketConnectionInbound): KtorTcpServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
         return startKtorTcpServer(this, bindSocket(), handler)
@@ -122,7 +127,7 @@ private class KtorTcpServerTargetImpl(
 private fun startKtorTcpServer(
     scope: CoroutineScope,
     serverSocket: ServerSocket,
-    handler: RSocketConnectionHandler,
+    handler: RSocketConnectionInbound,
 ): KtorTcpServerInstance {
     val serverJob = scope.launch {
         try {

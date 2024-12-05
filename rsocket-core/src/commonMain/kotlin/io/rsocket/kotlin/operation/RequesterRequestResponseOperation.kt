@@ -20,11 +20,10 @@ import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 
-internal class RequesterRequestResponseOperation(
-    private val responseDeferred: CompletableDeferred<Payload>,
-) : RequesterOperation {
+internal class RequesterRequestResponseOperation : RequesterOperation<Payload> {
+    private val responseDeferred: CompletableDeferred<Payload> = CompletableDeferred()
 
-    override suspend fun execute(outbound: OperationOutbound, requestPayload: Payload) {
+    override suspend fun execute(outbound: OperationOutbound, requestPayload: Payload): Payload {
         try {
             outbound.sendRequest(
                 type = FrameType.RequestResponse,
@@ -32,12 +31,14 @@ internal class RequesterRequestResponseOperation(
                 complete = false,
                 initialRequest = 0
             )
+            // join and not await, to not throw an exception on deferred failure.
             responseDeferred.join()
         } catch (cause: Throwable) {
             // TODO: we don't need to send cancel if we have sent no frames
             if (!outbound.isClosed) withContext(NonCancellable) { outbound.sendCancel() }
             throw cause
         }
+        return responseDeferred.await()
     }
 
     override fun shouldReceiveFrame(frameType: FrameType): Boolean = when {
@@ -63,9 +64,5 @@ internal class RequesterRequestResponseOperation(
         if (responseDeferred.isActive) responseDeferred.completeExceptionally(
             IllegalStateException("Unexpected request completion: no response received")
         )
-    }
-
-    override fun operationFailure(cause: Throwable) {
-        if (responseDeferred.isActive) responseDeferred.completeExceptionally(cause)
     }
 }

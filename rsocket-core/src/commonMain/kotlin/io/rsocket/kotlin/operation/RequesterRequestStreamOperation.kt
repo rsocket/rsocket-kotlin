@@ -16,33 +16,43 @@
 
 package io.rsocket.kotlin.operation
 
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 
+@ExperimentalStreamsApi
 internal class RequesterRequestStreamOperation(
+    private val responsePayloadsCollector: FlowCollector<Payload>,
+    private val requestStrategy: RequestStrategy.Element,
     private val initialRequestN: Int,
-    private val responsePayloads: PayloadChannel,
-) : RequesterOperation {
+) : RequesterOperation<Unit> {
+    private val responsePayloads: PayloadChannel = PayloadChannel()
 
-    override suspend fun execute(outbound: OperationOutbound, requestPayload: Payload) {
-        try {
+    override suspend fun execute(outbound: OperationOutbound, requestPayload: Payload): Unit = coroutineScope {
+        throw try {
             outbound.sendRequest(
                 type = FrameType.RequestStream,
                 payload = requestPayload,
                 complete = false,
                 initialRequest = initialRequestN
             )
-            try {
-                while (true) outbound.sendRequestN(responsePayloads.nextRequestN() ?: break)
-            } catch (cause: Throwable) {
-                if (!currentCoroutineContext().isActive || !outbound.isClosed) throw cause
+            val requestNJob = launch {
+                try {
+                    while (true) outbound.sendRequestN(responsePayloads.nextRequestN() ?: break)
+                } catch (cause: Throwable) {
+                    if (!currentCoroutineContext().isActive || !outbound.isClosed) throw cause
+                }
+            }
+            responsePayloads.consumeInto(responsePayloadsCollector, requestStrategy).also {
+                requestNJob.cancel()
             }
         } catch (cause: Throwable) {
             if (!outbound.isClosed) withContext(NonCancellable) { outbound.sendCancel() }
             throw cause
-        }
+        } ?: return@coroutineScope
     }
 
     override fun shouldReceiveFrame(frameType: FrameType): Boolean = when {
@@ -63,9 +73,5 @@ internal class RequesterRequestStreamOperation(
         if (responsePayloads.isActive) responsePayloads.close(
             IllegalStateException("Unexpected end of stream")
         )
-    }
-
-    override fun operationFailure(cause: Throwable) {
-        if (responsePayloads.isActive) responsePayloads.close(cause)
     }
 }

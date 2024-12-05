@@ -29,7 +29,7 @@ import kotlin.coroutines.*
 internal class NettyTcpConnectionInitializer(
     private val sslContext: SslContext?,
     private val remoteAddress: InetSocketAddress?,
-    private val handler: RSocketConnectionHandler,
+    private val handler: RSocketConnectionInbound,
     override val coroutineContext: CoroutineContext,
 ) : ChannelInitializer<DuplexChannel>(), CoroutineScope {
     override fun initChannel(channel: DuplexChannel): Unit = with(channel.pipeline()) {

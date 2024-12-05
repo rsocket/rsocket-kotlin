@@ -44,21 +44,25 @@ public interface RSocketTransport : CoroutineScope {
 
 @SubclassOptInRequired(RSocketTransportApi::class)
 public interface RSocketClientTarget : CoroutineScope {
-    // cancelling Job will cancel connection
-    // Job will be completed when the connection is finished
     @RSocketTransportApi
-    public fun connectClient(handler: RSocketConnectionHandler): Job
+    public suspend fun connectClient(): RSocketConnectionOutbound
 }
 
 @SubclassOptInRequired(RSocketTransportApi::class)
 public interface RSocketServerTarget<Instance : RSocketServerInstance> : CoroutineScope {
-    // handler will be called for all new connections
     @RSocketTransportApi
-    public suspend fun startServer(handler: RSocketConnectionHandler): Instance
+    public suspend fun startServer(inbound: RSocketServerInstanceInbound): Instance
 }
 
 // cancelling it will cancel server
 @SubclassOptInRequired(RSocketTransportApi::class)
 public interface RSocketServerInstance : CoroutineScope {
     // graceful closing API should be here
+    public fun close(cause: Throwable?)
+}
+
+@RSocketTransportApi
+public interface RSocketServerInstanceInbound {
+    public fun onConnection(connection: RSocketConnectionOutbound)
+    public fun onClose(cause: Throwable?)
 }

@@ -186,7 +186,7 @@ private class NettyWebSocketClientTransportTargetImpl(
 ) : RSocketClientTarget {
 
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
+    override fun connectClient(handler: RSocketConnectionInbound): Job = launch {
         bootstrap.clone().handler(
             NettyWebSocketClientConnectionInitializer(
                 sslContext = sslContext,
@@ -204,7 +204,7 @@ private class NettyWebSocketClientConnectionInitializer(
     sslContext: SslContext?,
     private val webSocketProtocolConfig: WebSocketClientProtocolConfig,
     remoteAddress: InetSocketAddress?,
-    handler: RSocketConnectionHandler,
+    handler: RSocketConnectionInbound,
     coroutineContext: CoroutineContext,
 ) : NettyWebSocketConnectionInitializer(sslContext, remoteAddress, handler, coroutineContext) {
     override fun createHttpHandler(): ChannelHandler = HttpClientCodec()

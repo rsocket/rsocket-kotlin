@@ -24,9 +24,11 @@ import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.io.*
+import kotlin.coroutines.*
+
 
 @RSocketTransportApi
-internal suspend fun RSocketConnectionHandler.handleKtorTcpConnection(socket: Socket): Unit = coroutineScope {
+internal suspend fun RSocketConnectionInbound.handleKtorTcpConnection(socket: Socket): Unit = coroutineScope {
     val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
     val inbound = bufferChannel(Channel.BUFFERED)
 
@@ -77,33 +79,47 @@ internal suspend fun RSocketConnectionHandler.handleKtorTcpConnection(socket: So
 }
 
 @RSocketTransportApi
-private class KtorTcpConnection(
-    private val outboundQueue: PrioritizationFrameQueue,
-    private val inbound: ReceiveChannel<Buffer>,
-) : RSocketSequentialConnection {
-    override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
-    override suspend fun sendFrame(streamId: Int, frame: Buffer) {
-        return outboundQueue.enqueueFrame(streamId, frame)
+internal class KtorTcpConnectionOutbound(
+    parentContext: CoroutineContext,
+    private val connection: Connection,
+) : SequentialRSocketConnectionOutbound {
+    private val connectionJob = Job(parentContext[Job])
+    override val coroutineContext: CoroutineContext = parentContext + connectionJob
+
+    override suspend fun sendFrame(frame: Buffer) {
+        return connection.output.writeFrame(frame)
     }
 
-    override suspend fun receiveFrame(): Buffer? {
-        return inbound.receiveCatching().getOrNull()
+    override fun close(cause: Throwable?) {
+        connectionJob.cancel("Connection closed", cause)
     }
-}
 
-@OptIn(InternalAPI::class)
-private fun ByteWriteChannel.writeFrame(frame: Buffer) {
-    writeBuffer.writeInt24(frame.size.toInt())
-    writeBuffer.transferFrom(frame)
-}
+    override fun startReceiving(inbound: SequentialRSocketConnectionInbound) {
+        launch {
+            try {
+                while (true) inbound.onFrame(connection.input.readFrame() ?: break)
+                inbound.onClose(null)
+            } catch (cause: Throwable) {
+                inbound.onClose(cause)
+            }
+        }
+    }
 
-@OptIn(InternalAPI::class)
-private suspend fun ByteReadChannel.readFrame(): Buffer? {
-    while (availableForRead < 3 && awaitContent(3)) yield()
-    if (availableForRead == 0) return null
+    @OptIn(InternalAPI::class)
+    private suspend fun ByteWriteChannel.writeFrame(frame: Buffer) {
+        writeBuffer.writeInt24(frame.size.toInt())
+        writeBuffer.transferFrom(frame)
+        flush()
+    }
 
-    val length = readBuffer.readInt24()
-    return readBuffer(length).also {
-        it.require(length.toLong())
+    @OptIn(InternalAPI::class)
+    private suspend fun ByteReadChannel.readFrame(): Buffer? {
+        while (availableForRead < 3 && awaitContent(3)) yield()
+        if (availableForRead == 0) return null
+
+        val length = readBuffer.readInt24()
+        return readBuffer(length).also {
+            it.require(length.toLong())
+        }
     }
 }

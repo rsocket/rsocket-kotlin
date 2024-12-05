@@ -25,7 +25,7 @@ import kotlinx.coroutines.channels.*
 import kotlinx.io.*
 
 @RSocketTransportApi
-public suspend fun RSocketConnectionHandler.handleKtorWebSocketConnection(webSocketSession: WebSocketSession): Unit = coroutineScope {
+public suspend fun RSocketConnectionInbound.handleKtorWebSocketConnection(webSocketSession: WebSocketSession): Unit = coroutineScope {
     val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
 
     val senderJob = launch {

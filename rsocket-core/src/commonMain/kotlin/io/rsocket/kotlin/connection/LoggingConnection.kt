@@ -21,41 +21,13 @@ import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.io.*
+import kotlin.coroutines.*
 
 @RSocketLoggingApi
 @RSocketTransportApi
-internal fun RSocketConnectionHandler.logging(logger: Logger): RSocketConnectionHandler {
+internal fun RSocketConnectionOutbound.logging(logger: Logger): RSocketConnectionOutbound {
     if (!logger.isLoggable(LoggingLevel.DEBUG)) return this
-
-    return RSocketConnectionHandler {
-        handleConnection(
-            when (it) {
-                is RSocketSequentialConnection  -> SequentialLoggingConnection(it, logger)
-                is RSocketMultiplexedConnection -> MultiplexedLoggingConnection(it, logger)
-            }
-        )
-    }
-}
-
-@RSocketLoggingApi
-@RSocketTransportApi
-private class SequentialLoggingConnection(
-    private val delegate: RSocketSequentialConnection,
-    private val logger: Logger,
-) : RSocketSequentialConnection {
-    override val isClosedForSend: Boolean get() = delegate.isClosedForSend
-
-    override suspend fun sendFrame(streamId: Int, frame: Buffer) {
-        logger.debug { "Send:    ${dumpFrameToString(frame)}" }
-        delegate.sendFrame(streamId, frame)
-    }
-
-    override suspend fun receiveFrame(): Buffer? {
-        return delegate.receiveFrame()?.also { frame ->
-            logger.debug { "Receive: ${dumpFrameToString(frame)}" }
-        }
-    }
-
+    return LoggingConnectionOutbound(this, logger)
 }
 
 private fun dumpFrameToString(frame: Buffer): String {
@@ -65,45 +37,86 @@ private fun dumpFrameToString(frame: Buffer): String {
 
 @RSocketLoggingApi
 @RSocketTransportApi
-private class MultiplexedLoggingConnection(
-    private val delegate: RSocketMultiplexedConnection,
+private class LoggingConnectionOutbound(
+    private val delegate: RSocketConnectionOutbound,
     private val logger: Logger,
-) : RSocketMultiplexedConnection {
-    override suspend fun createStream(): RSocketMultiplexedConnection.Stream {
-        return MultiplexedLoggingStream(delegate.createStream(), logger)
-    }
-
-    override suspend fun acceptStream(): RSocketMultiplexedConnection.Stream? {
-        return delegate.acceptStream()?.let {
-            MultiplexedLoggingStream(it, logger)
-        }
-    }
-}
-
-@RSocketLoggingApi
-@RSocketTransportApi
-private class MultiplexedLoggingStream(
-    private val delegate: RSocketMultiplexedConnection.Stream,
-    private val logger: Logger,
-) : RSocketMultiplexedConnection.Stream {
-    override val isClosedForSend: Boolean get() = delegate.isClosedForSend
-
-    override fun setSendPriority(priority: Int) {
-        delegate.setSendPriority(priority)
-    }
+) : RSocketConnectionOutbound {
+    override val coroutineContext: CoroutineContext get() = delegate.coroutineContext
 
     override suspend fun sendFrame(frame: Buffer) {
         logger.debug { "Send:    ${dumpFrameToString(frame)}" }
         delegate.sendFrame(frame)
     }
 
-    override suspend fun receiveFrame(): Buffer? {
-        return delegate.receiveFrame()?.also { frame ->
-            logger.debug { "Receive: ${dumpFrameToString(frame)}" }
-        }
+    override suspend fun createStream(): RSocketStreamOutbound {
+        return LoggingStreamOutbound(delegate.createStream(), logger)
     }
 
-    override fun close() {
-        delegate.close()
+    override fun close(cause: Throwable?) {
+        delegate.close(cause)
+    }
+
+    override fun startReceiving(inbound: RSocketConnectionInbound) {
+        delegate.startReceiving(LoggingConnectionInbound(inbound, logger))
+    }
+}
+
+@RSocketLoggingApi
+@RSocketTransportApi
+private class LoggingConnectionInbound(
+    private val delegate: RSocketConnectionInbound,
+    private val logger: Logger,
+) : RSocketConnectionInbound {
+    override fun onFrame(frame: Buffer) {
+        logger.debug { "Receive: ${dumpFrameToString(frame)}" }
+        delegate.onFrame(frame)
+    }
+
+    override fun onStream(frame: Buffer, stream: RSocketStreamOutbound) {
+        logger.debug { "Receive: ${dumpFrameToString(frame)}" }
+        delegate.onStream(frame, LoggingStreamOutbound(stream, logger))
+    }
+
+    override fun onClose(cause: Throwable?) {
+        delegate.onClose(cause)
+    }
+}
+
+@RSocketLoggingApi
+@RSocketTransportApi
+private class LoggingStreamOutbound(
+    private val delegate: RSocketStreamOutbound,
+    private val logger: Logger,
+) : RSocketStreamOutbound {
+    override val streamId: Int get() = delegate.streamId
+    override val isClosedForSend: Boolean get() = delegate.isClosedForSend
+
+    override suspend fun sendFrame(frame: Buffer) {
+        logger.debug { "Send:    ${dumpFrameToString(frame)}" }
+        delegate.sendFrame(frame)
+    }
+
+    override fun startReceiving(inbound: RSocketStreamInbound) {
+        delegate.startReceiving(LoggingStreamInbound(inbound, logger))
+    }
+
+    override fun close(cause: Throwable?) {
+        delegate.close(cause)
+    }
+}
+
+@RSocketLoggingApi
+@RSocketTransportApi
+private class LoggingStreamInbound(
+    private val delegate: RSocketStreamInbound,
+    private val logger: Logger,
+) : RSocketStreamInbound {
+    override fun onFrame(frame: Buffer) {
+        logger.debug { "Receive: ${dumpFrameToString(frame)}" }
+        delegate.onFrame(frame)
+    }
+
+    override fun onClose(cause: Throwable?) {
+        delegate.onClose(cause)
     }
 }

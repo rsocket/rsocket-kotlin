@@ -19,19 +19,40 @@ package io.rsocket.kotlin.connection
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.keepalive.*
-import io.rsocket.kotlin.operation.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.io.*
-import kotlin.coroutines.*
+
+internal interface ConnectionInbound {
+    fun receiveMetadataPush(metadata: Buffer)
+    fun receiveKeepAlive(respond: Boolean, data: Buffer, lastPosition: Long)
+    fun receiveLease(ttl: Int, numberOfRequests: Int, metadata: Buffer?)
+    fun receiveError(cause: Throwable)
+
+    @RSocketTransportApi
+    fun acceptStream(initialFrame: RequestFrame, stream: RSocketStreamOutbound)
+
+    fun onClose(cause: Throwable?)
+}
 
 @RSocketTransportApi
-internal class ConnectionInbound(
-    // requestContext
-    override val coroutineContext: CoroutineContext,
+internal abstract class ConnectionInbound2(
+    private val requestScope: CoroutineScope,
+    private val frameCodec: FrameCodec,
     private val responder: RSocket,
     private val keepAliveHandler: KeepAliveHandler,
-) : CoroutineScope {
+) : RSocketConnectionInbound {
+    private val requestHandler = RequestHandler(requestScope, frameCodec, responder)
+
+    override fun onFrame(frame: Buffer) {
+        handleFrame(frameCodec.decodeFrame(0, frame))
+    }
+
+    // TODO: streamId validation
+    override fun onStream(frame: Buffer, stream: RSocketStreamOutbound) {
+        requestHandler.handleRequest(frame, stream)
+    }
+
     fun handleFrame(frame: Frame): Unit = when (frame) {
         is MetadataPushFrame -> receiveMetadataPush(frame.metadata)
         is KeepAliveFrame    -> receiveKeepAlive(frame.respond, frame.data, frame.lastPosition)
@@ -42,7 +63,7 @@ internal class ConnectionInbound(
     }
 
     private fun receiveMetadataPush(metadata: Buffer) {
-        launch {
+        requestScope.launch {
             responder.metadataPush(metadata)
         }.invokeOnCompletion { metadata.close() }
     }
@@ -62,11 +83,7 @@ internal class ConnectionInbound(
         throw cause // TODO?
     }
 
-    fun createOperation(type: FrameType, requestJob: Job): ResponderOperation = when (type) {
-        FrameType.RequestFnF      -> ResponderFireAndForgetOperation(requestJob, responder)
-        FrameType.RequestResponse -> ResponderRequestResponseOperation(requestJob, responder)
-        FrameType.RequestStream   -> ResponderRequestStreamOperation(requestJob, responder)
-        FrameType.RequestChannel  -> ResponderRequestChannelOperation(requestJob, responder)
-        else                      -> error("should happen")
+    override fun onClose(cause: Throwable?) {
+        TODO("Not yet implemented")
     }
 }

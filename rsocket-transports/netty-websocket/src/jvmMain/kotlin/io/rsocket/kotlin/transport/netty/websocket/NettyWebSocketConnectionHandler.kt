@@ -31,7 +31,7 @@ import kotlinx.io.*
 @RSocketTransportApi
 internal class NettyWebSocketConnectionHandler(
     private val channel: DuplexChannel,
-    private val handler: RSocketConnectionHandler,
+    private val handler: RSocketConnectionInbound,
     scope: CoroutineScope,
 ) : ChannelInboundHandlerAdapter() {
     private val inbound = bufferChannel(Channel.UNLIMITED)

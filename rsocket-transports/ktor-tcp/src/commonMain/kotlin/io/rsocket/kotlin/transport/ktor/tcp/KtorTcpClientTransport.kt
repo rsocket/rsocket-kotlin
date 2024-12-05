@@ -20,6 +20,7 @@ import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
+import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
@@ -103,8 +104,10 @@ private class KtorTcpClientTargetImpl(
 ) : RSocketClientTarget {
 
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
-        val socket = aSocket(selectorManager).tcp().connect(remoteAddress, socketOptions)
-        handler.handleKtorTcpConnection(socket)
+    override suspend fun connectClient(): RSocketConnectionOutbound {
+        return KtorTcpConnectionOutbound(
+            coroutineContext,
+            aSocket(selectorManager).tcp().connect(remoteAddress, socketOptions).connection()
+        ).convert()
     }
 }

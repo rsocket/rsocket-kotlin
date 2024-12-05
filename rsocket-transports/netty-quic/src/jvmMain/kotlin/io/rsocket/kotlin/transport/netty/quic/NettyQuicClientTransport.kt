@@ -150,7 +150,7 @@ private class NettyQuicClientTargetImpl(
     private val remoteAddress: SocketAddress,
 ) : RSocketClientTarget {
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
+    override fun connectClient(handler: RSocketConnectionInbound): Job = launch {
         QuicChannel.newBootstrap(bootstrap.bind().awaitChannel()).also { quicBootstrap?.invoke(it) }
             .handler(
                 NettyQuicConnectionInitializer(handler, coroutineContext, isClient = true)

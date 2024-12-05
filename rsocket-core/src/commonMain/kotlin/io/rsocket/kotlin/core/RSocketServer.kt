@@ -61,7 +61,7 @@ public class RSocketServer internal constructor(
     ): T = transport.startServer(createHandler(acceptor))
 
     @RSocketTransportApi
-    public fun createHandler(acceptor: ConnectionAcceptor): RSocketConnectionHandler =
+    public fun createHandler(acceptor: ConnectionAcceptor): RSocketConnectionInbound =
         AcceptConnection(acceptor).logging(frameLogger)
 
     private inner class AcceptConnection(acceptor: ConnectionAcceptor) : ConnectionEstablishmentHandler(
@@ -71,7 +71,7 @@ public class RSocketServer internal constructor(
         interceptors = interceptors,
         requesterDeferred = null
     ) {
-        override suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig {
+        override suspend fun establishConnection(context: ConnectionOutbound): ConnectionConfig {
             val setupFrame = context.receiveFrame()
             return try {
                 when {

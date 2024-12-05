@@ -16,6 +16,7 @@
 
 package io.rsocket.kotlin.operation
 
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
@@ -23,11 +24,14 @@ import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
+@ExperimentalStreamsApi
 internal class RequesterRequestChannelOperation(
-    private val initialRequestN: Int,
     private val requestPayloads: Flow<Payload>,
-    private val responsePayloads: PayloadChannel,
-) : RequesterOperation {
+    private val responsePayloadsCollector: FlowCollector<Payload>,
+    private val requestStrategy: RequestStrategy.Element,
+    private val initialRequestN: Int,
+) : RequesterOperation<Unit> {
+    private val responsePayloads: PayloadChannel = PayloadChannel() // TODO
     private val limiter = PayloadLimiter(0)
     private var senderJob: Job? by atomic(null)
     private var failure: Throwable? = null
@@ -103,9 +107,5 @@ internal class RequesterRequestChannelOperation(
         if (responsePayloads.isActive) responsePayloads.close(
             IllegalStateException("Unexpected end of stream")
         )
-    }
-
-    override fun operationFailure(cause: Throwable) {
-        if (responsePayloads.isActive) responsePayloads.close(cause)
     }
 }

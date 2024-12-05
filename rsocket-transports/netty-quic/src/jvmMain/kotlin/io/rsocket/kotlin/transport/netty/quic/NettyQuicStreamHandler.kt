@@ -27,6 +27,42 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.io.*
+import kotlin.coroutines.*
+
+private class QS(
+    private val channel: QuicStreamChannel,
+) : RSocketStreamOutbound {
+
+    override val coroutineContext: CoroutineContext
+        get() = TODO("Not yet implemented")
+
+    override fun setSendPriority(priority: Int) {
+        channel.updatePriority(QuicStreamPriority(priority, false))
+    }
+
+    // TODO: can be buffered
+    override suspend fun sendFrame(frame: Buffer) {
+        channel.writeAndFlush(frame.toByteBuf(channel.alloc())).awaitFuture()
+    }
+
+    override fun close(cause: Throwable?) {
+        channel.shutdownOutput()
+    }
+
+    fun registerHandler(handler: RSocketStreamInbound) {
+        channel.pipeline().addLast("rsocket")
+    }
+}
+
+private class QSHandler(
+    private val handler: RSocketStreamInbound,
+) : ChannelInboundHandlerAdapter() {
+    override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
+        msg as ByteBuf
+
+        handler.onFrame(msg.toBuffer())
+    }
+}
 
 // TODO: first stream is a hack to initiate first stream because of buffering
 //  quic streams could be received unordered by server, so f.e we could receive first stream with id 4 and then with id 0
@@ -69,11 +105,11 @@ internal class NettyQuicStreamHandler(
                     state.startMarker?.complete()
                 }
             } finally {
-                withContext(NonCancellable) {
-                    channel.shutdownOutput().awaitFuture()
-                }
+//                withContext(NonCancellable) {
+//                    channel.shutdownOutput().awaitFuture()
+//                }
             }
-        }.onCompletion { outbound.cancel() }
+        }//.onCompletion { outbound.cancel() }
 
         try {
             state.closeMarker.join()
@@ -81,8 +117,10 @@ internal class NettyQuicStreamHandler(
             outbound.close() // will cause `writerJob` completion
             // no more reading
             state.inbound.cancel()
+            outbound.cancel()
             withContext(NonCancellable) {
                 writerJob.join()
+                channel.shutdown().awaitFuture()
                 channel.close().awaitFuture()
             }
         }

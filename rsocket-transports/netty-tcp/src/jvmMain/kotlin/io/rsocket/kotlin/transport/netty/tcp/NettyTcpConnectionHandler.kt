@@ -32,7 +32,7 @@ import io.netty.channel.socket.DuplexChannel as NettyDuplexChannel
 @RSocketTransportApi
 internal class NettyTcpConnectionHandler(
     private val channel: NettyDuplexChannel,
-    private val handler: RSocketConnectionHandler,
+    private val handler: RSocketConnectionInbound,
     scope: CoroutineScope,
 ) : ChannelInboundHandlerAdapter() {
     private val inbound = bufferChannel(Channel.UNLIMITED)

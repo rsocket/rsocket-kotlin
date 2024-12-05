@@ -32,11 +32,11 @@ internal abstract class ConnectionEstablishmentHandler(
     private val connectionAcceptor: ConnectionAcceptor,
     private val interceptors: Interceptors,
     private val requesterDeferred: CompletableDeferred<RSocket>?,
-) : RSocketConnectionHandler {
-    abstract suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig
+) : RSocketConnectionInbound {
+    abstract suspend fun establishConnection(context: ConnectionOutbound): ConnectionConfig
 
     private suspend fun wrapConnection(
-        connection: RSocketConnection,
+        connection: RSocketConnectionOutbound,
         requestContext: CoroutineContext,
     ): Connection2 = when (connection) {
         is RSocketMultiplexedConnection -> {
@@ -101,7 +101,7 @@ internal abstract class ConnectionEstablishmentHandler(
         }
     }
 
-    final override suspend fun handleConnection(connection: RSocketConnection): Unit = coroutineScope {
+    final override suspend fun handleConnection(connection: RSocketConnectionOutbound): Unit = coroutineScope {
         handleConnection(wrapConnection(connection, coroutineContext.supervisorContext()))
     }
 }

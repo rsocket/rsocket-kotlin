@@ -66,7 +66,7 @@ private class RSocketSupportTarget(
     override val coroutineContext: CoroutineContext get() = client.coroutineContext
 
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
+    override fun connectClient(handler: RSocketConnectionInbound): Job = launch {
         client.webSocket(request) {
             handler.handleKtorWebSocketConnection(this)
         }

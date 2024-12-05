@@ -28,8 +28,7 @@ import kotlin.time.*
 @RSocketTransportApi
 internal class KeepAliveHandler(
     private val keepAlive: KeepAlive,
-    private val connection2: Connection2,
-    private val connectionScope: CoroutineScope,
+    private val outbound: ConnectionOutbound,
 ) {
     private val initial = TimeSource.Monotonic.markNow()
     private fun currentDelayMillis() = initial.elapsedNow().inWholeMilliseconds
@@ -38,13 +37,13 @@ internal class KeepAliveHandler(
 
     init {
         // this could be moved to a function like `run` or `start`
-        connectionScope.launch {
+        outbound.launch {
             while (true) {
                 delay(keepAlive.intervalMillis.toLong())
                 if (currentDelayMillis() - lastMark.value >= keepAlive.maxLifetimeMillis)
                     throw RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetimeMillis} ms")
 
-                connection2.sendKeepAlive(true, EmptyBuffer, 0)
+                outbound.sendKeepAlive(true, EmptyBuffer, 0)
             }
         }
     }
@@ -52,8 +51,8 @@ internal class KeepAliveHandler(
     fun receive(data: Buffer, respond: Boolean) {
         lastMark.value = currentDelayMillis()
         // in most cases it will be possible to not suspend at all
-        if (respond) connectionScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            connection2.sendKeepAlive(false, data, 0)
+        if (respond) outbound.launch(start = CoroutineStart.UNDISPATCHED) {
+            outbound.sendKeepAlive(false, data, 0)
         }
     }
 }

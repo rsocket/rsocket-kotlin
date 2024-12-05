@@ -18,161 +18,154 @@ package io.rsocket.kotlin.transport.local
 
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
-import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.io.*
+import kotlin.coroutines.*
 
 internal sealed class LocalServerConnector {
     @RSocketTransportApi
-    abstract fun connect(
+    abstract suspend fun connect(
+        serverInbound: RSocketServerInstanceInbound,
         clientScope: CoroutineScope,
-        clientHandler: RSocketConnectionHandler,
         serverScope: CoroutineScope,
-        serverHandler: RSocketConnectionHandler,
-    ): Job
+    ): RSocketConnectionOutbound
 
-    internal class Sequential(
-        private val prioritizationQueueBuffersCapacity: Int,
-    ) : LocalServerConnector() {
-
+    object Sequential : LocalServerConnector() {
         @RSocketTransportApi
-        override fun connect(
+        override suspend fun connect(
+            serverInbound: RSocketServerInstanceInbound,
             clientScope: CoroutineScope,
-            clientHandler: RSocketConnectionHandler,
             serverScope: CoroutineScope,
-            serverHandler: RSocketConnectionHandler,
-        ): Job {
-            val clientToServer = PrioritizationFrameQueue(prioritizationQueueBuffersCapacity)
-            val serverToClient = PrioritizationFrameQueue(prioritizationQueueBuffersCapacity)
-
-            launchLocalConnection(serverScope, serverToClient, clientToServer, serverHandler)
-            return launchLocalConnection(clientScope, clientToServer, serverToClient, clientHandler)
-        }
-
-        @RSocketTransportApi
-        private fun launchLocalConnection(
-            scope: CoroutineScope,
-            outbound: PrioritizationFrameQueue,
-            inbound: PrioritizationFrameQueue,
-            handler: RSocketConnectionHandler,
-        ): Job = scope.launch {
-            handler.handleConnection(Connection(outbound, inbound))
-        }.onCompletion {
-            outbound.close()
-            inbound.cancel()
-        }
-
-        @RSocketTransportApi
-        private class Connection(
-            private val outbound: PrioritizationFrameQueue,
-            private val inbound: PrioritizationFrameQueue,
-        ) : RSocketSequentialConnection {
-            override val isClosedForSend: Boolean get() = outbound.isClosedForSend
-
-            override suspend fun sendFrame(streamId: Int, frame: Buffer) {
-                return outbound.enqueueFrame(streamId, frame)
-            }
-
-            override suspend fun receiveFrame(): Buffer? {
-                return inbound.dequeueFrame()
-            }
-        }
+        ): RSocketConnectionOutbound = Multiplexed.connect(serverInbound, clientScope, serverScope)
     }
 
-    // TODO: better parameters naming
-    class Multiplexed(
-        private val streamsQueueCapacity: Int,
-        private val streamBufferCapacity: Int,
-    ) : LocalServerConnector() {
+    object Multiplexed : LocalServerConnector() {
         @RSocketTransportApi
-        override fun connect(
+        override suspend fun connect(
+            serverInbound: RSocketServerInstanceInbound,
             clientScope: CoroutineScope,
-            clientHandler: RSocketConnectionHandler,
             serverScope: CoroutineScope,
-            serverHandler: RSocketConnectionHandler,
-        ): Job {
-            val streams = Streams(streamsQueueCapacity)
+        ): RSocketConnectionOutbound {
+            val zeroStream = Stream()
+            val streams = Streams()
 
-            launchLocalConnection(serverScope, streams.serverToClient, streams.clientToServer, serverHandler)
-            return launchLocalConnection(clientScope, streams.clientToServer, streams.serverToClient, clientHandler)
-        }
-
-        @RSocketTransportApi
-        private fun launchLocalConnection(
-            scope: CoroutineScope,
-            outbound: SendChannel<Frames>,
-            inbound: ReceiveChannel<Frames>,
-            handler: RSocketConnectionHandler,
-        ): Job = scope.launch {
-            handler.handleConnection(Connection(SupervisorJob(coroutineContext.job), outbound, inbound, streamBufferCapacity))
-        }.onCompletion {
-            outbound.close()
-            inbound.cancel()
-        }
-
-        @RSocketTransportApi
-        private class Connection(
-            private val streamsJob: Job,
-            private val outbound: SendChannel<Frames>,
-            private val inbound: ReceiveChannel<Frames>,
-            private val streamBufferCapacity: Int,
-        ) : RSocketMultiplexedConnection {
-            override suspend fun createStream(): RSocketMultiplexedConnection.Stream {
-                val frames = Frames(streamBufferCapacity)
-
-                outbound.send(frames)
-
-                return Stream(
-                    parentJob = streamsJob,
-                    outbound = frames.clientToServer,
-                    inbound = frames.serverToClient
+            serverInbound.onConnection(
+                ConnectionOutbound(
+                    parentContext = serverScope.coroutineContext,
+                    incomingFrames = zeroStream.clientToServer,
+                    outgoingFrames = zeroStream.serverToClient,
+                    incomingStreams = streams.clientToServer,
+                    outgoingStreams = streams.serverToClient
                 )
-            }
+            )
 
-            override suspend fun acceptStream(): RSocketMultiplexedConnection.Stream? {
-                val frames = inbound.receiveCatching().getOrNull() ?: return null
-
-                return Stream(
-                    parentJob = streamsJob,
-                    outbound = frames.serverToClient,
-                    inbound = frames.clientToServer
-                )
-            }
+            return ConnectionOutbound(
+                parentContext = clientScope.coroutineContext,
+                incomingFrames = zeroStream.serverToClient,
+                outgoingFrames = zeroStream.clientToServer,
+                incomingStreams = streams.serverToClient,
+                outgoingStreams = streams.clientToServer
+            )
         }
 
         @RSocketTransportApi
-        private class Stream(
-            parentJob: Job,
-            private val outbound: SendChannel<Buffer>,
-            private val inbound: ReceiveChannel<Buffer>,
-        ) : RSocketMultiplexedConnection.Stream {
-            private val streamJob = Job(parentJob).onCompletion {
-                outbound.close()
-                inbound.cancel()
-            }
-
-            override fun close() {
-                streamJob.complete()
-            }
-
-            @OptIn(DelicateCoroutinesApi::class)
-            override val isClosedForSend: Boolean get() = outbound.isClosedForSend
-
-            override fun setSendPriority(priority: Int) {}
+        private class ConnectionOutbound(
+            parentContext: CoroutineContext,
+            private val incomingFrames: ReceiveChannel<Buffer>,
+            private val outgoingFrames: SendChannel<Buffer>,
+            private val incomingStreams: ReceiveChannel<Stream>,
+            private val outgoingStreams: SendChannel<Stream>,
+        ) : RSocketConnectionOutbound {
+            private val connectionJob = Job(parentContext[Job])
+            override val coroutineContext: CoroutineContext = parentContext + connectionJob
+            private val streamsContext = parentContext.supervisorContext()
 
             override suspend fun sendFrame(frame: Buffer) {
-                return outbound.send(frame)
+                outgoingFrames.send(frame)
             }
 
-            override suspend fun receiveFrame(): Buffer? {
-                return inbound.receiveCatching().getOrNull()
+            override suspend fun createStream(): RSocketStreamOutbound {
+                val stream = Stream()
+                outgoingStreams.send(stream)
+                return StreamOutbound(
+                    parentContext = streamsContext,
+                    streamId = 1, // TODO
+                    incoming = stream.clientToServer,
+                    outgoing = stream.serverToClient
+                )
+            }
+
+            override fun close(cause: Throwable?) {
+                connectionJob.cancel("Connection closed", cause)
+            }
+
+            override fun startReceiving(inbound: RSocketConnectionInbound) {
+                launch {
+                    try {
+                        incomingFrames.consumeEach(inbound::onFrame)
+                        inbound.onClose(null)
+                    } catch (cause: Throwable) {
+                        inbound.onClose(cause)
+                        throw cause
+                    }
+                }
+                launch {
+                    incomingStreams.consumeEach {
+                        // TODO: validate first frame
+                        val firstFrame = it.serverToClient.receive()
+
+                        inbound.onStream(
+                            firstFrame,
+                            StreamOutbound(
+                                parentContext = streamsContext,
+                                streamId = 1, // TODO
+                                incoming = it.serverToClient,
+                                outgoing = it.clientToServer
+                            )
+                        )
+                    }
+                }
             }
         }
 
-        private class Streams(bufferCapacity: Int) : AutoCloseable {
-            val clientToServer = channelForCloseable<Frames>(bufferCapacity)
-            val serverToClient = channelForCloseable<Frames>(bufferCapacity)
+        @RSocketTransportApi
+        private class StreamOutbound(
+            parentContext: CoroutineContext,
+            override val streamId: Int,
+            private val incoming: ReceiveChannel<Buffer>,
+            private val outgoing: SendChannel<Buffer>,
+        ) : RSocketStreamOutbound, CoroutineScope {
+            private val streamJob = Job(parentContext[Job])
+            override val coroutineContext: CoroutineContext = parentContext + streamJob
+
+            @OptIn(DelicateCoroutinesApi::class)
+            override val isClosedForSend: Boolean get() = outgoing.isClosedForSend
+
+            override suspend fun sendFrame(frame: Buffer) {
+                return outgoing.send(frame)
+            }
+
+            override fun close(cause: Throwable?) {
+                streamJob.cancel("Stream closed", cause)
+            }
+
+            override fun startReceiving(inbound: RSocketStreamInbound) {
+                launch {
+                    try {
+                        incoming.consumeEach(inbound::onFrame)
+                        inbound.onClose(null)
+                    } catch (cause: Throwable) {
+                        inbound.onClose(cause)
+                        throw cause
+                    }
+                }
+            }
+        }
+
+        private class Streams : AutoCloseable {
+            val clientToServer = channelForCloseable<Stream>(Channel.BUFFERED)
+            val serverToClient = channelForCloseable<Stream>(Channel.BUFFERED)
 
             // only for undelivered element case
             override fun close() {
@@ -181,9 +174,9 @@ internal sealed class LocalServerConnector {
             }
         }
 
-        private class Frames(bufferCapacity: Int) : AutoCloseable {
-            val clientToServer = bufferChannel(bufferCapacity)
-            val serverToClient = bufferChannel(bufferCapacity)
+        private class Stream : AutoCloseable {
+            val clientToServer = bufferChannel(Channel.BUFFERED)
+            val serverToClient = bufferChannel(Channel.BUFFERED)
 
             // only for undelivered element case
             override fun close() {

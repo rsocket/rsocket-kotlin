@@ -34,9 +34,9 @@ class ConnectionEstablishmentTest : SuspendTest {
 
     private class TestServer(
         override val coroutineContext: CoroutineContext,
-        private val connection: RSocketConnection,
+        private val connection: RSocketConnectionOutbound,
     ) : RSocketServerTarget<TestInstance> {
-        override suspend fun startServer(handler: RSocketConnectionHandler): TestInstance {
+        override suspend fun startServer(handler: RSocketConnectionInbound): TestInstance {
             return TestInstance(async {
                 handler.handleConnection(connection)
             })

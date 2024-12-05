@@ -138,7 +138,7 @@ private class KtorWebSocketClientTargetImpl(
 ) : RSocketClientTarget {
 
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
+    override fun connectClient(handler: RSocketConnectionInbound): Job = launch {
         httpClient.webSocket(request) {
             handler.handleKtorWebSocketConnection(this)
         }

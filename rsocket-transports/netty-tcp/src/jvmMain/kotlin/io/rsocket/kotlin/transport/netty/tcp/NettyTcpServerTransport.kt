@@ -145,7 +145,7 @@ private class NettyTcpServerTargetImpl(
     private val localAddress: SocketAddress,
 ) : RSocketServerTarget<NettyTcpServerInstance> {
     @RSocketTransportApi
-    override suspend fun startServer(handler: RSocketConnectionHandler): NettyTcpServerInstance {
+    override suspend fun startServer(handler: RSocketConnectionInbound): NettyTcpServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 

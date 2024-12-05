@@ -129,7 +129,7 @@ private class NettyTcpClientTargetImpl(
     private val remoteAddress: SocketAddress,
 ) : RSocketClientTarget {
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
+    override fun connectClient(handler: RSocketConnectionInbound): Job = launch {
         bootstrap.clone().handler(
             NettyTcpConnectionInitializer(
                 sslContext = sslContext,

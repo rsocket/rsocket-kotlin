@@ -67,7 +67,7 @@ private class NodejsTcpClientTargetImpl(
     private val port: Int,
 ) : RSocketClientTarget {
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
+    override fun connectClient(handler: RSocketConnectionInbound): Job = launch {
         val socket = connect(port, host)
         handler.handleNodejsTcpConnection(socket)
     }

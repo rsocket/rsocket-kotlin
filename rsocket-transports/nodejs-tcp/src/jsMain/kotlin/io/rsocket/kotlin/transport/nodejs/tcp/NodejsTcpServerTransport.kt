@@ -74,7 +74,7 @@ private class NodejsTcpServerTargetImpl(
 ) : RSocketServerTarget<NodejsTcpServerInstance> {
 
     @RSocketTransportApi
-    override suspend fun startServer(handler: RSocketConnectionHandler): NodejsTcpServerInstance {
+    override suspend fun startServer(handler: RSocketConnectionInbound): NodejsTcpServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 

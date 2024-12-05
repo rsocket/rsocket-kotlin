@@ -19,7 +19,7 @@ package io.rsocket.kotlin.operation
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
-import kotlinx.io.*
+import io.rsocket.kotlin.transport.*
 import kotlin.math.*
 
 private const val lengthSize = 3
@@ -27,17 +27,18 @@ private const val headerSize = 6
 private const val fragmentOffset = lengthSize + headerSize
 private const val fragmentOffsetWithMetadata = fragmentOffset + lengthSize
 
-internal abstract class OperationOutbound(
-    protected val streamId: Int,
+@OptIn(RSocketTransportApi::class)
+internal class OperationOutbound(
+    private val outbound: RSocketStreamOutbound,
     private val frameCodec: FrameCodec,
 ) {
     // TODO: decide on it
     // private var firstRequestFrameSent: Boolean = false
 
-    abstract val isClosed: Boolean
+    val isClosed: Boolean get() = outbound.isClosedForSend
+    val streamId: Int get() = outbound.streamId
 
-    protected abstract suspend fun sendFrame(frame: Buffer)
-    private suspend fun sendFrame(frame: Frame): Unit = sendFrame(frameCodec.encodeFrame(frame))
+    private suspend fun sendFrame(frame: Frame): Unit = outbound.sendFrame(frameCodec.encodeFrame(frame))
 
     suspend fun sendError(cause: Throwable) {
         return sendFrame(ErrorFrame(streamId, cause))

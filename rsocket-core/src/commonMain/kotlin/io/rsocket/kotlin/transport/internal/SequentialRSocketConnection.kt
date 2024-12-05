@@ -14,45 +14,24 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport
+package io.rsocket.kotlin.transport.internal
 
+import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.io.*
 
 @RSocketTransportApi
-public interface RSocketConnectionOutbound : CoroutineScope {
-    // streamId = 0
-    public suspend fun sendFrame(frame: Buffer)
-
-    // streamId = X
-    public suspend fun createStream(): RSocketStreamOutbound
-    public fun close(cause: Throwable?)
-
-    public fun startReceiving(inbound: RSocketConnectionInbound)
-}
-
-@RSocketTransportApi
-public interface RSocketConnectionInbound {
-    // streamId = 0
-    public fun onFrame(frame: Buffer)
-
-    // streamId = X
-    public fun onStream(frame: Buffer, stream: RSocketStreamOutbound)
-    public fun onClose(cause: Throwable?)
-}
-
-@RSocketTransportApi
-public interface RSocketStreamOutbound {
-    public val streamId: Int
-    public val isClosedForSend: Boolean
+public interface SequentialRSocketConnectionOutbound : CoroutineScope {
     public suspend fun sendFrame(frame: Buffer)
     public fun close(cause: Throwable?)
-
-    public fun startReceiving(inbound: RSocketStreamInbound)
+    public fun startReceiving(inbound: SequentialRSocketConnectionInbound)
 }
 
 @RSocketTransportApi
-public interface RSocketStreamInbound {
+public interface SequentialRSocketConnectionInbound {
     public fun onFrame(frame: Buffer)
     public fun onClose(cause: Throwable?)
 }
+
+@RSocketTransportApi
+public fun SequentialRSocketConnectionOutbound.convert(): RSocketConnectionOutbound = TODO()

@@ -65,8 +65,10 @@ private class LocalClientTargetImpl(
 ) : RSocketClientTarget {
 
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job {
+    override suspend fun connectClient(): RSocketConnectionOutbound {
+        currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
-        return LocalServerRegistry.get(serverName).connect(clientScope = this, clientHandler = handler)
+
+        return LocalServerRegistry.get(serverName).connect(clientScope = this)
     }
 }

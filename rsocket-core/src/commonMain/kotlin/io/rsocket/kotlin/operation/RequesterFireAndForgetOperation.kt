@@ -19,11 +19,8 @@ package io.rsocket.kotlin.operation
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
-import kotlin.coroutines.*
 
-internal class RequesterFireAndForgetOperation(
-    private val requestSentCont: CancellableContinuation<Unit>,
-) : RequesterOperation {
+internal class RequesterFireAndForgetOperation : RequesterOperation<Unit> {
 
     override suspend fun execute(outbound: OperationOutbound, requestPayload: Payload) {
         try {
@@ -33,17 +30,11 @@ internal class RequesterFireAndForgetOperation(
                 complete = false,
                 initialRequest = 0
             )
-            requestSentCont.resume(Unit)
         } catch (cause: Throwable) {
-            if (requestSentCont.isActive) requestSentCont.resumeWithException(cause)
             if (!outbound.isClosed) withContext(NonCancellable) { outbound.sendCancel() }
             throw cause
         }
     }
 
     override fun shouldReceiveFrame(frameType: FrameType): Boolean = false
-
-    override fun operationFailure(cause: Throwable) {
-        if (requestSentCont.isActive) requestSentCont.resumeWithException(cause)
-    }
 }

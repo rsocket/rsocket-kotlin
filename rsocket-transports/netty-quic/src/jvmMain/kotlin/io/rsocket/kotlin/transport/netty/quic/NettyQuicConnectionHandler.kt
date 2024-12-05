@@ -30,7 +30,7 @@ import kotlin.coroutines.*
 @RSocketTransportApi
 internal class NettyQuicConnectionHandler(
     private val channel: QuicChannel,
-    private val handler: RSocketConnectionHandler,
+    private val handler: RSocketConnectionInbound,
     scope: CoroutineScope,
     private val isClient: Boolean,
 ) : ChannelInboundHandlerAdapter() {

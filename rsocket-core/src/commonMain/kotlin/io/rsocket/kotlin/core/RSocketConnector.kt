@@ -21,6 +21,7 @@ import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.internal.io.*
+import io.rsocket.kotlin.keepalive.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
@@ -42,7 +43,7 @@ public class RSocketConnector internal constructor(
     @Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API")
     public suspend fun connect(transport: ClientTransport): RSocket = connect(object : RSocketClientTarget {
         override val coroutineContext: CoroutineContext get() = transport.coroutineContext
-        override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
+        override fun connectClient(handler: RSocketConnectionInbound): Job = launch {
             handler.handleConnection(interceptors.wrapConnection(transport.connect()))
         }
     })
@@ -58,42 +59,52 @@ public class RSocketConnector internal constructor(
     }
 
     private suspend fun connectOnce(transport: RSocketClientTarget): RSocket {
-        val requesterDeferred = CompletableDeferred<RSocket>()
-        val connectJob = transport.connectClient(
-            SetupConnection(requesterDeferred).logging(frameLogger)
-        ).onCompletion { if (it != null) requesterDeferred.completeExceptionally(it) }
-        return try {
-            requesterDeferred.await()
-        } catch (cause: Throwable) {
-            connectJob.cancel("RSocketConnector.connect was cancelled", cause)
-            throw cause
-        }
-    }
+        val connectionConfig = connectionConfigProvider()
+        val connectionConfigPayload = connectionConfig.setupPayload.copy()
+        val frameCodec = FrameCodec(maxFragmentSize)
 
-    private inner class SetupConnection(requesterDeferred: CompletableDeferred<RSocket>) : ConnectionEstablishmentHandler(
-        isClient = true,
-        frameCodec = FrameCodec(maxFragmentSize),
-        connectionAcceptor = acceptor,
-        interceptors = interceptors,
-        requesterDeferred = requesterDeferred
-    ) {
-        override suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig {
-            val connectionConfig = connectionConfigProvider()
-            try {
-                context.sendSetup(
-                    version = Version.Current,
-                    honorLease = false,
-                    keepAlive = connectionConfig.keepAlive,
-                    resumeToken = null,
-                    payloadMimeType = connectionConfig.payloadMimeType,
-                    // copy needed, as it can be used in acceptor
-                    payload = connectionConfig.setupPayload.copy()
-                )
-            } catch (cause: Throwable) {
-                connectionConfig.setupPayload.close()
-                throw cause
+        val connection = transport.connectClient().logging(frameLogger)
+        val outbound = ConnectionOutbound(frameCodec, connection)
+        val context = connection.coroutineContext
+
+
+        val requester = interceptors.wrapRequester(
+            Requester(context.childContext(), outbound)
+        )
+        val responder = interceptors.wrapResponder(
+            with(interceptors.wrapAcceptor(acceptor)) {
+                ConnectionAcceptorContext(connectionConfig, requester).accept()
             }
-            return connectionConfig
+        )
+
+        // link completing of requester, connection and requestHandler
+        requester.coroutineContext.job.invokeOnCompletion {
+            connection.coroutineContext.job.cancel("Requester cancelled", it)
         }
+        responder.coroutineContext.job.invokeOnCompletion {
+            connection.coroutineContext.job.cancel("Responder cancelled", it)
+        }
+        connection.coroutineContext.job.invokeOnCompletion { cause ->
+            // the responder is not linked to `coroutineContext`
+            responder.cancel("Connection closed", cause)
+        }
+
+        val keepAliveHandler = KeepAliveHandler(connectionConfig.keepAlive, outbound)
+
+        connection.startReceiving(
+
+        )
+
+        outbound.sendSetup(
+            version = Version.Current,
+            honorLease = false,
+            keepAlive = connectionConfig.keepAlive,
+            resumeToken = null,
+            payloadMimeType = connectionConfig.payloadMimeType,
+            // copy needed, as it can be used in acceptor
+            payload = connectionConfigPayload
+        )
+
+        return requester
     }
 }

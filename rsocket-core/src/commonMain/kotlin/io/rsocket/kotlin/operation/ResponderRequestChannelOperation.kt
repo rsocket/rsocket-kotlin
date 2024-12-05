@@ -23,7 +23,6 @@ import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
 
 internal class ResponderRequestChannelOperation(
-    private val requestJob: Job,
     private val responder: RSocket,
 ) : ResponderOperation {
     private val limiter = PayloadLimiter(0)
@@ -70,7 +69,7 @@ internal class ResponderRequestChannelOperation(
     }
 
     override fun shouldReceiveFrame(frameType: FrameType): Boolean =
-        frameType === FrameType.Cancel || when {
+        when {
             requestPayloads.isActive -> frameType === FrameType.Payload || frameType === FrameType.Error
             else                     -> false
         } || frameType === FrameType.RequestN // TODO
@@ -85,14 +84,6 @@ internal class ResponderRequestChannelOperation(
     }
 
     override fun receiveErrorFrame(cause: Throwable) {
-        requestPayloads.close(cause)
-    }
-
-    override fun receiveCancelFrame() {
-        requestJob.cancel("Request was cancelled by remote party")
-    }
-
-    override fun operationFailure(cause: Throwable) {
         requestPayloads.close(cause)
     }
 

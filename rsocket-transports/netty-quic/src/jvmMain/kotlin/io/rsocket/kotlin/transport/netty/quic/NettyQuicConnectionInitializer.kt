@@ -24,7 +24,7 @@ import kotlin.coroutines.*
 
 @RSocketTransportApi
 internal class NettyQuicConnectionInitializer(
-    private val handler: RSocketConnectionHandler,
+    private val handler: RSocketConnectionInbound,
     override val coroutineContext: CoroutineContext,
     private val isClient: Boolean,
 ) : ChannelInitializer<QuicChannel>(), CoroutineScope {

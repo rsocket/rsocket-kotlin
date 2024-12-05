@@ -181,7 +181,7 @@ private class NettyWebSocketServerTargetImpl(
 ) : RSocketServerTarget<NettyWebSocketServerInstance> {
 
     @RSocketTransportApi
-    override suspend fun startServer(handler: RSocketConnectionHandler): NettyWebSocketServerInstance {
+    override suspend fun startServer(handler: RSocketConnectionInbound): NettyWebSocketServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
@@ -213,7 +213,7 @@ private class NettyWebSocketServerTargetImpl(
 private class NettyWebSocketServerConnectionInitializer(
     sslContext: SslContext?,
     private val webSocketProtocolConfig: WebSocketServerProtocolConfig,
-    handler: RSocketConnectionHandler,
+    handler: RSocketConnectionInbound,
     coroutineContext: CoroutineContext,
 ) : NettyWebSocketConnectionInitializer(sslContext, null, handler, coroutineContext) {
     override fun createHttpHandler(): ChannelHandler = HttpServerCodec()

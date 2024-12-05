@@ -25,7 +25,7 @@ import kotlinx.coroutines.channels.*
 import kotlinx.io.*
 
 @RSocketTransportApi
-internal suspend fun RSocketConnectionHandler.handleNodejsTcpConnection(socket: Socket): Unit = coroutineScope {
+internal suspend fun RSocketConnectionInbound.handleNodejsTcpConnection(socket: Socket): Unit = coroutineScope {
     val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
     val inbound = bufferChannel(Channel.UNLIMITED)
 

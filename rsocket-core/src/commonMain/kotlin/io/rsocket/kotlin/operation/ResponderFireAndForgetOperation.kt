@@ -19,10 +19,8 @@ package io.rsocket.kotlin.operation
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.payload.*
-import kotlinx.coroutines.*
 
 internal class ResponderFireAndForgetOperation(
-    private val requestJob: Job,
     private val responder: RSocket,
 ) : ResponderOperation {
 
@@ -30,9 +28,5 @@ internal class ResponderFireAndForgetOperation(
         responder.fireAndForget(requestPayload)
     }
 
-    override fun shouldReceiveFrame(frameType: FrameType): Boolean = frameType === FrameType.Cancel
-
-    override fun receiveCancelFrame() {
-        requestJob.cancel("Request was cancelled by remote party")
-    }
+    override fun shouldReceiveFrame(frameType: FrameType): Boolean = false
 }

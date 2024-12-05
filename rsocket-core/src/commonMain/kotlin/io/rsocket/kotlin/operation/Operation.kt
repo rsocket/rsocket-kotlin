@@ -19,23 +19,13 @@ package io.rsocket.kotlin.operation
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.payload.*
 
-internal interface Operation : OperationInbound {
+internal interface Operation<R> : OperationInbound {
     // after `execute` is completed, no other interactions with the operation are possible
-    suspend fun execute(outbound: OperationOutbound, requestPayload: Payload)
+    suspend fun execute(outbound: OperationOutbound, requestPayload: Payload): R
 
     // for requester only + responder RC
     // should not throw
-    fun operationFailure(cause: Throwable) {}
-}
-
-internal inline fun Operation.handleExecutionFailure(requestPayload: Payload, block: () -> Unit) {
-    try {
-        block()
-    } catch (cause: Throwable) {
-        operationFailure(cause)
-        requestPayload.close()
-        throw cause
-    }
+//    fun operationFailure(cause: Throwable) {}
 }
 
 internal data class ResponderOperationData(
@@ -47,7 +37,7 @@ internal data class ResponderOperationData(
 )
 
 // just marker interface
-internal interface RequesterOperation : Operation
+internal interface RequesterOperation<R> : Operation<R>
 
 // just marker interface
-internal interface ResponderOperation : Operation
+internal interface ResponderOperation : Operation<Unit>

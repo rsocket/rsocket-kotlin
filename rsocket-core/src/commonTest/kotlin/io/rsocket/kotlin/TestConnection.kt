@@ -44,7 +44,7 @@ class TestConnection : RSocketSequentialConnection, RSocketClientTarget {
         }
     }
 
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
+    override fun connectClient(handler: RSocketConnectionInbound): Job = launch {
         handler.handleConnection(this@TestConnection)
     }.onCompletion {
         if (it != null) job.completeExceptionally(it)

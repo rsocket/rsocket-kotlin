@@ -151,7 +151,7 @@ private class NettyQuicServerTargetImpl(
     private val localAddress: SocketAddress,
 ) : RSocketServerTarget<NettyQuicServerInstance> {
     @RSocketTransportApi
-    override suspend fun startServer(handler: RSocketConnectionHandler): NettyQuicServerInstance {
+    override suspend fun startServer(handler: RSocketConnectionInbound): NettyQuicServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
