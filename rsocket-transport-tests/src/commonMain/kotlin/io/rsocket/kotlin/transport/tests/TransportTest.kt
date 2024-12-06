@@ -121,7 +121,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @Ignore //flaky, ignore for now
+    //@Ignore //flaky, ignore for now
     fun requestChannel20000() = test {
         val request = flow {
             repeat(20_000) { emit(payload(7)) }
@@ -134,7 +134,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @Ignore //flaky, ignore for now
+    //@Ignore //flaky, ignore for now
     fun requestChannel200000() = test {
         val request = flow {
             repeat(200_000) { emit(payload(it)) }
@@ -148,7 +148,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @Ignore //flaky, ignore for now
+    //@Ignore //flaky, ignore for now
     fun requestChannel16x256() = test {
         val request = flow {
             repeat(256) {
@@ -164,7 +164,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @Ignore //flaky, ignore for now
+    //@Ignore //flaky, ignore for now
     fun requestChannel256x512() = test {
         val request = flow {
             repeat(512) {
@@ -180,7 +180,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @IgnoreNative // slow test
+    //@IgnoreNative // slow test
     fun requestStreamX16() = test {
         (0..16).map {
             async {
@@ -191,7 +191,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @Ignore //flaky, ignore for now
+    //@Ignore //flaky, ignore for now
     fun requestStreamX256() = test {
         (0..256).map {
             async {
@@ -202,7 +202,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @IgnoreNative //flaky, ignore for now
+    //@IgnoreNative //flaky, ignore for now
     fun requestChannel500NoLeak() = test {
         val request = flow {
             repeat(10_000) { emitOrClose(payload(3)) }
@@ -241,13 +241,13 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @IgnoreNative //flaky, ignore for now
+    //@IgnoreNative //flaky, ignore for now
     fun requestResponse10000() = test {
         (1..10000).map { async { client.requestResponse(payload(3)).let(Companion::checkPayload) } }.awaitAll()
     }
 
     @Test
-    @Ignore //flaky, ignore for now
+    //@Ignore //flaky, ignore for now
     fun requestResponse100000() = test {
         repeat(100000) { client.requestResponse(payload(3)).let(Companion::checkPayload) }
     }
@@ -260,14 +260,14 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @IgnoreNative
+    //@IgnoreNative
     fun requestStream8K() = test {
         val count = client.requestStream(payload(3)).onEach { checkPayload(it) }.count()
         assertEquals(8192, count) // TODO
     }
 
     @Test
-    @IgnoreNative
+    //@IgnoreNative
     fun requestStream500NoLeak() = test {
         val count =
             client
