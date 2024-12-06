@@ -23,9 +23,7 @@ plugins {
 description = "rsocket-kotlin internal IO support"
 
 kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
+    allTargets()
 
     sourceSets {
         commonMain.dependencies {

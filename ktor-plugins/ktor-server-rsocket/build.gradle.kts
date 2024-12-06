@@ -24,7 +24,7 @@ description = "rsocket-kotlin ktor server plugin"
 
 kotlin {
     jvmTarget()
-    nixTargets()
+    nativeTargets()
 
     sourceSets {
         commonMain.dependencies {

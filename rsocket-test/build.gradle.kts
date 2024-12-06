@@ -24,9 +24,7 @@ plugins {
 
 @OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    jvmTarget()
-    jsTarget()
-    nativeTargets()
+    allTargets()
 
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")

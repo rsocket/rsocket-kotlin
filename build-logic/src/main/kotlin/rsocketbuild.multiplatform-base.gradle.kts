@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.gradle.*
 import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.targets.js.ir.*
+import org.jetbrains.kotlin.gradle.targets.js.testing.*
 import org.jetbrains.kotlin.gradle.targets.jvm.*
 import org.jetbrains.kotlin.gradle.targets.jvm.tasks.*
 import org.jetbrains.kotlin.gradle.targets.native.tasks.*
@@ -32,13 +33,21 @@ plugins {
 @OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
     compilerOptions {
-        // because of INVISIBLE_REFERENCE suppression - will be removed after migration to kotlinx.io
-        if (project.name != "rsocket-test") {
-            allWarningsAsErrors.set(true)
-        }
+        allWarningsAsErrors.set(true)
         progressiveMode.set(true)
         freeCompilerArgs.add("-Xrender-internal-diagnostic-names")
         optIn.addAll(OptIns.ExperimentalSubclassOptIn)
+    }
+
+    applyDefaultHierarchyTemplate {
+        common {
+            group("nonJvm") {
+                withJs()
+                withWasmJs()
+                withWasmWasi()
+                group("native")
+            }
+        }
     }
 
     sourceSets.configureEach {
@@ -101,6 +110,12 @@ registerTestAggregationTask(
     name = "jvmAllTest",
     taskDependencies = { tasks.withType<KotlinJvmTest>() },
     targetFilter = { it.platformType == KotlinPlatformType.jvm }
+)
+
+registerTestAggregationTask(
+    name = "jsAndWasmTest",
+    taskDependencies = { tasks.withType<KotlinJsTest>() },
+    targetFilter = { it.platformType == KotlinPlatformType.js || it.platformType == KotlinPlatformType.wasm }
 )
 
 registerTestAggregationTask(
