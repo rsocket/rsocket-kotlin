@@ -18,7 +18,16 @@ package rsocketbuild
 
 import org.gradle.jvm.toolchain.*
 import org.gradle.kotlin.dsl.*
+import org.jetbrains.kotlin.gradle.*
 import org.jetbrains.kotlin.gradle.dsl.*
+
+fun KotlinMultiplatformExtension.allTargets() {
+    jvmTarget()
+    jsTarget()
+    wasmJsTarget()
+    wasmWasiTarget()
+    nativeTargets()
+}
 
 fun KotlinMultiplatformExtension.appleTargets() {
     macosX64()
@@ -32,29 +41,25 @@ fun KotlinMultiplatformExtension.appleTargets() {
     watchosArm32()
     watchosArm64()
     watchosSimulatorArm64()
-    // https://youtrack.jetbrains.com/issue/KTOR-6368, supported by kotlinx-io
-    // watchosDeviceArm64()
+    watchosDeviceArm64()
 
     tvosX64()
     tvosArm64()
     tvosSimulatorArm64()
 }
 
-fun KotlinMultiplatformExtension.nixTargets() {
+fun KotlinMultiplatformExtension.nativeTargets() {
     appleTargets()
+
     linuxX64()
     linuxArm64()
-}
-
-fun KotlinMultiplatformExtension.nativeTargets() {
-    nixTargets()
     mingwX64()
 
-    // not supported by ktor, supported by kotlinx-io
-    // androidNativeX64()
-    // androidNativeX86()
-    // androidNativeArm64()
-    // androidNativeArm32()
+// TODO: there are some issues with androidNative targets with Kotlin 2.1.0
+//    androidNativeX64()
+//    androidNativeX86()
+//    androidNativeArm64()
+//    androidNativeArm32()
 }
 
 fun KotlinMultiplatformExtension.jsTarget(
@@ -64,6 +69,24 @@ fun KotlinMultiplatformExtension.jsTarget(
     js {
         if (supportsNode) nodejs()
         if (supportsBrowser) browser()
+    }
+}
+
+@OptIn(ExperimentalWasmDsl::class)
+fun KotlinMultiplatformExtension.wasmJsTarget(
+    supportsNode: Boolean = true,
+    supportsBrowser: Boolean = true,
+) {
+    wasmJs {
+        if (supportsNode) nodejs()
+        if (supportsBrowser) browser()
+    }
+}
+
+@OptIn(ExperimentalWasmDsl::class)
+fun KotlinMultiplatformExtension.wasmWasiTarget() {
+    wasmWasi {
+        nodejs()
     }
 }
 

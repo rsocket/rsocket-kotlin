@@ -24,7 +24,7 @@ description = "rsocket-kotlin ktor WebSocket server transport implementation"
 
 kotlin {
     jvmTarget()
-    nixTargets()
+    nativeTargets()
 
     sourceSets {
         commonMain.dependencies {

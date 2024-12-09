@@ -25,7 +25,7 @@ import kotlin.test.*
 class TcpServerTest : SuspendTest {
     private val testJob = Job()
     private val testContext = testJob + TestExceptionHandler
-    private val serverTransport = KtorTcpServerTransport(testContext).target()
+    private val serverTransport = KtorTcpServerTransport(testContext).target("127.0.0.1")
     private fun KtorTcpServerInstance.clientTransport() =
         KtorTcpClientTransport(testContext).target(localAddress)
 
