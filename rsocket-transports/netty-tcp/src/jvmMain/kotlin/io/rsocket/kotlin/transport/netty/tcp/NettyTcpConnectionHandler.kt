@@ -27,6 +27,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.io.*
+import kotlin.coroutines.*
 import io.netty.channel.socket.DuplexChannel as NettyDuplexChannel
 
 @RSocketTransportApi
@@ -119,15 +120,59 @@ private class NettyTcpConnectionInboundHandler(
 
 @RSocketTransportApi
 private class NettyTcpConnection(
-    private val outboundQueue: PrioritizationFrameQueue,
-    private val inbound: ReceiveChannel<Buffer>,
-) : RSocketSequentialConnection {
+    private val channel: DuplexChannel,
+) : SequentialRSocketConnection {
+    private val outboundQueue = PrioritizationFrameQueue()
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
+    override val coroutineContext: CoroutineContext
+        get() = TODO("Not yet implemented")
+
+    override suspend fun sendConnectionFrame(frame: Buffer) {
+        return outboundQueue.enqueuePriorityFrame(frame)
+    }
+
+    override suspend fun sendStreamFrame(frame: Buffer) {
+        return outboundQueue.enqueueNormalFrame(frame)
+    }
+
+    override fun startReceiving(inbound: SequentialRSocketConnection.Inbound) {
+        TODO("Not yet implemented")
+    }
+
+    override fun close(cause: Throwable?) {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         return outboundQueue.enqueueFrame(streamId, frame)
     }
 
     override suspend fun receiveFrame(): Buffer? {
         return inbound.receiveCatching().getOrNull()
+    }
+}
+
+// TODO: implement support for isAutoRead=false to support `inbound` backpressure
+private class NettyTcpConnectionInboundHandler(
+    private val inbound: SendChannel<Buffer>,
+) : ChannelInboundHandlerAdapter() {
+    override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
+        msg as ByteBuf
+        try {
+            val frame = msg.toBuffer()
+            if (inbound.trySend(frame).isFailure) {
+                frame.clear()
+                error("inbound is closed")
+            }
+        } finally {
+            msg.release()
+        }
+    }
+
+    override fun userEventTriggered(ctx: ChannelHandlerContext?, evt: Any?) {
+        if (evt is ChannelInputShutdownEvent) {
+            inbound.close()
+        }
+        super.userEventTriggered(ctx, evt)
     }
 }

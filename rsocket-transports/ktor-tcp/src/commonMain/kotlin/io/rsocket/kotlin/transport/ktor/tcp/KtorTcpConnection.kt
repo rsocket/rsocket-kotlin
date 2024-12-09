@@ -26,6 +26,10 @@ import kotlinx.coroutines.channels.*
 import kotlinx.io.*
 import kotlin.coroutines.*
 
+public class KtorTcpConnectionContext internal constructor(
+    public val localAddress: SocketAddress,
+    public val remoteAddress: SocketAddress,
+)
 
 @RSocketTransportApi
 internal suspend fun RSocketConnectionInbound.handleKtorTcpConnection(socket: Socket): Unit = coroutineScope {
@@ -79,37 +83,72 @@ internal suspend fun RSocketConnectionInbound.handleKtorTcpConnection(socket: So
 }
 
 @RSocketTransportApi
-internal class KtorTcpConnectionOutbound(
+internal class KtorTcpConnection(
     parentContext: CoroutineContext,
-    private val connection: Connection,
-) : SequentialRSocketConnectionOutbound {
+    private val socket: Socket,
+) : SequentialRSocketConnection {
     private val connectionJob = Job(parentContext[Job])
     override val coroutineContext: CoroutineContext = parentContext + connectionJob
 
-    override suspend fun sendFrame(frame: Buffer) {
-        return connection.output.writeFrame(frame)
+    private val outboundQueue = PrioritizationFrameQueue()
+    private var readerJob: Job? = null
+
+    override val isClosedForSend: Boolean
+        get() = outboundQueue.isClosedForSend
+
+    init {
+        launch(Dispatchers.Unconfined) {
+            val output = socket.openWriteChannel()
+            try {
+                while (true) {
+                    // we write all available frames here, and only after it flush
+                    // in this case, if there are several buffered frames we can send them in one go
+                    // avoiding unnecessary flushes
+                    output.writeFrame(outboundQueue.dequeueFrame() ?: break)
+                    while (true) output.writeFrame(outboundQueue.tryDequeueFrame() ?: break)
+                    output.flush()
+                }
+                output.flushAndClose()
+            } catch (cause: Throwable) {
+                output.cancel(cause)
+                throw cause
+            }
+        }
+    }
+
+    override suspend fun sendConnectionFrame(frame: Buffer) {
+        return outboundQueue.enqueuePriorityFrame(frame)
+    }
+
+    override suspend fun sendStreamFrame(frame: Buffer) {
+        return outboundQueue.enqueueNormalFrame(frame)
     }
 
     override fun close(cause: Throwable?) {
-        connectionJob.cancel("Connection closed", cause)
+        outboundQueue.close()
+        readerJob?.cancel("Connection closed", cause)
+        // connectionJob.cancel("Connection closed", cause)
     }
 
-    override fun startReceiving(inbound: SequentialRSocketConnectionInbound) {
-        launch {
+    override fun startReceiving(inbound: SequentialRSocketConnection.Inbound) {
+        readerJob = launch(Dispatchers.Unconfined) {
+            val input = socket.openReadChannel()
             try {
-                while (true) inbound.onFrame(connection.input.readFrame() ?: break)
+                while (true) inbound.onFrame(input.readFrame() ?: break)
+                input.cancel(null)
                 inbound.onClose(null)
             } catch (cause: Throwable) {
+                input.cancel(cause)
                 inbound.onClose(cause)
+                throw cause
             }
         }
     }
 
     @OptIn(InternalAPI::class)
-    private suspend fun ByteWriteChannel.writeFrame(frame: Buffer) {
+    private fun ByteWriteChannel.writeFrame(frame: Buffer) {
         writeBuffer.writeInt24(frame.size.toInt())
         writeBuffer.transferFrom(frame)
-        flush()
     }
 
     @OptIn(InternalAPI::class)

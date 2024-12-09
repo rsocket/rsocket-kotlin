@@ -48,7 +48,7 @@ internal suspend fun RSocketConnectionInbound.handleConnection(connection: Conne
 private class OldConnection(
     private val outboundQueue: PrioritizationFrameQueue,
     private val connection: Connection,
-) : RSocketSequentialConnection {
+) : SequentialRSocketConnection {
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
 
     override suspend fun sendFrame(streamId: Int, frame: Buffer) {

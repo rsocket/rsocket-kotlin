@@ -16,19 +16,21 @@
 
 package io.rsocket.kotlin.transport.local
 
+import io.rsocket.kotlin.transport.*
 import kotlinx.atomicfu.locks.*
 import kotlinx.coroutines.*
 
+@RSocketTransportApi
 internal object LocalServerRegistry {
     private val lock = SynchronizedObject()
     private val instances = mutableMapOf<String, LocalServerInstanceImpl>()
 
-    fun register(name: String, target: LocalServerInstanceImpl) {
+    fun register(name: String, instance: LocalServerInstanceImpl) {
         synchronized(lock) {
             check(name !in instances) { "Already registered: $name" }
-            instances[name] = target
+            instances[name] = instance
         }
-        target.coroutineContext.job.invokeOnCompletion {
+        instance.coroutineContext.job.invokeOnCompletion {
             synchronized(lock) { instances.remove(name) }
         }
     }

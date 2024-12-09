@@ -20,39 +20,60 @@ import kotlinx.coroutines.*
 import kotlinx.io.*
 
 @RSocketTransportApi
-public interface RSocketConnectionOutbound : CoroutineScope {
-    // streamId = 0
-    public suspend fun sendFrame(frame: Buffer)
-
-    // streamId = X
-    public suspend fun createStream(): RSocketStreamOutbound
-    public fun close(cause: Throwable?)
-
-    public fun startReceiving(inbound: RSocketConnectionInbound)
-}
+public sealed interface RSocketConnection<Context> : CoroutineScope
 
 @RSocketTransportApi
-public interface RSocketConnectionInbound {
-    // streamId = 0
-    public fun onFrame(frame: Buffer)
-
-    // streamId = X
-    public fun onStream(frame: Buffer, stream: RSocketStreamOutbound)
-    public fun onClose(cause: Throwable?)
-}
-
-@RSocketTransportApi
-public interface RSocketStreamOutbound {
-    public val streamId: Int
+public interface SequentialRSocketConnection<Context> : RSocketConnection<Context> {
     public val isClosedForSend: Boolean
-    public suspend fun sendFrame(frame: Buffer)
-    public fun close(cause: Throwable?)
 
-    public fun startReceiving(inbound: RSocketStreamInbound)
+    // streamId = 0, prioritized
+    public suspend fun sendConnectionFrame(frame: Buffer)
+
+    // streamId = X
+    public suspend fun sendStreamFrame(frame: Buffer)
+
+    public fun startReceiving(inbound: Inbound)
+
+    @RSocketTransportApi
+    public interface Inbound {
+        public fun onFrame(frame: Buffer)
+    }
 }
 
 @RSocketTransportApi
-public interface RSocketStreamInbound {
-    public fun onFrame(frame: Buffer)
-    public fun onClose(cause: Throwable?)
+public interface MultiplexedRSocketConnection<Context> : RSocketConnection<Context> {
+    // streamId = 0, initial stream
+    public suspend fun sendConnectionFrame(frame: Buffer)
+
+    // streamId = X
+    public suspend fun createStream(): Stream
+
+    public fun startReceiving(inbound: Inbound)
+
+    @RSocketTransportApi
+    public interface Inbound {
+        // streamId = 0, initial stream
+        public fun onConnectionFrame(frame: Buffer)
+
+        // streamId = X
+        public fun onStream(frame: Buffer, stream: Stream)
+    }
+
+    // closing stream will send buffered frames (if needed)
+    // sending/receiving frames will be not possible after it
+    @RSocketTransportApi
+    public interface Stream : AutoCloseable {
+        public val isClosedForSend: Boolean
+
+        // throws if frame not sent
+        public suspend fun sendFrame(frame: Buffer)
+
+        public fun startReceiving(inbound: Inbound)
+
+        @RSocketTransportApi
+        public interface Inbound {
+            public fun onFrame(frame: Buffer)
+            public fun onClose()
+        }
+    }
 }

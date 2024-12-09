@@ -23,6 +23,7 @@ import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.io.*
+import kotlin.coroutines.*
 
 @RSocketTransportApi
 public suspend fun RSocketConnectionInbound.handleKtorWebSocketConnection(webSocketSession: WebSocketSession): Unit = coroutineScope {
@@ -47,17 +48,49 @@ public suspend fun RSocketConnectionInbound.handleKtorWebSocketConnection(webSoc
 
 @RSocketTransportApi
 private class KtorWebSocketConnection(
-    private val outboundQueue: PrioritizationFrameQueue,
+    private val webSocketSession: WebSocketSession,
     private val inbound: ReceiveChannel<Frame>,
-) : RSocketSequentialConnection {
+) : SequentialRSocketConnection {
+    private val outboundQueue = PrioritizationFrameQueue()
+
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
 
-    override suspend fun sendFrame(streamId: Int, frame: Buffer) {
-        return outboundQueue.enqueueFrame(streamId, frame)
+    override val coroutineContext: CoroutineContext
+        get() = TODO("Not yet implemented")
+
+    init {
+        val senderJob = launch {
+            while (true) webSocketSession.send(outboundQueue.dequeueFrame()?.readByteArray() ?: break)
+        }.onCompletion { outboundQueue.cancel() }
     }
 
-    override suspend fun receiveFrame(): Buffer? {
-        val frame = inbound.receiveCatching().getOrNull() ?: return null
-        return Buffer().apply { write(frame.data) }
+    override suspend fun sendConnectionFrame(frame: Buffer) {
+        return outboundQueue.enqueuePriorityFrame(frame)
+    }
+
+    override suspend fun sendStreamFrame(frame: Buffer) {
+        return outboundQueue.enqueueNormalFrame(frame)
+    }
+
+    override fun startReceiving(inbound: SequentialRSocketConnection.Inbound) {
+        launch(Dispatchers.Unconfined) {
+            try {
+                while (true) {
+                    // TODO: recheck
+                    val frame = webSocketSession.incoming.receiveCatching().getOrNull() ?: break
+                    inbound.onFrame(Buffer().apply { write(frame.data) })
+                }
+                webSocketSession.incoming.cancel()
+                inbound.onClose(null)
+            } catch (cause: Throwable) {
+                webSocketSession.incoming.cancel(CancellationException("", cause))
+                inbound.onClose(cause)
+                throw cause
+            }
+        }
+    }
+
+    override fun close(cause: Throwable?) {
+        TODO("Not yet implemented")
     }
 }

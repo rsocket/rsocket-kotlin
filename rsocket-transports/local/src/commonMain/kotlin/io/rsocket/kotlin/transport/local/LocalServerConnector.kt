@@ -26,27 +26,27 @@ import kotlin.coroutines.*
 internal sealed class LocalServerConnector {
     @RSocketTransportApi
     abstract suspend fun connect(
-        serverInbound: RSocketServerInstanceInbound,
+        serverInbound: RSocketServerInstance.Inbound<LocalConnectionContext>,
         clientScope: CoroutineScope,
         serverScope: CoroutineScope,
-    ): RSocketConnectionOutbound
+    ): RSocketConnection<LocalConnectionContext>
 
     object Sequential : LocalServerConnector() {
         @RSocketTransportApi
         override suspend fun connect(
-            serverInbound: RSocketServerInstanceInbound,
+            serverInbound: RSocketServerInstance.Inbound<LocalConnectionContext>,
             clientScope: CoroutineScope,
             serverScope: CoroutineScope,
-        ): RSocketConnectionOutbound = Multiplexed.connect(serverInbound, clientScope, serverScope)
+        ): RSocketConnection<LocalConnectionContext> = Multiplexed.connect(serverInbound, clientScope, serverScope)
     }
 
     object Multiplexed : LocalServerConnector() {
         @RSocketTransportApi
         override suspend fun connect(
-            serverInbound: RSocketServerInstanceInbound,
+            serverInbound: RSocketServerInstance.Inbound<LocalConnectionContext>,
             clientScope: CoroutineScope,
             serverScope: CoroutineScope,
-        ): RSocketConnectionOutbound {
+        ): RSocketConnection<LocalConnectionContext> {
             val zeroStream = Stream()
             val streams = Streams()
 
@@ -76,7 +76,7 @@ internal sealed class LocalServerConnector {
             private val outgoingFrames: SendChannel<Buffer>,
             private val incomingStreams: ReceiveChannel<Stream>,
             private val outgoingStreams: SendChannel<Stream>,
-        ) : RSocketConnectionOutbound {
+        ) : MultiplexedRSocketConnection<LocalConnectionContext> {
             private val connectionJob = Job(parentContext[Job])
             override val coroutineContext: CoroutineContext = parentContext + connectionJob
             private val streamsContext = parentContext.supervisorContext()

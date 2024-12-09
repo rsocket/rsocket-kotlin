@@ -26,9 +26,9 @@ import kotlinx.io.*
 private val selectFrame: suspend (ChannelResult<Buffer>) -> ChannelResult<Buffer> = { it }
 
 @RSocketTransportApi
-public class PrioritizationFrameQueue(buffersCapacity: Int) {
-    private val priorityFrames = bufferChannel(buffersCapacity)
-    private val normalFrames = bufferChannel(buffersCapacity)
+public class PrioritizationFrameQueue {
+    private val priorityFrames = bufferChannel(Channel.BUFFERED)
+    private val normalFrames = bufferChannel(Channel.BUFFERED)
 
     private val priorityOnReceive = priorityFrames.onReceiveCatching
     private val normalOnReceive = normalFrames.onReceiveCatching
@@ -37,12 +37,8 @@ public class PrioritizationFrameQueue(buffersCapacity: Int) {
     @OptIn(DelicateCoroutinesApi::class)
     public val isClosedForSend: Boolean get() = priorityFrames.isClosedForSend
 
-    private fun channel(streamId: Int): SendChannel<Buffer> = when (streamId) {
-        0    -> priorityFrames
-        else -> normalFrames
-    }
-
-    public suspend fun enqueueFrame(streamId: Int, frame: Buffer): Unit = channel(streamId).send(frame)
+    public suspend fun enqueuePriorityFrame(frame: Buffer): Unit = priorityFrames.send(frame)
+    public suspend fun enqueueNormalFrame(frame: Buffer): Unit = normalFrames.send(frame)
 
     public fun tryDequeueFrame(): Buffer? {
         // priority is first

@@ -48,7 +48,7 @@ internal abstract class ConnectionEstablishmentHandler(
             MultiplexedConnection(isClient, frameCodec, requestContext, connection, initialStream)
         }
 
-        is RSocketSequentialConnection  -> {
+        is SequentialRSocketConnection -> {
             SequentialConnection(isClient, frameCodec, requestContext, connection)
         }
     }

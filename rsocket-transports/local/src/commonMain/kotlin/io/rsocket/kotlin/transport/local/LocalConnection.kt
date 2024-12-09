@@ -21,6 +21,10 @@ import kotlinx.coroutines.channels.*
 import kotlinx.io.*
 import kotlin.coroutines.*
 
+public class LocalConnectionContext internal constructor(
+    public val serverName: String,
+)
+
 @Suppress("DEPRECATION_ERROR")
 internal class LocalConnection(
     private val sender: SendChannel<Buffer>,

@@ -63,7 +63,7 @@ internal suspend fun RSocketConnectionInbound.handleNodejsTcpConnection(socket: 
 private class NodejsTcpConnection(
     private val outboundQueue: PrioritizationFrameQueue,
     private val inbound: ReceiveChannel<Buffer>,
-) : RSocketSequentialConnection {
+) : SequentialRSocketConnection {
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
     override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         return outboundQueue.enqueueFrame(streamId, frame)

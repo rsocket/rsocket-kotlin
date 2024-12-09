@@ -21,24 +21,17 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
-internal class LocalServerInstanceImpl @RSocketTransportApi constructor(
-    override val serverName: String,
+@RSocketTransportApi
+internal class LocalServerInstanceImpl(
     override val coroutineContext: CoroutineContext,
-    private val serverInbound: RSocketServerInstanceInbound,
+    override val configuration: LocalServerConfiguration,
     private val connector: LocalServerConnector,
-) : LocalServerInstance {
+    private val serverInbound: RSocketServerInstance.Inbound<LocalConnectionContext>,
+) : RSocketServerInstance<LocalServerConfiguration> {
     private val serverScope = CoroutineScope(coroutineContext.supervisorContext())
 
-    init {
-        LocalServerRegistry.register(serverName, this)
-    }
-
-    override fun close(cause: Throwable?) {
-        coroutineContext.job.cancel("Server closed", cause)
-    }
-
     @RSocketTransportApi
-    suspend fun connect(clientScope: CoroutineScope): RSocketConnectionOutbound {
+    suspend fun connect(clientScope: CoroutineScope): RSocketConnection<LocalConnectionContext> {
         coroutineContext.ensureActive()
 
         return connector.connect(
