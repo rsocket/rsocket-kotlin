@@ -92,9 +92,10 @@ private class KtorTcpConnection(
 }
 
 @OptIn(InternalAPI::class)
-private fun ByteWriteChannel.writeFrame(frame: Buffer) {
+private suspend fun ByteWriteChannel.writeFrame(frame: Buffer) {
     writeBuffer.writeInt24(frame.size.toInt())
     writeBuffer.transferFrom(frame)
+    flushIfNeeded()
 }
 
 @OptIn(InternalAPI::class)
