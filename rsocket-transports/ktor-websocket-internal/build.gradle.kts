@@ -25,6 +25,7 @@ description = "rsocket-kotlin ktor WebSocket transport utilities"
 kotlin {
     jvmTarget()
     jsTarget()
+    wasmJsTarget()
     nativeTargets()
 
     sourceSets {
