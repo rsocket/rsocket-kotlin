@@ -73,7 +73,7 @@ internal class NettyQuicConnectionHandler(
 
 // TODO: implement support for isAutoRead=false to support `inbound` backpressure
 @RSocketTransportApi
-private class NettyQuicConnectionInboundHandler(
+private class NettyQuicConnectionInboundHandler2(
     private val inbound: SendChannel<RSocketMultiplexedConnection.Stream>,
     private val streamsContext: CoroutineContext,
     private val isClient: Boolean,
@@ -97,7 +97,7 @@ private class NettyQuicConnectionInboundHandler(
 }
 
 @RSocketTransportApi
-private class NettyQuicConnection(
+private class NettyQuicConnection2(
     private val channel: QuicChannel,
     private val inbound: ReceiveChannel<RSocketMultiplexedConnection.Stream>,
     private val streamsContext: CoroutineContext,

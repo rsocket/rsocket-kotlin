@@ -31,10 +31,12 @@ import java.net.*
 import kotlin.coroutines.*
 import kotlin.reflect.*
 
+public typealias NettyQuicClientTarget = RSocketClientTarget<NettyQuicConnectionContext>
+
 @OptIn(RSocketTransportApi::class)
 public sealed interface NettyQuicClientTransport : RSocketTransport {
-    public fun target(remoteAddress: InetSocketAddress): RSocketClientTarget
-    public fun target(host: String, port: Int): RSocketClientTarget
+    public fun target(remoteAddress: InetSocketAddress): NettyQuicClientTarget
+    public fun target(host: String, port: Int): NettyQuicClientTarget
 
     public companion object Factory :
         RSocketTransportFactory<NettyQuicClientTransport, NettyQuicClientTransportBuilder>(::NettyQuicClientTransportBuilderImpl)
@@ -132,14 +134,14 @@ private class NettyQuicClientTransportImpl(
         }
     }
 
-    override fun target(remoteAddress: InetSocketAddress): NettyQuicClientTargetImpl = NettyQuicClientTargetImpl(
+    override fun target(remoteAddress: InetSocketAddress): NettyQuicClientTarget = NettyQuicClientTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         bootstrap = bootstrap,
         quicBootstrap = quicBootstrap,
         remoteAddress = remoteAddress
     )
 
-    override fun target(host: String, port: Int): RSocketClientTarget = target(InetSocketAddress(host, port))
+    override fun target(host: String, port: Int): NettyQuicClientTarget = target(InetSocketAddress(host, port))
 }
 
 @OptIn(RSocketTransportApi::class)
@@ -148,12 +150,18 @@ private class NettyQuicClientTargetImpl(
     private val bootstrap: Bootstrap,
     private val quicBootstrap: (QuicChannelBootstrap.() -> Unit)?,
     private val remoteAddress: SocketAddress,
-) : RSocketClientTarget {
+) : NettyQuicClientTarget {
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionInbound): Job = launch {
-        QuicChannel.newBootstrap(bootstrap.bind().awaitChannel()).also { quicBootstrap?.invoke(it) }
-            .handler(
-                NettyQuicConnectionInitializer(handler, coroutineContext, isClient = true)
-            ).remoteAddress(remoteAddress).connect().awaitFuture()
+    override suspend fun connectClient(): RSocketConnection<NettyQuicConnectionContext> {
+        val channel =
+            QuicChannel.newBootstrap(bootstrap.bind().awaitChannel())
+                .also { quicBootstrap?.invoke(it) }
+                .streamHandler(NettyQuicStreamInitializer)
+                .handler(NettyQuicConnectionClientInitializer)
+                .remoteAddress(remoteAddress).connect().awaitFuture()
+
+        val stream = channel.createStream(QuicStreamType.BIDIRECTIONAL, null).awaitFuture()
+
+        return NettyQuicConnection(this, channel, stream)
     }
 }

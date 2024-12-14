@@ -17,7 +17,6 @@
 package io.rsocket.kotlin.transport.ktor.websocket.internal
 
 import io.ktor.websocket.*
-import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
@@ -26,42 +25,45 @@ import kotlinx.io.*
 import kotlin.coroutines.*
 
 @RSocketTransportApi
-public suspend fun RSocketConnectionInbound.handleKtorWebSocketConnection(webSocketSession: WebSocketSession): Unit = coroutineScope {
-    val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
+public class KtorWebSocketConnection<T>(
+    parentScope: CoroutineScope,
+    private val webSocketSession: WebSocketSession,
+    override val connectionContext: T,
+) : SequentialRSocketConnection<T> {
+    private val outboundQueue = PrioritizationFrameQueue()
+    private var inboundJob: Job? = null
+    private var outboundJob: Job? = null
 
-    val senderJob = launch {
-        while (true) webSocketSession.send(outboundQueue.dequeueFrame()?.readByteArray() ?: break)
-    }.onCompletion { outboundQueue.cancel() }
-
-    try {
-        handleConnection(KtorWebSocketConnection(outboundQueue, webSocketSession.incoming))
-    } finally {
-        webSocketSession.incoming.cancel()
-        outboundQueue.close()
-        withContext(NonCancellable) {
-            senderJob.join() // await all frames sent
-            webSocketSession.close()
-            webSocketSession.coroutineContext.job.join()
+    override val coroutineContext: CoroutineContext = parentScope.coroutineContext + parentScope.launch(Dispatchers.Unconfined) {
+        try {
+            awaitCancellation()
+        } finally {
+            withContext(NonCancellable) {
+                // await inbound completion
+                inboundJob?.cancel()
+                outboundQueue.close() // will cause `writerJob` completion
+                // await completion of read/write jobs
+                inboundJob?.join()
+                outboundJob?.join()
+                // await socket completion
+                webSocketSession.close()
+                webSocketSession.coroutineContext.job.join()
+            }
         }
     }
-}
-
-@RSocketTransportApi
-private class KtorWebSocketConnection(
-    private val webSocketSession: WebSocketSession,
-    private val inbound: ReceiveChannel<Frame>,
-) : SequentialRSocketConnection {
-    private val outboundQueue = PrioritizationFrameQueue()
 
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
 
-    override val coroutineContext: CoroutineContext
-        get() = TODO("Not yet implemented")
-
     init {
-        val senderJob = launch {
-            while (true) webSocketSession.send(outboundQueue.dequeueFrame()?.readByteArray() ?: break)
-        }.onCompletion { outboundQueue.cancel() }
+        outboundJob = webSocketSession.launch(Dispatchers.Unconfined) {
+            try {
+                while (true) {
+                    webSocketSession.send(outboundQueue.dequeueFrame()?.readByteArray() ?: break)
+                }
+            } finally {
+                outboundQueue.cancel()
+            }
+        }
     }
 
     override suspend fun sendConnectionFrame(frame: Buffer) {
@@ -73,24 +75,10 @@ private class KtorWebSocketConnection(
     }
 
     override fun startReceiving(inbound: SequentialRSocketConnection.Inbound) {
-        launch(Dispatchers.Unconfined) {
-            try {
-                while (true) {
-                    // TODO: recheck
-                    val frame = webSocketSession.incoming.receiveCatching().getOrNull() ?: break
-                    inbound.onFrame(Buffer().apply { write(frame.data) })
-                }
-                webSocketSession.incoming.cancel()
-                inbound.onClose(null)
-            } catch (cause: Throwable) {
-                webSocketSession.incoming.cancel(CancellationException("", cause))
-                inbound.onClose(cause)
-                throw cause
+        inboundJob = webSocketSession.launch(Dispatchers.Unconfined) {
+            webSocketSession.incoming.consumeEach { frame ->
+                inbound.onFrame(Buffer().apply { write(frame.data) })
             }
         }
-    }
-
-    override fun close(cause: Throwable?) {
-        TODO("Not yet implemented")
     }
 }

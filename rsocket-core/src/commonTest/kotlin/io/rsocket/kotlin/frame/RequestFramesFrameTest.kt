@@ -22,7 +22,7 @@ import io.rsocket.kotlin.test.*
 import kotlinx.io.*
 import kotlin.test.*
 
-class RequestStreamFrameTest {
+class RequestFramesFrameTest {
 
     @Test
     fun testEncoding() {

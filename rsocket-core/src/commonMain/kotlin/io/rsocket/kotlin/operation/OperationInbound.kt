@@ -19,8 +19,6 @@ package io.rsocket.kotlin.operation
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.payload.*
-import io.rsocket.kotlin.transport.*
-import kotlinx.io.*
 
 internal interface OperationInbound {
     fun shouldReceiveFrame(frameType: FrameType): Boolean
@@ -36,20 +34,20 @@ internal interface OperationInbound {
 }
 
 // TODO: merge into OperationInbound?
-@OptIn(RSocketTransportApi::class)
 internal class OperationFrameHandler(
-    private val streamId: Int,
     private val inbound: OperationInbound,
-    private val frameCodec: FrameCodec,
-    initialFrame: Frame?,
-) : RSocketStreamInbound {
+) {
     private val assembler = PayloadAssembler()
 
-    init {
-        initialFrame?.let(::handleFrame)
+    fun close() {
+        assembler.close()
     }
 
-    private fun handleFrame(frame: Frame) {
+    fun handleDone() {
+        inbound.receiveDone()
+    }
+
+    fun handleFrame(frame: Frame) {
         if (!inbound.shouldReceiveFrame(frame.type)) {
             // TODO: replace with logging
             println("unexpected frame: $frame")
@@ -62,7 +60,7 @@ internal class OperationFrameHandler(
             is RequestNFrame -> inbound.receiveRequestNFrame(frame.requestN)
             is RequestFrame  -> {
                 // TODO: split frames
-                // if (frame.initialRequest != 0) inbound.receiveRequestNFrame(frame.initialRequest)
+                if (frame.initialRequest != 0) inbound.receiveRequestNFrame(frame.initialRequest)
 
                 val payload = when {
                     // complete+follows=complete
@@ -101,15 +99,5 @@ internal class OperationFrameHandler(
 
             else             -> error("should not happen")
         }
-    }
-
-    override fun onFrame(frame: Buffer) {
-        handleFrame(frameCodec.decodeFrame(streamId, frame))
-    }
-
-    // TODO: cause?
-    override fun onClose(cause: Throwable?) {
-        inbound.receiveDone()
-        assembler.close()
     }
 }

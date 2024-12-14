@@ -32,15 +32,16 @@ import javax.net.ssl.*
 import kotlin.coroutines.*
 import kotlin.reflect.*
 
-@OptIn(RSocketTransportApi::class)
-public sealed interface NettyQuicServerInstance : RSocketServerInstance {
-    public val localAddress: InetSocketAddress
-}
+public class NettyQuicServerConfiguration internal constructor(
+    public val localAddress: InetSocketAddress,
+)
+
+public typealias NettyQuicServerTarget = RSocketServerTarget<NettyQuicConnectionContext, NettyQuicServerConfiguration>
 
 @OptIn(RSocketTransportApi::class)
 public sealed interface NettyQuicServerTransport : RSocketTransport {
-    public fun target(localAddress: InetSocketAddress? = null): RSocketServerTarget<NettyQuicServerInstance>
-    public fun target(host: String = "127.0.0.1", port: Int = 0): RSocketServerTarget<NettyQuicServerInstance>
+    public fun target(localAddress: InetSocketAddress? = null): NettyQuicServerTarget
+    public fun target(host: String = "127.0.0.1", port: Int = 0): NettyQuicServerTarget
 
     public companion object Factory :
         RSocketTransportFactory<NettyQuicServerTransport, NettyQuicServerTransportBuilder>(::NettyQuicServerTransportBuilderImpl)
@@ -103,6 +104,7 @@ private class NettyQuicServerTransportBuilderImpl : NettyQuicServerTransportBuil
                 val keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
                 sslContext(QuicSslContextBuilder.forServer(keyManagerFactory, null).apply(it).build())
             }
+            streamHandler(NettyQuicStreamInitializer)
         }
 
         val bootstrap = Bootstrap().apply {
@@ -132,15 +134,14 @@ private class NettyQuicServerTransportImpl(
         }
     }
 
-    override fun target(localAddress: InetSocketAddress?): NettyQuicServerTargetImpl = NettyQuicServerTargetImpl(
+    override fun target(localAddress: InetSocketAddress?): NettyQuicServerTarget = NettyQuicServerTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         bootstrap = bootstrap,
         codecBuilder = codecBuilder,
         localAddress = localAddress ?: InetSocketAddress(0)
     )
 
-    override fun target(host: String, port: Int): RSocketServerTarget<NettyQuicServerInstance> =
-        target(InetSocketAddress(host, port))
+    override fun target(host: String, port: Int): NettyQuicServerTarget = target(InetSocketAddress(host, port))
 }
 
 @OptIn(RSocketTransportApi::class)
@@ -149,9 +150,9 @@ private class NettyQuicServerTargetImpl(
     private val bootstrap: Bootstrap,
     private val codecBuilder: QuicServerCodecBuilder,
     private val localAddress: SocketAddress,
-) : RSocketServerTarget<NettyQuicServerInstance> {
+) : NettyQuicServerTarget {
     @RSocketTransportApi
-    override suspend fun startServer(handler: RSocketConnectionInbound): NettyQuicServerInstance {
+    override suspend fun startServer(inbound: RSocketServerInstance.Inbound<NettyQuicConnectionContext>): RSocketServerInstance<NettyQuicServerConfiguration> {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
@@ -159,9 +160,9 @@ private class NettyQuicServerTargetImpl(
         val channel = try {
             bootstrap.clone().handler(
                 codecBuilder.clone().handler(
-                    NettyQuicConnectionInitializer(handler, instanceContext.supervisorContext(), isClient = false)
+                    NettyQuicConnectionServerInitializer(CoroutineScope(instanceContext.supervisorContext()), inbound)
                 ).build()
-            ).bind(localAddress).awaitChannel()
+            ).bind(localAddress).awaitChannel<DatagramChannel>()
         } catch (cause: Throwable) {
             instanceContext.job.cancel("Failed to bind", cause)
             throw cause
@@ -169,12 +170,13 @@ private class NettyQuicServerTargetImpl(
 
         return NettyQuicServerInstanceImpl(
             coroutineContext = instanceContext,
-            localAddress = (channel as DatagramChannel).localAddress() as InetSocketAddress
+            configuration = NettyQuicServerConfiguration(channel.localAddress() as InetSocketAddress)
         )
     }
 }
 
+@RSocketTransportApi
 private class NettyQuicServerInstanceImpl(
     override val coroutineContext: CoroutineContext,
-    override val localAddress: InetSocketAddress,
-) : NettyQuicServerInstance
+    override val configuration: NettyQuicServerConfiguration,
+) : RSocketServerInstance<NettyQuicServerConfiguration>

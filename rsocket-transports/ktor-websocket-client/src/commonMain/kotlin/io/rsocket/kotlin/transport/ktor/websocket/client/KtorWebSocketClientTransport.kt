@@ -27,10 +27,16 @@ import io.rsocket.kotlin.transport.ktor.websocket.internal.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
+public class KtorWebSocketClientConnectionContext internal constructor(
+
+)
+
+public typealias KtorWebSocketClientTarget = RSocketClientTarget<KtorWebSocketClientConnectionContext>
+
 @OptIn(RSocketTransportApi::class)
 public sealed interface KtorWebSocketClientTransport : RSocketTransport {
-    public fun target(request: HttpRequestBuilder.() -> Unit): RSocketClientTarget
-    public fun target(urlString: String, request: HttpRequestBuilder.() -> Unit = {}): RSocketClientTarget
+    public fun target(request: HttpRequestBuilder.() -> Unit): KtorWebSocketClientTarget
+    public fun target(urlString: String, request: HttpRequestBuilder.() -> Unit = {}): KtorWebSocketClientTarget
 
     public fun target(
         method: HttpMethod = HttpMethod.Get,
@@ -38,7 +44,7 @@ public sealed interface KtorWebSocketClientTransport : RSocketTransport {
         port: Int? = null,
         path: String? = null,
         request: HttpRequestBuilder.() -> Unit = {},
-    ): RSocketClientTarget
+    ): KtorWebSocketClientTarget
 
     public companion object Factory :
         RSocketTransportFactory<KtorWebSocketClientTransport, KtorWebSocketClientTransportBuilder>(::KtorWebSocketClientTransportBuilderImpl)
@@ -97,7 +103,7 @@ private class KtorWebSocketClientTransportImpl(
     override val coroutineContext: CoroutineContext,
     private val httpClient: HttpClient,
 ) : KtorWebSocketClientTransport {
-    override fun target(request: HttpRequestBuilder.() -> Unit): RSocketClientTarget = KtorWebSocketClientTargetImpl(
+    override fun target(request: HttpRequestBuilder.() -> Unit): KtorWebSocketClientTarget = KtorWebSocketClientTargetImpl(
         coroutineContext = coroutineContext,
         httpClient = httpClient,
         request = request
@@ -106,7 +112,7 @@ private class KtorWebSocketClientTransportImpl(
     override fun target(
         urlString: String,
         request: HttpRequestBuilder.() -> Unit,
-    ): RSocketClientTarget = target(
+    ): KtorWebSocketClientTarget = target(
         method = HttpMethod.Get, host = null, port = null, path = null,
         request = {
             url.protocol = URLProtocol.WS
@@ -123,7 +129,7 @@ private class KtorWebSocketClientTransportImpl(
         port: Int?,
         path: String?,
         request: HttpRequestBuilder.() -> Unit,
-    ): RSocketClientTarget = target {
+    ): KtorWebSocketClientTarget = target {
         this.method = method
         url("ws", host, port, path)
         request()
@@ -135,13 +141,11 @@ private class KtorWebSocketClientTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val httpClient: HttpClient,
     private val request: HttpRequestBuilder.() -> Unit,
-) : RSocketClientTarget {
-
+) : KtorWebSocketClientTarget {
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionInbound): Job = launch {
-        httpClient.webSocket(request) {
-            handler.handleKtorWebSocketConnection(this)
-        }
+    override suspend fun connectClient(): RSocketConnection<KtorWebSocketClientConnectionContext> {
+        val session = httpClient.webSocketSession(request)
+        return KtorWebSocketConnection(this, session, KtorWebSocketClientConnectionContext())
     }
 }
 

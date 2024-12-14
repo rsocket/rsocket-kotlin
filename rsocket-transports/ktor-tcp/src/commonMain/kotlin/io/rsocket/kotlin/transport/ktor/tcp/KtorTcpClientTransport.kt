@@ -106,8 +106,8 @@ private class KtorTcpClientTargetImpl(
     @RSocketTransportApi
     override suspend fun connectClient(): RSocketConnection<KtorTcpConnectionContext> {
         return KtorTcpConnection(
-            coroutineContext,
-            aSocket(selectorManager).tcp().connect(remoteAddress, socketOptions)
+            parentScope = this@KtorTcpClientTargetImpl,
+            socket = aSocket(selectorManager).tcp().connect(remoteAddress, socketOptions)
         )
     }
 }

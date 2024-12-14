@@ -19,7 +19,7 @@ package io.rsocket.kotlin.connection
 import io.rsocket.kotlin.internal.*
 import kotlin.test.*
 
-class StreamIdGeneratorTest {
+class FramesIdGeneratorTest {
     private val map = IntMap<String>()
 
     @Test

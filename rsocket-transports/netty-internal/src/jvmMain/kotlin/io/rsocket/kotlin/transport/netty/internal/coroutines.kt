@@ -34,9 +34,9 @@ public suspend inline fun <T> Future<T>.awaitFuture(): T = suspendCancellableCor
     }
 }
 
-public suspend fun ChannelFuture.awaitChannel(): Channel {
+public suspend inline fun <reified T : Channel> ChannelFuture.awaitChannel(): T {
     awaitFuture()
-    return channel()
+    return channel() as T
 }
 
 // it should be used only for cleanup and so should not really block, only suspend

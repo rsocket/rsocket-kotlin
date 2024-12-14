@@ -17,6 +17,7 @@
 package io.rsocket.kotlin.transport.netty.internal
 
 import io.netty.buffer.*
+import io.netty.channel.*
 import kotlinx.io.*
 import kotlinx.io.unsafe.*
 
@@ -31,6 +32,7 @@ public fun ByteBuf.toBuffer(): Buffer {
             toRead
         }
     }
+    release()
     return buffer
 }
 
@@ -45,3 +47,6 @@ public fun Buffer.toByteBuf(allocator: ByteBufAllocator): ByteBuf {
     }
     return nettyBuffer
 }
+
+public fun Channel.writeBuffer(buffer: Buffer): ChannelFuture = write(buffer.toByteBuf(alloc()))
+public fun Channel.writeAndFlushBuffer(buffer: Buffer): ChannelFuture = writeAndFlush(buffer.toByteBuf(alloc()))

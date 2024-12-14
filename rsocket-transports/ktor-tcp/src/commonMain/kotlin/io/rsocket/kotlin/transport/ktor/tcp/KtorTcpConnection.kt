@@ -22,7 +22,6 @@ import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlinx.io.*
 import kotlin.coroutines.*
 
@@ -32,72 +31,38 @@ public class KtorTcpConnectionContext internal constructor(
 )
 
 @RSocketTransportApi
-internal suspend fun RSocketConnectionInbound.handleKtorTcpConnection(socket: Socket): Unit = coroutineScope {
-    val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
-    val inbound = bufferChannel(Channel.BUFFERED)
+internal class KtorTcpConnection(
+    parentScope: CoroutineScope,
+    private val socket: Socket,
+) : SequentialRSocketConnection<KtorTcpConnectionContext> {
+    private val outboundQueue = PrioritizationFrameQueue()
+    private var inboundJob: Job? = null
+    private var outboundJob: Job? = null
 
-    val readerJob = launch {
-        val input = socket.openReadChannel()
+    override val connectionContext: KtorTcpConnectionContext = KtorTcpConnectionContext(socket.localAddress, socket.remoteAddress)
+    override val coroutineContext: CoroutineContext = parentScope.coroutineContext + parentScope.launch(Dispatchers.Unconfined) {
         try {
-            while (true) inbound.send(input.readFrame() ?: break)
-            input.cancel(null)
-        } catch (cause: Throwable) {
-            input.cancel(cause)
-            throw cause
-        }
-    }.onCompletion { inbound.cancel() }
-
-    val writerJob = launch {
-        val output = socket.openWriteChannel()
-        try {
-            while (true) {
-                // we write all available frames here, and only after it flush
-                // in this case, if there are several buffered frames we can send them in one go
-                // avoiding unnecessary flushes
-                output.writeFrame(outboundQueue.dequeueFrame() ?: break)
-                while (true) output.writeFrame(outboundQueue.tryDequeueFrame() ?: break)
-                output.flush()
+            // await connection completion
+            awaitCancellation()
+        } finally {
+            // even if it was cancelled, we still need to close socket and await it closure
+            withContext(NonCancellable) {
+                // await inbound completion
+                inboundJob?.cancel()
+                outboundQueue.close() // will cause `writerJob` completion
+                // await completion of read/write jobs
+                inboundJob?.join()
+                outboundJob?.join()
+                // await socket completion
+                socket.close()
+                socket.socketContext.join()
             }
-            output.close(null)
-        } catch (cause: Throwable) {
-            output.close(cause)
-            throw cause
-        }
-    }.onCompletion { outboundQueue.cancel() }
-
-    try {
-        handleConnection(KtorTcpConnection(outboundQueue, inbound))
-    } finally {
-        readerJob.cancel()
-        outboundQueue.close() // will cause `writerJob` completion
-        // even if it was cancelled, we still need to close socket and await it closure
-        withContext(NonCancellable) {
-            // await completion of read/write and then close socket
-            readerJob.join()
-            writerJob.join()
-            // close socket
-            socket.close()
-            socket.socketContext.join()
         }
     }
-}
-
-@RSocketTransportApi
-internal class KtorTcpConnection(
-    parentContext: CoroutineContext,
-    private val socket: Socket,
-) : SequentialRSocketConnection {
-    private val connectionJob = Job(parentContext[Job])
-    override val coroutineContext: CoroutineContext = parentContext + connectionJob
-
-    private val outboundQueue = PrioritizationFrameQueue()
-    private var readerJob: Job? = null
-
-    override val isClosedForSend: Boolean
-        get() = outboundQueue.isClosedForSend
+    override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
 
     init {
-        launch(Dispatchers.Unconfined) {
+        outboundJob = socket.launch(Dispatchers.Unconfined) {
             val output = socket.openWriteChannel()
             try {
                 while (true) {
@@ -112,6 +77,8 @@ internal class KtorTcpConnection(
             } catch (cause: Throwable) {
                 output.cancel(cause)
                 throw cause
+            } finally {
+                outboundQueue.cancel() // cleanup frames
             }
         }
     }
@@ -124,22 +91,14 @@ internal class KtorTcpConnection(
         return outboundQueue.enqueueNormalFrame(frame)
     }
 
-    override fun close(cause: Throwable?) {
-        outboundQueue.close()
-        readerJob?.cancel("Connection closed", cause)
-        // connectionJob.cancel("Connection closed", cause)
-    }
-
     override fun startReceiving(inbound: SequentialRSocketConnection.Inbound) {
-        readerJob = launch(Dispatchers.Unconfined) {
+        inboundJob = socket.launch(Dispatchers.Unconfined) {
             val input = socket.openReadChannel()
             try {
                 while (true) inbound.onFrame(input.readFrame() ?: break)
                 input.cancel(null)
-                inbound.onClose(null)
             } catch (cause: Throwable) {
                 input.cancel(cause)
-                inbound.onClose(cause)
                 throw cause
             }
         }

@@ -20,7 +20,9 @@ import kotlinx.coroutines.*
 import kotlinx.io.*
 
 @RSocketTransportApi
-public sealed interface RSocketConnection<Context> : CoroutineScope
+public sealed interface RSocketConnection<Context> : CoroutineScope {
+    public val connectionContext: Context
+}
 
 @RSocketTransportApi
 public interface SequentialRSocketConnection<Context> : RSocketConnection<Context> {

@@ -25,29 +25,28 @@ import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.io.*
-import kotlin.coroutines.*
 
 // send/receive setup, resume, resume ok, lease, error
 @RSocketTransportApi
-internal class ConnectionOutbound(
+internal abstract class ConnectionOutbound(
     private val frameCodec: FrameCodec,
-    private val outbound: RSocketConnectionOutbound,
 ) : CoroutineScope {
-    override val coroutineContext: CoroutineContext get() = outbound.coroutineContext
+    protected abstract suspend fun sendConnectionFrame(frame: Buffer)
+    protected abstract suspend fun createStream(handler: OperationFrameHandler): OperationOutbound
 
-    private suspend fun sendFrame(frame: Frame): Unit = outbound.sendFrame(frameCodec.encodeFrame(frame))
+    private suspend fun sendConnectionFrame(frame: Frame): Unit = sendConnectionFrame(frameCodec.encodeFrame(frame))
 
     suspend fun sendError(cause: Throwable) {
-        sendFrame(ErrorFrame(0, cause))
+        sendConnectionFrame(ErrorFrame(0, cause))
     }
 
     suspend fun sendKeepAlive(respond: Boolean, data: Buffer, lastPosition: Long) {
-        sendFrame(KeepAliveFrame(respond, lastPosition, data))
+        sendConnectionFrame(KeepAliveFrame(respond, lastPosition, data))
     }
 
     suspend fun sendMetadataPush(metadata: Buffer) {
         ensureActiveOrClose(metadata::clear)
-        return sendFrame(MetadataPushFrame(metadata))
+        return sendConnectionFrame(MetadataPushFrame(metadata))
     }
 
     suspend fun sendSetup(
@@ -57,22 +56,20 @@ internal class ConnectionOutbound(
         resumeToken: Buffer?,
         payloadMimeType: PayloadMimeType,
         payload: Payload,
-    ): Unit = sendFrame(SetupFrame(version, honorLease, keepAlive, resumeToken, payloadMimeType, payload))
+    ): Unit = sendConnectionFrame(SetupFrame(version, honorLease, keepAlive, resumeToken, payloadMimeType, payload))
 
     suspend inline fun <T> executeRequest(payload: Payload, operation: RequesterOperation<T>): T {
         ensureActiveOrClose(payload::close)
 
-        var stream: RSocketStreamOutbound? = null
+        var stream: OperationOutbound? = null
         return try {
-            stream = outbound.createStream()
-            stream.startReceiving(OperationFrameHandler(stream.streamId, operation, frameCodec, null))
-            val result = operation.execute(OperationOutbound(stream, frameCodec), payload)
-            stream.close(null)
-            result
+            stream = createStream(OperationFrameHandler(operation))
+            operation.execute(stream, payload)
         } catch (cause: Throwable) {
             payload.close()
-            stream?.close(cause)
             throw cause
+        } finally {
+            stream?.close()
         }
     }
 

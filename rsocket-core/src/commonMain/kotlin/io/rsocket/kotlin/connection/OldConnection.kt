@@ -26,7 +26,7 @@ import kotlinx.io.*
 
 @Suppress("DEPRECATION_ERROR")
 @RSocketTransportApi
-internal suspend fun RSocketConnectionInbound.handleConnection(connection: Connection): Unit = coroutineScope {
+internal suspend fun RSocketConnectionHandler.handleConnection(connection: Connection): Unit = coroutineScope {
     val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
 
     val senderJob = launch {
@@ -48,7 +48,7 @@ internal suspend fun RSocketConnectionInbound.handleConnection(connection: Conne
 private class OldConnection(
     private val outboundQueue: PrioritizationFrameQueue,
     private val connection: Connection,
-) : SequentialRSocketConnection {
+) : RSocketSequentialConnection {
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
 
     override suspend fun sendFrame(streamId: Int, frame: Buffer) {

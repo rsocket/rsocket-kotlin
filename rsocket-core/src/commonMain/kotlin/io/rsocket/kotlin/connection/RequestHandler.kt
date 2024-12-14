@@ -61,8 +61,8 @@ internal class RequestHandler(
             val requestJob = requestJob
 
             return when {
-                requestJob == null  -> frameType.isRequestType || frameType === FrameType.Payload || frameType === FrameType.Cancel
-                requestJob.isActive -> operation.shouldReceiveFrame(frameType)
+                requestJob == null  -> frameType === FrameType.Cancel || frameType.isRequestType || frameType === FrameType.Payload
+                requestJob.isActive -> frameType === FrameType.Cancel || operation.shouldReceiveFrame(frameType)
                 else                -> false
             }
         }
