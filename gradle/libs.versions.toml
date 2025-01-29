@@ -1,19 +1,19 @@
 [versions]
-kotlin = "2.1.0"
+kotlin = "2.1.10"
 
 kotlinx-io = "0.6.0"
-kotlinx-atomicfu = "0.26.0"
-kotlinx-coroutines = "1.9.0"
+kotlinx-atomicfu = "0.27.0"
+kotlinx-coroutines = "1.10.1"
 kotlinx-benchmark = "0.4.8"
-kotlinx-bcv = "0.16.3"
+kotlinx-bcv = "0.17.0"
 
-ktor = "3.0.2"
+ktor = "3.0.3"
 
-netty = "4.1.115.Final"
-netty-quic = "0.0.69.Final"
+netty = "4.1.117.Final"
+netty-quic = "0.0.70.Final"
 
 # for netty TLS tests
-bouncycastle = "1.79"
+bouncycastle = "1.80"
 
 turbine = "1.2.0"
 
