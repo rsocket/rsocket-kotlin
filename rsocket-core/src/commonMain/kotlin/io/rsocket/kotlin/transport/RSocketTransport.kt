@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,22 +43,22 @@ public interface RSocketTransport : CoroutineScope {
 }
 
 @SubclassOptInRequired(RSocketTransportApi::class)
-public interface RSocketClientTarget : CoroutineScope {
-    // cancelling Job will cancel connection
-    // Job will be completed when the connection is finished
+public interface RSocketClientTarget<ConnectionContext> : CoroutineScope {
     @RSocketTransportApi
-    public fun connectClient(handler: RSocketConnectionHandler): Job
+    public suspend fun connectClient(): RSocketConnection<ConnectionContext>
 }
 
 @SubclassOptInRequired(RSocketTransportApi::class)
-public interface RSocketServerTarget<Instance : RSocketServerInstance> : CoroutineScope {
-    // handler will be called for all new connections
+public interface RSocketServerTarget<ConnectionContext, ServerConfiguration> : CoroutineScope {
     @RSocketTransportApi
-    public suspend fun startServer(handler: RSocketConnectionHandler): Instance
+    public suspend fun startServer(): RSocketServerInstance<ConnectionContext, ServerConfiguration>
 }
 
 // cancelling it will cancel server
-@SubclassOptInRequired(RSocketTransportApi::class)
-public interface RSocketServerInstance : CoroutineScope {
+@RSocketTransportApi
+public interface RSocketServerInstance<ConnectionContext, ServerConfiguration> : CoroutineScope {
+    public val configuration: ServerConfiguration
+    public suspend fun acceptConnection(): RSocketConnection<ConnectionContext>
+
     // graceful closing API should be here
 }

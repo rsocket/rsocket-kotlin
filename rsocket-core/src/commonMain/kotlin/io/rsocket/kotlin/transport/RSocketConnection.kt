@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,19 @@
 
 package io.rsocket.kotlin.transport
 
+import kotlinx.coroutines.*
 import kotlinx.io.*
 
 // all methods can be called from any thread/context at any time
 // should be accessed only internally
 // should be implemented only by transports
 @RSocketTransportApi
-public sealed interface RSocketConnection
-
-@RSocketTransportApi
-public fun interface RSocketConnectionHandler {
-    public suspend fun handleConnection(connection: RSocketConnection)
+public sealed interface RSocketConnection<Context> : CoroutineScope {
+    public val connectionContext: Context
 }
 
 @RSocketTransportApi
-public interface RSocketSequentialConnection : RSocketConnection {
+public interface RSocketSequentialConnection<Context> : RSocketConnection<Context> {
     // TODO: is it needed for connection?
     public val isClosedForSend: Boolean
 
@@ -43,10 +41,11 @@ public interface RSocketSequentialConnection : RSocketConnection {
 }
 
 @RSocketTransportApi
-public interface RSocketMultiplexedConnection : RSocketConnection {
+public interface RSocketMultiplexedConnection<Context> : RSocketConnection<Context> {
     public suspend fun createStream(): Stream
     public suspend fun acceptStream(): Stream?
 
+    @RSocketTransportApi
     public interface Stream : AutoCloseable {
         public val isClosedForSend: Boolean
 
