@@ -46,12 +46,9 @@ public final class io/rsocket/kotlin/PrefetchStrategy : io/rsocket/kotlin/Reques
 
 public abstract interface class io/rsocket/kotlin/RSocket : kotlinx/coroutines/CoroutineScope {
 	public fun fireAndForget (Lio/rsocket/kotlin/payload/Payload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun fireAndForget$suspendImpl (Lio/rsocket/kotlin/RSocket;Lio/rsocket/kotlin/payload/Payload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun metadataPush (Lkotlinx/io/Buffer;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun metadataPush$suspendImpl (Lio/rsocket/kotlin/RSocket;Lkotlinx/io/Buffer;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun requestChannel (Lio/rsocket/kotlin/payload/Payload;Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
 	public fun requestResponse (Lio/rsocket/kotlin/payload/Payload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun requestResponse$suspendImpl (Lio/rsocket/kotlin/RSocket;Lio/rsocket/kotlin/payload/Payload;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun requestStream (Lio/rsocket/kotlin/payload/Payload;)Lkotlinx/coroutines/flow/Flow;
 }
 

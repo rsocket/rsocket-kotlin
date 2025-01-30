@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ plugins {
 }
 
 dependencies {
-    implementation("com.gradle:gradle-enterprise-gradle-plugin:3.18.2")
-    implementation("com.gradle:common-custom-user-data-gradle-plugin:2.0.2")
-    implementation("org.gradle.toolchains:foojay-resolver:0.8.0")
+    implementation("com.gradle:gradle-enterprise-gradle-plugin:3.19.1")
+    implementation("com.gradle:common-custom-user-data-gradle-plugin:2.1")
+    implementation("org.gradle.toolchains:foojay-resolver:0.9.0")
 }
