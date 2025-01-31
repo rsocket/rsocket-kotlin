@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import io.rsocket.kotlin.transport.nodejs.tcp.internal.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
-@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use NodejsTcpServerInstance")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of `rsocket-transport-ktor-tcp` with ktor 3.1")
 public class TcpServer internal constructor(
     public val job: Job, private val server: Server
 ) {
@@ -32,7 +32,7 @@ public class TcpServer internal constructor(
 }
 
 @Suppress("DEPRECATION_ERROR")
-@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use NodejsTcpServerTransport")
+@Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of `rsocket-transport-ktor-tcp` with ktor 3.1")
 public class TcpServerTransport(
     private val port: Int, private val hostname: String,
 ) : ServerTransport<TcpServer> {
