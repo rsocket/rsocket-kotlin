@@ -17,7 +17,6 @@
 package io.rsocket.kotlin.transport.local
 
 import io.rsocket.kotlin.transport.tests.*
-import kotlinx.coroutines.channels.*
 
 @Suppress("DEPRECATION_ERROR")
 class OldLocalTransportTest : TransportTest() {
@@ -36,13 +35,10 @@ abstract class LocalTransportTest(
     }
 }
 
-class SequentialBufferedLocalTransportTest : LocalTransportTest({
-    sequential(prioritizationQueueBuffersCapacity = Channel.BUFFERED)
+class SequentialLocalTransportTest : LocalTransportTest({
+    sequential()
 })
 
-class MultiplexedBufferedLocalTransportTest : LocalTransportTest({
-    multiplexed(
-        streamsQueueCapacity = Channel.BUFFERED,
-        streamBufferCapacity = Channel.BUFFERED
-    )
+class MultiplexedLocalTransportTest : LocalTransportTest({
+    multiplexed()
 })

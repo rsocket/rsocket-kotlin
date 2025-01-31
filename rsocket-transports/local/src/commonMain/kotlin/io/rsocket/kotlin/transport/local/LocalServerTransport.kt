@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.rsocket.kotlin.transport.local
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 import kotlin.random.*
 
@@ -43,18 +42,12 @@ public sealed interface LocalServerTransportBuilder : RSocketTransportBuilder<Lo
     public fun dispatcher(context: CoroutineContext)
     public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
 
-    public fun sequential(
-        prioritizationQueueBuffersCapacity: Int = Channel.BUFFERED,
-    )
-
-    public fun multiplexed(
-        streamsQueueCapacity: Int = Channel.BUFFERED,
-        streamBufferCapacity: Int = Channel.BUFFERED,
-    )
+    public fun sequential()
+    public fun multiplexed()
 }
 
 private class LocalServerTransportBuilderImpl : LocalServerTransportBuilder {
-    private var dispatcher: CoroutineContext = Dispatchers.Default
+    private var dispatcher: CoroutineContext = Dispatchers.Unconfined
     private var connector: LocalServerConnector? = null
 
     override fun dispatcher(context: CoroutineContext) {
@@ -62,18 +55,18 @@ private class LocalServerTransportBuilderImpl : LocalServerTransportBuilder {
         this.dispatcher = context
     }
 
-    override fun sequential(prioritizationQueueBuffersCapacity: Int) {
-        connector = LocalServerConnector.Sequential(prioritizationQueueBuffersCapacity)
+    override fun sequential() {
+        connector = LocalServerConnector.Sequential
     }
 
-    override fun multiplexed(streamsQueueCapacity: Int, streamBufferCapacity: Int) {
-        connector = LocalServerConnector.Multiplexed(streamsQueueCapacity, streamBufferCapacity)
+    override fun multiplexed() {
+        connector = LocalServerConnector.Multiplexed
     }
 
     @RSocketTransportApi
     override fun buildTransport(context: CoroutineContext): LocalServerTransport = LocalServerTransportImpl(
         coroutineContext = context.supervisorContext() + dispatcher,
-        connector = connector ?: LocalServerConnector.Sequential(Channel.BUFFERED)
+        connector = connector ?: LocalServerConnector.Sequential
     )
 }
 

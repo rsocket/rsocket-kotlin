@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,7 @@ internal sealed class LocalServerConnector {
         serverHandler: RSocketConnectionHandler,
     ): Job
 
-    internal class Sequential(
-        private val prioritizationQueueBuffersCapacity: Int,
-    ) : LocalServerConnector() {
+    object Sequential : LocalServerConnector() {
 
         @RSocketTransportApi
         override fun connect(
@@ -43,8 +41,8 @@ internal sealed class LocalServerConnector {
             serverScope: CoroutineScope,
             serverHandler: RSocketConnectionHandler,
         ): Job {
-            val clientToServer = PrioritizationFrameQueue(prioritizationQueueBuffersCapacity)
-            val serverToClient = PrioritizationFrameQueue(prioritizationQueueBuffersCapacity)
+            val clientToServer = PrioritizationFrameQueue(Channel.BUFFERED)
+            val serverToClient = PrioritizationFrameQueue(Channel.BUFFERED)
 
             launchLocalConnection(serverScope, serverToClient, clientToServer, serverHandler)
             return launchLocalConnection(clientScope, clientToServer, serverToClient, clientHandler)
@@ -80,11 +78,7 @@ internal sealed class LocalServerConnector {
         }
     }
 
-    // TODO: better parameters naming
-    class Multiplexed(
-        private val streamsQueueCapacity: Int,
-        private val streamBufferCapacity: Int,
-    ) : LocalServerConnector() {
+    object Multiplexed : LocalServerConnector() {
         @RSocketTransportApi
         override fun connect(
             clientScope: CoroutineScope,
@@ -92,7 +86,7 @@ internal sealed class LocalServerConnector {
             serverScope: CoroutineScope,
             serverHandler: RSocketConnectionHandler,
         ): Job {
-            val streams = Streams(streamsQueueCapacity)
+            val streams = Streams()
 
             launchLocalConnection(serverScope, streams.serverToClient, streams.clientToServer, serverHandler)
             return launchLocalConnection(clientScope, streams.clientToServer, streams.serverToClient, clientHandler)
@@ -105,7 +99,7 @@ internal sealed class LocalServerConnector {
             inbound: ReceiveChannel<Frames>,
             handler: RSocketConnectionHandler,
         ): Job = scope.launch {
-            handler.handleConnection(Connection(SupervisorJob(coroutineContext.job), outbound, inbound, streamBufferCapacity))
+            handler.handleConnection(Connection(SupervisorJob(coroutineContext.job), outbound, inbound))
         }.onCompletion {
             outbound.close()
             inbound.cancel()
@@ -116,10 +110,9 @@ internal sealed class LocalServerConnector {
             private val streamsJob: Job,
             private val outbound: SendChannel<Frames>,
             private val inbound: ReceiveChannel<Frames>,
-            private val streamBufferCapacity: Int,
         ) : RSocketMultiplexedConnection {
             override suspend fun createStream(): RSocketMultiplexedConnection.Stream {
-                val frames = Frames(streamBufferCapacity)
+                val frames = Frames()
 
                 outbound.send(frames)
 
@@ -170,9 +163,9 @@ internal sealed class LocalServerConnector {
             }
         }
 
-        private class Streams(bufferCapacity: Int) : AutoCloseable {
-            val clientToServer = channelForCloseable<Frames>(bufferCapacity)
-            val serverToClient = channelForCloseable<Frames>(bufferCapacity)
+        private class Streams : AutoCloseable {
+            val clientToServer = channelForCloseable<Frames>(Channel.BUFFERED)
+            val serverToClient = channelForCloseable<Frames>(Channel.BUFFERED)
 
             // only for undelivered element case
             override fun close() {
@@ -181,9 +174,9 @@ internal sealed class LocalServerConnector {
             }
         }
 
-        private class Frames(bufferCapacity: Int) : AutoCloseable {
-            val clientToServer = bufferChannel(bufferCapacity)
-            val serverToClient = bufferChannel(bufferCapacity)
+        private class Frames : AutoCloseable {
+            val clientToServer = bufferChannel(Channel.BUFFERED)
+            val serverToClient = bufferChannel(Channel.BUFFERED)
 
             // only for undelivered element case
             override fun close() {
