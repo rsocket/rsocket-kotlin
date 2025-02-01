@@ -20,18 +20,18 @@ import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
-import kotlin.random.*
+import kotlin.uuid.*
 
-// TODO: rename to inprocess and more to another module/package later
-@OptIn(RSocketTransportApi::class)
-public sealed interface LocalServerInstance : RSocketServerInstance {
+public sealed interface LocalServerConfiguration {
     public val serverName: String
 }
 
+public typealias LocalServerTarget = RSocketServerTarget<LocalConnectionContext, LocalServerConfiguration>
+
 @OptIn(RSocketTransportApi::class)
 public sealed interface LocalServerTransport : RSocketTransport {
-    public fun target(): RSocketServerTarget<LocalServerInstance>
-    public fun target(serverName: String): RSocketServerTarget<LocalServerInstance>
+    public fun target(): LocalServerTarget
+    public fun target(serverName: String): LocalServerTarget
 
     public companion object Factory :
         RSocketTransportFactory<LocalServerTransport, LocalServerTransportBuilder>(::LocalServerTransportBuilderImpl)
@@ -74,16 +74,14 @@ private class LocalServerTransportImpl(
     override val coroutineContext: CoroutineContext,
     private val connector: LocalServerConnector,
 ) : LocalServerTransport {
-    override fun target(serverName: String): RSocketServerTarget<LocalServerInstance> = LocalServerTargetImpl(
+    override fun target(serverName: String): LocalServerTarget = LocalServerTargetImpl(
         serverName = serverName,
         coroutineContext = coroutineContext.supervisorContext(),
         connector = connector
     )
 
-    @OptIn(ExperimentalStdlibApi::class)
-    override fun target(): RSocketServerTarget<LocalServerInstance> = target(
-        Random.nextBytes(16).toHexString(HexFormat.UpperCase)
-    )
+    @OptIn(ExperimentalUuidApi::class)
+    override fun target(): LocalServerTarget = target(Uuid.random().toString())
 }
 
 @OptIn(RSocketTransportApi::class)
@@ -91,17 +89,12 @@ private class LocalServerTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val serverName: String,
     private val connector: LocalServerConnector,
-) : RSocketServerTarget<LocalServerInstance> {
+) : LocalServerTarget {
     @RSocketTransportApi
-    override suspend fun startServer(handler: RSocketConnectionHandler): LocalServerInstance {
+    override suspend fun startServer(): RSocketServerInstance<LocalConnectionContext, LocalServerConfiguration> {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
-        return LocalServerInstanceImpl(
-            serverName = serverName,
-            coroutineContext = coroutineContext.childContext(),
-            serverHandler = handler,
-            connector = connector
-        )
+        return LocalServerRegistry.startServer(this, serverName, connector)
     }
 }
