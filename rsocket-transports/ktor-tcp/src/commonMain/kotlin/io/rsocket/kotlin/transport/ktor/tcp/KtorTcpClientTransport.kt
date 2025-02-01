@@ -23,10 +23,12 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
+public typealias KtorTcpClientTarget = RSocketClientTarget<KtorTcpConnectionContext>
+
 @OptIn(RSocketTransportApi::class)
 public sealed interface KtorTcpClientTransport : RSocketTransport {
-    public fun target(remoteAddress: SocketAddress): RSocketClientTarget
-    public fun target(host: String, port: Int): RSocketClientTarget
+    public fun target(remoteAddress: SocketAddress): KtorTcpClientTarget
+    public fun target(host: String, port: Int): KtorTcpClientTarget
 
     public companion object Factory :
         RSocketTransportFactory<KtorTcpClientTransport, KtorTcpClientTransportBuilder>(::KtorTcpClientTransportBuilderImpl)
@@ -84,14 +86,14 @@ private class KtorTcpClientTransportImpl(
     private val socketOptions: SocketOptions.TCPClientSocketOptions.() -> Unit,
     private val selectorManager: SelectorManager,
 ) : KtorTcpClientTransport {
-    override fun target(remoteAddress: SocketAddress): RSocketClientTarget = KtorTcpClientTargetImpl(
+    override fun target(remoteAddress: SocketAddress): KtorTcpClientTarget = KtorTcpClientTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         socketOptions = socketOptions,
         selectorManager = selectorManager,
         remoteAddress = remoteAddress
     )
 
-    override fun target(host: String, port: Int): RSocketClientTarget = target(InetSocketAddress(host, port))
+    override fun target(host: String, port: Int): KtorTcpClientTarget = target(InetSocketAddress(host, port))
 }
 
 @OptIn(RSocketTransportApi::class)
@@ -100,11 +102,15 @@ private class KtorTcpClientTargetImpl(
     private val socketOptions: SocketOptions.TCPClientSocketOptions.() -> Unit,
     private val selectorManager: SelectorManager,
     private val remoteAddress: SocketAddress,
-) : RSocketClientTarget {
-
+) : KtorTcpClientTarget {
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
-        val socket = aSocket(selectorManager).tcp().connect(remoteAddress, socketOptions)
-        handler.handleKtorTcpConnection(socket)
+    override suspend fun connectClient(): RSocketConnection<KtorTcpConnectionContext> {
+        currentCoroutineContext().ensureActive()
+        coroutineContext.ensureActive()
+
+        val socket = withContext(Dispatchers.IO) {
+            aSocket(selectorManager).tcp().connect(remoteAddress, socketOptions)
+        }
+        return KtorTcpConnection(this@KtorTcpClientTargetImpl, socket)
     }
 }

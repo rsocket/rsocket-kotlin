@@ -23,15 +23,16 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
-@OptIn(RSocketTransportApi::class)
-public sealed interface KtorTcpServerInstance : RSocketServerInstance {
+public sealed interface KtorTcpServerConfiguration {
     public val localAddress: SocketAddress
 }
 
+public typealias KtorTcpServerTarget = RSocketServerTarget<KtorTcpConnectionContext, KtorTcpServerConfiguration>
+
 @OptIn(RSocketTransportApi::class)
 public sealed interface KtorTcpServerTransport : RSocketTransport {
-    public fun target(localAddress: SocketAddress? = null): RSocketServerTarget<KtorTcpServerInstance>
-    public fun target(host: String = "0.0.0.0", port: Int = 0): RSocketServerTarget<KtorTcpServerInstance>
+    public fun target(localAddress: SocketAddress? = null): KtorTcpServerTarget
+    public fun target(host: String = "0.0.0.0", port: Int = 0): KtorTcpServerTarget
 
     public companion object Factory :
         RSocketTransportFactory<KtorTcpServerTransport, KtorTcpServerTransportBuilder>(::KtorTcpServerTransportBuilderImpl)
@@ -87,14 +88,14 @@ private class KtorTcpServerTransportImpl(
     private val socketOptions: SocketOptions.AcceptorOptions.() -> Unit,
     private val selectorManager: SelectorManager,
 ) : KtorTcpServerTransport {
-    override fun target(localAddress: SocketAddress?): RSocketServerTarget<KtorTcpServerInstance> = KtorTcpServerTargetImpl(
+    override fun target(localAddress: SocketAddress?): KtorTcpServerTarget = KtorTcpServerTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         socketOptions = socketOptions,
         selectorManager = selectorManager,
         localAddress = localAddress
     )
 
-    override fun target(host: String, port: Int): RSocketServerTarget<KtorTcpServerInstance> = target(InetSocketAddress(host, port))
+    override fun target(host: String, port: Int): KtorTcpServerTarget = target(InetSocketAddress(host, port))
 }
 
 @OptIn(RSocketTransportApi::class)
@@ -103,52 +104,49 @@ private class KtorTcpServerTargetImpl(
     private val socketOptions: SocketOptions.AcceptorOptions.() -> Unit,
     private val selectorManager: SelectorManager,
     private val localAddress: SocketAddress?,
-) : RSocketServerTarget<KtorTcpServerInstance> {
-
+) : KtorTcpServerTarget {
     @RSocketTransportApi
-    override suspend fun startServer(handler: RSocketConnectionHandler): KtorTcpServerInstance {
+    override suspend fun startServer(): RSocketServerInstance<KtorTcpConnectionContext, KtorTcpServerConfiguration> {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
-        return startKtorTcpServer(this, bindSocket(), handler)
-    }
 
-    private suspend fun bindSocket(): ServerSocket = launchCoroutine { cont ->
-        val socket = aSocket(selectorManager).tcp().bind(localAddress, socketOptions)
-        cont.resume(socket) { _, value, _ -> value.close() }
+        val serverSocket = withContext(Dispatchers.IO) {
+            aSocket(selectorManager).tcp().bind(localAddress, socketOptions)
+        }
+
+        return KtorTcpServerInstanceImpl(
+            parentScope = this@KtorTcpServerTargetImpl,
+            serverSocket = serverSocket
+        )
     }
 }
 
 @RSocketTransportApi
-private fun startKtorTcpServer(
-    scope: CoroutineScope,
-    serverSocket: ServerSocket,
-    handler: RSocketConnectionHandler,
-): KtorTcpServerInstance {
-    val serverJob = scope.launch {
-        try {
-            // the failure of one connection should not stop all other connections
-            supervisorScope {
-                while (true) {
-                    val socket = serverSocket.accept()
-                    launch { handler.handleKtorTcpConnection(socket) }
-                }
-            }
-        } finally {
-            // even if it was cancelled, we still need to close socket and await it closure
-            withContext(NonCancellable) {
+private class KtorTcpServerInstanceImpl(
+    parentScope: CoroutineScope,
+    private val serverSocket: ServerSocket,
+) : RSocketServerInstance<KtorTcpConnectionContext, KtorTcpServerConfiguration>, KtorTcpServerConfiguration {
+    override val configuration: KtorTcpServerConfiguration get() = this
+    override val localAddress: SocketAddress get() = serverSocket.localAddress
+
+    override val coroutineContext: CoroutineContext = parentScope.coroutineContext.childContext()
+
+    private val connectionsScope = CoroutineScope(coroutineContext.supervisorContext())
+
+    init {
+        launch(Dispatchers.Unconfined) {
+            nonCancellable {
+                // await ALL connections completion
+                connectionsScope.coroutineContext.job.join()
+
                 serverSocket.close()
                 serverSocket.socketContext.join()
             }
         }
     }
-    return KtorTcpServerInstanceImpl(
-        coroutineContext = scope.coroutineContext + serverJob,
-        localAddress = serverSocket.localAddress
-    )
-}
 
-@RSocketTransportApi
-private class KtorTcpServerInstanceImpl(
-    override val coroutineContext: CoroutineContext,
-    override val localAddress: SocketAddress,
-) : KtorTcpServerInstance
+    override suspend fun acceptConnection(): RSocketConnection<KtorTcpConnectionContext>? {
+        val socket = serverSocket.accept()
+        return KtorTcpConnection(connectionsScope, socket)
+    }
+}
