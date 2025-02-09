@@ -23,8 +23,10 @@ plugins {
 description = "rsocket-kotlin ktor server plugin"
 
 kotlin {
-    jvmTarget()
-    nixTargets()
+    allTargets(
+        supportsWasi = false,
+        supportsBrowser = false
+    )
 
     sourceSets {
         commonMain.dependencies {

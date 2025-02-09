@@ -33,7 +33,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ 'ubuntu-latest' ]
-        target: [ 'jvm', 'jvm11', 'jvm17', 'jvm21', 'js', 'native' ]
+        target: [ 'jvm', 'jvm11', 'jvm17', 'jvm21', 'web', 'native' ]
         include:
           - os: 'macos-latest'
             target: 'macos'
@@ -50,7 +50,6 @@ jobs:
       - uses: ./.github/actions/setup-gradle
 
       - run: ./gradlew ${{ matrix.target }}Test --continue
-        timeout-minutes: 30
 
       - if: always() && !cancelled()
         uses: actions/upload-artifact@v4
