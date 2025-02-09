@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,23 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport.ktor.websocket.server
+import rsocketbuild.*
 
-import io.ktor.client.engine.cio.CIO as ClientCIO
-import io.ktor.server.cio.CIO as ServerCIO
+plugins {
+    id("rsocketbuild.multiplatform-base")
+}
 
-class CIOWebSocketTransportTest : WebSocketTransportTest(ClientCIO, ServerCIO)
+kotlin {
+    jvmTarget()
+    nixTargets()
 
-class CIOKtorWebSocketTransportTest : KtorWebSocketTransportTest(ClientCIO, ServerCIO)
+    sourceSets {
+        commonTest.dependencies {
+            implementation(projects.ktorClientRsocket)
+            implementation(projects.ktorServerRsocket)
+            implementation(projects.rsocketTest)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.server.cio)
+        }
+    }
+}

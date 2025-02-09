@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,43 +14,38 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport.ktor.websocket.server
+package io.rsocket.kotlin.transport.ktor.websocket.tests
 
-import io.ktor.client.engine.*
-import io.ktor.server.engine.*
 import io.rsocket.kotlin.transport.ktor.websocket.client.*
+import io.rsocket.kotlin.transport.ktor.websocket.server.*
 import io.rsocket.kotlin.transport.tests.*
+import io.ktor.client.engine.cio.CIO as ClientCIO
+import io.ktor.server.cio.CIO as ServerCIO
 
 @Suppress("DEPRECATION_ERROR")
-abstract class WebSocketTransportTest(
-    private val clientEngine: HttpClientEngineFactory<*>,
-    private val serverEngine: ApplicationEngineFactory<*, *>,
-) : TransportTest() {
+class WebSocketTransportTest : TransportTest() {
     override suspend fun before() {
         val embeddedServer = startServer(
-            WebSocketServerTransport(serverEngine, port = 0)
+            WebSocketServerTransport(ServerCIO, port = 0)
         )
         val connector = embeddedServer.engine.resolvedConnectors().single()
         client = connectClient(
-            WebSocketClientTransport(clientEngine, port = connector.port, context = testContext)
+            WebSocketClientTransport(ClientCIO, port = connector.port, context = testContext)
         )
     }
 }
 
-abstract class KtorWebSocketTransportTest(
-    private val clientEngine: HttpClientEngineFactory<*>,
-    private val serverEngine: ApplicationEngineFactory<*, *>,
-) : TransportTest() {
+class KtorWebSocketTransportTest : TransportTest() {
     override suspend fun before() {
         val server = startServer(
             KtorWebSocketServerTransport(testContext) {
-                httpEngine(serverEngine)
+                httpEngine(ServerCIO)
             }.target(port = 0)
         )
         val port = server.connectors.single().port
         client = connectClient(
             KtorWebSocketClientTransport(testContext) {
-                httpEngine(clientEngine)
+                httpEngine(ClientCIO)
             }.target(port = port)
         )
     }

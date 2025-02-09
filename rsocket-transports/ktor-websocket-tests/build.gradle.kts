@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,23 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport.ktor.websocket.client
+import rsocketbuild.*
 
-//class ClientWebSocketTransportTest : TransportTest() {
-//    override suspend fun before() {
-//        client = connectClient(
-//            WebSocketClientTransport(Js, port = 9000, context = testContext, pool = InUseTrackingPool)
-//        )
-//    }
-//}
+plugins {
+    id("rsocketbuild.multiplatform-base")
+}
+
+kotlin {
+    jvmTarget()
+    nixTargets()
+
+    sourceSets {
+        commonTest.dependencies {
+            implementation(projects.rsocketTransportTests)
+            implementation(projects.rsocketTransportKtorWebsocketClient)
+            implementation(projects.rsocketTransportKtorWebsocketServer)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.server.cio)
+        }
+    }
+}
