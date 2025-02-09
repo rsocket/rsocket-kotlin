@@ -7,7 +7,7 @@ kotlinx-coroutines = "1.10.1"
 kotlinx-benchmark = "0.4.8"
 kotlinx-bcv = "0.17.0"
 
-ktor = "3.0.3"
+ktor = "3.1.0-eap-1227"
 
 netty = "4.1.117.Final"
 netty-quic = "0.0.70.Final"
