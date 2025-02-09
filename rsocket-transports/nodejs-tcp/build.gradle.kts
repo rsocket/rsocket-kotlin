@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ plugins {
     id("rsocketbuild.multiplatform-library")
 }
 
-description = "rsocket-kotlin NodeJS TCP client/server transport implementation"
+description = "[DEPRECATED] rsocket-kotlin NodeJS TCP client/server transport implementation"
 
 kotlin {
     jsTarget(supportsBrowser = false)

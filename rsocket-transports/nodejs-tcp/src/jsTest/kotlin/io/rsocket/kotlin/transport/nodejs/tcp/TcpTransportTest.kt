@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +33,5 @@ class TcpTransportTest : TransportTest() {
         delay(100) //TODO close race
         super.after()
         server.close()
-    }
-}
-
-class NodejsTcpTransportTest : TransportTest() {
-    override suspend fun before() {
-        val port = PortProvider.next()
-        startServer(NodejsTcpServerTransport(testContext).target("127.0.0.1", port))
-        client = connectClient(NodejsTcpClientTransport(testContext).target("127.0.0.1", port))
     }
 }
