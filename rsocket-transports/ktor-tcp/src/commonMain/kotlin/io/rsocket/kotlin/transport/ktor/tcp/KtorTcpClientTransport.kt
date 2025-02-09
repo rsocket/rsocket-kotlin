@@ -36,56 +36,44 @@ public sealed interface KtorTcpClientTransport : RSocketTransport {
 
 @OptIn(RSocketTransportApi::class)
 public sealed interface KtorTcpClientTransportBuilder : RSocketTransportBuilder<KtorTcpClientTransport> {
-    public fun dispatcher(context: CoroutineContext)
-    public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
-
-    public fun selectorManagerDispatcher(context: CoroutineContext)
     public fun selectorManager(manager: SelectorManager, manage: Boolean)
-
     public fun socketOptions(block: SocketOptions.TCPClientSocketOptions.() -> Unit)
-
     //TODO: TLS support
 }
 
 private class KtorTcpClientTransportBuilderImpl : KtorTcpClientTransportBuilder {
-    private var dispatcher: CoroutineContext = Dispatchers.Default
-    private var selector: KtorTcpSelector = KtorTcpSelector.FromContext(Dispatchers.IoCompatible)
+    private var selectorManager: SelectorManager? = null
+    private var manageSelectorManager: Boolean = true
     private var socketOptions: SocketOptions.TCPClientSocketOptions.() -> Unit = {}
-
-    override fun dispatcher(context: CoroutineContext) {
-        check(context[Job] == null) { "Dispatcher shouldn't contain job" }
-        this.dispatcher = context
-    }
 
     override fun socketOptions(block: SocketOptions.TCPClientSocketOptions.() -> Unit) {
         this.socketOptions = block
     }
 
-    override fun selectorManagerDispatcher(context: CoroutineContext) {
-        check(context[Job] == null) { "Dispatcher shouldn't contain job" }
-        this.selector = KtorTcpSelector.FromContext(context)
-    }
-
     override fun selectorManager(manager: SelectorManager, manage: Boolean) {
-        this.selector = KtorTcpSelector.FromInstance(manager, manage)
+        this.selectorManager = manager
+        this.manageSelectorManager = manage
     }
 
     @RSocketTransportApi
-    override fun buildTransport(context: CoroutineContext): KtorTcpClientTransport {
-        val transportContext = context.supervisorContext() + dispatcher
-        return KtorTcpClientTransportImpl(
-            coroutineContext = transportContext,
-            socketOptions = socketOptions,
-            selectorManager = selector.createFor(transportContext)
-        )
-    }
+    override fun buildTransport(context: CoroutineContext): KtorTcpClientTransport = KtorTcpClientTransportImpl(
+        coroutineContext = context.supervisorContext(),
+        socketOptions = socketOptions,
+        selectorManager = selectorManager ?: SelectorManager(Dispatchers.IO),
+        manageSelectorManager = manageSelectorManager
+    )
 }
 
 private class KtorTcpClientTransportImpl(
     override val coroutineContext: CoroutineContext,
     private val socketOptions: SocketOptions.TCPClientSocketOptions.() -> Unit,
     private val selectorManager: SelectorManager,
+    manageSelectorManager: Boolean,
 ) : KtorTcpClientTransport {
+    init {
+        if (manageSelectorManager) coroutineContext.job.invokeOnCompletion { selectorManager.close() }
+    }
+
     override fun target(remoteAddress: SocketAddress): KtorTcpClientTarget = KtorTcpClientTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         socketOptions = socketOptions,
@@ -104,13 +92,15 @@ private class KtorTcpClientTargetImpl(
     private val remoteAddress: SocketAddress,
 ) : KtorTcpClientTarget {
     @RSocketTransportApi
-    override suspend fun connectClient(): RSocketConnection<KtorTcpConnectionContext> {
+    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<KtorTcpConnectionContext, T>): T {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
-        val socket = withContext(Dispatchers.IO) {
-            aSocket(selectorManager).tcp().connect(remoteAddress, socketOptions)
+        return withContext(Dispatchers.IO) {
+            val socket = aSocket(selectorManager).tcp().connect(remoteAddress, socketOptions)
+            initializer.runInitializer(
+                KtorTcpConnection(coroutineContext.childContext(), socket)
+            )
         }
-        return KtorTcpConnection(this@KtorTcpClientTargetImpl, socket)
     }
 }

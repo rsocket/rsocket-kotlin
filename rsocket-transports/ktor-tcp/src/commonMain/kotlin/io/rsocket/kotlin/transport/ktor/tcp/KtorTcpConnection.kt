@@ -26,14 +26,14 @@ import kotlinx.coroutines.channels.*
 import kotlinx.io.*
 import kotlin.coroutines.*
 
-public sealed interface KtorTcpConnectionContext {
+public sealed interface KtorTcpConnectionContext : RSocketConnectionContext {
     public val localAddress: SocketAddress
     public val remoteAddress: SocketAddress
 }
 
 @RSocketTransportApi
 internal class KtorTcpConnection(
-    parentScope: CoroutineScope,
+    override val coroutineContext: CoroutineContext,
     private val socket: Socket,
 ) : RSocketSequentialConnection<KtorTcpConnectionContext>, KtorTcpConnectionContext {
     override val localAddress: SocketAddress get() = socket.localAddress
@@ -43,49 +43,54 @@ internal class KtorTcpConnection(
     private val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
     private val inbound = bufferChannel(Channel.BUFFERED)
 
-    //  TODO: decide on Unconfined
-    override val coroutineContext: CoroutineContext = parentScope.coroutineContext + parentScope.launch(Dispatchers.Unconfined) {
-        val outboundJob = launch {
-            nonCancellable {
-                val output = socket.openWriteChannel()
-                try {
-                    while (true) {
-                        // we write all available frames here, and only after it flush
-                        // in this case, if there are several buffered frames we can send them in one go
-                        // avoiding unnecessary flushes
-                        output.writeFrame(outboundQueue.dequeueFrame() ?: break)
-                        while (true) output.writeFrame(outboundQueue.tryDequeueFrame() ?: break)
-                        output.flush()
+    init {
+        @OptIn(DelicateCoroutinesApi::class)
+        launch(start = CoroutineStart.ATOMIC) {
+            val outboundJob = launch {
+                nonCancellable {
+                    val output = socket.openWriteChannel()
+                    try {
+                        while (true) {
+                            // we write all available frames here, and only after it flush
+                            // in this case, if there are several buffered frames we can send them in one go
+                            // avoiding unnecessary flushes
+                            output.writeFrame(outboundQueue.dequeueFrame() ?: break)
+                            while (true) output.writeFrame(outboundQueue.tryDequeueFrame() ?: break)
+                            output.flush()
+                        }
+                        output.flushAndClose()
+                    } catch (cause: Throwable) {
+                        output.cancel(cause)
+                        throw cause
+                    } finally {
+                        outboundQueue.cancel()
                     }
-                    output.flushAndClose()
-                } catch (cause: Throwable) {
-                    output.cancel(cause)
-                    throw cause
-                } finally {
-                    outboundQueue.cancel()
                 }
             }
-        }
 
-        try {
-            val input = socket.openReadChannel()
             try {
-                while (true) inbound.send(input.readFrame() ?: break)
-                input.cancel(null)
-            } catch (cause: Throwable) {
-                input.cancel(cause)
-                throw cause
+                currentCoroutineContext().ensureActive() // because of ATOMIC start
+
+                val input = socket.openReadChannel()
+                try {
+                    while (true) inbound.send(input.readFrame() ?: break)
+                    input.cancel(null)
+                } catch (cause: Throwable) {
+                    input.cancel(cause)
+                    throw cause
+                } finally {
+                    inbound.cancel()
+                }
+
+                awaitCancellation()
             } finally {
-                inbound.cancel()
-            }
-            awaitCancellation()
-        } finally {
-            nonCancellable {
-                outboundQueue.close()
-                outboundJob.join()
-                // await socket completion
-                socket.close()
-                socket.socketContext.join()
+                nonCancellable {
+                    outboundQueue.close()
+                    outboundJob.join()
+                    // await socket completion
+                    socket.close()
+                    socket.socketContext.join()
+                }
             }
         }
     }

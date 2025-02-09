@@ -40,54 +40,43 @@ public sealed interface KtorTcpServerTransport : RSocketTransport {
 
 @OptIn(RSocketTransportApi::class)
 public sealed interface KtorTcpServerTransportBuilder : RSocketTransportBuilder<KtorTcpServerTransport> {
-    public fun dispatcher(context: CoroutineContext)
-    public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
-
-    public fun selectorManagerDispatcher(context: CoroutineContext)
     public fun selectorManager(manager: SelectorManager, manage: Boolean)
-
     public fun socketOptions(block: SocketOptions.AcceptorOptions.() -> Unit)
 }
 
 private class KtorTcpServerTransportBuilderImpl : KtorTcpServerTransportBuilder {
-    private var dispatcher: CoroutineContext = Dispatchers.Default
-    private var selector: KtorTcpSelector = KtorTcpSelector.FromContext(Dispatchers.IoCompatible)
+    private var selectorManager: SelectorManager? = null
+    private var manageSelectorManager: Boolean = true
     private var socketOptions: SocketOptions.AcceptorOptions.() -> Unit = {}
-
-    override fun dispatcher(context: CoroutineContext) {
-        check(context[Job] == null) { "Dispatcher shouldn't contain job" }
-        this.dispatcher = context
-    }
 
     override fun socketOptions(block: SocketOptions.AcceptorOptions.() -> Unit) {
         this.socketOptions = block
     }
 
-    override fun selectorManagerDispatcher(context: CoroutineContext) {
-        check(context[Job] == null) { "Dispatcher shouldn't contain job" }
-        this.selector = KtorTcpSelector.FromContext(context)
-    }
-
     override fun selectorManager(manager: SelectorManager, manage: Boolean) {
-        this.selector = KtorTcpSelector.FromInstance(manager, manage)
+        this.selectorManager = manager
+        this.manageSelectorManager = manage
     }
 
     @RSocketTransportApi
-    override fun buildTransport(context: CoroutineContext): KtorTcpServerTransport {
-        val transportContext = context.supervisorContext() + dispatcher
-        return KtorTcpServerTransportImpl(
-            coroutineContext = transportContext,
-            socketOptions = socketOptions,
-            selectorManager = selector.createFor(transportContext)
-        )
-    }
+    override fun buildTransport(context: CoroutineContext): KtorTcpServerTransport = KtorTcpServerTransportImpl(
+        coroutineContext = context.supervisorContext(),
+        socketOptions = socketOptions,
+        selectorManager = selectorManager ?: SelectorManager(Dispatchers.IO),
+        manageSelectorManager = manageSelectorManager
+    )
 }
 
 private class KtorTcpServerTransportImpl(
     override val coroutineContext: CoroutineContext,
     private val socketOptions: SocketOptions.AcceptorOptions.() -> Unit,
     private val selectorManager: SelectorManager,
+    manageSelectorManager: Boolean,
 ) : KtorTcpServerTransport {
+    init {
+        if (manageSelectorManager) coroutineContext.job.invokeOnCompletion { selectorManager.close() }
+    }
+
     override fun target(localAddress: SocketAddress?): KtorTcpServerTarget = KtorTcpServerTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         socketOptions = socketOptions,
@@ -105,48 +94,47 @@ private class KtorTcpServerTargetImpl(
     private val selectorManager: SelectorManager,
     private val localAddress: SocketAddress?,
 ) : KtorTcpServerTarget {
+
     @RSocketTransportApi
-    override suspend fun startServer(): RSocketServerInstance<KtorTcpConnectionContext, KtorTcpServerConfiguration> {
+    override suspend fun startServer(initializer: RSocketConnectionInitializer<KtorTcpConnectionContext, Unit>): RSocketServerInstance<KtorTcpServerConfiguration> {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
-        val serverSocket = withContext(Dispatchers.IO) {
-            aSocket(selectorManager).tcp().bind(localAddress, socketOptions)
+        return withContext(Dispatchers.IO) {
+            val serverSocket = aSocket(selectorManager).tcp().bind(localAddress, socketOptions)
+            KtorTcpServerInstanceImpl(coroutineContext.childContext(), serverSocket, initializer)
         }
-
-        return KtorTcpServerInstanceImpl(
-            parentScope = this@KtorTcpServerTargetImpl,
-            serverSocket = serverSocket
-        )
     }
 }
 
 @RSocketTransportApi
 private class KtorTcpServerInstanceImpl(
-    parentScope: CoroutineScope,
+    override val coroutineContext: CoroutineContext,
     private val serverSocket: ServerSocket,
-) : RSocketServerInstance<KtorTcpConnectionContext, KtorTcpServerConfiguration>, KtorTcpServerConfiguration {
+    private val initializer: RSocketConnectionInitializer<KtorTcpConnectionContext, Unit>,
+) : RSocketServerInstance<KtorTcpServerConfiguration>, KtorTcpServerConfiguration {
     override val configuration: KtorTcpServerConfiguration get() = this
     override val localAddress: SocketAddress get() = serverSocket.localAddress
 
-    override val coroutineContext: CoroutineContext = parentScope.coroutineContext.childContext()
-
-    private val connectionsScope = CoroutineScope(coroutineContext.supervisorContext())
-
     init {
-        launch(Dispatchers.Unconfined) {
-            nonCancellable {
-                // await ALL connections completion
-                connectionsScope.coroutineContext.job.join()
+        @OptIn(DelicateCoroutinesApi::class)
+        launch(start = CoroutineStart.ATOMIC) {
+            try {
+                currentCoroutineContext().ensureActive() // because of ATOMIC start
+                val connectionsContext = currentCoroutineContext().childContext()
 
-                serverSocket.close()
-                serverSocket.socketContext.join()
+                while (true) {
+                    val socket = serverSocket.accept()
+                    initializer.launchInitializer(
+                        KtorTcpConnection(connectionsContext.childContext(), socket)
+                    )
+                }
+            } finally {
+                nonCancellable {
+                    serverSocket.close()
+                    serverSocket.socketContext.join()
+                }
             }
         }
-    }
-
-    override suspend fun acceptConnection(): RSocketConnection<KtorTcpConnectionContext>? {
-        val socket = serverSocket.accept()
-        return KtorTcpConnection(connectionsScope, socket)
     }
 }
