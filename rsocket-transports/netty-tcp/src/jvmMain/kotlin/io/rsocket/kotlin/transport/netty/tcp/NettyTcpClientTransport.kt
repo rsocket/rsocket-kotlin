@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,12 @@ import java.net.*
 import kotlin.coroutines.*
 import kotlin.reflect.*
 
+public typealias NettyTcpClientTarget = RSocketClientTarget<NettyTcpConnectionContext>
+
 @OptIn(RSocketTransportApi::class)
 public sealed interface NettyTcpClientTransport : RSocketTransport {
-    public fun target(remoteAddress: SocketAddress): RSocketClientTarget
-    public fun target(host: String, port: Int): RSocketClientTarget
+    public fun target(remoteAddress: SocketAddress): NettyTcpClientTarget
+    public fun target(host: String, port: Int): NettyTcpClientTarget
 
     public companion object Factory :
         RSocketTransportFactory<NettyTcpClientTransport, NettyTcpClientTransportBuilder>(::NettyTcpClientTransportBuilderImpl)
@@ -88,11 +90,11 @@ private class NettyTcpClientTransportBuilderImpl : NettyTcpClientTransportBuilde
             bootstrap?.invoke(this)
             channelFactory(channelFactory ?: ReflectiveChannelFactory(NioSocketChannel::class.java))
             group(eventLoopGroup ?: NioEventLoopGroup())
+            handler(NettyTcpConnectionInitializer(sslContext))
         }
 
         return NettyTcpClientTransportImpl(
-            coroutineContext = context.supervisorContext() + bootstrap.config().group().asCoroutineDispatcher(),
-            sslContext = sslContext,
+            coroutineContext = context.supervisorContext(),
             bootstrap = bootstrap,
             manageBootstrap = manageEventLoopGroup
         )
@@ -101,42 +103,37 @@ private class NettyTcpClientTransportBuilderImpl : NettyTcpClientTransportBuilde
 
 private class NettyTcpClientTransportImpl(
     override val coroutineContext: CoroutineContext,
-    private val sslContext: SslContext?,
     private val bootstrap: Bootstrap,
     manageBootstrap: Boolean,
 ) : NettyTcpClientTransport {
     init {
-        if (manageBootstrap) callOnCancellation {
-            bootstrap.config().group().shutdownGracefully().awaitFuture()
-        }
+        if (manageBootstrap) shutdownOnCancellation(bootstrap.config().group())
     }
 
-    override fun target(remoteAddress: SocketAddress): NettyTcpClientTargetImpl = NettyTcpClientTargetImpl(
+    override fun target(remoteAddress: SocketAddress): NettyTcpClientTarget = NettyTcpClientTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         bootstrap = bootstrap,
-        sslContext = sslContext,
         remoteAddress = remoteAddress
     )
 
-    override fun target(host: String, port: Int): RSocketClientTarget = target(InetSocketAddress(host, port))
+    override fun target(host: String, port: Int): NettyTcpClientTarget = target(InetSocketAddress(host, port))
 }
 
 @OptIn(RSocketTransportApi::class)
 private class NettyTcpClientTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: Bootstrap,
-    private val sslContext: SslContext?,
     private val remoteAddress: SocketAddress,
-) : RSocketClientTarget {
+) : NettyTcpClientTarget {
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
-        bootstrap.clone().handler(
-            NettyTcpConnectionInitializer(
-                sslContext = sslContext,
-                remoteAddress = remoteAddress as? InetSocketAddress,
-                handler = handler,
-                coroutineContext = coroutineContext
-            )
-        ).connect(remoteAddress).awaitFuture()
+    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<NettyTcpConnectionContext, T>): T {
+        currentCoroutineContext().ensureActive()
+        coroutineContext.ensureActive()
+
+        val channel = bootstrap.connect(remoteAddress).awaitChannel<DuplexChannel>()
+
+        return initializer.runInitializer(
+            NettyTcpConnection(coroutineContext.childContext(), channel)
+        )
     }
 }

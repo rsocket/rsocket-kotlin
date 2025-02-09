@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.netty.bootstrap.*
 import io.netty.channel.*
 import io.netty.channel.ChannelFactory
 import io.netty.channel.nio.*
+import io.netty.channel.socket.*
 import io.netty.channel.socket.nio.*
 import io.netty.handler.ssl.*
 import io.rsocket.kotlin.internal.io.*
@@ -31,15 +32,16 @@ import javax.net.ssl.*
 import kotlin.coroutines.*
 import kotlin.reflect.*
 
-@OptIn(RSocketTransportApi::class)
-public sealed interface NettyTcpServerInstance : RSocketServerInstance {
+public sealed interface NettyTcpServerConfiguration {
     public val localAddress: SocketAddress
 }
 
+public typealias NettyTcpServerTarget = RSocketServerTarget<NettyTcpConnectionContext, NettyTcpServerConfiguration>
+
 @OptIn(RSocketTransportApi::class)
 public sealed interface NettyTcpServerTransport : RSocketTransport {
-    public fun target(localAddress: SocketAddress? = null): RSocketServerTarget<NettyTcpServerInstance>
-    public fun target(host: String = "0.0.0.0", port: Int = 0): RSocketServerTarget<NettyTcpServerInstance>
+    public fun target(localAddress: SocketAddress? = null): NettyTcpServerTarget
+    public fun target(host: String = "0.0.0.0", port: Int = 0): NettyTcpServerTarget
 
     public companion object Factory :
         RSocketTransportFactory<NettyTcpServerTransport, NettyTcpServerTransportBuilder>(::NettyTcpServerTransportBuilderImpl)
@@ -101,13 +103,17 @@ private class NettyTcpServerTransportBuilderImpl : NettyTcpServerTransportBuilde
         val bootstrap = ServerBootstrap().apply {
             bootstrap?.invoke(this)
             channelFactory(channelFactory ?: ReflectiveChannelFactory(NioServerSocketChannel::class.java))
-            group(parentEventLoopGroup ?: NioEventLoopGroup(), childEventLoopGroup ?: NioEventLoopGroup())
+
+            val parentEventLoopGroup = parentEventLoopGroup ?: NioEventLoopGroup()
+            val childEventLoopGroup = childEventLoopGroup ?: parentEventLoopGroup
+            group(parentEventLoopGroup, childEventLoopGroup)
+
+            childHandler(NettyTcpConnectionInitializer(sslContext))
         }
 
         return NettyTcpServerTransportImpl(
-            coroutineContext = context.supervisorContext() + bootstrap.config().childGroup().asCoroutineDispatcher(),
+            coroutineContext = context.supervisorContext(),
             bootstrap = bootstrap,
-            sslContext = sslContext,
             manageBootstrap = manageEventLoopGroup
         )
     }
@@ -116,63 +122,82 @@ private class NettyTcpServerTransportBuilderImpl : NettyTcpServerTransportBuilde
 private class NettyTcpServerTransportImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: ServerBootstrap,
-    private val sslContext: SslContext?,
     manageBootstrap: Boolean,
 ) : NettyTcpServerTransport {
     init {
-        if (manageBootstrap) callOnCancellation {
-            bootstrap.config().childGroup().shutdownGracefully().awaitFuture()
-            bootstrap.config().group().shutdownGracefully().awaitFuture()
-        }
+        if (manageBootstrap) shutdownOnCancellation(bootstrap.config().childGroup(), bootstrap.config().group())
     }
 
-    override fun target(localAddress: SocketAddress?): NettyTcpServerTargetImpl = NettyTcpServerTargetImpl(
+    override fun target(localAddress: SocketAddress?): NettyTcpServerTarget = NettyTcpServerTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         bootstrap = bootstrap,
-        sslContext = sslContext,
         localAddress = localAddress ?: InetSocketAddress(0),
     )
 
-    override fun target(host: String, port: Int): RSocketServerTarget<NettyTcpServerInstance> =
-        target(InetSocketAddress(host, port))
+    override fun target(host: String, port: Int): NettyTcpServerTarget = target(InetSocketAddress(host, port))
 }
 
 @OptIn(RSocketTransportApi::class)
 private class NettyTcpServerTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: ServerBootstrap,
-    private val sslContext: SslContext?,
     private val localAddress: SocketAddress,
-) : RSocketServerTarget<NettyTcpServerInstance> {
+) : NettyTcpServerTarget {
     @RSocketTransportApi
-    override suspend fun startServer(handler: RSocketConnectionHandler): NettyTcpServerInstance {
+    override suspend fun startServer(initializer: RSocketConnectionInitializer<NettyTcpConnectionContext, Unit>): RSocketServerInstance<NettyTcpServerConfiguration> {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
         val instanceContext = coroutineContext.childContext()
         val channel = try {
             bootstrap.clone().childHandler(
-                NettyTcpConnectionInitializer(
-                    sslContext = sslContext,
-                    remoteAddress = null,
-                    handler = handler,
-                    coroutineContext = instanceContext.supervisorContext()
+                NettyTcpConnectionServerInitializer(
+                    parentContext = instanceContext.supervisorContext(),
+                    initializer = initializer,
+                    childHandler = bootstrap.config().childHandler()
                 )
-            ).bind(localAddress).awaitChannel()
+            ).bind(localAddress).awaitChannel<ServerChannel>()
         } catch (cause: Throwable) {
             instanceContext.job.cancel("Failed to bind", cause)
             throw cause
         }
 
-        // TODO: handle server closure
-        return NettyTcpServerInstanceImpl(
-            coroutineContext = instanceContext,
-            localAddress = (channel as ServerChannel).localAddress()
-        )
+        return NettyTcpServerInstanceImpl(instanceContext, channel)
     }
 }
 
+@RSocketTransportApi
 private class NettyTcpServerInstanceImpl(
     override val coroutineContext: CoroutineContext,
-    override val localAddress: SocketAddress,
-) : NettyTcpServerInstance
+    private val channel: ServerChannel,
+) : RSocketServerInstance<NettyTcpServerConfiguration>, NettyTcpServerConfiguration {
+    override val configuration: NettyTcpServerConfiguration get() = this
+    override val localAddress: SocketAddress get() = channel.localAddress()
+
+    init {
+        @OptIn(DelicateCoroutinesApi::class)
+        launch(start = CoroutineStart.ATOMIC) {
+            try {
+                awaitCancellation()
+            } finally {
+                nonCancellable {
+                    channel.close().awaitFuture()
+                }
+            }
+        }
+    }
+}
+
+@RSocketTransportApi
+private class NettyTcpConnectionServerInitializer(
+    private val parentContext: CoroutineContext,
+    private val initializer: RSocketConnectionInitializer<NettyTcpConnectionContext, Unit>,
+    private val childHandler: ChannelHandler,
+) : ChannelInitializer<DuplexChannel>() {
+    override fun initChannel(ch: DuplexChannel) {
+        ch.pipeline().addLast(childHandler)
+        initializer.launchInitializer(
+            NettyTcpConnection(parentContext.childContext(), ch)
+        )
+    }
+}
