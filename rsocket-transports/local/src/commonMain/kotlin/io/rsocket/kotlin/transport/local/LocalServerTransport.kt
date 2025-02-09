@@ -40,7 +40,6 @@ public sealed interface LocalServerTransport : RSocketTransport {
 @OptIn(RSocketTransportApi::class)
 public sealed interface LocalServerTransportBuilder : RSocketTransportBuilder<LocalServerTransport> {
     public fun dispatcher(context: CoroutineContext)
-    public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
 
     public fun sequential()
     public fun multiplexed()
@@ -91,10 +90,10 @@ private class LocalServerTargetImpl(
     private val connector: LocalServerConnector,
 ) : LocalServerTarget {
     @RSocketTransportApi
-    override suspend fun startServer(): RSocketServerInstance<LocalConnectionContext, LocalServerConfiguration> {
+    override suspend fun startServer(initializer: RSocketConnectionInitializer<LocalConnectionContext, Unit>): RSocketServerInstance<LocalServerConfiguration> {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
-        return LocalServerRegistry.startServer(this, serverName, connector)
+        return LocalServerRegistry.startServer(serverName, coroutineContext, initializer, connector)
     }
 }

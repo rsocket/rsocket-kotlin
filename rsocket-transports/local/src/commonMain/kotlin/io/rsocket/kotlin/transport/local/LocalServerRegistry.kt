@@ -20,7 +20,6 @@ import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.atomicfu.locks.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
 @RSocketTransportApi
@@ -43,18 +42,21 @@ internal object LocalServerRegistry : SynchronizedObject() {
         checkNotNull(instances[name]) { "Cannot find $name" }
     }
 
-    suspend fun connectClient(
-        scope: CoroutineScope,
+    suspend fun <T> connectClient(
         serverName: String,
-    ): RSocketConnection<LocalConnectionContext> = get(serverName).connect(scope)
+        parentContext: CoroutineContext,
+        initializer: RSocketConnectionInitializer<LocalConnectionContext, T>,
+    ): T = get(serverName).connect(parentContext, initializer)
 
     fun startServer(
-        scope: CoroutineScope,
         serverName: String,
+        parentContext: CoroutineContext,
+        initializer: RSocketConnectionInitializer<LocalConnectionContext, Unit>,
         connector: LocalServerConnector,
-    ): RSocketServerInstance<LocalConnectionContext, LocalServerConfiguration> = LocalServerInstanceImpl(
-        coroutineContext = scope.coroutineContext.supervisorContext(),
+    ): RSocketServerInstance<LocalServerConfiguration> = LocalServerInstanceImpl(
+        coroutineContext = parentContext.childContext(),
         configuration = LocalServerContext(serverName),
+        serverInitializer = initializer,
         connector = connector
     ).also {
         register(serverName, it)
@@ -65,29 +67,24 @@ internal object LocalServerRegistry : SynchronizedObject() {
 private class LocalServerInstanceImpl(
     override val coroutineContext: CoroutineContext,
     override val configuration: LocalServerContext,
+    private val serverInitializer: RSocketConnectionInitializer<LocalConnectionContext, Unit>,
     private val connector: LocalServerConnector,
-) : RSocketServerInstance<LocalConnectionContext, LocalServerConfiguration> {
-    private val connections = Channel<RSocketConnection<LocalConnectionContext>>(Channel.BUFFERED) {
-        it.cancel("Connection failed to be delivered to client")
-    }
-
-    init {
-        coroutineContext.job.invokeOnCompletion {
-            connections.cancel(CancellationException("Server stopped", it))
-        }
-    }
-
-    override suspend fun acceptConnection(): RSocketConnection<LocalConnectionContext>? = connections.receiveCatching().getOrNull()
+) : RSocketServerInstance<LocalServerConfiguration> {
+    private val serverContext = coroutineContext.supervisorContext()
 
     @RSocketTransportApi
-    suspend fun connect(clientScope: CoroutineScope): RSocketConnection<LocalConnectionContext> {
+    suspend fun <T> connect(
+        clientContext: CoroutineContext,
+        clientInitializer: RSocketConnectionInitializer<LocalConnectionContext, T>,
+    ): T {
         coroutineContext.ensureActive()
 
         return connector.connect(
             connectionContext = configuration,
-            serverConnections = connections,
-            clientScope = clientScope,
-            serverScope = this
+            clientContext = clientContext,
+            clientInitializer = clientInitializer,
+            serverContext = serverContext,
+            serverInitializer = serverInitializer,
         )
     }
 }

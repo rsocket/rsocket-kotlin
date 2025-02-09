@@ -17,11 +17,12 @@
 package io.rsocket.kotlin.transport.local
 
 import io.rsocket.kotlin.*
+import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.channels.*
 import kotlinx.io.*
 import kotlin.coroutines.*
 
-public sealed interface LocalConnectionContext {
+public sealed interface LocalConnectionContext : RSocketConnectionContext {
     public val serverName: String
 }
 

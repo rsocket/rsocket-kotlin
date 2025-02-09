@@ -34,7 +34,6 @@ public sealed interface LocalClientTransport : RSocketTransport {
 @OptIn(RSocketTransportApi::class)
 public sealed interface LocalClientTransportBuilder : RSocketTransportBuilder<LocalClientTransport> {
     public fun dispatcher(context: CoroutineContext)
-    public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
 }
 
 private class LocalClientTransportBuilderImpl : LocalClientTransportBuilder {
@@ -67,10 +66,10 @@ private class LocalClientTargetImpl(
 ) : LocalClientTarget {
 
     @RSocketTransportApi
-    override suspend fun connectClient(): RSocketConnection<LocalConnectionContext> {
+    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<LocalConnectionContext, T>): T {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
-        return LocalServerRegistry.connectClient(this, serverName)
+        return LocalServerRegistry.connectClient(serverName, coroutineContext, initializer)
     }
 }
