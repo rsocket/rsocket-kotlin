@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ package io.rsocket.kotlin.transport.ktor.tcp
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
-import io.ktor.utils.io.core.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 
 @Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use KtorTcpServerInstance")
 public class TcpServer internal constructor(
     public val handlerJob: Job,
-    public val serverSocket: Deferred<ServerSocket>
+    public val serverSocket: Deferred<ServerSocket>,
 )
 
 @Suppress("DEPRECATION_ERROR")
@@ -44,7 +44,7 @@ public fun TcpServerTransport(
     configure: SocketOptions.AcceptorOptions.() -> Unit = {},
 ): ServerTransport<TcpServer> = ServerTransport { accept ->
     val serverSocketDeferred = CompletableDeferred<ServerSocket>()
-    val handlerJob = launch(Dispatchers.IO + coroutineContext) {
+    val handlerJob = launch(Dispatchers.IoCompatible + coroutineContext) {
         SelectorManager(coroutineContext).use { selector ->
             aSocket(selector).tcp().bind(localAddress, configure).use { serverSocket ->
                 serverSocketDeferred.complete(serverSocket)

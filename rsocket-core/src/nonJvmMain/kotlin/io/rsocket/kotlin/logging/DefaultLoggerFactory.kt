@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,10 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.test
+package io.rsocket.kotlin.logging
 
-import kotlinx.coroutines.*
-import kotlin.experimental.*
-import kotlin.native.*
+import io.rsocket.kotlin.*
 
-actual annotation class IgnoreJs
-actual annotation class IgnoreJvm
-actual typealias IgnoreNative = kotlin.test.Ignore
-
-actual val anotherDispatcher: CoroutineDispatcher get() = newSingleThreadContext("another")
-
-@OptIn(ExperimentalNativeApi::class)
-actual fun identityHashCode(instance: Any): Int = instance.identityHashCode()
+@RSocketLoggingApi
+internal actual val DefaultLoggerFactory: LoggerFactory
+    get() = PrintLogger

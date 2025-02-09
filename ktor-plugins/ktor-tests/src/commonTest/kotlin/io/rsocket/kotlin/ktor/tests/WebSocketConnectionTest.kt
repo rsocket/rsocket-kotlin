@@ -76,12 +76,12 @@ class WebSocketConnectionTest : SuspendTest {
     }
 
     override suspend fun before() {
-        server.start()
+        server.startSuspend()
         delay(1000)
     }
 
     override suspend fun after() {
-        server.stop()
+        server.stopSuspend()
         client.coroutineContext.job.cancelAndJoin()
     }
 

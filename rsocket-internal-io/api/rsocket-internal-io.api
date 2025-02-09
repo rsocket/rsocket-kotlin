@@ -13,6 +13,10 @@ public final class io/rsocket/kotlin/internal/io/ContextKt {
 	public static final fun supervisorContext (Lkotlin/coroutines/CoroutineContext;)Lkotlin/coroutines/CoroutineContext;
 }
 
+public final class io/rsocket/kotlin/internal/io/Context_concurrentKt {
+	public static final fun getIoCompatible (Lkotlinx/coroutines/Dispatchers;)Lkotlinx/coroutines/CoroutineDispatcher;
+}
+
 public final class io/rsocket/kotlin/internal/io/Int24Kt {
 	public static final fun readInt24 (Lkotlinx/io/Source;)I
 	public static final fun writeInt24 (Lkotlinx/io/Sink;I)V
