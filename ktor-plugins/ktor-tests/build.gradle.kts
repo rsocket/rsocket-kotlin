@@ -17,20 +17,20 @@
 import rsocketbuild.*
 
 plugins {
-    id("rsocketbuild.multiplatform-library")
+    id("rsocketbuild.multiplatform-base")
 }
-
-description = "rsocket-kotlin ktor server plugin"
 
 kotlin {
     jvmTarget()
     nixTargets()
 
     sourceSets {
-        commonMain.dependencies {
-            implementation(projects.rsocketTransportKtorWebsocketInternal)
-            api(projects.rsocketCore)
-            api(libs.ktor.server.websockets)
+        commonTest.dependencies {
+            implementation(projects.ktorClientRsocket)
+            implementation(projects.ktorServerRsocket)
+            implementation(projects.rsocketTest)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.server.cio)
         }
     }
 }

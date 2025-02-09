@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ projects("rsocket-kotlin") {
         module("ktor-websocket-internal")
         module("ktor-websocket-client")
         module("ktor-websocket-server")
+        module("ktor-websocket-tests")
 
         module("netty-internal")
         module("netty-tcp")
@@ -52,6 +53,7 @@ projects("rsocket-kotlin") {
     folder("ktor-plugins", null) {
         module("ktor-client-rsocket")
         module("ktor-server-rsocket")
+        module("ktor-tests")
         // for migration from old names
         module("rsocket-ktor-client")
         module("rsocket-ktor-server")

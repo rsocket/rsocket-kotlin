@@ -34,11 +34,5 @@ kotlin {
             api(libs.ktor.server.core)
             api(libs.ktor.server.websockets)
         }
-        commonTest.dependencies {
-            implementation(projects.rsocketTransportTests)
-            implementation(projects.rsocketTransportKtorWebsocketClient)
-            implementation(libs.ktor.client.cio)
-            implementation(libs.ktor.server.cio)
-        }
     }
 }
