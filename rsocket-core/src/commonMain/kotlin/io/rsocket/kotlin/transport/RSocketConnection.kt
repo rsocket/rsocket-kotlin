@@ -28,21 +28,6 @@ public sealed interface RSocketConnection<Context : RSocketConnectionContext> : 
 }
 
 @RSocketTransportApi
-public interface RSocketConnectionInitializer<Context : RSocketConnectionContext, T> {
-    public suspend fun initializeConnection(connection: RSocketConnection<Context>): T
-}
-
-@RSocketTransportApi
-public suspend fun <Context : RSocketConnectionContext, T> RSocketConnectionInitializer<Context, T>.initializeOrCancelConnection(
-    connection: RSocketConnection<Context>,
-): T = try {
-    initializeConnection(connection)
-} catch (cause: Throwable) {
-    connection.coroutineContext.job.cancel("Connection initialization failed", cause)
-    throw cause
-}
-
-@RSocketTransportApi
 public interface RSocketSequentialConnection<Context : RSocketConnectionContext> : RSocketConnection<Context> {
     // TODO: is it needed for connection?
     public val isClosedForSend: Boolean

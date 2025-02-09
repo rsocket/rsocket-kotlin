@@ -74,12 +74,12 @@ private class MappedRSocketConnectionInitializer<OldContext : RSocketConnectionC
     private val delegate: RSocketConnectionInitializer<NewContext, T>,
     private val transformer: RSocketConnectionContextTransformer<OldContext, NewContext>,
 ) : RSocketConnectionInitializer<OldContext, T> {
-    override suspend fun initializeConnection(connection: RSocketConnection<OldContext>): T = delegate.initializeConnection(
-        when (connection) {
+    override suspend fun RSocketConnection<OldContext>.initializeConnection(): T = with(delegate) {
+        when (val connection = this@initializeConnection) {
             is RSocketMultiplexedConnection<OldContext> -> MappedRSocketMultiplexedConnection(connection, transformer)
             is RSocketSequentialConnection<OldContext>  -> MappedRSocketSequentialConnection(connection, transformer)
-        }
-    )
+        }.initializeConnection()
+    }
 }
 
 @RSocketTransportApi
