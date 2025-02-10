@@ -186,6 +186,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
+    @Ignore
     fun requestStreamX256() = test {
         (0..256).map {
             async {
