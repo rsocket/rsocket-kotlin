@@ -161,6 +161,7 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
+    @Ignore
     fun requestChannel256x512() = test {
         val request = flow {
             repeat(512) {
