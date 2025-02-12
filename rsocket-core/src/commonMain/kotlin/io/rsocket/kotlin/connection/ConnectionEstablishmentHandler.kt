@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,11 @@ internal abstract class ConnectionEstablishmentHandler(
     private val frameCodec: FrameCodec,
     private val connectionAcceptor: ConnectionAcceptor,
     private val interceptors: Interceptors,
-    private val requesterDeferred: CompletableDeferred<RSocket>?,
-) : RSocketConnectionHandler {
+) : RSocketConnectionInitializer<RSocketConnectionContext, RSocket> {
     abstract suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig
 
     private suspend fun wrapConnection(
-        connection: RSocketConnection,
+        connection: RSocketConnection<*>,
         requestContext: CoroutineContext,
     ): Connection2 = when (connection) {
         is RSocketMultiplexedConnection -> {
@@ -54,8 +53,8 @@ internal abstract class ConnectionEstablishmentHandler(
     }
 
     @Suppress("SuspendFunctionOnCoroutineScope")
-    private suspend fun CoroutineScope.handleConnection(connection: Connection2) {
-        try {
+    private suspend fun CoroutineScope.handleConnection(connection: Connection2): RSocket {
+        return try {
             val connectionConfig = connection.establishConnection(this@ConnectionEstablishmentHandler)
             try {
                 val requester = interceptors.wrapRequester(connection)
@@ -77,12 +76,12 @@ internal abstract class ConnectionEstablishmentHandler(
                     responder.cancel("Connection closed", cause)
                 }
 
-                requesterDeferred?.complete(requester)
-
                 val keepAliveHandler = KeepAliveHandler(connectionConfig.keepAlive, connection, this)
                 connection.handleConnection(
                     ConnectionInbound(connection.coroutineContext, responder, keepAliveHandler)
                 )
+
+                requester
             } catch (cause: Throwable) {
                 connectionConfig.setupPayload.close()
                 throw cause
@@ -101,7 +100,7 @@ internal abstract class ConnectionEstablishmentHandler(
         }
     }
 
-    final override suspend fun handleConnection(connection: RSocketConnection): Unit = coroutineScope {
-        handleConnection(wrapConnection(connection, coroutineContext.supervisorContext()))
+    final override suspend fun RSocketConnection<RSocketConnectionContext>.initializeConnection(): RSocket {
+        return handleConnection(wrapConnection(this, coroutineContext.supervisorContext()))
     }
 }

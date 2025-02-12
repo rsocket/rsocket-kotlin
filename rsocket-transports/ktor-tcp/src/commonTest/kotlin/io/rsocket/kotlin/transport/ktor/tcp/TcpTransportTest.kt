@@ -40,7 +40,7 @@ class KtorTcpTransportTest : TransportTest() {
         }.target("127.0.0.1"))
         client = connectClient(KtorTcpClientTransport(testContext) {
             selectorManager(selector, false)
-        }.target(server.localAddress))
+        }.target(server.configuration.localAddress))
     }
 
     override suspend fun after() {

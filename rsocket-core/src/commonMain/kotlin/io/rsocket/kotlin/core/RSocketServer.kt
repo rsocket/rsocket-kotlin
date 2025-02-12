@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,10 +55,10 @@ public class RSocketServer internal constructor(
         }
     }
 
-    public suspend fun <T : RSocketServerInstance> startServer(
-        transport: RSocketServerTarget<T>,
+    public suspend fun <ServerConfiguration> startServer(
+        transport: RSocketServerTarget<*, ServerConfiguration>,
         acceptor: ConnectionAcceptor,
-    ): T = transport.startServer(createHandler(acceptor))
+    ): RSocketServerInstance<ServerConfiguration> = transport.startServer(createHandler(acceptor))
 
     @RSocketTransportApi
     public fun createHandler(acceptor: ConnectionAcceptor): RSocketConnectionHandler =

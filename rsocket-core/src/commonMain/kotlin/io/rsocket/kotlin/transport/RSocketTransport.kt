@@ -59,7 +59,7 @@ public interface RSocketServerTarget<ConnectionContext : RSocketConnectionContex
 }
 
 // cancelling it will cancel server
-@RSocketTransportApi
+// @RSocketTransportApi - apply annotation after configuration rework
 public interface RSocketServerInstance<ServerConfiguration> : CoroutineScope {
     public val configuration: ServerConfiguration
     // graceful closing API should be here

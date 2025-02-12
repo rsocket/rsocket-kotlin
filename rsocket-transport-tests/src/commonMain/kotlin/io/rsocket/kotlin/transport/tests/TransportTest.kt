@@ -48,10 +48,10 @@ abstract class TransportTest : SuspendTest {
     protected fun <T> startServer(serverTransport: ServerTransport<T>): T =
         SERVER.bindIn(testScope, serverTransport, ACCEPTOR)
 
-    protected suspend fun connectClient(clientTransport: RSocketClientTarget): RSocket =
+    protected suspend fun connectClient(clientTransport: RSocketClientTarget<*>): RSocket =
         CONNECTOR.connect(clientTransport)
 
-    protected suspend fun <T : RSocketServerInstance> startServer(serverTransport: RSocketServerTarget<T>): T =
+    protected suspend fun <ServerConfiguration> startServer(serverTransport: RSocketServerTarget<*, ServerConfiguration>): RSocketServerInstance<ServerConfiguration> =
         SERVER.startServer(serverTransport, ACCEPTOR)
 
     override suspend fun after() {

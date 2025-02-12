@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class RSocketConnector internal constructor(
         }
     })
 
-    public suspend fun connect(transport: RSocketClientTarget): RSocket = when (reconnectPredicate) {
+    public suspend fun connect(transport: RSocketClientTarget<*>): RSocket = when (reconnectPredicate) {
         null -> connectOnce(transport)
         else -> connectWithReconnect(
             transport.coroutineContext,
@@ -57,25 +57,17 @@ public class RSocketConnector internal constructor(
         )
     }
 
-    private suspend fun connectOnce(transport: RSocketClientTarget): RSocket {
-        val requesterDeferred = CompletableDeferred<RSocket>()
-        val connectJob = transport.connectClient(
-            SetupConnection(requesterDeferred).logging(frameLogger)
-        ).onCompletion { if (it != null) requesterDeferred.completeExceptionally(it) }
-        return try {
-            requesterDeferred.await()
-        } catch (cause: Throwable) {
-            connectJob.cancel("RSocketConnector.connect was cancelled", cause)
-            throw cause
-        }
+    private suspend fun connectOnce(transport: RSocketClientTarget<*>): RSocket {
+        return transport.connectClient(
+            initializer = SetupConnection()//.logging(frameLogger)
+        )
     }
 
-    private inner class SetupConnection(requesterDeferred: CompletableDeferred<RSocket>) : ConnectionEstablishmentHandler(
+    private inner class SetupConnection : ConnectionEstablishmentHandler(
         isClient = true,
         frameCodec = FrameCodec(maxFragmentSize),
         connectionAcceptor = acceptor,
-        interceptors = interceptors,
-        requesterDeferred = requesterDeferred
+        interceptors = interceptors
     ) {
         override suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig {
             val connectionConfig = connectionConfigProvider()
