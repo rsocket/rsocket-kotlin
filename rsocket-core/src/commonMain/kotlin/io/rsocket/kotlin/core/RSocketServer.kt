@@ -55,10 +55,10 @@ public class RSocketServer internal constructor(
         }
     }
 
-    public suspend fun <ServerConfiguration> startServer(
-        transport: RSocketServerTarget<*, ServerConfiguration>,
+    public suspend fun <T : RSocketServerInstance> startServer(
+        transport: RSocketServerTarget<T>,
         acceptor: ConnectionAcceptor,
-    ): RSocketServerInstance<ServerConfiguration> = transport.startServer(createHandler(acceptor))
+    ): T = transport.startServer(createHandler(acceptor))
 
     @RSocketTransportApi
     public fun createHandler(acceptor: ConnectionAcceptor): RSocketConnectionHandler =

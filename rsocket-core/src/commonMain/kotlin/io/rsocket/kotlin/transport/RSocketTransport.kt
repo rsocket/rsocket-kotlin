@@ -43,24 +43,23 @@ public interface RSocketTransport : CoroutineScope {
 }
 
 @SubclassOptInRequired(RSocketTransportApi::class)
-public interface RSocketClientTarget<ConnectionContext : RSocketConnectionContext> : CoroutineScope {
+public interface RSocketClientTarget : CoroutineScope {
     @RSocketTransportApi
     public suspend fun <T> connectClient(
-        initializer: RSocketConnectionInitializer<ConnectionContext, T>,
+        initializer: RSocketConnectionInitializer<T>,
     ): T
 }
 
 @SubclassOptInRequired(RSocketTransportApi::class)
-public interface RSocketServerTarget<ConnectionContext : RSocketConnectionContext, ServerConfiguration> : CoroutineScope {
+public interface RSocketServerTarget<Instance : RSocketServerInstance> : CoroutineScope {
     @RSocketTransportApi
     public suspend fun startServer(
-        initializer: RSocketConnectionInitializer<ConnectionContext, Unit>,
-    ): RSocketServerInstance<ServerConfiguration>
+        initializer: RSocketConnectionInitializer<Unit>,
+    ): Instance
 }
 
 // cancelling it will cancel server
-// @RSocketTransportApi - apply annotation after configuration rework
-public interface RSocketServerInstance<ServerConfiguration> : CoroutineScope {
-    public val configuration: ServerConfiguration
+@SubclassOptInRequired(RSocketTransportApi::class)
+public interface RSocketServerInstance : CoroutineScope {
     // graceful closing API should be here
 }

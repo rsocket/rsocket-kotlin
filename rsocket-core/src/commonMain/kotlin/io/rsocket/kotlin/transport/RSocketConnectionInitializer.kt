@@ -19,16 +19,14 @@ package io.rsocket.kotlin.transport
 import kotlinx.coroutines.*
 
 @RSocketTransportApi
-public interface RSocketConnectionInitializer<Context : RSocketConnectionContext, T> {
-    public suspend fun RSocketConnection<Context>.initializeConnection(): T
+public interface RSocketConnectionInitializer<T> {
+    public suspend fun RSocketConnection.initialize(): T
 }
 
 @RSocketTransportApi
-public suspend fun <Context : RSocketConnectionContext, T> RSocketConnectionInitializer<Context, T>.runInitializer(
-    connection: RSocketConnection<Context>,
-): T {
+public suspend fun <T> RSocketConnectionInitializer<T>.runInitializer(connection: RSocketConnection): T {
     val result = connection.async {
-        connection.initializeConnection()
+        connection.initialize()
     }
     try {
         result.join()
@@ -40,10 +38,8 @@ public suspend fun <Context : RSocketConnectionContext, T> RSocketConnectionInit
 }
 
 @RSocketTransportApi
-public fun <Context : RSocketConnectionContext> RSocketConnectionInitializer<Context, Unit>.launchInitializer(
-    connection: RSocketConnection<Context>,
-) {
+public fun RSocketConnectionInitializer<Unit>.launchInitializer(connection: RSocketConnection) {
     connection.launch {
-        connection.initializeConnection()
+        connection.initialize()
     }
 }

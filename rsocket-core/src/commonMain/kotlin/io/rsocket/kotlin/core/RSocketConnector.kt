@@ -47,7 +47,7 @@ public class RSocketConnector internal constructor(
         }
     })
 
-    public suspend fun connect(transport: RSocketClientTarget<*>): RSocket = when (reconnectPredicate) {
+    public suspend fun connect(transport: RSocketClientTarget): RSocket = when (reconnectPredicate) {
         null -> connectOnce(transport)
         else -> connectWithReconnect(
             transport.coroutineContext,
@@ -57,17 +57,25 @@ public class RSocketConnector internal constructor(
         )
     }
 
-    private suspend fun connectOnce(transport: RSocketClientTarget<*>): RSocket {
-        return transport.connectClient(
-            initializer = SetupConnection()//.logging(frameLogger)
-        )
+    private suspend fun connectOnce(transport: RSocketClientTarget): RSocket {
+        val requesterDeferred = CompletableDeferred<RSocket>()
+        val connectJob = transport.connectClient(
+            SetupConnection(requesterDeferred).logging(frameLogger)
+        ).onCompletion { if (it != null) requesterDeferred.completeExceptionally(it) }
+        return try {
+            requesterDeferred.await()
+        } catch (cause: Throwable) {
+            connectJob.cancel("RSocketConnector.connect was cancelled", cause)
+            throw cause
+        }
     }
 
-    private inner class SetupConnection : ConnectionEstablishmentHandler(
+    private inner class SetupConnection(requesterDeferred: CompletableDeferred<RSocket>) : ConnectionEstablishmentHandler(
         isClient = true,
         frameCodec = FrameCodec(maxFragmentSize),
         connectionAcceptor = acceptor,
-        interceptors = interceptors
+        interceptors = interceptors,
+        requesterDeferred = requesterDeferred
     ) {
         override suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig {
             val connectionConfig = connectionConfigProvider()

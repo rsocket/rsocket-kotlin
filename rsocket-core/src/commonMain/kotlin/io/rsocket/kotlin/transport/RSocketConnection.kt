@@ -23,12 +23,10 @@ import kotlinx.io.*
 // should be accessed only internally
 // should be implemented only by transports
 @RSocketTransportApi
-public sealed interface RSocketConnection<Context : RSocketConnectionContext> : CoroutineScope {
-    public val connectionContext: Context
-}
+public sealed interface RSocketConnection : CoroutineScope
 
 @RSocketTransportApi
-public interface RSocketSequentialConnection<Context : RSocketConnectionContext> : RSocketConnection<Context> {
+public interface RSocketSequentialConnection : RSocketConnection {
     // TODO: is it needed for connection?
     public val isClosedForSend: Boolean
 
@@ -41,12 +39,12 @@ public interface RSocketSequentialConnection<Context : RSocketConnectionContext>
 }
 
 @RSocketTransportApi
-public interface RSocketMultiplexedConnection<Context : RSocketConnectionContext> : RSocketConnection<Context> {
+public interface RSocketMultiplexedConnection : RSocketConnection {
     public suspend fun createStream(): Stream
     public suspend fun acceptStream(): Stream?
 
     @RSocketTransportApi
-    public interface Stream : CoroutineScope {
+    public interface Stream : AutoCloseable {
         public val isClosedForSend: Boolean
 
         // 0 - highest priority
@@ -58,5 +56,10 @@ public interface RSocketMultiplexedConnection<Context : RSocketConnectionContext
 
         // null if no more frames could be received
         public suspend fun receiveFrame(): Buffer?
+
+        // closing stream will send buffered frames (if needed)
+        // sending/receiving frames will be not possible after it
+        // should not throw
+        override fun close()
     }
 }
