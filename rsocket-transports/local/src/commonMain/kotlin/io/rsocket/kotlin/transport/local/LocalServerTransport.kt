@@ -22,11 +22,12 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.uuid.*
 
-public sealed interface LocalServerConfiguration {
+@OptIn(RSocketTransportApi::class)
+public sealed interface LocalServerInstance : RSocketServerInstance {
     public val serverName: String
 }
 
-public typealias LocalServerTarget = RSocketServerTarget<LocalConnectionContext, LocalServerConfiguration>
+public typealias LocalServerTarget = RSocketServerTarget<LocalServerInstance>
 
 @OptIn(RSocketTransportApi::class)
 public sealed interface LocalServerTransport : RSocketTransport {
@@ -90,7 +91,7 @@ private class LocalServerTargetImpl(
     private val connector: LocalServerConnector,
 ) : LocalServerTarget {
     @RSocketTransportApi
-    override suspend fun startServer(initializer: RSocketConnectionInitializer<LocalConnectionContext, Unit>): RSocketServerInstance<LocalServerConfiguration> {
+    override suspend fun startServer(initializer: RSocketConnectionInitializer<Unit>): LocalServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 

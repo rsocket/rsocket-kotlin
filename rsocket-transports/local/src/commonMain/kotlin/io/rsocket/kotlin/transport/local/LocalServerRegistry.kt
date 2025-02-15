@@ -45,17 +45,17 @@ internal object LocalServerRegistry : SynchronizedObject() {
     suspend fun <T> connectClient(
         serverName: String,
         parentContext: CoroutineContext,
-        initializer: RSocketConnectionInitializer<LocalConnectionContext, T>,
+        initializer: RSocketConnectionInitializer<T>,
     ): T = get(serverName).connect(parentContext, initializer)
 
     fun startServer(
         serverName: String,
         parentContext: CoroutineContext,
-        initializer: RSocketConnectionInitializer<LocalConnectionContext, Unit>,
+        initializer: RSocketConnectionInitializer<Unit>,
         connector: LocalServerConnector,
-    ): RSocketServerInstance<LocalServerConfiguration> = LocalServerInstanceImpl(
+    ): LocalServerInstance = LocalServerInstanceImpl(
         coroutineContext = parentContext.childContext(),
-        configuration = LocalServerContext(serverName),
+        serverName = serverName,
         serverInitializer = initializer,
         connector = connector
     ).also {
@@ -66,21 +66,17 @@ internal object LocalServerRegistry : SynchronizedObject() {
 @RSocketTransportApi
 private class LocalServerInstanceImpl(
     override val coroutineContext: CoroutineContext,
-    override val configuration: LocalServerContext,
-    private val serverInitializer: RSocketConnectionInitializer<LocalConnectionContext, Unit>,
+    override val serverName: String,
+    private val serverInitializer: RSocketConnectionInitializer<Unit>,
     private val connector: LocalServerConnector,
-) : RSocketServerInstance<LocalServerConfiguration> {
+) : LocalServerInstance {
     private val serverContext = coroutineContext.supervisorContext()
 
     @RSocketTransportApi
-    suspend fun <T> connect(
-        clientContext: CoroutineContext,
-        clientInitializer: RSocketConnectionInitializer<LocalConnectionContext, T>,
-    ): T {
+    suspend fun <T> connect(clientContext: CoroutineContext, clientInitializer: RSocketConnectionInitializer<T>): T {
         coroutineContext.ensureActive()
 
         return connector.connect(
-            connectionContext = configuration,
             clientContext = clientContext,
             clientInitializer = clientInitializer,
             serverContext = serverContext,
@@ -88,7 +84,3 @@ private class LocalServerInstanceImpl(
         )
     }
 }
-
-private class LocalServerContext(
-    override val serverName: String,
-) : LocalConnectionContext, LocalServerConfiguration

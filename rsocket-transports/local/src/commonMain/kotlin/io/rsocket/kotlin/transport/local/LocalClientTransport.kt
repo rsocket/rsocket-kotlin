@@ -21,11 +21,9 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
-public typealias LocalClientTarget = RSocketClientTarget<LocalConnectionContext>
-
 @OptIn(RSocketTransportApi::class)
 public sealed interface LocalClientTransport : RSocketTransport {
-    public fun target(serverName: String): LocalClientTarget
+    public fun target(serverName: String): RSocketClientTarget
 
     public companion object Factory :
         RSocketTransportFactory<LocalClientTransport, LocalClientTransportBuilder>(::LocalClientTransportBuilderImpl)
@@ -53,7 +51,7 @@ private class LocalClientTransportBuilderImpl : LocalClientTransportBuilder {
 private class LocalClientTransportImpl(
     override val coroutineContext: CoroutineContext,
 ) : LocalClientTransport {
-    override fun target(serverName: String): LocalClientTarget = LocalClientTargetImpl(
+    override fun target(serverName: String): RSocketClientTarget = LocalClientTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         serverName = serverName
     )
@@ -63,10 +61,10 @@ private class LocalClientTransportImpl(
 private class LocalClientTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val serverName: String,
-) : LocalClientTarget {
+) : RSocketClientTarget {
 
     @RSocketTransportApi
-    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<LocalConnectionContext, T>): T {
+    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 

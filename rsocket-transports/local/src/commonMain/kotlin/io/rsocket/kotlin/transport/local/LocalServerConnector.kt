@@ -27,39 +27,36 @@ import kotlin.coroutines.*
 internal sealed class LocalServerConnector {
     @RSocketTransportApi
     abstract suspend fun <T> connect(
-        connectionContext: LocalConnectionContext,
         clientContext: CoroutineContext,
-        clientInitializer: RSocketConnectionInitializer<LocalConnectionContext, T>,
+        clientInitializer: RSocketConnectionInitializer<T>,
         serverContext: CoroutineContext,
-        serverInitializer: RSocketConnectionInitializer<LocalConnectionContext, Unit>,
+        serverInitializer: RSocketConnectionInitializer<Unit>,
     ): T
 
     object Sequential : LocalServerConnector() {
         @RSocketTransportApi
         override suspend fun <T> connect(
-            connectionContext: LocalConnectionContext,
             clientContext: CoroutineContext,
-            clientInitializer: RSocketConnectionInitializer<LocalConnectionContext, T>,
+            clientInitializer: RSocketConnectionInitializer<T>,
             serverContext: CoroutineContext,
-            serverInitializer: RSocketConnectionInitializer<LocalConnectionContext, Unit>,
+            serverInitializer: RSocketConnectionInitializer<Unit>,
         ): T {
             val frames = Frames()
 
             serverInitializer.launchInitializer(
-                Connection(serverContext.childContext(), connectionContext, frames.serverToClient, frames.clientToServer)
+                Connection(serverContext.childContext(), frames.serverToClient, frames.clientToServer)
             )
             return clientInitializer.runInitializer(
-                Connection(clientContext.childContext(), connectionContext, frames.serverToClient, frames.serverToClient)
+                Connection(clientContext.childContext(), frames.serverToClient, frames.serverToClient)
             )
         }
 
         @RSocketTransportApi
         private class Connection(
             override val coroutineContext: CoroutineContext,
-            override val connectionContext: LocalConnectionContext,
             private val incomingFrames: ReceiveChannel<Buffer>,
             private val outgoingFrames: SendChannel<Buffer>,
-        ) : RSocketSequentialConnection<LocalConnectionContext> {
+        ) : RSocketSequentialConnection {
             private val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
 
             init {
@@ -97,40 +94,29 @@ internal sealed class LocalServerConnector {
     object Multiplexed : LocalServerConnector() {
         @RSocketTransportApi
         override suspend fun <T> connect(
-            connectionContext: LocalConnectionContext,
             clientContext: CoroutineContext,
-            clientInitializer: RSocketConnectionInitializer<LocalConnectionContext, T>,
+            clientInitializer: RSocketConnectionInitializer<T>,
             serverContext: CoroutineContext,
-            serverInitializer: RSocketConnectionInitializer<LocalConnectionContext, Unit>,
+            serverInitializer: RSocketConnectionInitializer<Unit>,
         ): T {
             val streams = Streams()
 
             serverInitializer.launchInitializer(
-                Connection(
-                    coroutineContext = serverContext.childContext(),
-                    connectionContext = connectionContext,
-                    incomingStreams = streams.clientToServer,
-                    outgoingStreams = streams.serverToClient
-                )
+                Connection(serverContext.childContext(), streams.clientToServer, streams.serverToClient)
             )
             return clientInitializer.runInitializer(
-                Connection(
-                    coroutineContext = clientContext.childContext(),
-                    connectionContext = connectionContext,
-                    incomingStreams = streams.serverToClient,
-                    outgoingStreams = streams.clientToServer
-                )
+                Connection(clientContext.childContext(), streams.serverToClient, streams.clientToServer)
             )
         }
 
         @RSocketTransportApi
         private class Connection(
             override val coroutineContext: CoroutineContext,
-            override val connectionContext: LocalConnectionContext,
             private val incomingStreams: ReceiveChannel<Frames>,
             private val outgoingStreams: SendChannel<Frames>,
-        ) : RSocketMultiplexedConnection<LocalConnectionContext> {
-            private val streamsContext = coroutineContext.supervisorContext()
+        ) : RSocketMultiplexedConnection {
+            private val streamsJob = SupervisorJob(coroutineContext[Job])
+            //private val streamsContext = coroutineContext.supervisorContext()
 
             init {
                 coroutineContext.job.invokeOnCompletion {
@@ -143,7 +129,7 @@ internal sealed class LocalServerConnector {
                 val frames = Frames()
                 outgoingStreams.send(frames)
                 return Stream(
-                    coroutineContext = streamsContext.childContext(),
+                    job = Job(streamsJob),
                     incoming = frames.clientToServer,
                     outgoing = frames.serverToClient
                 )
@@ -152,7 +138,7 @@ internal sealed class LocalServerConnector {
             override suspend fun acceptStream(): RSocketMultiplexedConnection.Stream? {
                 val frames = incomingStreams.receiveCatching().getOrNull() ?: return null
                 return Stream(
-                    coroutineContext = streamsContext.childContext(),
+                    job = Job(streamsJob),
                     incoming = frames.serverToClient,
                     outgoing = frames.clientToServer
                 )
@@ -161,12 +147,12 @@ internal sealed class LocalServerConnector {
 
         @RSocketTransportApi
         private class Stream(
-            override val coroutineContext: CoroutineContext,
+            private val job: Job,
             private val incoming: ReceiveChannel<Buffer>,
             private val outgoing: SendChannel<Buffer>,
         ) : RSocketMultiplexedConnection.Stream {
             init {
-                coroutineContext.job.invokeOnCompletion {
+                job.invokeOnCompletion {
                     outgoing.close()
                     incoming.cancel()
                 }
@@ -185,6 +171,10 @@ internal sealed class LocalServerConnector {
 
             override suspend fun receiveFrame(): Buffer? {
                 return incoming.receiveCatching().getOrNull()
+            }
+
+            override fun close() {
+                job.cancel("Stream closed")
             }
         }
     }
