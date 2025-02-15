@@ -29,22 +29,13 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.io.*
-import java.net.*
 import kotlin.coroutines.*
-
-public sealed interface NettyTcpConnectionContext : RSocketConnectionContext {
-    public val localAddress: SocketAddress
-    public val remoteAddress: SocketAddress
-}
 
 @RSocketTransportApi
 internal class NettyTcpConnection(
     parentContext: CoroutineContext,
     private val channel: DuplexChannel,
-) : RSocketSequentialConnection<NettyTcpConnectionContext>, NettyTcpConnectionContext, ChannelInboundHandlerAdapter() {
-    override val localAddress: SocketAddress get() = channel.localAddress()
-    override val remoteAddress: SocketAddress get() = channel.remoteAddress()
-    override val connectionContext: NettyTcpConnectionContext get() = this
+) : RSocketSequentialConnection, ChannelInboundHandlerAdapter() {
 
     private val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
     private val inbound = bufferChannel(Channel.BUFFERED)

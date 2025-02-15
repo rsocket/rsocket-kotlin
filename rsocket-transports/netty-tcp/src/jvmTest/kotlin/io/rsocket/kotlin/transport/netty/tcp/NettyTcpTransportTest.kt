@@ -38,7 +38,7 @@ class NettyTcpTransportTest : TransportTest() {
         client = connectClient(
             NettyTcpClientTransport(testContext) {
                 eventLoopGroup(eventLoop, manage = false)
-            }.target(server.configuration.localAddress)
+            }.target(server.localAddress)
         )
     }
 }
@@ -59,7 +59,7 @@ class NettyTcpSslTransportTest : TransportTest() {
                 ssl {
                     trustManager(InsecureTrustManagerFactory.INSTANCE)
                 }
-            }.target(server.configuration.localAddress)
+            }.target(server.localAddress)
         )
     }
 }

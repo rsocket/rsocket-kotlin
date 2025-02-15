@@ -31,12 +31,10 @@ import java.net.*
 import kotlin.coroutines.*
 import kotlin.reflect.*
 
-public typealias NettyTcpClientTarget = RSocketClientTarget<NettyTcpConnectionContext>
-
 @OptIn(RSocketTransportApi::class)
 public sealed interface NettyTcpClientTransport : RSocketTransport {
-    public fun target(remoteAddress: SocketAddress): NettyTcpClientTarget
-    public fun target(host: String, port: Int): NettyTcpClientTarget
+    public fun target(remoteAddress: SocketAddress): RSocketClientTarget
+    public fun target(host: String, port: Int): RSocketClientTarget
 
     public companion object Factory :
         RSocketTransportFactory<NettyTcpClientTransport, NettyTcpClientTransportBuilder>(::NettyTcpClientTransportBuilderImpl)
@@ -110,13 +108,13 @@ private class NettyTcpClientTransportImpl(
         if (manageBootstrap) shutdownOnCancellation(bootstrap.config().group())
     }
 
-    override fun target(remoteAddress: SocketAddress): NettyTcpClientTarget = NettyTcpClientTargetImpl(
+    override fun target(remoteAddress: SocketAddress): RSocketClientTarget = NettyTcpClientTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         bootstrap = bootstrap,
         remoteAddress = remoteAddress
     )
 
-    override fun target(host: String, port: Int): NettyTcpClientTarget = target(InetSocketAddress(host, port))
+    override fun target(host: String, port: Int): RSocketClientTarget = target(InetSocketAddress(host, port))
 }
 
 @OptIn(RSocketTransportApi::class)
@@ -124,9 +122,9 @@ private class NettyTcpClientTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: Bootstrap,
     private val remoteAddress: SocketAddress,
-) : NettyTcpClientTarget {
+) : RSocketClientTarget {
     @RSocketTransportApi
-    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<NettyTcpConnectionContext, T>): T {
+    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 

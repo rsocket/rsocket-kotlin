@@ -32,11 +32,12 @@ import javax.net.ssl.*
 import kotlin.coroutines.*
 import kotlin.reflect.*
 
-public sealed interface NettyTcpServerConfiguration {
+@OptIn(RSocketTransportApi::class)
+public sealed interface NettyTcpServerInstance : RSocketServerInstance {
     public val localAddress: SocketAddress
 }
 
-public typealias NettyTcpServerTarget = RSocketServerTarget<NettyTcpConnectionContext, NettyTcpServerConfiguration>
+public typealias NettyTcpServerTarget = RSocketServerTarget<NettyTcpServerInstance>
 
 @OptIn(RSocketTransportApi::class)
 public sealed interface NettyTcpServerTransport : RSocketTransport {
@@ -144,7 +145,7 @@ private class NettyTcpServerTargetImpl(
     private val localAddress: SocketAddress,
 ) : NettyTcpServerTarget {
     @RSocketTransportApi
-    override suspend fun startServer(initializer: RSocketConnectionInitializer<NettyTcpConnectionContext, Unit>): RSocketServerInstance<NettyTcpServerConfiguration> {
+    override suspend fun startServer(initializer: RSocketConnectionInitializer<Unit>): NettyTcpServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
@@ -170,8 +171,7 @@ private class NettyTcpServerTargetImpl(
 private class NettyTcpServerInstanceImpl(
     override val coroutineContext: CoroutineContext,
     private val channel: ServerChannel,
-) : RSocketServerInstance<NettyTcpServerConfiguration>, NettyTcpServerConfiguration {
-    override val configuration: NettyTcpServerConfiguration get() = this
+) : NettyTcpServerInstance {
     override val localAddress: SocketAddress get() = channel.localAddress()
 
     init {
@@ -191,7 +191,7 @@ private class NettyTcpServerInstanceImpl(
 @RSocketTransportApi
 private class NettyTcpConnectionServerInitializer(
     private val parentContext: CoroutineContext,
-    private val initializer: RSocketConnectionInitializer<NettyTcpConnectionContext, Unit>,
+    private val initializer: RSocketConnectionInitializer<Unit>,
     private val childHandler: ChannelHandler,
 ) : ChannelInitializer<DuplexChannel>() {
     override fun initChannel(ch: DuplexChannel) {
