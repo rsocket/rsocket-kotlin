@@ -23,12 +23,10 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
-public typealias KtorTcpClientTarget = RSocketClientTarget<KtorTcpConnectionContext>
-
 @OptIn(RSocketTransportApi::class)
 public sealed interface KtorTcpClientTransport : RSocketTransport {
-    public fun target(remoteAddress: SocketAddress): KtorTcpClientTarget
-    public fun target(host: String, port: Int): KtorTcpClientTarget
+    public fun target(remoteAddress: SocketAddress): RSocketClientTarget
+    public fun target(host: String, port: Int): RSocketClientTarget
 
     public companion object Factory :
         RSocketTransportFactory<KtorTcpClientTransport, KtorTcpClientTransportBuilder>(::KtorTcpClientTransportBuilderImpl)
@@ -74,14 +72,14 @@ private class KtorTcpClientTransportImpl(
         if (manageSelectorManager) coroutineContext.job.invokeOnCompletion { selectorManager.close() }
     }
 
-    override fun target(remoteAddress: SocketAddress): KtorTcpClientTarget = KtorTcpClientTargetImpl(
+    override fun target(remoteAddress: SocketAddress): RSocketClientTarget = KtorTcpClientTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         socketOptions = socketOptions,
         selectorManager = selectorManager,
         remoteAddress = remoteAddress
     )
 
-    override fun target(host: String, port: Int): KtorTcpClientTarget = target(InetSocketAddress(host, port))
+    override fun target(host: String, port: Int): RSocketClientTarget = target(InetSocketAddress(host, port))
 }
 
 @OptIn(RSocketTransportApi::class)
@@ -90,9 +88,9 @@ private class KtorTcpClientTargetImpl(
     private val socketOptions: SocketOptions.TCPClientSocketOptions.() -> Unit,
     private val selectorManager: SelectorManager,
     private val remoteAddress: SocketAddress,
-) : KtorTcpClientTarget {
+) : RSocketClientTarget {
     @RSocketTransportApi
-    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<KtorTcpConnectionContext, T>): T {
+    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 

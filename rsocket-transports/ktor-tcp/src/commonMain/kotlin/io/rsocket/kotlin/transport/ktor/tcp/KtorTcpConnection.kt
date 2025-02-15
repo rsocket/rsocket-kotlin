@@ -26,20 +26,11 @@ import kotlinx.coroutines.channels.*
 import kotlinx.io.*
 import kotlin.coroutines.*
 
-public sealed interface KtorTcpConnectionContext : RSocketConnectionContext {
-    public val localAddress: SocketAddress
-    public val remoteAddress: SocketAddress
-}
-
 @RSocketTransportApi
 internal class KtorTcpConnection(
     override val coroutineContext: CoroutineContext,
     private val socket: Socket,
-) : RSocketSequentialConnection<KtorTcpConnectionContext>, KtorTcpConnectionContext {
-    override val localAddress: SocketAddress get() = socket.localAddress
-    override val remoteAddress: SocketAddress get() = socket.remoteAddress
-    override val connectionContext: KtorTcpConnectionContext get() = this
-
+) : RSocketSequentialConnection {
     private val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
     private val inbound = bufferChannel(Channel.BUFFERED)
 

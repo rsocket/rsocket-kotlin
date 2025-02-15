@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import kotlin.test.*
 class TcpServerTest : SuspendTest {
     private val testJob = Job()
     private val testContext = testJob + TestExceptionHandler
-    private val serverTransport = KtorTcpServerTransport(testContext).target("127.0.0.1")
+    private val serverTransport = KtorTcpServerTransport(testContext).target()
     private fun KtorTcpServerInstance.clientTransport() =
         KtorTcpClientTransport(testContext).target(localAddress)
 

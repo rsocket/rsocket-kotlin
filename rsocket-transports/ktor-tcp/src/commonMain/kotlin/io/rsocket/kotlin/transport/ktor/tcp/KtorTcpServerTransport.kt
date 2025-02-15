@@ -23,11 +23,12 @@ import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
-public sealed interface KtorTcpServerConfiguration {
+@OptIn(RSocketTransportApi::class)
+public sealed interface KtorTcpServerInstance : RSocketServerInstance {
     public val localAddress: SocketAddress
 }
 
-public typealias KtorTcpServerTarget = RSocketServerTarget<KtorTcpConnectionContext, KtorTcpServerConfiguration>
+public typealias KtorTcpServerTarget = RSocketServerTarget<KtorTcpServerInstance>
 
 @OptIn(RSocketTransportApi::class)
 public sealed interface KtorTcpServerTransport : RSocketTransport {
@@ -96,7 +97,7 @@ private class KtorTcpServerTargetImpl(
 ) : KtorTcpServerTarget {
 
     @RSocketTransportApi
-    override suspend fun startServer(initializer: RSocketConnectionInitializer<KtorTcpConnectionContext, Unit>): RSocketServerInstance<KtorTcpServerConfiguration> {
+    override suspend fun startServer(initializer: RSocketConnectionInitializer<Unit>): KtorTcpServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
@@ -111,9 +112,8 @@ private class KtorTcpServerTargetImpl(
 private class KtorTcpServerInstanceImpl(
     override val coroutineContext: CoroutineContext,
     private val serverSocket: ServerSocket,
-    private val initializer: RSocketConnectionInitializer<KtorTcpConnectionContext, Unit>,
-) : RSocketServerInstance<KtorTcpServerConfiguration>, KtorTcpServerConfiguration {
-    override val configuration: KtorTcpServerConfiguration get() = this
+    private val initializer: RSocketConnectionInitializer<Unit>,
+) : KtorTcpServerInstance {
     override val localAddress: SocketAddress get() = serverSocket.localAddress
 
     init {
