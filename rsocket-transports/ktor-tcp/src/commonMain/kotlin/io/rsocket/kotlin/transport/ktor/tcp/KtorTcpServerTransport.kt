@@ -61,9 +61,9 @@ private class KtorTcpServerTransportBuilderImpl : KtorTcpServerTransportBuilder 
 
     @RSocketTransportApi
     override fun buildTransport(context: CoroutineContext): KtorTcpServerTransport = KtorTcpServerTransportImpl(
-        coroutineContext = context.supervisorContext(),
+        coroutineContext = context.supervisorContext() + Dispatchers.Default,
         socketOptions = socketOptions,
-        selectorManager = selectorManager ?: SelectorManager(Dispatchers.IO),
+        selectorManager = selectorManager ?: SelectorManager(Dispatchers.IoCompatible),
         manageSelectorManager = manageSelectorManager
     )
 }
@@ -101,9 +101,13 @@ private class KtorTcpServerTargetImpl(
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.IoCompatible) {
             val serverSocket = aSocket(selectorManager).tcp().bind(localAddress, socketOptions)
-            KtorTcpServerInstanceImpl(coroutineContext.childContext(), serverSocket, initializer)
+            KtorTcpServerInstanceImpl(
+                coroutineContext = this@KtorTcpServerTargetImpl.coroutineContext.childContext(),
+                serverSocket = serverSocket,
+                initializer = initializer
+            )
         }
     }
 }
@@ -121,8 +125,8 @@ private class KtorTcpServerInstanceImpl(
         launch(start = CoroutineStart.ATOMIC) {
             try {
                 currentCoroutineContext().ensureActive() // because of ATOMIC start
-                val connectionsContext = currentCoroutineContext().childContext()
 
+                val connectionsContext = currentCoroutineContext().supervisorContext()
                 while (true) {
                     val socket = serverSocket.accept()
                     initializer.launchInitializer(

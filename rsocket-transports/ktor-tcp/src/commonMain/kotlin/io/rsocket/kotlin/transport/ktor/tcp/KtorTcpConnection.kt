@@ -53,31 +53,34 @@ internal class KtorTcpConnection(
                     } catch (cause: Throwable) {
                         output.cancel(cause)
                         throw cause
-                    } finally {
-                        outboundQueue.cancel()
                     }
                 }
+            }.onCompletion {
+                outboundQueue.cancel()
             }
 
-            try {
-                currentCoroutineContext().ensureActive() // because of ATOMIC start
-
+            val inboundJob = launch {
                 val input = socket.openReadChannel()
                 try {
-                    while (true) inbound.send(input.readFrame() ?: break)
+                    while (true) {
+                        inbound.send(input.readFrame() ?: break)
+                    }
                     input.cancel(null)
                 } catch (cause: Throwable) {
                     input.cancel(cause)
                     throw cause
-                } finally {
-                    inbound.cancel()
                 }
+            }.onCompletion {
+                inbound.cancel()
+            }
 
+            try {
                 awaitCancellation()
             } finally {
                 nonCancellable {
                     outboundQueue.close()
                     outboundJob.join()
+                    inboundJob.join()
                     // await socket completion
                     socket.close()
                     socket.socketContext.join()

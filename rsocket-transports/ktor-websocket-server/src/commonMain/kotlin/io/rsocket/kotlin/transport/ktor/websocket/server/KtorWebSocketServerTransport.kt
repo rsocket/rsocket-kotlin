@@ -92,8 +92,7 @@ private class KtorWebSocketServerTransportBuilderImpl : KtorWebSocketServerTrans
 
     @RSocketTransportApi
     override fun buildTransport(context: CoroutineContext): KtorWebSocketServerTransport = KtorWebSocketServerTransportImpl(
-        // we always add IO - as it's the best choice here, server will use it's own dispatcher anyway
-        coroutineContext = context.supervisorContext() + Dispatchers.IoCompatible,
+        coroutineContext = context.supervisorContext() + Dispatchers.Default,
         factory = requireNotNull(httpServerFactory) { "httpEngine is required" },
         webSocketsConfig = webSocketsConfig,
     )
@@ -170,7 +169,7 @@ private class KtorWebSocketServerTargetImpl(
     // parentCoroutineContext is the context of server instance
     @RSocketTransportApi
     private fun createServer(
-        initializer: RSocketConnectionInitializer<Unit>
+        initializer: RSocketConnectionInitializer<Unit>,
         serverContext: CoroutineContext,
     ): EmbeddedServer<*, *> {
         val config = serverConfig {
@@ -180,7 +179,7 @@ private class KtorWebSocketServerTargetImpl(
                 install(WebSockets, webSocketsConfig)
                 routing {
                     webSocket(target.path, target.protocol) {
-                        initializer.launchInitializer(wrapSession(this))
+                        initializer.launchInitializer(KtorWebSocketConnection(this))
                     }
                 }
             }
@@ -191,20 +190,24 @@ private class KtorWebSocketServerTargetImpl(
     private suspend fun startServer(
         embeddedServer: EmbeddedServer<*, *>,
         serverContext: CoroutineContext,
-    ): List<EngineConnectorConfig> = launchCoroutine(serverContext + Dispatchers.IoCompatible) { cont ->
-        embeddedServer.startSuspend()
-        launch(serverContext + Dispatchers.IoCompatible) {
+    ): List<EngineConnectorConfig> {
+        @OptIn(DelicateCoroutinesApi::class)
+        val serverJob = launch(serverContext, start = CoroutineStart.ATOMIC) {
             try {
+                currentCoroutineContext().ensureActive() // because of atomic start
+                embeddedServer.startSuspend()
                 awaitCancellation()
             } finally {
-                withContext(NonCancellable) {
+                nonCancellable {
                     embeddedServer.stopSuspend()
                 }
             }
         }
-        cont.resume(embeddedServer.engine.resolvedConnectors()) { cause, _, _ ->
-            // will cause stopping of the server
-            serverContext.job.cancel("Cancelled", cause)
+        return try {
+            embeddedServer.engine.resolvedConnectors()
+        } catch (cause: Throwable) {
+            serverJob.cancel("Starting server cancelled", cause)
+            throw cause
         }
     }
 }

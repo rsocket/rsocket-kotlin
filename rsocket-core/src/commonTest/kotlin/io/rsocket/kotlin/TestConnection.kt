@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,9 @@ class TestConnection : RSocketSequentialConnection, RSocketClientTarget {
         }
     }
 
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
-        handler.handleConnection(this@TestConnection)
-    }.onCompletion {
-        if (it != null) job.completeExceptionally(it)
+    @RSocketTransportApi
+    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
+        return initializer.runInitializer(this)
     }
 
     override val isClosedForSend: Boolean get() = sendChannel.isClosedForSend

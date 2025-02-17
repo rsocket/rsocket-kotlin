@@ -55,9 +55,9 @@ private class KtorTcpClientTransportBuilderImpl : KtorTcpClientTransportBuilder 
 
     @RSocketTransportApi
     override fun buildTransport(context: CoroutineContext): KtorTcpClientTransport = KtorTcpClientTransportImpl(
-        coroutineContext = context.supervisorContext(),
+        coroutineContext = context.supervisorContext() + Dispatchers.Default,
         socketOptions = socketOptions,
-        selectorManager = selectorManager ?: SelectorManager(Dispatchers.IO),
+        selectorManager = selectorManager ?: SelectorManager(Dispatchers.IoCompatible),
         manageSelectorManager = manageSelectorManager
     )
 }
@@ -94,10 +94,13 @@ private class KtorTcpClientTargetImpl(
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.IoCompatible) {
             val socket = aSocket(selectorManager).tcp().connect(remoteAddress, socketOptions)
             initializer.runInitializer(
-                KtorTcpConnection(coroutineContext.childContext(), socket)
+                KtorTcpConnection(
+                    coroutineContext = this@KtorTcpClientTargetImpl.coroutineContext.childContext(),
+                    socket = socket
+                )
             )
         }
     }

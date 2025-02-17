@@ -24,6 +24,7 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.internal.*
+import kotlinx.coroutines.*
 
 private val RSocketSupportConfigKey = AttributeKey<RSocketSupportConfig.Internal>("RSocketSupportConfig")
 
@@ -54,8 +55,9 @@ internal fun Route.rSocketHandler(acceptor: ConnectionAcceptor): suspend Default
     val config = application.attributes.getOrNull(RSocketSupportConfigKey)
         ?: error("Plugin RSocketSupport is not installed. Consider using `install(RSocketSupport)` in server config first.")
 
-    val handler = config.server.createInitializer(acceptor)
+    val initializer = config.server.createInitializer(acceptor)
     return {
-        handler.handleKtorWebSocketConnection(this)
+        initializer.launchInitializer(KtorWebSocketConnection(this))
+        awaitCancellation()
     }
 }

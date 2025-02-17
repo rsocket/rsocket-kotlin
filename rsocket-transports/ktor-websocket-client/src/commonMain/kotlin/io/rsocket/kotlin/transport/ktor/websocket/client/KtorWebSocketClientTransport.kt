@@ -79,15 +79,15 @@ private class KtorWebSocketClientTransportBuilderImpl : KtorWebSocketClientTrans
             install(WebSockets, webSocketsConfig)
         }
         // only dispatcher of a client is used - it looks like it's Dispatchers.IO now
-        val newContext = context.supervisorContext() + (httpClient.coroutineContext[ContinuationInterceptor] ?: EmptyCoroutineContext)
-        val newJob = newContext.job
+        val transportContext = context.supervisorContext() + Dispatchers.Default
+        val transportJob = transportContext.job
         val httpClientJob = httpClient.coroutineContext.job
 
-        httpClientJob.invokeOnCompletion { newJob.cancel("HttpClient closed", it) }
-        newJob.invokeOnCompletion { httpClientJob.cancel("KtorWebSocketClientTransport closed", it) }
+        httpClientJob.invokeOnCompletion { transportJob.cancel("HttpClient closed", it) }
+        transportJob.invokeOnCompletion { httpClientJob.cancel("KtorWebSocketClientTransport closed", it) }
 
         return KtorWebSocketClientTransportImpl(
-            coroutineContext = newContext,
+            coroutineContext = transportContext,
             httpClient = httpClient,
         )
     }
@@ -98,7 +98,7 @@ private class KtorWebSocketClientTransportImpl(
     private val httpClient: HttpClient,
 ) : KtorWebSocketClientTransport {
     override fun target(request: HttpRequestBuilder.() -> Unit): RSocketClientTarget = KtorWebSocketClientTargetImpl(
-        coroutineContext = coroutineContext,
+        coroutineContext = coroutineContext.supervisorContext(),
         httpClient = httpClient,
         request = request
     )
@@ -138,10 +138,15 @@ private class KtorWebSocketClientTargetImpl(
 ) : RSocketClientTarget {
     @RSocketTransportApi
     override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
+        currentCoroutineContext().ensureActive()
+        coroutineContext.ensureActive()
+
         val session = httpClient.webSocketSession(request)
-        return initializer.runInitializer(
-            KtorWebSocketConnection(coroutineContext.childContext(), session)
-        )
+        val handle = coroutineContext.job.invokeOnCompletion {
+            session.cancel("Transport was cancelled", it)
+        }
+        session.coroutineContext.job.invokeOnCompletion { handle.dispose() }
+        return initializer.runInitializer(KtorWebSocketConnection(session))
     }
 }
 

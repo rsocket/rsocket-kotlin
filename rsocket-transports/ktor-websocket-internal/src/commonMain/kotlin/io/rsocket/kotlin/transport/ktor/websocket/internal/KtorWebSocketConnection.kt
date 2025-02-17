@@ -25,42 +25,52 @@ import kotlinx.coroutines.channels.*
 import kotlinx.io.*
 import kotlin.coroutines.*
 
-//@RSocketTransportApi
-//public suspend fun RSocketConnectionHandler.handleKtorWebSocketConnection(webSocketSession: WebSocketSession): Unit = coroutineScope {
-//    val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
-//
-//    val senderJob = launch {
-//        while (true) webSocketSession.send(outboundQueue.dequeueFrame()?.readByteArray() ?: break)
-//    }.onCompletion { outboundQueue.cancel() }
-//
-//    try {
-//        handleConnection(KtorWebSocketConnection(outboundQueue, webSocketSession.incoming))
-//    } finally {
-//        webSocketSession.incoming.cancel()
-//        outboundQueue.close()
-//        withContext(NonCancellable) {
-//            senderJob.join() // await all frames sent
-//            webSocketSession.close()
-//            webSocketSession.coroutineContext.job.join()
-//        }
-//    }
-//}
-
 @RSocketTransportApi
 public class KtorWebSocketConnection(
-    override val coroutineContext: CoroutineContext,
     private val session: WebSocketSession,
-//    private val outboundQueue: PrioritizationFrameQueue,
-//    private val inbound: ReceiveChannel<Frame>,
 ) : RSocketSequentialConnection {
+    private val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
+    override val coroutineContext: CoroutineContext get() = session.coroutineContext
+
+    init {
+        @OptIn(DelicateCoroutinesApi::class)
+        launch(start = CoroutineStart.ATOMIC) {
+            val outboundJob = launch {
+                nonCancellable {
+                    try {
+                        while (true) {
+                            session.send(outboundQueue.dequeueFrame()?.readByteArray() ?: break)
+                        }
+                    } catch (cause: Throwable) {
+                        session.outgoing.close(cause)
+                        throw cause
+                    } finally {
+                        outboundQueue.cancel()
+                    }
+                }
+            }
+
+            try {
+                awaitCancellation()
+            } finally {
+                nonCancellable {
+                    session.incoming.cancel()
+                    outboundQueue.close()
+                    outboundJob.join()
+                    // await socket completion
+                    session.close()
+                }
+            }
+        }
+    }
 
     override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         return outboundQueue.enqueueFrame(streamId, frame)
     }
 
     override suspend fun receiveFrame(): Buffer? {
-        val frame = inbound.receiveCatching().getOrNull() ?: return null
+        val frame = session.incoming.receiveCatching().getOrNull() ?: return null
         return Buffer().apply { write(frame.data) }
     }
 }

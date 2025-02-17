@@ -38,8 +38,8 @@ public suspend fun <T> RSocketConnectionInitializer<T>.runInitializer(connection
 }
 
 @RSocketTransportApi
-public fun RSocketConnectionInitializer<Unit>.launchInitializer(connection: RSocketConnection) {
-    connection.launch {
+public fun RSocketConnectionInitializer<Unit>.launchInitializer(connection: RSocketConnection): Job {
+    return connection.launch {
         connection.initialize()
     }
 }
