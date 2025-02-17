@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,33 +23,35 @@ import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.io.*
+import kotlin.coroutines.*
 
 @Suppress("DEPRECATION_ERROR")
 @RSocketTransportApi
-internal suspend fun RSocketConnectionHandler.handleConnection(connection: Connection): Unit = coroutineScope {
-    val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
-
-    val senderJob = launch {
-        while (true) connection.send(outboundQueue.dequeueFrame() ?: break)
-    }.onCompletion { outboundQueue.cancel() }
-
-    try {
-        handleConnection(OldConnection(outboundQueue, connection))
-    } finally {
-        outboundQueue.close()
-        withContext(NonCancellable) {
-            senderJob.join()
-        }
-    }
-}
-
-@Suppress("DEPRECATION_ERROR")
-@RSocketTransportApi
-private class OldConnection(
-    private val outboundQueue: PrioritizationFrameQueue,
+internal class OldConnection(
     private val connection: Connection,
 ) : RSocketSequentialConnection {
+    private val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
+
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
+
+    override val coroutineContext: CoroutineContext get() = connection.coroutineContext
+
+    init {
+        val senderJob = launch {
+            while (true) connection.send(outboundQueue.dequeueFrame() ?: break)
+        }.onCompletion { outboundQueue.cancel() }
+
+//        try
+//        {
+//            handleConnection(OldConnection(outboundQueue, connection))
+//        } finally
+//        {
+//            outboundQueue.close()
+//            withContext(NonCancellable) {
+//                senderJob.join()
+//            }
+//        }
+    }
 
     override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         return outboundQueue.enqueueFrame(streamId, frame)

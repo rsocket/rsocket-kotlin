@@ -46,31 +46,32 @@ public class RSocketServer internal constructor(
         scope: CoroutineScope,
         transport: ServerTransport<T>,
         acceptor: ConnectionAcceptor,
-    ): T {
-        val handler = createHandler(acceptor)
-        return with(transport) {
-            scope.start {
-                handler.handleConnection(interceptors.wrapConnection(it))
-            }
+    ): T = with(transport) {
+        val initializer = createInitializer(acceptor)
+        scope.start {
+            initializer.launchInitializer(
+                OldConnection(interceptors.wrapConnection(it))
+            )
         }
     }
 
     public suspend fun <T : RSocketServerInstance> startServer(
         transport: RSocketServerTarget<T>,
         acceptor: ConnectionAcceptor,
-    ): T = transport.startServer(createHandler(acceptor))
+    ): T = transport.startServer(createInitializer(acceptor))
 
     @RSocketTransportApi
-    public fun createHandler(acceptor: ConnectionAcceptor): RSocketConnectionHandler =
+    public fun createInitializer(acceptor: ConnectionAcceptor): RSocketConnectionInitializer<Unit> =
         AcceptConnection(acceptor).logging(frameLogger)
 
-    private inner class AcceptConnection(acceptor: ConnectionAcceptor) : ConnectionEstablishmentHandler(
+    private inner class AcceptConnection(acceptor: ConnectionAcceptor) : ConnectionEstablishmentHandler<Unit>(
         isClient = false,
         frameCodec = FrameCodec(maxFragmentSize),
         connectionAcceptor = acceptor,
         interceptors = interceptors,
-        requesterDeferred = null
     ) {
+        override fun transform(requester: RSocket) = Unit
+
         override suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig {
             val setupFrame = context.receiveFrame()
             return try {

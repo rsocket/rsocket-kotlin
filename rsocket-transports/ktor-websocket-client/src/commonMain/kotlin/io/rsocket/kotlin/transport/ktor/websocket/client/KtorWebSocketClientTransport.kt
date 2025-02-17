@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,12 +136,12 @@ private class KtorWebSocketClientTargetImpl(
     private val httpClient: HttpClient,
     private val request: HttpRequestBuilder.() -> Unit,
 ) : RSocketClientTarget {
-
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
-        httpClient.webSocket(request) {
-            handler.handleKtorWebSocketConnection(this)
-        }
+    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
+        val session = httpClient.webSocketSession(request)
+        return initializer.runInitializer(
+            KtorWebSocketConnection(coroutineContext.childContext(), session)
+        )
     }
 }
 

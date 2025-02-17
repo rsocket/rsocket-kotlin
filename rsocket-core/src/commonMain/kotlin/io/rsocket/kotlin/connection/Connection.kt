@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ internal abstract class Connection2(
 
     // connection establishment part
 
-    abstract suspend fun establishConnection(handler: ConnectionEstablishmentHandler): ConnectionConfig
+    abstract suspend fun establishConnection(handler: ConnectionEstablishmentHandler<*>): ConnectionConfig
 
     // setup completed, start handling requests
     abstract suspend fun handleConnection(inbound: ConnectionInbound)

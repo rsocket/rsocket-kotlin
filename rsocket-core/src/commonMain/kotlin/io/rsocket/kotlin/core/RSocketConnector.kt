@@ -20,10 +20,8 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
-import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
 @OptIn(RSocketTransportApi::class, RSocketLoggingApi::class)
@@ -42,8 +40,12 @@ public class RSocketConnector internal constructor(
     @Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API")
     public suspend fun connect(transport: ClientTransport): RSocket = connect(object : RSocketClientTarget {
         override val coroutineContext: CoroutineContext get() = transport.coroutineContext
-        override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
-            handler.handleConnection(interceptors.wrapConnection(transport.connect()))
+
+        @RSocketTransportApi
+        override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
+            return initializer.runInitializer(
+                OldConnection(interceptors.wrapConnection(transport.connect()))
+            )
         }
     })
 
@@ -58,25 +60,16 @@ public class RSocketConnector internal constructor(
     }
 
     private suspend fun connectOnce(transport: RSocketClientTarget): RSocket {
-        val requesterDeferred = CompletableDeferred<RSocket>()
-        val connectJob = transport.connectClient(
-            SetupConnection(requesterDeferred).logging(frameLogger)
-        ).onCompletion { if (it != null) requesterDeferred.completeExceptionally(it) }
-        return try {
-            requesterDeferred.await()
-        } catch (cause: Throwable) {
-            connectJob.cancel("RSocketConnector.connect was cancelled", cause)
-            throw cause
-        }
+        return transport.connectClient(SetupConnection().logging(frameLogger))
     }
 
-    private inner class SetupConnection(requesterDeferred: CompletableDeferred<RSocket>) : ConnectionEstablishmentHandler(
+    private inner class SetupConnection : ConnectionEstablishmentHandler<RSocket>(
         isClient = true,
         frameCodec = FrameCodec(maxFragmentSize),
         connectionAcceptor = acceptor,
-        interceptors = interceptors,
-        requesterDeferred = requesterDeferred
+        interceptors = interceptors
     ) {
+        override fun transform(requester: RSocket): RSocket = requester
         override suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig {
             val connectionConfig = connectionConfigProvider()
             try {
@@ -95,5 +88,6 @@ public class RSocketConnector internal constructor(
             }
             return connectionConfig
         }
+
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,20 @@ import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.io.*
+import kotlin.coroutines.*
 
 @RSocketLoggingApi
 @RSocketTransportApi
-internal fun RSocketConnectionHandler.logging(logger: Logger): RSocketConnectionHandler {
+internal fun <T> RSocketConnectionInitializer<T>.logging(logger: Logger): RSocketConnectionInitializer<T> {
     if (!logger.isLoggable(LoggingLevel.DEBUG)) return this
 
-    return RSocketConnectionHandler {
-        handleConnection(
-            when (it) {
-                is RSocketSequentialConnection  -> SequentialLoggingConnection(it, logger)
-                is RSocketMultiplexedConnection -> MultiplexedLoggingConnection(it, logger)
-            }
-        )
+    return object : RSocketConnectionInitializer<T> {
+        override suspend fun RSocketConnection.initialize(): T = with(this@logging) {
+            when (this@initialize) {
+                is RSocketSequentialConnection  -> SequentialLoggingConnection(this@initialize, logger)
+                is RSocketMultiplexedConnection -> MultiplexedLoggingConnection(this@initialize, logger)
+            }.initialize()
+        }
     }
 }
 
@@ -44,6 +45,7 @@ private class SequentialLoggingConnection(
     private val logger: Logger,
 ) : RSocketSequentialConnection {
     override val isClosedForSend: Boolean get() = delegate.isClosedForSend
+    override val coroutineContext: CoroutineContext get() = delegate.coroutineContext
 
     override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         logger.debug { "Send:    ${dumpFrameToString(frame)}" }
@@ -69,6 +71,8 @@ private class MultiplexedLoggingConnection(
     private val delegate: RSocketMultiplexedConnection,
     private val logger: Logger,
 ) : RSocketMultiplexedConnection {
+    override val coroutineContext: CoroutineContext get() = delegate.coroutineContext
+
     override suspend fun createStream(): RSocketMultiplexedConnection.Stream {
         return MultiplexedLoggingStream(delegate.createStream(), logger)
     }

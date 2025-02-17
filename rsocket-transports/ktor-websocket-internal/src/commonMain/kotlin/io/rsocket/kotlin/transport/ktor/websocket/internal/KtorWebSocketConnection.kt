@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,32 +23,35 @@ import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.io.*
+import kotlin.coroutines.*
+
+//@RSocketTransportApi
+//public suspend fun RSocketConnectionHandler.handleKtorWebSocketConnection(webSocketSession: WebSocketSession): Unit = coroutineScope {
+//    val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
+//
+//    val senderJob = launch {
+//        while (true) webSocketSession.send(outboundQueue.dequeueFrame()?.readByteArray() ?: break)
+//    }.onCompletion { outboundQueue.cancel() }
+//
+//    try {
+//        handleConnection(KtorWebSocketConnection(outboundQueue, webSocketSession.incoming))
+//    } finally {
+//        webSocketSession.incoming.cancel()
+//        outboundQueue.close()
+//        withContext(NonCancellable) {
+//            senderJob.join() // await all frames sent
+//            webSocketSession.close()
+//            webSocketSession.coroutineContext.job.join()
+//        }
+//    }
+//}
 
 @RSocketTransportApi
-public suspend fun RSocketConnectionHandler.handleKtorWebSocketConnection(webSocketSession: WebSocketSession): Unit = coroutineScope {
-    val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
-
-    val senderJob = launch {
-        while (true) webSocketSession.send(outboundQueue.dequeueFrame()?.readByteArray() ?: break)
-    }.onCompletion { outboundQueue.cancel() }
-
-    try {
-        handleConnection(KtorWebSocketConnection(outboundQueue, webSocketSession.incoming))
-    } finally {
-        webSocketSession.incoming.cancel()
-        outboundQueue.close()
-        withContext(NonCancellable) {
-            senderJob.join() // await all frames sent
-            webSocketSession.close()
-            webSocketSession.coroutineContext.job.join()
-        }
-    }
-}
-
-@RSocketTransportApi
-private class KtorWebSocketConnection(
-    private val outboundQueue: PrioritizationFrameQueue,
-    private val inbound: ReceiveChannel<Frame>,
+public class KtorWebSocketConnection(
+    override val coroutineContext: CoroutineContext,
+    private val session: WebSocketSession,
+//    private val outboundQueue: PrioritizationFrameQueue,
+//    private val inbound: ReceiveChannel<Frame>,
 ) : RSocketSequentialConnection {
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
 
