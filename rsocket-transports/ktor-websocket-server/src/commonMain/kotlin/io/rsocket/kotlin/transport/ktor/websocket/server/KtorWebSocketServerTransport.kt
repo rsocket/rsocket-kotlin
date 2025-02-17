@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ private class KtorWebSocketServerTransportBuilderImpl : KtorWebSocketServerTrans
     @RSocketTransportApi
     override fun buildTransport(context: CoroutineContext): KtorWebSocketServerTransport = KtorWebSocketServerTransportImpl(
         // we always add IO - as it's the best choice here, server will use it's own dispatcher anyway
-        coroutineContext = context.supervisorContext() + Dispatchers.IO,
+        coroutineContext = context.supervisorContext() + Dispatchers.IoCompatible,
         factory = requireNotNull(httpServerFactory) { "httpEngine is required" },
         webSocketsConfig = webSocketsConfig,
     )
@@ -191,14 +191,14 @@ private class KtorWebSocketServerTargetImpl(
     private suspend fun startServer(
         embeddedServer: EmbeddedServer<*, *>,
         serverContext: CoroutineContext,
-    ): List<EngineConnectorConfig> = launchCoroutine(serverContext + Dispatchers.IO) { cont ->
-        embeddedServer.start()
-        launch(serverContext + Dispatchers.IO) {
+    ): List<EngineConnectorConfig> = launchCoroutine(serverContext + Dispatchers.IoCompatible) { cont ->
+        embeddedServer.startSuspend()
+        launch(serverContext + Dispatchers.IoCompatible) {
             try {
                 awaitCancellation()
             } finally {
                 withContext(NonCancellable) {
-                    embeddedServer.stop()
+                    embeddedServer.stopSuspend()
                 }
             }
         }

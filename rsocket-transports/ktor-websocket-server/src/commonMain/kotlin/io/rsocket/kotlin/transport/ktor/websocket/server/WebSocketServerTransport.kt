@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.internal.*
+import kotlinx.coroutines.*
 
 @Deprecated(level = DeprecationLevel.ERROR, message = "Deprecated in favor of new Transport API, use KtorWebSocketServerTransport")
 @Suppress("DEPRECATION_ERROR", "FunctionName")
@@ -71,7 +72,13 @@ public fun <A : ApplicationEngine, T : ApplicationEngine.Configuration> WebSocke
         this.connectors.addAll(connectors)
         engine()
     }.also {
-        it.start(wait = false)
-        it.engine.stopServerOnCancellation(it.application)
+        it.application.launch(start = CoroutineStart.UNDISPATCHED) {
+            try {
+                it.startSuspend()
+                awaitCancellation()
+            } finally {
+                it.stopSuspend()
+            }
+        }
     }
 }

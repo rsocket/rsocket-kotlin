@@ -21,8 +21,10 @@ plugins {
 }
 
 kotlin {
-    jvmTarget()
-    nixTargets()
+    allTargets(
+        supportsWasi = false,
+        supportsBrowser = false
+    )
 
     sourceSets {
         commonTest.dependencies {

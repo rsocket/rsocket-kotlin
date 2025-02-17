@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package io.rsocket.kotlin.transport.ktor.tcp
 
 import io.ktor.network.selector.*
 import io.ktor.network.sockets.*
+import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
@@ -42,7 +43,7 @@ public fun TcpClientTransport(
     configure: SocketOptions.TCPClientSocketOptions.() -> Unit = {},
 ): ClientTransport {
     val transportJob = SupervisorJob(context[Job])
-    val transportContext = Dispatchers.IO + context + transportJob + CoroutineName("rSocket-tcp-client")
+    val transportContext = Dispatchers.IoCompatible + context + transportJob + CoroutineName("rSocket-tcp-client")
     val selector = SelectorManager(transportContext)
     Job(transportJob).invokeOnCompletion { selector.close() }
     return ClientTransport(transportContext) {

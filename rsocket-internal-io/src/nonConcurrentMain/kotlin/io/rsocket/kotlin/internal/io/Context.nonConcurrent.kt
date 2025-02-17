@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,8 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.test
+package io.rsocket.kotlin.internal.io
 
 import kotlinx.coroutines.*
 
-actual typealias IgnoreJs = kotlin.test.Ignore
-
-actual annotation class IgnoreJvm
-actual annotation class IgnoreNative
-
-//JS is single threaded, so it have only one dispatcher backed by one threed
-actual val anotherDispatcher: CoroutineDispatcher get() = Dispatchers.Default
-
-actual fun identityHashCode(instance: Any): Int = instance.hashCode()
+public actual val Dispatchers.IoCompatible: CoroutineDispatcher get() = Default

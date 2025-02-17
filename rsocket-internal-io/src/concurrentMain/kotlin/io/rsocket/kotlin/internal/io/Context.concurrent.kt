@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,8 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.test
+package io.rsocket.kotlin.internal.io
 
 import kotlinx.coroutines.*
 
-expect annotation class IgnoreJs()
-expect annotation class IgnoreJvm()
-expect annotation class IgnoreNative()
-
-expect val anotherDispatcher: CoroutineDispatcher
-
-expect fun identityHashCode(instance: Any): Int
+public actual val Dispatchers.IoCompatible: CoroutineDispatcher get() = IO

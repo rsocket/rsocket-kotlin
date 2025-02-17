@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,21 @@ package rsocketbuild
 
 import org.gradle.jvm.toolchain.*
 import org.gradle.kotlin.dsl.*
+import org.jetbrains.kotlin.gradle.*
 import org.jetbrains.kotlin.gradle.dsl.*
 
-fun KotlinMultiplatformExtension.appleTargets() {
+fun KotlinMultiplatformExtension.allTargets(
+    supportsWasi: Boolean = true,
+    supportsBrowser: Boolean = true,
+) {
+    jvmTarget()
+    jsTarget(supportsBrowser = supportsBrowser)
+    wasmJsTarget(supportsBrowser = supportsBrowser)
+    if (supportsWasi) wasmWasiTarget()
+    nativeTargets()
+}
+
+fun KotlinMultiplatformExtension.nativeTargets() {
     macosX64()
     macosArm64()
 
@@ -32,29 +44,20 @@ fun KotlinMultiplatformExtension.appleTargets() {
     watchosArm32()
     watchosArm64()
     watchosSimulatorArm64()
-    // https://youtrack.jetbrains.com/issue/KTOR-6368, supported by kotlinx-io
-    // watchosDeviceArm64()
+    watchosDeviceArm64()
 
     tvosX64()
     tvosArm64()
     tvosSimulatorArm64()
-}
 
-fun KotlinMultiplatformExtension.nixTargets() {
-    appleTargets()
     linuxX64()
     linuxArm64()
-}
-
-fun KotlinMultiplatformExtension.nativeTargets() {
-    nixTargets()
     mingwX64()
 
-    // not supported by ktor, supported by kotlinx-io
-    // androidNativeX64()
-    // androidNativeX86()
-    // androidNativeArm64()
-    // androidNativeArm32()
+    androidNativeX64()
+    androidNativeX86()
+    androidNativeArm64()
+    androidNativeArm32()
 }
 
 fun KotlinMultiplatformExtension.jsTarget(
@@ -64,6 +67,24 @@ fun KotlinMultiplatformExtension.jsTarget(
     js {
         if (supportsNode) nodejs()
         if (supportsBrowser) browser()
+    }
+}
+
+@OptIn(ExperimentalWasmDsl::class)
+fun KotlinMultiplatformExtension.wasmJsTarget(
+    supportsNode: Boolean = true,
+    supportsBrowser: Boolean = true,
+) {
+    wasmJs {
+        if (supportsNode) nodejs()
+        if (supportsBrowser) browser()
+    }
+}
+
+@OptIn(ExperimentalWasmDsl::class)
+fun KotlinMultiplatformExtension.wasmWasiTarget() {
+    wasmWasi {
+        nodejs()
     }
 }
 

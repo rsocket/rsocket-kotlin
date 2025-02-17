@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public sealed interface KtorTcpClientTransportBuilder : RSocketTransportBuilder<
 
 private class KtorTcpClientTransportBuilderImpl : KtorTcpClientTransportBuilder {
     private var dispatcher: CoroutineContext = Dispatchers.Default
-    private var selector: KtorTcpSelector = KtorTcpSelector.FromContext(Dispatchers.IO)
+    private var selector: KtorTcpSelector = KtorTcpSelector.FromContext(Dispatchers.IoCompatible)
     private var socketOptions: SocketOptions.TCPClientSocketOptions.() -> Unit = {}
 
     override fun dispatcher(context: CoroutineContext) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.rsocket.kotlin.internal.io
 
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
+
+public expect val Dispatchers.IoCompatible: CoroutineDispatcher
 
 public fun CoroutineContext.supervisorContext(): CoroutineContext = plus(SupervisorJob(get(Job)))
 public fun CoroutineContext.childContext(): CoroutineContext = plus(Job(get(Job)))
