@@ -40,20 +40,9 @@ class SequentialBufferedLocalTransportTest : LocalTransportTest({
     sequential(prioritizationQueueBuffersCapacity = Channel.BUFFERED)
 })
 
-//class SequentialUnlimitedLocalTransportTest : LocalTransportTest({
-//    sequential(prioritizationQueueBuffersCapacity = Channel.UNLIMITED)
-//})
-
 class MultiplexedBufferedLocalTransportTest : LocalTransportTest({
     multiplexed(
         streamsQueueCapacity = Channel.BUFFERED,
         streamBufferCapacity = Channel.BUFFERED
     )
 })
-
-//class MultiplexedUnlimitedLocalTransportTest : LocalTransportTest({
-//    multiplexed(
-//        streamsQueueCapacity = Channel.UNLIMITED,
-//        streamBufferCapacity = Channel.UNLIMITED
-//    )
-//})
