@@ -78,9 +78,11 @@ internal abstract class ConnectionEstablishmentHandler<T>(
                 }
 
                 val keepAliveHandler = KeepAliveHandler(connectionConfig.keepAlive, connection, this)
-                connection.handleConnection(
-                    ConnectionInbound(connection.coroutineContext, responder, keepAliveHandler)
-                )
+                connection.launch {
+                    connection.handleConnection(
+                        ConnectionInbound(connection.coroutineContext, responder, keepAliveHandler)
+                    )
+                }
 
                 transform(requester)
             } catch (cause: Throwable) {
