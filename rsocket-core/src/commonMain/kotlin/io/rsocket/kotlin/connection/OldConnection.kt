@@ -37,20 +37,27 @@ internal class OldConnection(
     override val coroutineContext: CoroutineContext get() = connection.coroutineContext
 
     init {
-        val senderJob = launch {
-            while (true) connection.send(outboundQueue.dequeueFrame() ?: break)
-        }.onCompletion { outboundQueue.cancel() }
+        @OptIn(DelicateCoroutinesApi::class)
+        launch(start = CoroutineStart.ATOMIC) {
+            val outboundJob = launch {
+                nonCancellable {
+                    while (true) {
+                        connection.send(outboundQueue.dequeueFrame() ?: break)
+                    }
+                }
+            }.onCompletion {
+                outboundQueue.cancel()
+            }
 
-//        try
-//        {
-//            handleConnection(OldConnection(outboundQueue, connection))
-//        } finally
-//        {
-//            outboundQueue.close()
-//            withContext(NonCancellable) {
-//                senderJob.join()
-//            }
-//        }
+            try {
+                awaitCancellation()
+            } finally {
+                nonCancellable {
+                    outboundQueue.close()
+                    outboundJob.join()
+                }
+            }
+        }
     }
 
     override suspend fun sendFrame(streamId: Int, frame: Buffer) {
@@ -59,7 +66,7 @@ internal class OldConnection(
 
     override suspend fun receiveFrame(): Buffer? = try {
         connection.receive()
-    } catch (cause: Throwable) {
+    } catch (_: Throwable) {
         currentCoroutineContext().ensureActive()
         null
     }
