@@ -44,10 +44,10 @@ internal sealed class LocalServerConnector {
             val frames = Frames()
 
             serverInitializer.launchInitializer(
-                Connection(serverContext.childContext(), frames.serverToClient, frames.clientToServer)
+                Connection(serverContext.childContext(), frames.clientToServer, frames.serverToClient)
             )
             return clientInitializer.runInitializer(
-                Connection(clientContext.childContext(), frames.serverToClient, frames.serverToClient)
+                Connection(clientContext.childContext(), frames.serverToClient, frames.clientToServer)
             )
         }
 
