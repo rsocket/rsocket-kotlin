@@ -19,8 +19,7 @@ package io.rsocket.kotlin.transport.netty.tcp
 import io.netty.buffer.*
 import io.netty.channel.*
 import io.netty.channel.socket.*
-import io.netty.handler.codec.*
-import io.netty.handler.ssl.*
+import io.netty.util.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.internal.*
@@ -38,12 +37,11 @@ internal class NettyTcpConnection(
 ) : RSocketSequentialConnection, ChannelInboundHandlerAdapter() {
 
     private val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
-    private val inbound = bufferChannel(Channel.BUFFERED)
+    private val inbound = bufferChannel(Channel.UNLIMITED)
 
     override val coroutineContext: CoroutineContext = parentContext.childContext() + channel.eventLoop().asCoroutineDispatcher()
 
     init {
-        channel.pipeline().addLast(this)
         @OptIn(DelicateCoroutinesApi::class)
         launch(start = CoroutineStart.ATOMIC) {
             val outboundJob = launch {
@@ -53,12 +51,9 @@ internal class NettyTcpConnection(
                             // we write all available frames here, and only after it flush
                             // in this case, if there are several buffered frames we can send them in one go
                             // avoiding unnecessary flushes
-                            // TODO: could be optimized to avoid allocation of not-needed promises
-                            var lastWriteFuture = channel.writeBuffer(outboundQueue.dequeueFrame() ?: break)
-                            while (true) lastWriteFuture = channel.writeBuffer(outboundQueue.tryDequeueFrame() ?: break)
+                            channel.writeBuffer(outboundQueue.dequeueFrame() ?: break)
+                            while (true) channel.writeBuffer(outboundQueue.tryDequeueFrame() ?: break)
                             channel.flush()
-                            // await writing to respect transport backpressure
-                            lastWriteFuture.awaitFuture()
                         }
                     } finally {
                         outboundQueue.cancel()
@@ -68,9 +63,8 @@ internal class NettyTcpConnection(
             }
             try {
                 awaitCancellation()
-            } catch (cause: Throwable) {
+            } finally {
                 nonCancellable {
-                    // TODO: stop inbound
                     outboundQueue.close()
                     inbound.cancel()
                     channel.shutdownInput().awaitFuture()
@@ -100,32 +94,8 @@ internal class NettyTcpConnection(
         channel.read()
         return inbound.receiveCatching().getOrNull()
     }
-}
 
-internal class NettyTcpConnectionInitializer(
-    private val sslContext: SslContext?,
-) : ChannelInitializer<DuplexChannel>() {
-    override fun initChannel(channel: DuplexChannel): Unit = with(channel.pipeline()) {
-        channel.config().isAutoRead = false
-
-        if (sslContext != null) {
-            addLast("ssl", sslContext.newHandler(channel.alloc()))
-        }
-        addLast(
-            "rsocket-length-encoder",
-            LengthFieldPrepender(
-                /* lengthFieldLength = */ 3
-            )
-        )
-        addLast(
-            "rsocket-length-decoder",
-            LengthFieldBasedFrameDecoder(
-                /* maxFrameLength = */ Int.MAX_VALUE,
-                /* lengthFieldOffset = */ 0,
-                /* lengthFieldLength = */ 3,
-                /* lengthAdjustment = */ 0,
-                /* initialBytesToStrip = */ 3
-            )
-        )
+    companion object {
+        val ATTRIBUTE: AttributeKey<RSocketConnection> = AttributeKey.newInstance<RSocketConnection>("rsocket-tcp-connection")
     }
 }

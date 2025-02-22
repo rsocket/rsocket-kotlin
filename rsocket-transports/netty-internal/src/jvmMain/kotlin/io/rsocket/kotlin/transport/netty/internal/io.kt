@@ -48,5 +48,6 @@ public fun Buffer.toByteBuf(allocator: ByteBufAllocator): ByteBuf {
     return nettyBuffer
 }
 
-public fun Channel.writeBuffer(buffer: Buffer): ChannelFuture = write(buffer.toByteBuf(alloc()))
-public fun Channel.writeAndFlushBuffer(buffer: Buffer): ChannelFuture = writeAndFlush(buffer.toByteBuf(alloc()))
+public fun Channel.writeBuffer(buffer: Buffer) {
+    write(buffer.toByteBuf(alloc()), voidPromise())
+}

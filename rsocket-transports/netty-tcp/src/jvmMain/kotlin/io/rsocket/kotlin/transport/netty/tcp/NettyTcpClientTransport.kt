@@ -88,30 +88,28 @@ private class NettyTcpClientTransportBuilderImpl : NettyTcpClientTransportBuilde
             bootstrap?.invoke(this)
             channelFactory(channelFactory ?: ReflectiveChannelFactory(NioSocketChannel::class.java))
             group(eventLoopGroup ?: NioEventLoopGroup())
-            handler(NettyTcpConnectionInitializer(sslContext))
         }
 
         return NettyTcpClientTransportImpl(
             coroutineContext = context.supervisorContext(),
             bootstrap = bootstrap,
-            manageBootstrap = manageEventLoopGroup
-        )
+            sslContext = sslContext,
+        ).also {
+            if (manageEventLoopGroup) it.shutdownOnCancellation(bootstrap.config().group())
+        }
     }
 }
 
 private class NettyTcpClientTransportImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: Bootstrap,
-    manageBootstrap: Boolean,
+    private val sslContext: SslContext?,
 ) : NettyTcpClientTransport {
-    init {
-        if (manageBootstrap) shutdownOnCancellation(bootstrap.config().group())
-    }
-
     override fun target(remoteAddress: SocketAddress): RSocketClientTarget = NettyTcpClientTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         bootstrap = bootstrap,
-        remoteAddress = remoteAddress
+        sslContext = sslContext,
+        remoteAddress = remoteAddress,
     )
 
     override fun target(host: String, port: Int): RSocketClientTarget = target(InetSocketAddress(host, port))
@@ -120,18 +118,21 @@ private class NettyTcpClientTransportImpl(
 @OptIn(RSocketTransportApi::class)
 private class NettyTcpClientTargetImpl(
     override val coroutineContext: CoroutineContext,
-    private val bootstrap: Bootstrap,
-    private val remoteAddress: SocketAddress,
-) : RSocketClientTarget {
+    bootstrap: Bootstrap,
+    sslContext: SslContext?,
+    remoteAddress: SocketAddress,
+) : RSocketClientTarget, NettyTcpConnectionChannelInitializer(coroutineContext, sslContext) {
+    private val bootstrap = bootstrap.clone().handler(this).remoteAddress(remoteAddress)
+
     @RSocketTransportApi
     override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
-        val channel = bootstrap.connect(remoteAddress).awaitChannel<DuplexChannel>()
+        val channel = bootstrap.connect().awaitChannel<Channel>()
 
         return initializer.runInitializer(
-            NettyTcpConnection(coroutineContext.childContext(), channel)
+            channel.attr(NettyTcpConnection.ATTRIBUTE).get()
         )
     }
 }
