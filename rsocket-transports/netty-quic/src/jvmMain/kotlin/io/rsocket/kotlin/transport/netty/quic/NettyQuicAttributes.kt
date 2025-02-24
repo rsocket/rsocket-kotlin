@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,22 @@
 
 package io.rsocket.kotlin.transport.netty.quic
 
-import io.netty.channel.*
-import io.netty.incubator.codec.quic.*
+import io.netty.util.*
 import io.rsocket.kotlin.transport.*
-import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
 @RSocketTransportApi
-internal class NettyQuicConnectionInitializer(
-    private val handler: RSocketConnectionHandler,
-    override val coroutineContext: CoroutineContext,
-    private val isClient: Boolean,
-) : ChannelInitializer<QuicChannel>(), CoroutineScope {
-    override fun initChannel(channel: QuicChannel) {
-        with(channel.pipeline()) {
-            //addLast(LoggingHandler(if (isClient) "CLIENT" else "SERVER"))
-            addLast("rsocket", NettyQuicConnectionHandler(channel, handler, this@NettyQuicConnectionInitializer, isClient))
-        }
-    }
-}
+internal val ATTRIBUTE_STREAM: AttributeKey<NettyQuicStream> =
+    AttributeKey.newInstance("rsocket-quic-stream")
+
+@RSocketTransportApi
+internal val ATTRIBUTE_CONNECTION: AttributeKey<NettyQuicConnection> =
+    AttributeKey.newInstance("rsocket-quic-connection")
+
+@RSocketTransportApi
+internal val ATTRIBUTE_CONNECTION_INITIALIZER: AttributeKey<RSocketConnectionInitializer<Unit>> =
+    AttributeKey.newInstance("rsocket-quic-connection-initializer")
+
+@RSocketTransportApi
+internal val ATTRIBUTE_TRANSPORT_CONTEXT: AttributeKey<CoroutineContext> =
+    AttributeKey.newInstance("rsocket-quic-transport-context")
