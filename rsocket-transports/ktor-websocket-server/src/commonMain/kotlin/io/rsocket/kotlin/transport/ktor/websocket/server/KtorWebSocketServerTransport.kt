@@ -150,12 +150,12 @@ private class KtorWebSocketServerTargetImpl(
 ) : RSocketServerTarget<KtorWebSocketServerInstance> {
 
     @RSocketTransportApi
-    override suspend fun startServer(initializer: RSocketConnectionInitializer<Unit>): KtorWebSocketServerInstance {
+    override suspend fun startServer(onConnection: (RSocketConnection) -> Unit): KtorWebSocketServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
         val serverContext = coroutineContext.childContext()
-        val embeddedServer = createServer(initializer, serverContext)
+        val embeddedServer = createServer(serverContext, onConnection)
         val resolvedConnectors = startServer(embeddedServer, serverContext)
 
         return KtorWebSocketServerInstanceImpl(
@@ -169,8 +169,8 @@ private class KtorWebSocketServerTargetImpl(
     // parentCoroutineContext is the context of server instance
     @RSocketTransportApi
     private fun createServer(
-        initializer: RSocketConnectionInitializer<Unit>,
         serverContext: CoroutineContext,
+        onConnection: (RSocketConnection) -> Unit,
     ): EmbeddedServer<*, *> {
         val config = serverConfig {
             val target = this@KtorWebSocketServerTargetImpl
@@ -179,7 +179,8 @@ private class KtorWebSocketServerTargetImpl(
                 install(WebSockets, webSocketsConfig)
                 routing {
                     webSocket(target.path, target.protocol) {
-                        initializer.launchInitializer(KtorWebSocketConnection(this))
+                        onConnection(KtorWebSocketConnection(this))
+                        awaitCancellation()
                     }
                 }
             }

@@ -55,9 +55,8 @@ internal fun Route.rSocketHandler(acceptor: ConnectionAcceptor): suspend Default
     val config = application.attributes.getOrNull(RSocketSupportConfigKey)
         ?: error("Plugin RSocketSupport is not installed. Consider using `install(RSocketSupport)` in server config first.")
 
-    val initializer = config.server.createInitializer(acceptor)
     return {
-        initializer.launchInitializer(KtorWebSocketConnection(this))
+        config.server.acceptConnection(acceptor, KtorWebSocketConnection(this))
         awaitCancellation()
     }
 }

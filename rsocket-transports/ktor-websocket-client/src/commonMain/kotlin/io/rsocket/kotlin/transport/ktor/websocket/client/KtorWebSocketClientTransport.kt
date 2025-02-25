@@ -137,7 +137,7 @@ private class KtorWebSocketClientTargetImpl(
     private val request: HttpRequestBuilder.() -> Unit,
 ) : RSocketClientTarget {
     @RSocketTransportApi
-    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
+    override suspend fun connectClient(): RSocketConnection {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
@@ -146,7 +146,7 @@ private class KtorWebSocketClientTargetImpl(
             session.cancel("Transport was cancelled", it)
         }
         session.coroutineContext.job.invokeOnCompletion { handle.dispose() }
-        return initializer.runInitializer(KtorWebSocketConnection(session))
+        return KtorWebSocketConnection(session)
     }
 }
 

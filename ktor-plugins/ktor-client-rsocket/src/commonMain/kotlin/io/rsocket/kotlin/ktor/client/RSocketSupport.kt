@@ -65,8 +65,7 @@ private class RSocketSupportTarget(
     override val coroutineContext: CoroutineContext get() = client.coroutineContext
 
     @RSocketTransportApi
-    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
-        val session = client.webSocketSession(request)
-        return initializer.runInitializer(KtorWebSocketConnection(session))
+    override suspend fun connectClient(): RSocketConnection {
+        return KtorWebSocketConnection(client.webSocketSession(request))
     }
 }
