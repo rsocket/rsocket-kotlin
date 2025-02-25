@@ -97,7 +97,7 @@ private class KtorTcpServerTargetImpl(
 ) : KtorTcpServerTarget {
 
     @RSocketTransportApi
-    override suspend fun startServer(initializer: RSocketConnectionInitializer<Unit>): KtorTcpServerInstance {
+    override suspend fun startServer(onConnection: (RSocketConnection) -> Unit): KtorTcpServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
@@ -106,7 +106,7 @@ private class KtorTcpServerTargetImpl(
             KtorTcpServerInstanceImpl(
                 coroutineContext = this@KtorTcpServerTargetImpl.coroutineContext.childContext(),
                 serverSocket = serverSocket,
-                initializer = initializer
+                onConnection = onConnection
             )
         }
     }
@@ -116,7 +116,7 @@ private class KtorTcpServerTargetImpl(
 private class KtorTcpServerInstanceImpl(
     override val coroutineContext: CoroutineContext,
     private val serverSocket: ServerSocket,
-    private val initializer: RSocketConnectionInitializer<Unit>,
+    private val onConnection: (RSocketConnection) -> Unit,
 ) : KtorTcpServerInstance {
     override val localAddress: SocketAddress get() = serverSocket.localAddress
 
@@ -129,9 +129,7 @@ private class KtorTcpServerInstanceImpl(
                 val connectionsContext = currentCoroutineContext().supervisorContext()
                 while (true) {
                     val socket = serverSocket.accept()
-                    initializer.launchInitializer(
-                        KtorTcpConnection(connectionsContext.childContext(), socket)
-                    )
+                    onConnection(KtorTcpConnection(connectionsContext.childContext(), socket))
                 }
             } finally {
                 nonCancellable {

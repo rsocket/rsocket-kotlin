@@ -90,17 +90,15 @@ private class KtorTcpClientTargetImpl(
     private val remoteAddress: SocketAddress,
 ) : RSocketClientTarget {
     @RSocketTransportApi
-    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
+    override suspend fun connectClient(): RSocketConnection {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
         return withContext(Dispatchers.IoCompatible) {
             val socket = aSocket(selectorManager).tcp().connect(remoteAddress, socketOptions)
-            initializer.runInitializer(
-                KtorTcpConnection(
-                    coroutineContext = this@KtorTcpClientTargetImpl.coroutineContext.childContext(),
-                    socket = socket
-                )
+            KtorTcpConnection(
+                coroutineContext = this@KtorTcpClientTargetImpl.coroutineContext.childContext(),
+                socket = socket
             )
         }
     }
