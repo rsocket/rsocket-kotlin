@@ -29,7 +29,7 @@ internal val ATTRIBUTE_CONNECTION: AttributeKey<NettyQuicConnection> =
     AttributeKey.newInstance("rsocket-quic-connection")
 
 @RSocketTransportApi
-internal val ATTRIBUTE_CONNECTION_INITIALIZER: AttributeKey<RSocketConnectionInitializer<Unit>> =
+internal val ATTRIBUTE_CONNECTION_ACCEPTOR: AttributeKey<(RSocketConnection) -> Unit> =
     AttributeKey.newInstance("rsocket-quic-connection-initializer")
 
 @RSocketTransportApi

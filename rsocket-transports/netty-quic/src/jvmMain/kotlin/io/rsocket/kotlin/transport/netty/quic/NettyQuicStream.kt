@@ -18,6 +18,7 @@ package io.rsocket.kotlin.transport.netty.quic
 
 import io.netty.buffer.*
 import io.netty.channel.*
+import io.netty.channel.socket.*
 import io.netty.handler.codec.*
 import io.netty.incubator.codec.quic.*
 import io.rsocket.kotlin.internal.io.*
@@ -27,11 +28,11 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.io.*
+import kotlin.coroutines.*
 
-// TODO: handle first stream?
 @RSocketTransportApi
 internal class NettyQuicStream(
-    parentScope: CoroutineScope,
+    parentContext: CoroutineContext,
     private val channel: QuicStreamChannel,
 ) : RSocketMultiplexedConnection.Stream, ChannelInboundHandlerAdapter() {
 
@@ -41,61 +42,54 @@ internal class NettyQuicStream(
     @OptIn(DelicateCoroutinesApi::class)
     override val isClosedForSend: Boolean get() = outbound.isClosedForSend
 
-    @OptIn(DelicateCoroutinesApi::class)
-    private val job = parentScope.launch(
-        context = channel.eventLoop().asCoroutineDispatcher(),
-        start = CoroutineStart.ATOMIC
-    ) {
-        val outboundJob = launch {
-            nonCancellable {
-                try {
-                    while (true) {
-                        // we write all available frames here, and only after it flush
-                        // in this case, if there are several buffered frames we can send them in one go
-                        // avoiding unnecessary flushes
-                        channel.writeBuffer(outbound.receiveCatching().getOrNull() ?: break)
-                        while (true) channel.writeBuffer(outbound.tryReceive().getOrNull() ?: break)
-                        channel.flush()
+    override val coroutineContext: CoroutineContext = parentContext.childContext() + channel.eventLoop().asCoroutineDispatcher()
+
+    init {
+        @OptIn(DelicateCoroutinesApi::class)
+        launch(start = CoroutineStart.ATOMIC) {
+            val outboundJob = launch {
+                nonCancellable {
+                    try {
+                        while (true) {
+                            // we write all available frames here, and only after it flush
+                            // in this case, if there are several buffered frames we can send them in one go
+                            // avoiding unnecessary flushes
+                            channel.writeBuffer(outbound.receiveCatching().getOrNull() ?: break)
+                            while (true) channel.writeBuffer(outbound.tryReceive().getOrNull() ?: break)
+                            channel.flush()
+                        }
+                    } finally {
+                        outbound.cancel()
+                        channel.writeAndFlush(QuicStreamFrame.EMPTY_FIN).awaitFuture()
                     }
-                } finally {
-                    outbound.cancel()
-                    channel.shutdownOutput(channel.voidPromise())//.awaitFuture()
                 }
             }
-        }
-        try {
-            awaitCancellation()
-        } finally {
-            nonCancellable {
-                println("STOP STREAM: $channel")
-                outbound.close()
-                inbound.cancel()
-                outboundJob.join()
-//                channel.shutdownInput().awaitFuture()
-
-//                channel.shutdown().awaitFuture()
-                channel.close().awaitFuture()
+            try {
+                awaitCancellation()
+            } finally {
+                nonCancellable {
+                    outbound.close()
+                    inbound.cancel()
+                    outboundJob.join()
+                    channel.close().awaitFuture()
+                }
             }
         }
     }
 
-//    override fun channelInactive(ctx: ChannelHandlerContext) {
-//        job.cancel("Channel is not active")
-//
-//        ctx.fireChannelInactive()
-//    }
+    override fun channelInactive(ctx: ChannelHandlerContext) {
+        cancel("Channel is not active")
+        ctx.fireChannelInactive()
+    }
 
-//    override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable?) {
-//        job.cancel("exceptionCaught", cause)
-//    }
+    override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable?) {
+        cancel("exceptionCaught", cause)
+    }
 
-//    override fun userEventTriggered(ctx: ChannelHandlerContext?, evt: Any?) {
-//        // TODO: handle for TCP?
-//        if (evt is ChannelInputShutdownReadComplete) {
-//            inbound.close()
-//        }
-//        super.userEventTriggered(ctx, evt)
-//    }
+    override fun userEventTriggered(ctx: ChannelHandlerContext?, evt: Any?) {
+        if (evt is ChannelInputShutdownEvent) inbound.close()
+        super.userEventTriggered(ctx, evt)
+    }
 
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
         val buffer = (msg as ByteBuf).toBuffer()
@@ -115,16 +109,12 @@ internal class NettyQuicStream(
         channel.read()
         return inbound.receiveCatching().getOrNull()
     }
-
-    override fun close() {
-        job.cancel("Stream closed")
-    }
 }
 
 @RSocketTransportApi
 internal object NettyQuicStreamInitializer : ChannelInitializer<QuicStreamChannel>() {
     override fun initChannel(channel: QuicStreamChannel) {
-        println("INIT STREAM: $channel")
+//        channel.pipeline().addLast(DebugLoggingHandler(channel.debugName))
         channel.config().isAutoRead = false
 
         channel.pipeline().addLast(

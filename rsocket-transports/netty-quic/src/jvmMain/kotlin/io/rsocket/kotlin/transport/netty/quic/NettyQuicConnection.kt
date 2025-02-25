@@ -29,10 +29,11 @@ import kotlin.coroutines.*
 internal class NettyQuicConnection(
     parentContext: CoroutineContext,
     private val channel: QuicChannel,
+    private val isClient: Boolean,
 ) : RSocketMultiplexedConnection, ChannelInboundHandlerAdapter() {
     private val inboundStreams = Channel<RSocketMultiplexedConnection.Stream>(Channel.UNLIMITED)
     override val coroutineContext: CoroutineContext = parentContext.childContext() + channel.eventLoop().asCoroutineDispatcher()
-    private val streamsScope = CoroutineScope(coroutineContext.supervisorContext())
+    private val streamsContext = coroutineContext.supervisorContext()
 
     init {
         @OptIn(DelicateCoroutinesApi::class)
@@ -43,47 +44,33 @@ internal class NettyQuicConnection(
                 nonCancellable {
                     inboundStreams.cancel()
                     // stop streams first
-                    streamsScope.coroutineContext.job.cancelAndJoin()
+                    streamsContext.job.cancelAndJoin()
                     channel.close().awaitFuture()
+                    // close UDP channel
+                    if (isClient) channel.parent().close().awaitFuture()
                 }
             }
         }
     }
 
     fun initStreamChannel(streamChannel: QuicStreamChannel) {
-        val stream = NettyQuicStream(streamsScope, streamChannel)
+        val stream = NettyQuicStream(streamsContext, streamChannel)
         streamChannel.attr(ATTRIBUTE_STREAM).set(stream)
         streamChannel.pipeline().addLast("rsocket-quic-stream", stream)
 
         if (streamChannel.isLocalCreated) return
 
-        if (inboundStreams.trySend(stream).isFailure) stream.close()
+        if (inboundStreams.trySend(stream).isFailure) stream.cancel("Connection closed")
     }
 
-//    override fun channelActive(ctx: ChannelHandlerContext) {
-//        handlerJob.start()
-//        connectionJob.complete()
-//        ctx.pipeline().addLast("rsocket-inbound", NettyQuicConnectionInboundHandler(inbound, streamsContext, isClient))
-//
-//        ctx.fireChannelActive()
-//    }
-//
-//    override fun channelInactive(ctx: ChannelHandlerContext) {
-//        handlerJob.cancel("Channel is not active")
-//
-//        ctx.fireChannelInactive()
-//    }
-//
-//    @Suppress("OVERRIDE_DEPRECATION")
-//    override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable?) {
-//        handlerJob.cancel("exceptionCaught", cause)
-//    }
-//    override fun userEventTriggered(ctx: ChannelHandlerContext?, evt: Any?) {
-//        if (evt is ChannelInputShutdownEvent) {
-//            inbound.close()
-//        }
-//        super.userEventTriggered(ctx, evt)
-//    }
+    override fun channelInactive(ctx: ChannelHandlerContext) {
+        cancel("Channel is not active")
+        ctx.fireChannelInactive()
+    }
+
+    override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable?) {
+        cancel("exceptionCaught", cause)
+    }
 
     override suspend fun createStream(): RSocketMultiplexedConnection.Stream {
         val streamChannel = channel.createStream(QuicStreamType.BIDIRECTIONAL, NettyQuicStreamInitializer).awaitFuture()
@@ -98,9 +85,19 @@ internal class NettyQuicConnection(
 @RSocketTransportApi
 internal object NettyQuicConnectionInitializer : ChannelInitializer<QuicChannel>() {
     override fun initChannel(channel: QuicChannel) {
+        val acceptor = channel.parent().attr(ATTRIBUTE_CONNECTION_ACCEPTOR).get()
+        val isClient = acceptor == null
+//        val name = if (isClient) {
+//            "CLIENT"
+//        } else {
+//            "SERVER"
+//        }
+//        channel.pipeline().addLast(DebugLoggingHandler("CONNECTION-$name"))
+
         val connection = NettyQuicConnection(
             parentContext = channel.parent().attr(ATTRIBUTE_TRANSPORT_CONTEXT).get(),
-            channel = channel
+            channel = channel,
+            isClient = isClient
         )
         channel.attr(ATTRIBUTE_CONNECTION).set(connection)
 
@@ -111,8 +108,6 @@ internal object NettyQuicConnectionInitializer : ChannelInitializer<QuicChannel>
         )
 
         // initialize is run only for server
-        channel.parent()
-            .attr(ATTRIBUTE_CONNECTION_INITIALIZER).get()
-            ?.launchInitializer(connection)
+        acceptor?.invoke(connection)
     }
 }

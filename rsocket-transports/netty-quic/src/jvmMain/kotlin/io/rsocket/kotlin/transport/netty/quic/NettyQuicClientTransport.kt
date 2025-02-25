@@ -144,7 +144,7 @@ private class NettyQuicClientTargetImpl(
     private val remoteAddress: SocketAddress,
 ) : RSocketClientTarget {
     @RSocketTransportApi
-    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
+    override suspend fun connectClient(): RSocketConnection {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
@@ -160,8 +160,6 @@ private class NettyQuicClientTargetImpl(
             .connect()
             .awaitFuture()
 
-        return initializer.runInitializer(
-            channel.attr(ATTRIBUTE_CONNECTION).get()
-        )
+        return channel.attr(ATTRIBUTE_CONNECTION).get()
     }
 }

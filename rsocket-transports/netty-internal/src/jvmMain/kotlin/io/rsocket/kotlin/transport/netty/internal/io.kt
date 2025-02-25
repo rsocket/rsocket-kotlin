@@ -48,6 +48,7 @@ public fun Buffer.toByteBuf(allocator: ByteBufAllocator): ByteBuf {
     return nettyBuffer
 }
 
+// TODO: handle FUTURE result at least in QUIC
 public fun Channel.writeBuffer(buffer: Buffer) {
     write(buffer.toByteBuf(alloc()), voidPromise())
 }

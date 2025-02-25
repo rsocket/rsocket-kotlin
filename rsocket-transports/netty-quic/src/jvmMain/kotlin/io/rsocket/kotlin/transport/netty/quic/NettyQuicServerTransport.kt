@@ -23,7 +23,6 @@ import io.netty.channel.nio.*
 import io.netty.channel.socket.*
 import io.netty.channel.socket.nio.*
 import io.netty.incubator.codec.quic.*
-import io.netty.util.*
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.netty.internal.*
@@ -138,11 +137,6 @@ private class NettyQuicServerTransportImpl(
         target(InetSocketAddress(host, port))
 }
 
-@RSocketTransportApi
-internal val INITIALIZER_ATTRIBUTE = AttributeKey.newInstance<
-        RSocketConnectionInitializer<Unit>
-        >("netty-initializer")
-
 @OptIn(RSocketTransportApi::class)
 private class NettyQuicServerTargetImpl(
     override val coroutineContext: CoroutineContext,
@@ -150,7 +144,7 @@ private class NettyQuicServerTargetImpl(
     private val localAddress: SocketAddress,
 ) : RSocketServerTarget<NettyQuicServerInstance> {
     @RSocketTransportApi
-    override suspend fun startServer(initializer: RSocketConnectionInitializer<Unit>): NettyQuicServerInstance {
+    override suspend fun startServer(onConnection: (RSocketConnection) -> Unit): NettyQuicServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
@@ -158,7 +152,7 @@ private class NettyQuicServerTargetImpl(
         val channel = try {
             bootstrap.clone()
                 .attr(ATTRIBUTE_TRANSPORT_CONTEXT, instanceContext.supervisorContext())
-                .attr(ATTRIBUTE_CONNECTION_INITIALIZER, initializer)
+                .attr(ATTRIBUTE_CONNECTION_ACCEPTOR, onConnection)
                 .bind(localAddress)
                 .awaitChannel<DatagramChannel>()
         } catch (cause: Throwable) {
