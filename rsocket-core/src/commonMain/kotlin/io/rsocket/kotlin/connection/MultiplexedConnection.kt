@@ -80,7 +80,7 @@ internal class MultiplexedConnection(
                 execute(streamId, stream, requestPayload, operation)
             } finally {
                 storage.removeStream(streamId)
-                stream.close()
+                stream.cancel("Stream closed")
             }
         }
     }
@@ -112,7 +112,7 @@ internal class MultiplexedConnection(
                 storage.removeStream(streamId)
             }
         } finally {
-            stream.close()
+            stream.cancel("Stream closed")
         }
     }
 

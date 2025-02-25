@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.transport
+package io.rsocket.kotlin.connection
 
+import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 
 @RSocketTransportApi
-public interface RSocketConnectionInitializer<T> {
+internal interface RSocketConnectionInitializer<T> {
     public suspend fun RSocketConnection.initialize(): T
 }
 
 @RSocketTransportApi
-public suspend fun <T> RSocketConnectionInitializer<T>.runInitializer(connection: RSocketConnection): T {
+internal suspend fun <T> RSocketConnectionInitializer<T>.runInitializer(connection: RSocketConnection): T {
     val result = connection.async {
         connection.initialize()
     }
@@ -38,7 +39,7 @@ public suspend fun <T> RSocketConnectionInitializer<T>.runInitializer(connection
 }
 
 @RSocketTransportApi
-public fun RSocketConnectionInitializer<Unit>.launchInitializer(connection: RSocketConnection): Job {
+internal fun RSocketConnectionInitializer<Unit>.launchInitializer(connection: RSocketConnection): Job {
     return connection.launch {
         connection.initialize()
     }

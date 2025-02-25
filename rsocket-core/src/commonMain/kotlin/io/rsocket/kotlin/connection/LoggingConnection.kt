@@ -25,16 +25,12 @@ import kotlin.coroutines.*
 
 @RSocketLoggingApi
 @RSocketTransportApi
-internal fun <T> RSocketConnectionInitializer<T>.logging(logger: Logger): RSocketConnectionInitializer<T> {
+internal fun RSocketConnection.logging(logger: Logger): RSocketConnection {
     if (!logger.isLoggable(LoggingLevel.DEBUG)) return this
 
-    return object : RSocketConnectionInitializer<T> {
-        override suspend fun RSocketConnection.initialize(): T = with(this@logging) {
-            when (this@initialize) {
-                is RSocketSequentialConnection  -> SequentialLoggingConnection(this@initialize, logger)
-                is RSocketMultiplexedConnection -> MultiplexedLoggingConnection(this@initialize, logger)
-            }.initialize()
-        }
+    return when (this) {
+        is RSocketSequentialConnection  -> SequentialLoggingConnection(this, logger)
+        is RSocketMultiplexedConnection -> MultiplexedLoggingConnection(this, logger)
     }
 }
 
@@ -91,6 +87,7 @@ private class MultiplexedLoggingStream(
     private val logger: Logger,
 ) : RSocketMultiplexedConnection.Stream {
     override val isClosedForSend: Boolean get() = delegate.isClosedForSend
+    override val coroutineContext: CoroutineContext get() = delegate.coroutineContext
 
     override fun setSendPriority(priority: Int) {
         delegate.setSendPriority(priority)
@@ -105,9 +102,5 @@ private class MultiplexedLoggingStream(
         return delegate.receiveFrame()?.also { frame ->
             logger.debug { "Receive: ${dumpFrameToString(frame)}" }
         }
-    }
-
-    override fun close() {
-        delegate.close()
     }
 }

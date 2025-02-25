@@ -44,7 +44,8 @@ public interface RSocketMultiplexedConnection : RSocketConnection {
     public suspend fun acceptStream(): Stream?
 
     @RSocketTransportApi
-    public interface Stream : AutoCloseable {
+    public interface Stream : CoroutineScope {
+        // TODO: try to drop it!!!
         public val isClosedForSend: Boolean
 
         // 0 - highest priority
@@ -56,10 +57,5 @@ public interface RSocketMultiplexedConnection : RSocketConnection {
 
         // null if no more frames could be received
         public suspend fun receiveFrame(): Buffer?
-
-        // closing stream will send buffered frames (if needed)
-        // sending/receiving frames will be not possible after it
-        // should not throw
-        override fun close()
     }
 }

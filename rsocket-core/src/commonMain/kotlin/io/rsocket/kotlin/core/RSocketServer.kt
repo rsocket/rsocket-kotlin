@@ -47,22 +47,20 @@ public class RSocketServer internal constructor(
         transport: ServerTransport<T>,
         acceptor: ConnectionAcceptor,
     ): T = with(transport) {
-        val initializer = createInitializer(acceptor)
         scope.start {
-            initializer.launchInitializer(
-                OldConnection(interceptors.wrapConnection(it))
-            )
+            acceptConnection(acceptor, OldConnection(interceptors.wrapConnection(it)))
         }
     }
 
     public suspend fun <T : RSocketServerInstance> startServer(
         transport: RSocketServerTarget<T>,
         acceptor: ConnectionAcceptor,
-    ): T = transport.startServer(createInitializer(acceptor))
+    ): T = transport.startServer { acceptConnection(acceptor, it) }
 
     @RSocketTransportApi
-    public fun createInitializer(acceptor: ConnectionAcceptor): RSocketConnectionInitializer<Unit> =
-        AcceptConnection(acceptor).logging(frameLogger)
+    public fun acceptConnection(acceptor: ConnectionAcceptor, connection: RSocketConnection) {
+        AcceptConnection(acceptor).launchInitializer(connection.logging(frameLogger))
+    }
 
     private inner class AcceptConnection(acceptor: ConnectionAcceptor) : ConnectionEstablishmentHandler<Unit>(
         isClient = false,

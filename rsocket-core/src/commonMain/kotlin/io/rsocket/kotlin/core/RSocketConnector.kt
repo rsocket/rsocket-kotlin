@@ -42,10 +42,8 @@ public class RSocketConnector internal constructor(
         override val coroutineContext: CoroutineContext get() = transport.coroutineContext
 
         @RSocketTransportApi
-        override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
-            return initializer.runInitializer(
-                OldConnection(interceptors.wrapConnection(transport.connect()))
-            )
+        override suspend fun connectClient(): RSocketConnection {
+            return OldConnection(interceptors.wrapConnection(transport.connect()))
         }
     })
 
@@ -60,7 +58,7 @@ public class RSocketConnector internal constructor(
     }
 
     private suspend fun connectOnce(transport: RSocketClientTarget): RSocket {
-        return transport.connectClient(SetupConnection().logging(frameLogger))
+        return SetupConnection().runInitializer(transport.connectClient().logging(frameLogger))
     }
 
     private inner class SetupConnection : ConnectionEstablishmentHandler<RSocket>(

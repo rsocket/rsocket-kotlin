@@ -42,10 +42,8 @@ class RSocketResponderRequestNTest : TestWithConnection() {
         private val connection: RSocketConnection,
     ) : RSocketServerTarget<TestInstance> {
         @RSocketTransportApi
-        override suspend fun startServer(initializer: RSocketConnectionInitializer<Unit>): TestInstance {
-            return TestInstance(async {
-                initializer.runInitializer(connection)
-            })
+        override suspend fun startServer(onConnection: (RSocketConnection) -> Unit): TestInstance {
+            return TestInstance(async { onConnection(connection) })
         }
     }
 

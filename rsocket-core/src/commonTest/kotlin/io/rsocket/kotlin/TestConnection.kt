@@ -45,9 +45,7 @@ class TestConnection : RSocketSequentialConnection, RSocketClientTarget {
     }
 
     @RSocketTransportApi
-    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
-        return initializer.runInitializer(this)
-    }
+    override suspend fun connectClient(): RSocketConnection = this
 
     override val isClosedForSend: Boolean get() = sendChannel.isClosedForSend
 

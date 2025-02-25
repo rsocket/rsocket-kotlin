@@ -45,17 +45,14 @@ public interface RSocketTransport : CoroutineScope {
 @SubclassOptInRequired(RSocketTransportApi::class)
 public interface RSocketClientTarget : CoroutineScope {
     @RSocketTransportApi
-    public suspend fun <T> connectClient(
-        initializer: RSocketConnectionInitializer<T>,
-    ): T
+    public suspend fun connectClient(): RSocketConnection
 }
 
 @SubclassOptInRequired(RSocketTransportApi::class)
 public interface RSocketServerTarget<Instance : RSocketServerInstance> : CoroutineScope {
+    // callback shouldn't throw.
     @RSocketTransportApi
-    public suspend fun startServer(
-        initializer: RSocketConnectionInitializer<Unit>,
-    ): Instance
+    public suspend fun startServer(onConnection: (RSocketConnection) -> Unit): Instance
 }
 
 // cancelling it will cancel server
