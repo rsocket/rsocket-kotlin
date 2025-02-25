@@ -91,10 +91,10 @@ private class LocalServerTargetImpl(
     private val connector: LocalServerConnector,
 ) : LocalServerTarget {
     @RSocketTransportApi
-    override suspend fun startServer(initializer: RSocketConnectionInitializer<Unit>): LocalServerInstance {
+    override suspend fun startServer(onConnection: (RSocketConnection) -> Unit): LocalServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
-        return LocalServerRegistry.startServer(serverName, coroutineContext, initializer, connector)
+        return LocalServerRegistry.startServer(serverName, coroutineContext, connector, onConnection)
     }
 }

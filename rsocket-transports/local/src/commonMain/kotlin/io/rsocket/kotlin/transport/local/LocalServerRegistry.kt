@@ -42,22 +42,21 @@ internal object LocalServerRegistry : SynchronizedObject() {
         checkNotNull(instances[name]) { "Cannot find $name" }
     }
 
-    suspend fun <T> connectClient(
+    suspend fun connectClient(
         serverName: String,
         parentContext: CoroutineContext,
-        initializer: RSocketConnectionInitializer<T>,
-    ): T = get(serverName).connect(parentContext, initializer)
+    ): RSocketConnection = get(serverName).connectClient(parentContext)
 
     fun startServer(
         serverName: String,
         parentContext: CoroutineContext,
-        initializer: RSocketConnectionInitializer<Unit>,
         connector: LocalServerConnector,
+        onConnection: (RSocketConnection) -> Unit,
     ): LocalServerInstance = LocalServerInstanceImpl(
         coroutineContext = parentContext.childContext(),
         serverName = serverName,
-        serverInitializer = initializer,
-        connector = connector
+        connector = connector,
+        onConnection = onConnection
     ).also {
         register(serverName, it)
     }
@@ -67,20 +66,19 @@ internal object LocalServerRegistry : SynchronizedObject() {
 private class LocalServerInstanceImpl(
     override val coroutineContext: CoroutineContext,
     override val serverName: String,
-    private val serverInitializer: RSocketConnectionInitializer<Unit>,
     private val connector: LocalServerConnector,
+    private val onConnection: (RSocketConnection) -> Unit,
 ) : LocalServerInstance {
     private val serverContext = coroutineContext.supervisorContext()
 
     @RSocketTransportApi
-    suspend fun <T> connect(clientContext: CoroutineContext, clientInitializer: RSocketConnectionInitializer<T>): T {
+    suspend fun connectClient(clientContext: CoroutineContext): RSocketConnection {
         coroutineContext.ensureActive()
 
         return connector.connect(
             clientContext = clientContext,
-            clientInitializer = clientInitializer,
             serverContext = serverContext,
-            serverInitializer = serverInitializer,
+            onConnection = onConnection
         )
     }
 }

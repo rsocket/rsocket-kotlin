@@ -62,12 +62,11 @@ private class LocalClientTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val serverName: String,
 ) : RSocketClientTarget {
-
     @RSocketTransportApi
-    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
+    override suspend fun connectClient(): RSocketConnection {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
-        return LocalServerRegistry.connectClient(serverName, coroutineContext, initializer)
+        return LocalServerRegistry.connectClient(serverName, coroutineContext)
     }
 }
