@@ -133,7 +133,6 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @Ignore //flaky, ignore for now
     fun requestChannel200000() = test {
         val request = flow {
             repeat(200_000) { emit(payload(it)) }
@@ -162,7 +161,6 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @Ignore //flaky, ignore for now
     fun requestChannel256x512() = test {
         val request = flow {
             repeat(512) {
@@ -188,7 +186,6 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @Ignore //flaky, ignore for now
     fun requestStreamX256() = test {
         (0..256).map {
             async {
@@ -237,15 +234,17 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    @Ignore // windows
-    fun requestResponse10000() = test {
-        (1..10000).map { async { client.requestResponse(payload(3)).let(Companion::checkPayload) } }.awaitAll()
+    fun requestResponse10000Sequential() = test {
+        repeat(10000) {
+            client.requestResponse(payload(3)).let(Companion::checkPayload)
+        }
     }
 
     @Test
-    @Ignore // QUIC
-    fun requestResponse100000() = test {
-        repeat(100000) { client.requestResponse(payload(3)).let(Companion::checkPayload) }
+    fun requestResponse10000Parallel() = test {
+        repeat(10000) {
+            launch { client.requestResponse(payload(3)).let(Companion::checkPayload) }
+        }
     }
 
     @Test
