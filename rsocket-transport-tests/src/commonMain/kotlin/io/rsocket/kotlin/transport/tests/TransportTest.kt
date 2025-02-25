@@ -55,6 +55,7 @@ abstract class TransportTest : SuspendTest {
         SERVER.startServer(serverTransport, ACCEPTOR)
 
     override suspend fun after() {
+        delay(500) // TODO QUIC streams
         client.coroutineContext.job.cancelAndJoin()
         testJob.cancelAndJoin()
     }
