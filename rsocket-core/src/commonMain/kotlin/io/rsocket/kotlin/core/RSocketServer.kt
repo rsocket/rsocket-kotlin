@@ -49,6 +49,7 @@ public class RSocketServer internal constructor(
     ): T = with(transport) {
         scope.start {
             acceptConnection(acceptor, OldConnection(interceptors.wrapConnection(it)))
+            awaitCancellation()
         }
     }
 
