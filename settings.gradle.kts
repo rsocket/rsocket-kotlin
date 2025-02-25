@@ -45,7 +45,7 @@ projects("rsocket-kotlin") {
 
         module("netty-internal")
         module("netty-tcp")
-        module("netty-websocket")
+//        module("netty-websocket")
         module("netty-quic")
     }
 
