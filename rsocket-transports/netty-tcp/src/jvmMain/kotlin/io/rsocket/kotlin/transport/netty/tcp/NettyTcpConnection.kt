@@ -77,7 +77,20 @@ internal class NettyTcpConnection(
 
     override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
 
-    // TODO: check channel state
+    override fun channelInactive(ctx: ChannelHandlerContext) {
+        cancel("Channel is not active")
+        ctx.fireChannelInactive()
+    }
+
+    override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable?) {
+        cancel("exceptionCaught", cause)
+    }
+
+    override fun userEventTriggered(ctx: ChannelHandlerContext?, evt: Any?) {
+        if (evt is ChannelInputShutdownEvent) inbound.close()
+        super.userEventTriggered(ctx, evt)
+    }
+
     override fun channelRead(ctx: ChannelHandlerContext, msg: Any) {
         val buffer = (msg as ByteBuf).toBuffer()
         if (inbound.trySend(buffer).isFailure) buffer.clear()
