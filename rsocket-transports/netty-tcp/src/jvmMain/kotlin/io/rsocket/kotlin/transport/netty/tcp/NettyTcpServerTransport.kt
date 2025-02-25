@@ -143,7 +143,7 @@ private class NettyTcpServerTargetImpl(
     private val localAddress: SocketAddress,
 ) : NettyTcpServerTarget {
     @RSocketTransportApi
-    override suspend fun startServer(initializer: RSocketConnectionInitializer<Unit>): NettyTcpServerInstance {
+    override suspend fun startServer(onConnection: (RSocketConnection) -> Unit): NettyTcpServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
@@ -152,7 +152,7 @@ private class NettyTcpServerTargetImpl(
             val handler = NettyTcpConnectionServerInitializer(
                 coroutineContext = instanceContext.supervisorContext(),
                 sslContext = sslContext,
-                initializer = initializer
+                onConnection = onConnection,
             )
             bootstrap.clone()
                 .childHandler(handler)
@@ -190,15 +190,12 @@ private class NettyTcpServerInstanceImpl(
 
 @RSocketTransportApi
 private class NettyTcpConnectionServerInitializer(
-    override val coroutineContext: CoroutineContext,
+    coroutineContext: CoroutineContext,
     sslContext: SslContext?,
-    private val initializer: RSocketConnectionInitializer<Unit>,
+    private val onConnection: (RSocketConnection) -> Unit,
 ) : NettyTcpConnectionChannelInitializer(coroutineContext, sslContext) {
     override fun initChannel(ch: DuplexChannel) {
         super.initChannel(ch)
-
-        initializer.launchInitializer(
-            ch.attr(NettyTcpConnection.ATTRIBUTE).get()
-        )
+        onConnection(ch.attr(NettyTcpConnection.ATTRIBUTE).get())
     }
 }

@@ -125,14 +125,12 @@ private class NettyTcpClientTargetImpl(
     private val bootstrap = bootstrap.clone().handler(this).remoteAddress(remoteAddress)
 
     @RSocketTransportApi
-    override suspend fun <T> connectClient(initializer: RSocketConnectionInitializer<T>): T {
+    override suspend fun connectClient(): RSocketConnection {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
         val channel = bootstrap.connect().awaitChannel<Channel>()
 
-        return initializer.runInitializer(
-            channel.attr(NettyTcpConnection.ATTRIBUTE).get()
-        )
+        return channel.attr(NettyTcpConnection.ATTRIBUTE).get()
     }
 }

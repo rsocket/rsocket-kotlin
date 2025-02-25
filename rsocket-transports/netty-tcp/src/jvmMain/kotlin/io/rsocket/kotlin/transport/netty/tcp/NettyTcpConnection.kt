@@ -57,7 +57,7 @@ internal class NettyTcpConnection(
                         }
                     } finally {
                         outboundQueue.cancel()
-                        channel.shutdownOutput().awaitFuture()
+                        channel.shutdownOutput(channel.voidPromise())
                     }
                 }
             }
@@ -67,10 +67,8 @@ internal class NettyTcpConnection(
                 nonCancellable {
                     outboundQueue.close()
                     inbound.cancel()
-                    channel.shutdownInput().awaitFuture()
+                    channel.shutdownInput(channel.voidPromise())
                     outboundJob.join()
-
-                    channel.shutdown().awaitFuture()
                     channel.close().awaitFuture()
                 }
             }
