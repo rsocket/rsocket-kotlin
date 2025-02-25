@@ -8,10 +8,7 @@ public final class io/rsocket/kotlin/transport/ktor/tcp/KtorTcpClientTransport$F
 }
 
 public abstract interface class io/rsocket/kotlin/transport/ktor/tcp/KtorTcpClientTransportBuilder : io/rsocket/kotlin/transport/RSocketTransportBuilder {
-	public abstract fun dispatcher (Lkotlin/coroutines/CoroutineContext;)V
-	public fun inheritDispatcher ()V
 	public abstract fun selectorManager (Lio/ktor/network/selector/SelectorManager;Z)V
-	public abstract fun selectorManagerDispatcher (Lkotlin/coroutines/CoroutineContext;)V
 	public abstract fun socketOptions (Lkotlin/jvm/functions/Function1;)V
 }
 
@@ -31,10 +28,7 @@ public final class io/rsocket/kotlin/transport/ktor/tcp/KtorTcpServerTransport$F
 }
 
 public abstract interface class io/rsocket/kotlin/transport/ktor/tcp/KtorTcpServerTransportBuilder : io/rsocket/kotlin/transport/RSocketTransportBuilder {
-	public abstract fun dispatcher (Lkotlin/coroutines/CoroutineContext;)V
-	public fun inheritDispatcher ()V
 	public abstract fun selectorManager (Lio/ktor/network/selector/SelectorManager;Z)V
-	public abstract fun selectorManagerDispatcher (Lkotlin/coroutines/CoroutineContext;)V
 	public abstract fun socketOptions (Lkotlin/jvm/functions/Function1;)V
 }
 
