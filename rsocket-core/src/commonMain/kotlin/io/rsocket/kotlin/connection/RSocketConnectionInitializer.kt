@@ -21,13 +21,13 @@ import kotlinx.coroutines.*
 
 @RSocketTransportApi
 internal interface RSocketConnectionInitializer<T> {
-    public suspend fun RSocketConnection.initialize(): T
+    suspend fun initialize(connection: RSocketConnection): T
 }
 
 @RSocketTransportApi
 internal suspend fun <T> RSocketConnectionInitializer<T>.runInitializer(connection: RSocketConnection): T {
     val result = connection.async {
-        connection.initialize()
+        initialize(connection)
     }
     try {
         result.join()
@@ -41,6 +41,6 @@ internal suspend fun <T> RSocketConnectionInitializer<T>.runInitializer(connecti
 @RSocketTransportApi
 internal fun RSocketConnectionInitializer<Unit>.launchInitializer(connection: RSocketConnection): Job {
     return connection.launch {
-        connection.initialize()
+        initialize(connection)
     }
 }

@@ -101,7 +101,15 @@ internal abstract class ConnectionEstablishmentHandler(
         }
     }
 
-    override suspend fun RSocketConnection.initialize() = coroutineScope {
-        handleConnection(wrapConnection(this@initialize, coroutineContext.supervisorContext()))
+    override suspend fun initialize(connection: RSocketConnection) {
+        try {
+            coroutineScope {
+                handleConnection(wrapConnection(connection, coroutineContext.supervisorContext()))
+            }
+            connection.cancel()
+        } catch (cause: Throwable) {
+            connection.cancel("Connection closed", cause)
+            throw cause
+        }
     }
 }
