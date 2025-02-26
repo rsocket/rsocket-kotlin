@@ -62,6 +62,7 @@ abstract class TransportTest : SuspendTest {
     @Test
     fun fireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(payload(it)) } }.awaitAll()
+        delay(500) // TODO
     }
 
     @Test
@@ -203,6 +204,7 @@ abstract class TransportTest : SuspendTest {
                 }
                 .count()
         assertEquals(500, count)
+        delay(500) // TODO
     }
 
     @Test
@@ -262,6 +264,7 @@ abstract class TransportTest : SuspendTest {
                 .onEach { checkPayload(it) }
                 .count()
         assertEquals(500, count)
+        delay(500) // TODO
     }
 
     companion object {
