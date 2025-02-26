@@ -74,6 +74,7 @@ abstract class TransportTest : SuspendTest {
     @Test
     fun metadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterData)) } }.awaitAll()
+        delay(500) // TODO
     }
 
     @Test
