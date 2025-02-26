@@ -38,7 +38,7 @@ internal abstract class Connection2(
 
     // connection establishment part
 
-    abstract suspend fun establishConnection(handler: ConnectionEstablishmentHandler<*>): ConnectionConfig
+    abstract suspend fun establishConnection(handler: ConnectionEstablishmentHandler): ConnectionConfig
 
     // setup completed, start handling requests
     abstract suspend fun handleConnection(inbound: ConnectionInbound)

@@ -40,7 +40,7 @@ internal class MultiplexedConnection(
         storage.clear()
     }
 
-    override suspend fun establishConnection(handler: ConnectionEstablishmentHandler<*>): ConnectionConfig {
+    override suspend fun establishConnection(handler: ConnectionEstablishmentHandler): ConnectionConfig {
         return handler.establishConnection(EstablishmentContext())
     }
 

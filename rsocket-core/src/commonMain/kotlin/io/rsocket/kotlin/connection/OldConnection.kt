@@ -39,7 +39,7 @@ internal class OldConnection(
     init {
         @OptIn(DelicateCoroutinesApi::class)
         launch(start = CoroutineStart.ATOMIC) {
-            val outboundJob = launch {
+            launch {
                 nonCancellable {
                     while (true) {
                         connection.send(outboundQueue.dequeueFrame() ?: break)
@@ -52,10 +52,7 @@ internal class OldConnection(
             try {
                 awaitCancellation()
             } finally {
-                nonCancellable {
-                    outboundQueue.close()
-                    outboundJob.join()
-                }
+                outboundQueue.close()
             }
         }
     }

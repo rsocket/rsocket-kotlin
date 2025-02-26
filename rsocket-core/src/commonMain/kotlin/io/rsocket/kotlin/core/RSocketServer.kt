@@ -63,14 +63,13 @@ public class RSocketServer internal constructor(
         AcceptConnection(acceptor).launchInitializer(connection.logging(frameLogger))
     }
 
-    private inner class AcceptConnection(acceptor: ConnectionAcceptor) : ConnectionEstablishmentHandler<Unit>(
+    private inner class AcceptConnection(acceptor: ConnectionAcceptor) : ConnectionEstablishmentHandler(
         isClient = false,
         frameCodec = FrameCodec(maxFragmentSize),
         connectionAcceptor = acceptor,
         interceptors = interceptors,
+        requesterDeferred = null
     ) {
-        override fun transform(requester: RSocket) = Unit
-
         override suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig {
             val setupFrame = context.receiveFrame()
             return try {

@@ -26,14 +26,14 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
 @RSocketTransportApi
-internal abstract class ConnectionEstablishmentHandler<T>(
+internal abstract class ConnectionEstablishmentHandler(
     private val isClient: Boolean,
     private val frameCodec: FrameCodec,
     private val connectionAcceptor: ConnectionAcceptor,
     private val interceptors: Interceptors,
-) : RSocketConnectionInitializer<T> {
+    private val requesterDeferred: CompletableDeferred<RSocket>?,
+) : RSocketConnectionInitializer<Unit> {
     abstract suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig
-    protected abstract fun transform(requester: RSocket): T
 
     private suspend fun wrapConnection(
         connection: RSocketConnection,
@@ -54,8 +54,8 @@ internal abstract class ConnectionEstablishmentHandler<T>(
     }
 
     @Suppress("SuspendFunctionOnCoroutineScope")
-    private suspend fun CoroutineScope.handleConnection(connection: Connection2): T {
-        return try {
+    private suspend fun CoroutineScope.handleConnection(connection: Connection2) {
+        try {
             val connectionConfig = connection.establishConnection(this@ConnectionEstablishmentHandler)
             try {
                 val requester = interceptors.wrapRequester(connection)
@@ -77,14 +77,12 @@ internal abstract class ConnectionEstablishmentHandler<T>(
                     responder.cancel("Connection closed", cause)
                 }
 
-                val keepAliveHandler = KeepAliveHandler(connectionConfig.keepAlive, connection, this)
-                connection.launch {
-                    connection.handleConnection(
-                        ConnectionInbound(connection.coroutineContext, responder, keepAliveHandler)
-                    )
-                }
+                requesterDeferred?.complete(requester)
 
-                transform(requester)
+                val keepAliveHandler = KeepAliveHandler(connectionConfig.keepAlive, connection, this)
+                connection.handleConnection(
+                    ConnectionInbound(connection.coroutineContext, responder, keepAliveHandler)
+                )
             } catch (cause: Throwable) {
                 connectionConfig.setupPayload.close()
                 throw cause
@@ -103,7 +101,7 @@ internal abstract class ConnectionEstablishmentHandler<T>(
         }
     }
 
-    override suspend fun RSocketConnection.initialize(): T {
-        return handleConnection(wrapConnection(this, coroutineContext.supervisorContext()))
+    override suspend fun RSocketConnection.initialize() {
+        handleConnection(wrapConnection(this, coroutineContext.supervisorContext()))
     }
 }
