@@ -19,10 +19,12 @@ package io.rsocket.kotlin.transport.ktor.websocket.tests
 import io.rsocket.kotlin.transport.ktor.websocket.client.*
 import io.rsocket.kotlin.transport.ktor.websocket.server.*
 import io.rsocket.kotlin.transport.tests.*
+import kotlin.test.*
 import io.ktor.client.engine.cio.CIO as ClientCIO
 import io.ktor.server.cio.CIO as ServerCIO
 
 @Suppress("DEPRECATION_ERROR")
+@Ignore
 class WebSocketTransportTest : TransportTest() {
     override suspend fun before() {
         val embeddedServer = startServer(

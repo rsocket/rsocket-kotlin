@@ -32,7 +32,7 @@ import kotlin.time.Duration.Companion.seconds
 
 //TODO: need to somehow rework those tests, as now they are super flaky
 abstract class TransportTest : SuspendTest {
-    override val testTimeout: Duration = 20.minutes
+    override val testTimeout: Duration = 10.minutes
 
     private val testJob = SupervisorJob()
     protected val testContext = testJob + TestExceptionHandler
