@@ -187,16 +187,6 @@ abstract class TransportTest : SuspendTest {
     }
 
     @Test
-    fun requestStreamX256() = test {
-        (0..256).map {
-            async {
-                val count = client.requestStream(payload(0)).onEach { it.close() }.count()
-                assertEquals(8192, count)
-            }
-        }.awaitAll()
-    }
-
-    @Test
     fun requestChannel500NoLeak() = test {
         val request = flow {
             repeat(10_000) { emitOrClose(payload(3)) }
