@@ -55,7 +55,6 @@ abstract class TransportTest : SuspendTest {
         SERVER.startServer(serverTransport, ACCEPTOR)
 
     override suspend fun after() {
-        delay(500) // TODO QUIC streams
         client.coroutineContext.job.cancelAndJoin()
         testJob.cancelAndJoin()
     }
@@ -68,6 +67,7 @@ abstract class TransportTest : SuspendTest {
     @Test
     open fun largePayloadFireAndForget10() = test {
         (1..10).map { async { client.fireAndForget(requesterLargePayload) } }.awaitAll()
+        delay(500) // TODO because of QUIC streams
     }
 
     @Test
@@ -78,6 +78,7 @@ abstract class TransportTest : SuspendTest {
     @Test
     open fun largePayloadMetadataPush10() = test {
         (1..10).map { async { client.metadataPush(packet(requesterLargeData)) } }.awaitAll()
+        delay(500) // TODO QUIC streams
     }
 
     @Test
