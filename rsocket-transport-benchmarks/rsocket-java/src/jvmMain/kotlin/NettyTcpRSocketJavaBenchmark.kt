@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnstableApiUsage")
+package io.rsocket.kotlin.transport.benchmarks.java
 
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
+import io.rsocket.transport.*
+import io.rsocket.transport.netty.client.*
+import io.rsocket.transport.netty.server.*
 
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
+class NettyTcpRSocketJavaBenchmark : RSocketJavaBenchmark() {
+    override val serverTransport: ServerTransport<*> = TcpServerTransport.create(9000)
+    override val clientTransport: ClientTransport = TcpClientTransport.create(9000)
 }

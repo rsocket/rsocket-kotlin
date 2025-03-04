@@ -31,6 +31,14 @@ projects("rsocket-kotlin") {
 
     module("rsocket-test")
     module("rsocket-transport-tests")
+    folder("rsocket-transport-benchmarks") {
+        module("base")
+        // pre ktor 3.0, kotlinx.io and grand Transport API rework.
+        module("rsocket-kotlin-0_16")
+        // current version
+        module("rsocket-kotlin")
+        module("rsocket-java")
+    }
 
     // transports
     folder("rsocket-transports", "rsocket-transport") {
