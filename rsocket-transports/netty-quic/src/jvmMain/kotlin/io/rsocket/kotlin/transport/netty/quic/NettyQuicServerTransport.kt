@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ private class NettyQuicServerTransportBuilderImpl : NettyQuicServerTransportBuil
 
     @RSocketTransportApi
     override fun buildTransport(context: CoroutineContext): NettyQuicServerTransport {
-        val codecBuilder = QuicServerCodecBuilder().apply {
+        val codecHandler = fun(connectionInitializer: ChannelHandler): ChannelHandler = QuicServerCodecBuilder().apply {
             // by default, we allow Int.MAX_VALUE of active stream
             initialMaxData(Int.MAX_VALUE.toLong())
             initialMaxStreamDataBidirectionalLocal(Int.MAX_VALUE.toLong())
@@ -103,7 +103,9 @@ private class NettyQuicServerTransportBuilderImpl : NettyQuicServerTransportBuil
                 val keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
                 sslContext(QuicSslContextBuilder.forServer(keyManagerFactory, null).apply(it).build())
             }
-        }
+            handler(connectionInitializer)
+            streamHandler(NettyQuicStreamInitializer)
+        }.build()
 
         val bootstrap = Bootstrap().apply {
             bootstrap?.invoke(this)
@@ -114,28 +116,22 @@ private class NettyQuicServerTransportBuilderImpl : NettyQuicServerTransportBuil
         return NettyQuicServerTransportImpl(
             coroutineContext = context.supervisorContext() + bootstrap.config().group().asCoroutineDispatcher(),
             bootstrap = bootstrap,
-            codecBuilder = codecBuilder,
-            manageBootstrap = manageEventLoopGroup
-        )
+            codecHandler = codecHandler
+        ).also {
+            if (manageEventLoopGroup) it.shutdownOnCancellation(bootstrap.config().group())
+        }
     }
 }
 
 private class NettyQuicServerTransportImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: Bootstrap,
-    private val codecBuilder: QuicServerCodecBuilder,
-    manageBootstrap: Boolean,
+    private val codecHandler: (ChannelHandler) -> ChannelHandler,
 ) : NettyQuicServerTransport {
-    init {
-        if (manageBootstrap) callOnCancellation {
-            bootstrap.config().group().shutdownGracefully().awaitFuture()
-        }
-    }
-
     override fun target(localAddress: InetSocketAddress?): NettyQuicServerTargetImpl = NettyQuicServerTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         bootstrap = bootstrap,
-        codecBuilder = codecBuilder,
+        codecHandler = codecHandler,
         localAddress = localAddress ?: InetSocketAddress(0)
     )
 
@@ -147,21 +143,27 @@ private class NettyQuicServerTransportImpl(
 private class NettyQuicServerTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: Bootstrap,
-    private val codecBuilder: QuicServerCodecBuilder,
+    private val codecHandler: (ChannelHandler) -> ChannelHandler,
     private val localAddress: SocketAddress,
 ) : RSocketServerTarget<NettyQuicServerInstance> {
     @RSocketTransportApi
-    override suspend fun startServer(handler: RSocketConnectionHandler): NettyQuicServerInstance {
+    override suspend fun startServer(onConnection: (RSocketConnection) -> Unit): NettyQuicServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
         val instanceContext = coroutineContext.childContext()
         val channel = try {
-            bootstrap.clone().handler(
-                codecBuilder.clone().handler(
-                    NettyQuicConnectionInitializer(handler, instanceContext.supervisorContext(), isClient = false)
-                ).build()
-            ).bind(localAddress).awaitChannel()
+            bootstrap.clone()
+                .handler(
+                    codecHandler(
+                        NettyQuicConnectionInitializer(
+                            parentContext = instanceContext.supervisorContext(),
+                            onConnection = onConnection
+                        )
+                    )
+                )
+                .bind(localAddress)
+                .awaitChannel<DatagramChannel>()
         } catch (cause: Throwable) {
             instanceContext.job.cancel("Failed to bind", cause)
             throw cause
@@ -169,12 +171,27 @@ private class NettyQuicServerTargetImpl(
 
         return NettyQuicServerInstanceImpl(
             coroutineContext = instanceContext,
-            localAddress = (channel as DatagramChannel).localAddress() as InetSocketAddress
+            channel = channel
         )
     }
 }
 
 private class NettyQuicServerInstanceImpl(
     override val coroutineContext: CoroutineContext,
-    override val localAddress: InetSocketAddress,
-) : NettyQuicServerInstance
+    private val channel: DatagramChannel,
+) : NettyQuicServerInstance {
+    override val localAddress: InetSocketAddress get() = channel.localAddress() as InetSocketAddress
+
+    init {
+        @OptIn(DelicateCoroutinesApi::class)
+        launch(start = CoroutineStart.ATOMIC) {
+            try {
+                awaitCancellation()
+            } finally {
+                nonCancellable {
+                    channel.close().awaitFuture()
+                }
+            }
+        }
+    }
+}

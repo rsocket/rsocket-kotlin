@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package io.rsocket.kotlin.transport.netty.quic
 
 import io.netty.channel.nio.*
 import io.netty.handler.ssl.util.*
-import io.netty.incubator.codec.quic.*
 import io.rsocket.kotlin.transport.tests.*
 import kotlin.concurrent.*
 
@@ -28,7 +27,7 @@ private val eventLoop = NioEventLoopGroup().also {
 }
 private val certificates = SelfSignedCertificate()
 
-private val protos = arrayOf("hq-29")
+private val protos = arrayOf("h3")
 
 class NettyQuicTransportTest : TransportTest() {
     override suspend fun before() {
@@ -38,9 +37,6 @@ class NettyQuicTransportTest : TransportTest() {
                 ssl {
                     keyManager(certificates.privateKey(), null, certificates.certificate())
                     applicationProtocols(*protos)
-                }
-                codec {
-                    tokenHandler(InsecureQuicTokenHandler.INSTANCE)
                 }
             }.target("127.0.0.1")
         )
