@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.internal.*
+import kotlinx.coroutines.*
 
 private val RSocketSupportConfigKey = AttributeKey<RSocketSupportConfig.Internal>("RSocketSupportConfig")
 
@@ -54,8 +55,8 @@ internal fun Route.rSocketHandler(acceptor: ConnectionAcceptor): suspend Default
     val config = application.attributes.getOrNull(RSocketSupportConfigKey)
         ?: error("Plugin RSocketSupport is not installed. Consider using `install(RSocketSupport)` in server config first.")
 
-    val handler = config.server.createHandler(acceptor)
     return {
-        handler.handleKtorWebSocketConnection(this)
+        config.server.acceptConnection(acceptor, KtorWebSocketConnection(this))
+        awaitCancellation()
     }
 }

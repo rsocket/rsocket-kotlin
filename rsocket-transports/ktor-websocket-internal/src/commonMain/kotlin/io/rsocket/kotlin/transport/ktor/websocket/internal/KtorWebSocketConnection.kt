@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,43 +21,54 @@ import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlinx.io.*
+import kotlin.coroutines.*
 
 @RSocketTransportApi
-public suspend fun RSocketConnectionHandler.handleKtorWebSocketConnection(webSocketSession: WebSocketSession): Unit = coroutineScope {
-    val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
+public class KtorWebSocketConnection(
+    private val session: WebSocketSession,
+) : RSocketSequentialConnection {
+    private val outboundQueue = PrioritizationFrameQueue()
+    override val coroutineContext: CoroutineContext get() = session.coroutineContext
 
-    val senderJob = launch {
-        while (true) webSocketSession.send(outboundQueue.dequeueFrame()?.readByteArray() ?: break)
-    }.onCompletion { outboundQueue.cancel() }
+    init {
+        @OptIn(DelicateCoroutinesApi::class)
+        launch(start = CoroutineStart.ATOMIC) {
+            val outboundJob = launch {
+                nonCancellable {
+                    try {
+                        while (true) {
+                            session.send(outboundQueue.dequeueFrame()?.readByteArray() ?: break)
+                        }
+                    } catch (cause: Throwable) {
+                        session.outgoing.close(cause)
+                        throw cause
+                    } finally {
+                        outboundQueue.cancel()
+                    }
+                }
+            }
 
-    try {
-        handleConnection(KtorWebSocketConnection(outboundQueue, webSocketSession.incoming))
-    } finally {
-        webSocketSession.incoming.cancel()
-        outboundQueue.close()
-        withContext(NonCancellable) {
-            senderJob.join() // await all frames sent
-            webSocketSession.close()
-            webSocketSession.coroutineContext.job.join()
+            try {
+                awaitCancellation()
+            } finally {
+                nonCancellable {
+                    session.incoming.cancel()
+                    outboundQueue.close()
+                    outboundJob.join()
+                    // await socket completion
+                    session.close()
+                }
+            }
         }
     }
-}
-
-@RSocketTransportApi
-private class KtorWebSocketConnection(
-    private val outboundQueue: PrioritizationFrameQueue,
-    private val inbound: ReceiveChannel<Frame>,
-) : RSocketSequentialConnection {
-    override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
 
     override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         return outboundQueue.enqueueFrame(streamId, frame)
     }
 
     override suspend fun receiveFrame(): Buffer? {
-        val frame = inbound.receiveCatching().getOrNull() ?: return null
+        val frame = session.incoming.receiveCatching().getOrNull() ?: return null
         return Buffer().apply { write(frame.data) }
     }
 }

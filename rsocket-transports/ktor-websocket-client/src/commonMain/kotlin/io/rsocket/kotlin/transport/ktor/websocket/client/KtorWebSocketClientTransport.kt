@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,15 +79,15 @@ private class KtorWebSocketClientTransportBuilderImpl : KtorWebSocketClientTrans
             install(WebSockets, webSocketsConfig)
         }
         // only dispatcher of a client is used - it looks like it's Dispatchers.IO now
-        val newContext = context.supervisorContext() + (httpClient.coroutineContext[ContinuationInterceptor] ?: EmptyCoroutineContext)
-        val newJob = newContext.job
+        val transportContext = context.supervisorContext() + Dispatchers.Default
+        val transportJob = transportContext.job
         val httpClientJob = httpClient.coroutineContext.job
 
-        httpClientJob.invokeOnCompletion { newJob.cancel("HttpClient closed", it) }
-        newJob.invokeOnCompletion { httpClientJob.cancel("KtorWebSocketClientTransport closed", it) }
+        httpClientJob.invokeOnCompletion { transportJob.cancel("HttpClient closed", it) }
+        transportJob.invokeOnCompletion { httpClientJob.cancel("KtorWebSocketClientTransport closed", it) }
 
         return KtorWebSocketClientTransportImpl(
-            coroutineContext = newContext,
+            coroutineContext = transportContext,
             httpClient = httpClient,
         )
     }
@@ -98,7 +98,7 @@ private class KtorWebSocketClientTransportImpl(
     private val httpClient: HttpClient,
 ) : KtorWebSocketClientTransport {
     override fun target(request: HttpRequestBuilder.() -> Unit): RSocketClientTarget = KtorWebSocketClientTargetImpl(
-        coroutineContext = coroutineContext,
+        coroutineContext = coroutineContext.supervisorContext(),
         httpClient = httpClient,
         request = request
     )
@@ -136,12 +136,17 @@ private class KtorWebSocketClientTargetImpl(
     private val httpClient: HttpClient,
     private val request: HttpRequestBuilder.() -> Unit,
 ) : RSocketClientTarget {
-
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
-        httpClient.webSocket(request) {
-            handler.handleKtorWebSocketConnection(this)
+    override suspend fun connectClient(): RSocketConnection {
+        currentCoroutineContext().ensureActive()
+        coroutineContext.ensureActive()
+
+        val session = httpClient.webSocketSession(request)
+        val handle = coroutineContext.job.invokeOnCompletion {
+            session.cancel("Transport was cancelled", it)
         }
+        session.coroutineContext.job.invokeOnCompletion { handle.dispose() }
+        return KtorWebSocketConnection(session)
     }
 }
 
