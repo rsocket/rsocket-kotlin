@@ -41,7 +41,6 @@ ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.re
 ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
 
 netty-handler = { module = "io.netty:netty-handler", version.ref = "netty" }
-netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty" }
 netty-codec-quic = { module = "io.netty.incubator:netty-incubator-codec-native-quic", version.ref = "netty-quic" }
 
 bouncycastle = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
