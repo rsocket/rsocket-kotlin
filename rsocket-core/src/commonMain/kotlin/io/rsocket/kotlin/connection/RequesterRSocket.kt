@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,67 +17,30 @@
 package io.rsocket.kotlin.connection
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
-import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.operation.*
 import io.rsocket.kotlin.payload.*
-import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.io.*
 import kotlin.coroutines.*
 
-// TODO: rename to just `Connection` after root `Connection` will be dropped
-@RSocketTransportApi
-internal abstract class Connection2(
-    protected val frameCodec: FrameCodec,
-    // requestContext
-    final override val coroutineContext: CoroutineContext,
-) : RSocket, AutoCloseable {
+internal class RequesterRSocket(
+    private val requestsScope: CoroutineScope,
+    private val outbound: ConnectionOutbound,
+) : RSocket {
+    override val coroutineContext: CoroutineContext get() = requestsScope.coroutineContext
 
-    // connection establishment part
-
-    abstract suspend fun establishConnection(handler: ConnectionEstablishmentHandler): ConnectionConfig
-
-    // setup completed, start handling requests
-    abstract suspend fun handleConnection(inbound: ConnectionInbound)
-
-    // connection part
-
-    protected abstract suspend fun sendConnectionFrame(frame: Buffer)
-    private suspend fun sendConnectionFrame(frame: Frame): Unit = sendConnectionFrame(frameCodec.encodeFrame(frame))
-
-    suspend fun sendError(cause: Throwable) {
-        sendConnectionFrame(ErrorFrame(0, cause))
+    override suspend fun metadataPush(metadata: Buffer) {
+        ensureActiveOrClose(metadata::clear)
+        outbound.sendMetadataPush(metadata)
     }
 
-    private suspend fun sendMetadataPush(metadata: Buffer) {
-        sendConnectionFrame(MetadataPushFrame(metadata))
-    }
-
-    suspend fun sendKeepAlive(respond: Boolean, data: Buffer, lastPosition: Long) {
-        sendConnectionFrame(KeepAliveFrame(respond, lastPosition, data))
-    }
-
-    // operations part
-
-    protected abstract fun launchRequest(requestPayload: Payload, operation: RequesterOperation): Job
-    private suspend fun ensureActiveOrClose(closeable: AutoCloseable) {
-        currentCoroutineContext().ensureActive { closeable.close() }
-        coroutineContext.ensureActive { closeable.close() }
-    }
-
-    final override suspend fun metadataPush(metadata: Buffer) {
-        ensureActiveOrClose(metadata)
-        sendMetadataPush(metadata)
-    }
-
-    final override suspend fun fireAndForget(payload: Payload) {
-        ensureActiveOrClose(payload)
+    override suspend fun fireAndForget(payload: Payload) {
+        ensureActiveOrClose(payload::close)
 
         suspendCancellableCoroutine { cont ->
-            val requestJob = launchRequest(
+            val requestJob = outbound.launchRequest(
                 requestPayload = payload,
                 operation = RequesterFireAndForgetOperation(cont)
             )
@@ -87,12 +50,12 @@ internal abstract class Connection2(
         }
     }
 
-    final override suspend fun requestResponse(payload: Payload): Payload {
-        ensureActiveOrClose(payload)
+    override suspend fun requestResponse(payload: Payload): Payload {
+        ensureActiveOrClose(payload::close)
 
         val responseDeferred = CompletableDeferred<Payload>()
 
-        val requestJob = launchRequest(
+        val requestJob = outbound.launchRequest(
             requestPayload = payload,
             operation = RequesterRequestResponseOperation(responseDeferred)
         )
@@ -107,14 +70,14 @@ internal abstract class Connection2(
     }
 
     @OptIn(ExperimentalStreamsApi::class)
-    final override fun requestStream(
+    override fun requestStream(
         payload: Payload,
     ): Flow<Payload> = payloadFlow { strategy, initialRequest ->
-        ensureActiveOrClose(payload)
+        ensureActiveOrClose(payload::close)
 
         val responsePayloads = PayloadChannel()
 
-        val requestJob = launchRequest(
+        val requestJob = outbound.launchRequest(
             requestPayload = payload,
             operation = RequesterRequestStreamOperation(initialRequest, responsePayloads)
         )
@@ -128,15 +91,15 @@ internal abstract class Connection2(
     }
 
     @OptIn(ExperimentalStreamsApi::class)
-    final override fun requestChannel(
+    override fun requestChannel(
         initPayload: Payload,
         payloads: Flow<Payload>,
     ): Flow<Payload> = payloadFlow { strategy, initialRequest ->
-        ensureActiveOrClose(initPayload)
+        ensureActiveOrClose(initPayload::close)
 
         val responsePayloads = PayloadChannel()
 
-        val requestJob = launchRequest(
+        val requestJob = outbound.launchRequest(
             initPayload,
             RequesterRequestChannelOperation(initialRequest, payloads, responsePayloads)
         )
@@ -148,4 +111,16 @@ internal abstract class Connection2(
             throw cause
         } ?: return@payloadFlow
     }
+
+    private suspend inline fun ensureActiveOrClose(onInactive: () -> Unit) {
+        currentCoroutineContext().ensureActive(onInactive)
+        coroutineContext.ensureActive(onInactive)
+    }
+
+    private inline fun CoroutineContext.ensureActive(onInactive: () -> Unit) {
+        if (isActive) return
+        onInactive() // should not throw
+        ensureActive() // will throw
+    }
+
 }

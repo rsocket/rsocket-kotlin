@@ -19,12 +19,11 @@ package io.rsocket.kotlin.transport.internal
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.test.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlinx.io.*
 import kotlin.test.*
 
 class PrioritizationFrameQueueTest : SuspendTest {
-    private val queue = PrioritizationFrameQueue(Channel.BUFFERED)
+    private val queue = PrioritizationFrameQueue()
 
     @Test
     fun testOrdering() = test {

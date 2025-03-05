@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@ internal abstract class OperationOutbound(
 ) {
     // TODO: decide on it
     // private var firstRequestFrameSent: Boolean = false
-
-    abstract val isClosed: Boolean
 
     protected abstract suspend fun sendFrame(frame: Buffer)
     private suspend fun sendFrame(frame: Frame): Unit = sendFrame(frameCodec.encodeFrame(frame))
