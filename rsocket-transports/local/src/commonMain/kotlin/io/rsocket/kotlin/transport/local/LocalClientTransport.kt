@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,10 @@ public sealed interface LocalClientTransport : RSocketTransport {
 @OptIn(RSocketTransportApi::class)
 public sealed interface LocalClientTransportBuilder : RSocketTransportBuilder<LocalClientTransport> {
     public fun dispatcher(context: CoroutineContext)
-    public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
 }
 
 private class LocalClientTransportBuilderImpl : LocalClientTransportBuilder {
-    private var dispatcher: CoroutineContext = Dispatchers.Default
+    private var dispatcher: CoroutineContext = Dispatchers.Unconfined
 
     override fun dispatcher(context: CoroutineContext) {
         check(context[Job] == null) { "Dispatcher shouldn't contain job" }
@@ -63,10 +62,11 @@ private class LocalClientTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val serverName: String,
 ) : RSocketClientTarget {
-
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job {
+    override suspend fun connectClient(): RSocketConnection {
+        currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
-        return LocalServerRegistry.get(serverName).connect(clientScope = this, clientHandler = handler)
+
+        return LocalServerRegistry.connectClient(serverName, coroutineContext)
     }
 }

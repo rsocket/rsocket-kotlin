@@ -8,7 +8,6 @@ public final class io/rsocket/kotlin/transport/local/LocalClientTransport$Factor
 
 public abstract interface class io/rsocket/kotlin/transport/local/LocalClientTransportBuilder : io/rsocket/kotlin/transport/RSocketTransportBuilder {
 	public abstract fun dispatcher (Lkotlin/coroutines/CoroutineContext;)V
-	public fun inheritDispatcher ()V
 }
 
 public final class io/rsocket/kotlin/transport/local/LocalServer : io/rsocket/kotlin/transport/ClientTransport {
@@ -35,10 +34,7 @@ public final class io/rsocket/kotlin/transport/local/LocalServerTransport$Factor
 
 public abstract interface class io/rsocket/kotlin/transport/local/LocalServerTransportBuilder : io/rsocket/kotlin/transport/RSocketTransportBuilder {
 	public abstract fun dispatcher (Lkotlin/coroutines/CoroutineContext;)V
-	public fun inheritDispatcher ()V
-	public abstract fun multiplexed (II)V
-	public static synthetic fun multiplexed$default (Lio/rsocket/kotlin/transport/local/LocalServerTransportBuilder;IIILjava/lang/Object;)V
-	public abstract fun sequential (I)V
-	public static synthetic fun sequential$default (Lio/rsocket/kotlin/transport/local/LocalServerTransportBuilder;IILjava/lang/Object;)V
+	public abstract fun multiplexed ()V
+	public abstract fun sequential ()V
 }
 

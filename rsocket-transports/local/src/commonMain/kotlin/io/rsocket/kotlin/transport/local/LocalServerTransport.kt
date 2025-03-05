@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,20 @@ package io.rsocket.kotlin.transport.local
 import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
-import kotlin.random.*
+import kotlin.uuid.*
 
-// TODO: rename to inprocess and more to another module/package later
 @OptIn(RSocketTransportApi::class)
 public sealed interface LocalServerInstance : RSocketServerInstance {
     public val serverName: String
 }
 
+public typealias LocalServerTarget = RSocketServerTarget<LocalServerInstance>
+
 @OptIn(RSocketTransportApi::class)
 public sealed interface LocalServerTransport : RSocketTransport {
-    public fun target(): RSocketServerTarget<LocalServerInstance>
-    public fun target(serverName: String): RSocketServerTarget<LocalServerInstance>
+    public fun target(): LocalServerTarget
+    public fun target(serverName: String): LocalServerTarget
 
     public companion object Factory :
         RSocketTransportFactory<LocalServerTransport, LocalServerTransportBuilder>(::LocalServerTransportBuilderImpl)
@@ -41,20 +41,13 @@ public sealed interface LocalServerTransport : RSocketTransport {
 @OptIn(RSocketTransportApi::class)
 public sealed interface LocalServerTransportBuilder : RSocketTransportBuilder<LocalServerTransport> {
     public fun dispatcher(context: CoroutineContext)
-    public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
 
-    public fun sequential(
-        prioritizationQueueBuffersCapacity: Int = Channel.BUFFERED,
-    )
-
-    public fun multiplexed(
-        streamsQueueCapacity: Int = Channel.BUFFERED,
-        streamBufferCapacity: Int = Channel.BUFFERED,
-    )
+    public fun sequential()
+    public fun multiplexed()
 }
 
 private class LocalServerTransportBuilderImpl : LocalServerTransportBuilder {
-    private var dispatcher: CoroutineContext = Dispatchers.Default
+    private var dispatcher: CoroutineContext = Dispatchers.Unconfined
     private var connector: LocalServerConnector? = null
 
     override fun dispatcher(context: CoroutineContext) {
@@ -62,18 +55,18 @@ private class LocalServerTransportBuilderImpl : LocalServerTransportBuilder {
         this.dispatcher = context
     }
 
-    override fun sequential(prioritizationQueueBuffersCapacity: Int) {
-        connector = LocalServerConnector.Sequential(prioritizationQueueBuffersCapacity)
+    override fun sequential() {
+        connector = LocalServerConnector.Sequential
     }
 
-    override fun multiplexed(streamsQueueCapacity: Int, streamBufferCapacity: Int) {
-        connector = LocalServerConnector.Multiplexed(streamsQueueCapacity, streamBufferCapacity)
+    override fun multiplexed() {
+        connector = LocalServerConnector.Multiplexed
     }
 
     @RSocketTransportApi
     override fun buildTransport(context: CoroutineContext): LocalServerTransport = LocalServerTransportImpl(
         coroutineContext = context.supervisorContext() + dispatcher,
-        connector = connector ?: LocalServerConnector.Sequential(Channel.BUFFERED)
+        connector = connector ?: LocalServerConnector.Sequential
     )
 }
 
@@ -81,16 +74,14 @@ private class LocalServerTransportImpl(
     override val coroutineContext: CoroutineContext,
     private val connector: LocalServerConnector,
 ) : LocalServerTransport {
-    override fun target(serverName: String): RSocketServerTarget<LocalServerInstance> = LocalServerTargetImpl(
+    override fun target(serverName: String): LocalServerTarget = LocalServerTargetImpl(
         serverName = serverName,
         coroutineContext = coroutineContext.supervisorContext(),
         connector = connector
     )
 
-    @OptIn(ExperimentalStdlibApi::class)
-    override fun target(): RSocketServerTarget<LocalServerInstance> = target(
-        Random.nextBytes(16).toHexString(HexFormat.UpperCase)
-    )
+    @OptIn(ExperimentalUuidApi::class)
+    override fun target(): LocalServerTarget = target(Uuid.random().toString())
 }
 
 @OptIn(RSocketTransportApi::class)
@@ -98,17 +89,12 @@ private class LocalServerTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val serverName: String,
     private val connector: LocalServerConnector,
-) : RSocketServerTarget<LocalServerInstance> {
+) : LocalServerTarget {
     @RSocketTransportApi
-    override suspend fun startServer(handler: RSocketConnectionHandler): LocalServerInstance {
+    override suspend fun startServer(onConnection: (RSocketConnection) -> Unit): LocalServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
 
-        return LocalServerInstanceImpl(
-            serverName = serverName,
-            coroutineContext = coroutineContext.childContext(),
-            serverHandler = handler,
-            connector = connector
-        )
+        return LocalServerRegistry.startServer(serverName, coroutineContext, connector, onConnection)
     }
 }
