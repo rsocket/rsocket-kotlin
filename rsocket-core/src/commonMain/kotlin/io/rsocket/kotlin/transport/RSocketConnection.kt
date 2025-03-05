@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,17 @@
 
 package io.rsocket.kotlin.transport
 
+import kotlinx.coroutines.*
 import kotlinx.io.*
 
 // all methods can be called from any thread/context at any time
 // should be accessed only internally
 // should be implemented only by transports
 @RSocketTransportApi
-public sealed interface RSocketConnection
-
-@RSocketTransportApi
-public fun interface RSocketConnectionHandler {
-    public suspend fun handleConnection(connection: RSocketConnection)
-}
+public sealed interface RSocketConnection : CoroutineScope
 
 @RSocketTransportApi
 public interface RSocketSequentialConnection : RSocketConnection {
-    // TODO: is it needed for connection?
-    public val isClosedForSend: Boolean
-
     // throws if frame not sent
     // streamId=0 should be sent earlier
     public suspend fun sendFrame(streamId: Int, frame: Buffer)
@@ -47,9 +40,8 @@ public interface RSocketMultiplexedConnection : RSocketConnection {
     public suspend fun createStream(): Stream
     public suspend fun acceptStream(): Stream?
 
-    public interface Stream : AutoCloseable {
-        public val isClosedForSend: Boolean
-
+    @RSocketTransportApi
+    public interface Stream : CoroutineScope {
         // 0 - highest priority
         // Int.MAX - lowest priority
         public fun setSendPriority(priority: Int)
@@ -59,10 +51,5 @@ public interface RSocketMultiplexedConnection : RSocketConnection {
 
         // null if no more frames could be received
         public suspend fun receiveFrame(): Buffer?
-
-        // closing stream will send buffered frames (if needed)
-        // sending/receiving frames will be not possible after it
-        // should not throw
-        override fun close()
     }
 }
