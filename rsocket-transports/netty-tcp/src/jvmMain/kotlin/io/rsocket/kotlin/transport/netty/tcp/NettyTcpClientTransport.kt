@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,31 +91,25 @@ private class NettyTcpClientTransportBuilderImpl : NettyTcpClientTransportBuilde
         }
 
         return NettyTcpClientTransportImpl(
-            coroutineContext = context.supervisorContext() + bootstrap.config().group().asCoroutineDispatcher(),
-            sslContext = sslContext,
+            coroutineContext = context.supervisorContext() + Dispatchers.Default,
             bootstrap = bootstrap,
-            manageBootstrap = manageEventLoopGroup
-        )
+            sslContext = sslContext,
+        ).also {
+            if (manageEventLoopGroup) it.shutdownOnCancellation(bootstrap.config().group())
+        }
     }
 }
 
 private class NettyTcpClientTransportImpl(
     override val coroutineContext: CoroutineContext,
-    private val sslContext: SslContext?,
     private val bootstrap: Bootstrap,
-    manageBootstrap: Boolean,
+    private val sslContext: SslContext?,
 ) : NettyTcpClientTransport {
-    init {
-        if (manageBootstrap) callOnCancellation {
-            bootstrap.config().group().shutdownGracefully().awaitFuture()
-        }
-    }
-
-    override fun target(remoteAddress: SocketAddress): NettyTcpClientTargetImpl = NettyTcpClientTargetImpl(
+    override fun target(remoteAddress: SocketAddress): RSocketClientTarget = NettyTcpClientTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         bootstrap = bootstrap,
         sslContext = sslContext,
-        remoteAddress = remoteAddress
+        remoteAddress = remoteAddress,
     )
 
     override fun target(host: String, port: Int): RSocketClientTarget = target(InetSocketAddress(host, port))
@@ -124,19 +118,27 @@ private class NettyTcpClientTransportImpl(
 @OptIn(RSocketTransportApi::class)
 private class NettyTcpClientTargetImpl(
     override val coroutineContext: CoroutineContext,
-    private val bootstrap: Bootstrap,
-    private val sslContext: SslContext?,
-    private val remoteAddress: SocketAddress,
+    bootstrap: Bootstrap,
+    sslContext: SslContext?,
+    remoteAddress: SocketAddress,
 ) : RSocketClientTarget {
-    @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
-        bootstrap.clone().handler(
+    private val bootstrap = bootstrap.clone()
+        .handler(
             NettyTcpConnectionInitializer(
+                parentContext = coroutineContext,
                 sslContext = sslContext,
-                remoteAddress = remoteAddress as? InetSocketAddress,
-                handler = handler,
-                coroutineContext = coroutineContext
+                onConnection = null
             )
-        ).connect(remoteAddress).awaitFuture()
+        )
+        .remoteAddress(remoteAddress)
+
+    @RSocketTransportApi
+    override suspend fun connectClient(): RSocketConnection {
+        currentCoroutineContext().ensureActive()
+        coroutineContext.ensureActive()
+
+        val channel = bootstrap.connect().awaitChannel<Channel>()
+
+        return channel.attr(NettyTcpConnection.ATTRIBUTE).get()
     }
 }
