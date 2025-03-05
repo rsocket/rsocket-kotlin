@@ -28,10 +28,12 @@ public sealed interface KtorTcpServerInstance : RSocketServerInstance {
     public val localAddress: SocketAddress
 }
 
+public typealias KtorTcpServerTarget = RSocketServerTarget<KtorTcpServerInstance>
+
 @OptIn(RSocketTransportApi::class)
 public sealed interface KtorTcpServerTransport : RSocketTransport {
-    public fun target(localAddress: SocketAddress? = null): RSocketServerTarget<KtorTcpServerInstance>
-    public fun target(host: String = "0.0.0.0", port: Int = 0): RSocketServerTarget<KtorTcpServerInstance>
+    public fun target(localAddress: SocketAddress? = null): KtorTcpServerTarget
+    public fun target(host: String = "0.0.0.0", port: Int = 0): KtorTcpServerTarget
 
     public companion object Factory :
         RSocketTransportFactory<KtorTcpServerTransport, KtorTcpServerTransportBuilder>(::KtorTcpServerTransportBuilderImpl)
@@ -39,62 +41,51 @@ public sealed interface KtorTcpServerTransport : RSocketTransport {
 
 @OptIn(RSocketTransportApi::class)
 public sealed interface KtorTcpServerTransportBuilder : RSocketTransportBuilder<KtorTcpServerTransport> {
-    public fun dispatcher(context: CoroutineContext)
-    public fun inheritDispatcher(): Unit = dispatcher(EmptyCoroutineContext)
-
-    public fun selectorManagerDispatcher(context: CoroutineContext)
     public fun selectorManager(manager: SelectorManager, manage: Boolean)
-
     public fun socketOptions(block: SocketOptions.AcceptorOptions.() -> Unit)
 }
 
 private class KtorTcpServerTransportBuilderImpl : KtorTcpServerTransportBuilder {
-    private var dispatcher: CoroutineContext = Dispatchers.Default
-    private var selector: KtorTcpSelector = KtorTcpSelector.FromContext(Dispatchers.IoCompatible)
+    private var selectorManager: SelectorManager? = null
+    private var manageSelectorManager: Boolean = true
     private var socketOptions: SocketOptions.AcceptorOptions.() -> Unit = {}
-
-    override fun dispatcher(context: CoroutineContext) {
-        check(context[Job] == null) { "Dispatcher shouldn't contain job" }
-        this.dispatcher = context
-    }
 
     override fun socketOptions(block: SocketOptions.AcceptorOptions.() -> Unit) {
         this.socketOptions = block
     }
 
-    override fun selectorManagerDispatcher(context: CoroutineContext) {
-        check(context[Job] == null) { "Dispatcher shouldn't contain job" }
-        this.selector = KtorTcpSelector.FromContext(context)
-    }
-
     override fun selectorManager(manager: SelectorManager, manage: Boolean) {
-        this.selector = KtorTcpSelector.FromInstance(manager, manage)
+        this.selectorManager = manager
+        this.manageSelectorManager = manage
     }
 
     @RSocketTransportApi
-    override fun buildTransport(context: CoroutineContext): KtorTcpServerTransport {
-        val transportContext = context.supervisorContext() + dispatcher
-        return KtorTcpServerTransportImpl(
-            coroutineContext = transportContext,
-            socketOptions = socketOptions,
-            selectorManager = selector.createFor(transportContext)
-        )
-    }
+    override fun buildTransport(context: CoroutineContext): KtorTcpServerTransport = KtorTcpServerTransportImpl(
+        coroutineContext = context.supervisorContext() + Dispatchers.Default,
+        socketOptions = socketOptions,
+        selectorManager = selectorManager ?: SelectorManager(Dispatchers.IoCompatible),
+        manageSelectorManager = manageSelectorManager
+    )
 }
 
 private class KtorTcpServerTransportImpl(
     override val coroutineContext: CoroutineContext,
     private val socketOptions: SocketOptions.AcceptorOptions.() -> Unit,
     private val selectorManager: SelectorManager,
+    manageSelectorManager: Boolean,
 ) : KtorTcpServerTransport {
-    override fun target(localAddress: SocketAddress?): RSocketServerTarget<KtorTcpServerInstance> = KtorTcpServerTargetImpl(
+    init {
+        if (manageSelectorManager) coroutineContext.job.invokeOnCompletion { selectorManager.close() }
+    }
+
+    override fun target(localAddress: SocketAddress?): KtorTcpServerTarget = KtorTcpServerTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         socketOptions = socketOptions,
         selectorManager = selectorManager,
         localAddress = localAddress
     )
 
-    override fun target(host: String, port: Int): RSocketServerTarget<KtorTcpServerInstance> = target(InetSocketAddress(host, port))
+    override fun target(host: String, port: Int): KtorTcpServerTarget = target(InetSocketAddress(host, port))
 }
 
 @OptIn(RSocketTransportApi::class)
@@ -103,52 +94,54 @@ private class KtorTcpServerTargetImpl(
     private val socketOptions: SocketOptions.AcceptorOptions.() -> Unit,
     private val selectorManager: SelectorManager,
     private val localAddress: SocketAddress?,
-) : RSocketServerTarget<KtorTcpServerInstance> {
+) : KtorTcpServerTarget {
 
     @RSocketTransportApi
-    override suspend fun startServer(handler: RSocketConnectionHandler): KtorTcpServerInstance {
+    override suspend fun startServer(onConnection: (RSocketConnection) -> Unit): KtorTcpServerInstance {
         currentCoroutineContext().ensureActive()
         coroutineContext.ensureActive()
-        return startKtorTcpServer(this, bindSocket(), handler)
-    }
 
-    private suspend fun bindSocket(): ServerSocket = launchCoroutine { cont ->
-        val socket = aSocket(selectorManager).tcp().bind(localAddress, socketOptions)
-        cont.resume(socket) { _, value, _ -> value.close() }
-    }
-}
-
-@RSocketTransportApi
-private fun startKtorTcpServer(
-    scope: CoroutineScope,
-    serverSocket: ServerSocket,
-    handler: RSocketConnectionHandler,
-): KtorTcpServerInstance {
-    val serverJob = scope.launch {
-        try {
-            // the failure of one connection should not stop all other connections
-            supervisorScope {
-                while (true) {
-                    val socket = serverSocket.accept()
-                    launch { handler.handleKtorTcpConnection(socket) }
-                }
-            }
-        } finally {
-            // even if it was cancelled, we still need to close socket and await it closure
-            withContext(NonCancellable) {
-                serverSocket.close()
-                serverSocket.socketContext.join()
-            }
+        return withContext(Dispatchers.IoCompatible) {
+            val serverSocket = aSocket(selectorManager).tcp().bind(localAddress, socketOptions)
+            KtorTcpServerInstanceImpl(
+                coroutineContext = this@KtorTcpServerTargetImpl.coroutineContext.childContext(),
+                serverSocket = serverSocket,
+                onConnection = onConnection
+            )
         }
     }
-    return KtorTcpServerInstanceImpl(
-        coroutineContext = scope.coroutineContext + serverJob,
-        localAddress = serverSocket.localAddress
-    )
 }
 
 @RSocketTransportApi
 private class KtorTcpServerInstanceImpl(
     override val coroutineContext: CoroutineContext,
-    override val localAddress: SocketAddress,
-) : KtorTcpServerInstance
+    private val serverSocket: ServerSocket,
+    private val onConnection: (RSocketConnection) -> Unit,
+) : KtorTcpServerInstance {
+    override val localAddress: SocketAddress get() = serverSocket.localAddress
+
+    init {
+        @OptIn(DelicateCoroutinesApi::class)
+        launch(start = CoroutineStart.ATOMIC) {
+            try {
+                currentCoroutineContext().ensureActive() // because of ATOMIC start
+
+                val connectionsContext = currentCoroutineContext().supervisorContext()
+                while (true) {
+                    val socket = serverSocket.accept()
+                    onConnection(
+                        KtorTcpConnection(
+                            parentContext = connectionsContext,
+                            socket = socket
+                        )
+                    )
+                }
+            } finally {
+                nonCancellable {
+                    serverSocket.close()
+                    serverSocket.socketContext.join()
+                }
+            }
+        }
+    }
+}
