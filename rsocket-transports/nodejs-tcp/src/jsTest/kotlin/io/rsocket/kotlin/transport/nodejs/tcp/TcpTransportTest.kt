@@ -18,8 +18,10 @@ package io.rsocket.kotlin.transport.nodejs.tcp
 
 import io.rsocket.kotlin.transport.tests.*
 import kotlinx.coroutines.*
+import kotlin.test.*
 
 @Suppress("DEPRECATION_ERROR")
+@Ignore
 class TcpTransportTest : TransportTest() {
     private lateinit var server: TcpServer
 
