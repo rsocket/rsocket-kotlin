@@ -1,0 +1,27 @@
+// Klib ABI Dump
+// Targets: [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86, iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64, mingwX64, tvosArm64, tvosSimulatorArm64, tvosX64, wasmJs, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64, watchosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.rsocket.kotlin:rsocket-transport-ktor-websocket-internal>
+final class io.rsocket.kotlin.transport.ktor.websocket.internal/KtorWebSocketConnection : io.rsocket.kotlin.transport/RSocketSequentialConnection { // io.rsocket.kotlin.transport.ktor.websocket.internal/KtorWebSocketConnection|null[0]
+    constructor <init>(io.ktor.websocket/WebSocketSession) // io.rsocket.kotlin.transport.ktor.websocket.internal/KtorWebSocketConnection.<init>|<init>(io.ktor.websocket.WebSocketSession){}[0]
+
+    final val coroutineContext // io.rsocket.kotlin.transport.ktor.websocket.internal/KtorWebSocketConnection.coroutineContext|{}coroutineContext[0]
+        final fun <get-coroutineContext>(): kotlin.coroutines/CoroutineContext // io.rsocket.kotlin.transport.ktor.websocket.internal/KtorWebSocketConnection.coroutineContext.<get-coroutineContext>|<get-coroutineContext>(){}[0]
+
+    final suspend fun receiveFrame(): kotlinx.io/Buffer? // io.rsocket.kotlin.transport.ktor.websocket.internal/KtorWebSocketConnection.receiveFrame|receiveFrame(){}[0]
+    final suspend fun sendFrame(kotlin/Int, kotlinx.io/Buffer) // io.rsocket.kotlin.transport.ktor.websocket.internal/KtorWebSocketConnection.sendFrame|sendFrame(kotlin.Int;kotlinx.io.Buffer){}[0]
+}
+
+final class io.rsocket.kotlin.transport.ktor.websocket.internal/WebSocketConnection : io.rsocket.kotlin/Connection, kotlinx.coroutines/CoroutineScope { // io.rsocket.kotlin.transport.ktor.websocket.internal/WebSocketConnection|null[0]
+    constructor <init>(io.ktor.websocket/WebSocketSession) // io.rsocket.kotlin.transport.ktor.websocket.internal/WebSocketConnection.<init>|<init>(io.ktor.websocket.WebSocketSession){}[0]
+
+    final val coroutineContext // io.rsocket.kotlin.transport.ktor.websocket.internal/WebSocketConnection.coroutineContext|{}coroutineContext[0]
+        final fun <get-coroutineContext>(): kotlin.coroutines/CoroutineContext // io.rsocket.kotlin.transport.ktor.websocket.internal/WebSocketConnection.coroutineContext.<get-coroutineContext>|<get-coroutineContext>(){}[0]
+
+    final suspend fun receive(): kotlinx.io/Buffer // io.rsocket.kotlin.transport.ktor.websocket.internal/WebSocketConnection.receive|receive(){}[0]
+    final suspend fun send(kotlinx.io/Buffer) // io.rsocket.kotlin.transport.ktor.websocket.internal/WebSocketConnection.send|send(kotlinx.io.Buffer){}[0]
+}

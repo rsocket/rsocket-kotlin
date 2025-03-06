@@ -1,0 +1,841 @@
+// Klib ABI Dump
+// Targets: [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86, iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64, mingwX64, tvosArm64, tvosSimulatorArm64, tvosX64, wasmJs, wasmWasi, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64, watchosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.rsocket.kotlin:rsocket-core>
+open annotation class io.rsocket.kotlin.transport/RSocketTransportApi : kotlin/Annotation { // io.rsocket.kotlin.transport/RSocketTransportApi|null[0]
+    constructor <init>() // io.rsocket.kotlin.transport/RSocketTransportApi.<init>|<init>(){}[0]
+}
+
+open annotation class io.rsocket.kotlin/ExperimentalMetadataApi : kotlin/Annotation { // io.rsocket.kotlin/ExperimentalMetadataApi|null[0]
+    constructor <init>() // io.rsocket.kotlin/ExperimentalMetadataApi.<init>|<init>(){}[0]
+}
+
+open annotation class io.rsocket.kotlin/ExperimentalStreamsApi : kotlin/Annotation { // io.rsocket.kotlin/ExperimentalStreamsApi|null[0]
+    constructor <init>() // io.rsocket.kotlin/ExperimentalStreamsApi.<init>|<init>(){}[0]
+}
+
+open annotation class io.rsocket.kotlin/RSocketLoggingApi : kotlin/Annotation { // io.rsocket.kotlin/RSocketLoggingApi|null[0]
+    constructor <init>() // io.rsocket.kotlin/RSocketLoggingApi.<init>|<init>(){}[0]
+}
+
+open annotation class io.rsocket.kotlin/TransportApi : kotlin/Annotation { // io.rsocket.kotlin/TransportApi|null[0]
+    constructor <init>() // io.rsocket.kotlin/TransportApi.<init>|<init>(){}[0]
+}
+
+final enum class io.rsocket.kotlin.core/WellKnownMimeType : io.rsocket.kotlin.core/MimeTypeWithId, io.rsocket.kotlin.core/MimeTypeWithName, kotlin/Enum<io.rsocket.kotlin.core/WellKnownMimeType> { // io.rsocket.kotlin.core/WellKnownMimeType|null[0]
+    enum entry ApplicationAvro // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationAvro|null[0]
+    enum entry ApplicationCapnProto // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationCapnProto|null[0]
+    enum entry ApplicationCbor // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationCbor|null[0]
+    enum entry ApplicationCloudeventsJson // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationCloudeventsJson|null[0]
+    enum entry ApplicationFlatBuffers // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationFlatBuffers|null[0]
+    enum entry ApplicationGraphql // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationGraphql|null[0]
+    enum entry ApplicationGzip // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationGzip|null[0]
+    enum entry ApplicationHessian // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationHessian|null[0]
+    enum entry ApplicationJavaObject // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationJavaObject|null[0]
+    enum entry ApplicationJavascript // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationJavascript|null[0]
+    enum entry ApplicationJson // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationJson|null[0]
+    enum entry ApplicationOctetStream // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationOctetStream|null[0]
+    enum entry ApplicationPdf // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationPdf|null[0]
+    enum entry ApplicationProtoBuf // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationProtoBuf|null[0]
+    enum entry ApplicationThrift // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationThrift|null[0]
+    enum entry ApplicationXml // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationXml|null[0]
+    enum entry ApplicationZip // io.rsocket.kotlin.core/WellKnownMimeType.ApplicationZip|null[0]
+    enum entry AudioAac // io.rsocket.kotlin.core/WellKnownMimeType.AudioAac|null[0]
+    enum entry AudioMp3 // io.rsocket.kotlin.core/WellKnownMimeType.AudioMp3|null[0]
+    enum entry AudioMp4 // io.rsocket.kotlin.core/WellKnownMimeType.AudioMp4|null[0]
+    enum entry AudioMpeg // io.rsocket.kotlin.core/WellKnownMimeType.AudioMpeg|null[0]
+    enum entry AudioMpeg3 // io.rsocket.kotlin.core/WellKnownMimeType.AudioMpeg3|null[0]
+    enum entry AudioOgg // io.rsocket.kotlin.core/WellKnownMimeType.AudioOgg|null[0]
+    enum entry AudioOpus // io.rsocket.kotlin.core/WellKnownMimeType.AudioOpus|null[0]
+    enum entry AudioVorbis // io.rsocket.kotlin.core/WellKnownMimeType.AudioVorbis|null[0]
+    enum entry ImageBmp // io.rsocket.kotlin.core/WellKnownMimeType.ImageBmp|null[0]
+    enum entry ImageGif // io.rsocket.kotlin.core/WellKnownMimeType.ImageGif|null[0]
+    enum entry ImageHeic // io.rsocket.kotlin.core/WellKnownMimeType.ImageHeic|null[0]
+    enum entry ImageHeicSequence // io.rsocket.kotlin.core/WellKnownMimeType.ImageHeicSequence|null[0]
+    enum entry ImageHeif // io.rsocket.kotlin.core/WellKnownMimeType.ImageHeif|null[0]
+    enum entry ImageHeifSequence // io.rsocket.kotlin.core/WellKnownMimeType.ImageHeifSequence|null[0]
+    enum entry ImageJpeg // io.rsocket.kotlin.core/WellKnownMimeType.ImageJpeg|null[0]
+    enum entry ImagePng // io.rsocket.kotlin.core/WellKnownMimeType.ImagePng|null[0]
+    enum entry ImageTiff // io.rsocket.kotlin.core/WellKnownMimeType.ImageTiff|null[0]
+    enum entry MessageRSocketAcceptMimeTypes // io.rsocket.kotlin.core/WellKnownMimeType.MessageRSocketAcceptMimeTypes|null[0]
+    enum entry MessageRSocketAuthentication // io.rsocket.kotlin.core/WellKnownMimeType.MessageRSocketAuthentication|null[0]
+    enum entry MessageRSocketCompositeMetadata // io.rsocket.kotlin.core/WellKnownMimeType.MessageRSocketCompositeMetadata|null[0]
+    enum entry MessageRSocketMimeType // io.rsocket.kotlin.core/WellKnownMimeType.MessageRSocketMimeType|null[0]
+    enum entry MessageRSocketRouting // io.rsocket.kotlin.core/WellKnownMimeType.MessageRSocketRouting|null[0]
+    enum entry MessageRSocketTracingZipkin // io.rsocket.kotlin.core/WellKnownMimeType.MessageRSocketTracingZipkin|null[0]
+    enum entry MultipartMixed // io.rsocket.kotlin.core/WellKnownMimeType.MultipartMixed|null[0]
+    enum entry TextCss // io.rsocket.kotlin.core/WellKnownMimeType.TextCss|null[0]
+    enum entry TextCsv // io.rsocket.kotlin.core/WellKnownMimeType.TextCsv|null[0]
+    enum entry TextHtml // io.rsocket.kotlin.core/WellKnownMimeType.TextHtml|null[0]
+    enum entry TextPlain // io.rsocket.kotlin.core/WellKnownMimeType.TextPlain|null[0]
+    enum entry TextXml // io.rsocket.kotlin.core/WellKnownMimeType.TextXml|null[0]
+    enum entry VideoH264 // io.rsocket.kotlin.core/WellKnownMimeType.VideoH264|null[0]
+    enum entry VideoH265 // io.rsocket.kotlin.core/WellKnownMimeType.VideoH265|null[0]
+    enum entry VideoVp8 // io.rsocket.kotlin.core/WellKnownMimeType.VideoVp8|null[0]
+
+    final val entries // io.rsocket.kotlin.core/WellKnownMimeType.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.rsocket.kotlin.core/WellKnownMimeType> // io.rsocket.kotlin.core/WellKnownMimeType.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val identifier // io.rsocket.kotlin.core/WellKnownMimeType.identifier|{}identifier[0]
+        final fun <get-identifier>(): kotlin/Byte // io.rsocket.kotlin.core/WellKnownMimeType.identifier.<get-identifier>|<get-identifier>(){}[0]
+    final val text // io.rsocket.kotlin.core/WellKnownMimeType.text|{}text[0]
+        final fun <get-text>(): kotlin/String // io.rsocket.kotlin.core/WellKnownMimeType.text.<get-text>|<get-text>(){}[0]
+
+    final fun toString(): kotlin/String // io.rsocket.kotlin.core/WellKnownMimeType.toString|toString(){}[0]
+    final fun valueOf(kotlin/String): io.rsocket.kotlin.core/WellKnownMimeType // io.rsocket.kotlin.core/WellKnownMimeType.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.rsocket.kotlin.core/WellKnownMimeType> // io.rsocket.kotlin.core/WellKnownMimeType.values|values#static(){}[0]
+
+    final object Companion { // io.rsocket.kotlin.core/WellKnownMimeType.Companion|null[0]
+        final fun invoke(kotlin/Byte): io.rsocket.kotlin.core/WellKnownMimeType? // io.rsocket.kotlin.core/WellKnownMimeType.Companion.invoke|invoke(kotlin.Byte){}[0]
+        final fun invoke(kotlin/String): io.rsocket.kotlin.core/WellKnownMimeType? // io.rsocket.kotlin.core/WellKnownMimeType.Companion.invoke|invoke(kotlin.String){}[0]
+    }
+}
+
+final enum class io.rsocket.kotlin.logging/LoggingLevel : kotlin/Enum<io.rsocket.kotlin.logging/LoggingLevel> { // io.rsocket.kotlin.logging/LoggingLevel|null[0]
+    enum entry DEBUG // io.rsocket.kotlin.logging/LoggingLevel.DEBUG|null[0]
+    enum entry ERROR // io.rsocket.kotlin.logging/LoggingLevel.ERROR|null[0]
+    enum entry INFO // io.rsocket.kotlin.logging/LoggingLevel.INFO|null[0]
+    enum entry TRACE // io.rsocket.kotlin.logging/LoggingLevel.TRACE|null[0]
+    enum entry WARN // io.rsocket.kotlin.logging/LoggingLevel.WARN|null[0]
+
+    final val entries // io.rsocket.kotlin.logging/LoggingLevel.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.rsocket.kotlin.logging/LoggingLevel> // io.rsocket.kotlin.logging/LoggingLevel.entries.<get-entries>|<get-entries>#static(){}[0]
+
+    final fun valueOf(kotlin/String): io.rsocket.kotlin.logging/LoggingLevel // io.rsocket.kotlin.logging/LoggingLevel.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.rsocket.kotlin.logging/LoggingLevel> // io.rsocket.kotlin.logging/LoggingLevel.values|values#static(){}[0]
+}
+
+final enum class io.rsocket.kotlin.metadata.security/WellKnowAuthType : io.rsocket.kotlin.metadata.security/AuthTypeWithId, io.rsocket.kotlin.metadata.security/AuthTypeWithName, kotlin/Enum<io.rsocket.kotlin.metadata.security/WellKnowAuthType> { // io.rsocket.kotlin.metadata.security/WellKnowAuthType|null[0]
+    enum entry Bearer // io.rsocket.kotlin.metadata.security/WellKnowAuthType.Bearer|null[0]
+    enum entry Simple // io.rsocket.kotlin.metadata.security/WellKnowAuthType.Simple|null[0]
+
+    final val entries // io.rsocket.kotlin.metadata.security/WellKnowAuthType.entries|#static{}entries[0]
+        final fun <get-entries>(): kotlin.enums/EnumEntries<io.rsocket.kotlin.metadata.security/WellKnowAuthType> // io.rsocket.kotlin.metadata.security/WellKnowAuthType.entries.<get-entries>|<get-entries>#static(){}[0]
+    final val identifier // io.rsocket.kotlin.metadata.security/WellKnowAuthType.identifier|{}identifier[0]
+        final fun <get-identifier>(): kotlin/Byte // io.rsocket.kotlin.metadata.security/WellKnowAuthType.identifier.<get-identifier>|<get-identifier>(){}[0]
+    final val text // io.rsocket.kotlin.metadata.security/WellKnowAuthType.text|{}text[0]
+        final fun <get-text>(): kotlin/String // io.rsocket.kotlin.metadata.security/WellKnowAuthType.text.<get-text>|<get-text>(){}[0]
+
+    final fun toString(): kotlin/String // io.rsocket.kotlin.metadata.security/WellKnowAuthType.toString|toString(){}[0]
+    final fun valueOf(kotlin/String): io.rsocket.kotlin.metadata.security/WellKnowAuthType // io.rsocket.kotlin.metadata.security/WellKnowAuthType.valueOf|valueOf#static(kotlin.String){}[0]
+    final fun values(): kotlin/Array<io.rsocket.kotlin.metadata.security/WellKnowAuthType> // io.rsocket.kotlin.metadata.security/WellKnowAuthType.values|values#static(){}[0]
+
+    final object Companion { // io.rsocket.kotlin.metadata.security/WellKnowAuthType.Companion|null[0]
+        final fun invoke(kotlin/Byte): io.rsocket.kotlin.metadata.security/WellKnowAuthType? // io.rsocket.kotlin.metadata.security/WellKnowAuthType.Companion.invoke|invoke(kotlin.Byte){}[0]
+        final fun invoke(kotlin/String): io.rsocket.kotlin.metadata.security/WellKnowAuthType? // io.rsocket.kotlin.metadata.security/WellKnowAuthType.Companion.invoke|invoke(kotlin.String){}[0]
+    }
+}
+
+abstract fun interface <#A: kotlin/Any?> io.rsocket.kotlin.core/Interceptor { // io.rsocket.kotlin.core/Interceptor|null[0]
+    abstract fun intercept(#A): #A // io.rsocket.kotlin.core/Interceptor.intercept|intercept(1:0){}[0]
+}
+
+abstract fun interface <#A: kotlin/Any?> io.rsocket.kotlin.transport/ServerTransport { // io.rsocket.kotlin.transport/ServerTransport|null[0]
+    abstract fun (kotlinx.coroutines/CoroutineScope).start(kotlin.coroutines/SuspendFunction2<kotlinx.coroutines/CoroutineScope, io.rsocket.kotlin/Connection, kotlin/Unit>): #A // io.rsocket.kotlin.transport/ServerTransport.start|start@kotlinx.coroutines.CoroutineScope(kotlin.coroutines.SuspendFunction2<kotlinx.coroutines.CoroutineScope,io.rsocket.kotlin.Connection,kotlin.Unit>){}[0]
+}
+
+abstract fun interface io.rsocket.kotlin.logging/LoggerFactory { // io.rsocket.kotlin.logging/LoggerFactory|null[0]
+    abstract fun logger(kotlin/String): io.rsocket.kotlin.logging/Logger // io.rsocket.kotlin.logging/LoggerFactory.logger|logger(kotlin.String){}[0]
+}
+
+abstract fun interface io.rsocket.kotlin.transport/ClientTransport : kotlinx.coroutines/CoroutineScope { // io.rsocket.kotlin.transport/ClientTransport|null[0]
+    open val coroutineContext // io.rsocket.kotlin.transport/ClientTransport.coroutineContext|{}coroutineContext[0]
+        open fun <get-coroutineContext>(): kotlin.coroutines/CoroutineContext // io.rsocket.kotlin.transport/ClientTransport.coroutineContext.<get-coroutineContext>|<get-coroutineContext>(){}[0]
+
+    abstract suspend fun connect(): io.rsocket.kotlin/Connection // io.rsocket.kotlin.transport/ClientTransport.connect|connect(){}[0]
+}
+
+abstract fun interface io.rsocket.kotlin/ConnectionAcceptor { // io.rsocket.kotlin/ConnectionAcceptor|null[0]
+    abstract suspend fun (io.rsocket.kotlin/ConnectionAcceptorContext).accept(): io.rsocket.kotlin/RSocket // io.rsocket.kotlin/ConnectionAcceptor.accept|accept@io.rsocket.kotlin.ConnectionAcceptorContext(){}[0]
+}
+
+abstract interface <#A: io.rsocket.kotlin.metadata/Metadata> io.rsocket.kotlin.metadata/MetadataReader { // io.rsocket.kotlin.metadata/MetadataReader|null[0]
+    abstract val mimeType // io.rsocket.kotlin.metadata/MetadataReader.mimeType|{}mimeType[0]
+        abstract fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/MetadataReader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+
+    abstract fun (kotlinx.io/Source).read(): #A // io.rsocket.kotlin.metadata/MetadataReader.read|read@kotlinx.io.Source(){}[0]
+}
+
+abstract interface <#A: io.rsocket.kotlin.transport/RSocketServerInstance> io.rsocket.kotlin.transport/RSocketServerTarget : kotlinx.coroutines/CoroutineScope { // io.rsocket.kotlin.transport/RSocketServerTarget|null[0]
+    abstract suspend fun startServer(kotlin/Function1<io.rsocket.kotlin.transport/RSocketConnection, kotlin/Unit>): #A // io.rsocket.kotlin.transport/RSocketServerTarget.startServer|startServer(kotlin.Function1<io.rsocket.kotlin.transport.RSocketConnection,kotlin.Unit>){}[0]
+}
+
+abstract interface <#A: io.rsocket.kotlin.transport/RSocketTransport> io.rsocket.kotlin.transport/RSocketTransportBuilder { // io.rsocket.kotlin.transport/RSocketTransportBuilder|null[0]
+    abstract fun buildTransport(kotlin.coroutines/CoroutineContext): #A // io.rsocket.kotlin.transport/RSocketTransportBuilder.buildTransport|buildTransport(kotlin.coroutines.CoroutineContext){}[0]
+}
+
+abstract interface io.rsocket.kotlin.logging/Logger { // io.rsocket.kotlin.logging/Logger|null[0]
+    abstract val tag // io.rsocket.kotlin.logging/Logger.tag|{}tag[0]
+        abstract fun <get-tag>(): kotlin/String // io.rsocket.kotlin.logging/Logger.tag.<get-tag>|<get-tag>(){}[0]
+
+    abstract fun isLoggable(io.rsocket.kotlin.logging/LoggingLevel): kotlin/Boolean // io.rsocket.kotlin.logging/Logger.isLoggable|isLoggable(io.rsocket.kotlin.logging.LoggingLevel){}[0]
+    abstract fun rawLog(io.rsocket.kotlin.logging/LoggingLevel, kotlin/Throwable?, kotlin/Any?) // io.rsocket.kotlin.logging/Logger.rawLog|rawLog(io.rsocket.kotlin.logging.LoggingLevel;kotlin.Throwable?;kotlin.Any?){}[0]
+}
+
+abstract interface io.rsocket.kotlin.metadata/Metadata : kotlin/AutoCloseable { // io.rsocket.kotlin.metadata/Metadata|null[0]
+    abstract val mimeType // io.rsocket.kotlin.metadata/Metadata.mimeType|{}mimeType[0]
+        abstract fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/Metadata.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+
+    abstract fun (kotlinx.io/Sink).writeSelf() // io.rsocket.kotlin.metadata/Metadata.writeSelf|writeSelf@kotlinx.io.Sink(){}[0]
+}
+
+abstract interface io.rsocket.kotlin.transport/RSocketClientTarget : kotlinx.coroutines/CoroutineScope { // io.rsocket.kotlin.transport/RSocketClientTarget|null[0]
+    abstract suspend fun connectClient(): io.rsocket.kotlin.transport/RSocketConnection // io.rsocket.kotlin.transport/RSocketClientTarget.connectClient|connectClient(){}[0]
+}
+
+abstract interface io.rsocket.kotlin.transport/RSocketMultiplexedConnection : io.rsocket.kotlin.transport/RSocketConnection { // io.rsocket.kotlin.transport/RSocketMultiplexedConnection|null[0]
+    abstract suspend fun acceptStream(): io.rsocket.kotlin.transport/RSocketMultiplexedConnection.Stream? // io.rsocket.kotlin.transport/RSocketMultiplexedConnection.acceptStream|acceptStream(){}[0]
+    abstract suspend fun createStream(): io.rsocket.kotlin.transport/RSocketMultiplexedConnection.Stream // io.rsocket.kotlin.transport/RSocketMultiplexedConnection.createStream|createStream(){}[0]
+
+    abstract interface Stream : kotlinx.coroutines/CoroutineScope { // io.rsocket.kotlin.transport/RSocketMultiplexedConnection.Stream|null[0]
+        abstract fun setSendPriority(kotlin/Int) // io.rsocket.kotlin.transport/RSocketMultiplexedConnection.Stream.setSendPriority|setSendPriority(kotlin.Int){}[0]
+        abstract suspend fun receiveFrame(): kotlinx.io/Buffer? // io.rsocket.kotlin.transport/RSocketMultiplexedConnection.Stream.receiveFrame|receiveFrame(){}[0]
+        abstract suspend fun sendFrame(kotlinx.io/Buffer) // io.rsocket.kotlin.transport/RSocketMultiplexedConnection.Stream.sendFrame|sendFrame(kotlinx.io.Buffer){}[0]
+    }
+}
+
+abstract interface io.rsocket.kotlin.transport/RSocketSequentialConnection : io.rsocket.kotlin.transport/RSocketConnection { // io.rsocket.kotlin.transport/RSocketSequentialConnection|null[0]
+    abstract suspend fun receiveFrame(): kotlinx.io/Buffer? // io.rsocket.kotlin.transport/RSocketSequentialConnection.receiveFrame|receiveFrame(){}[0]
+    abstract suspend fun sendFrame(kotlin/Int, kotlinx.io/Buffer) // io.rsocket.kotlin.transport/RSocketSequentialConnection.sendFrame|sendFrame(kotlin.Int;kotlinx.io.Buffer){}[0]
+}
+
+abstract interface io.rsocket.kotlin.transport/RSocketServerInstance : kotlinx.coroutines/CoroutineScope // io.rsocket.kotlin.transport/RSocketServerInstance|null[0]
+
+abstract interface io.rsocket.kotlin.transport/RSocketTransport : kotlinx.coroutines/CoroutineScope // io.rsocket.kotlin.transport/RSocketTransport|null[0]
+
+abstract interface io.rsocket.kotlin/Connection : kotlinx.coroutines/CoroutineScope { // io.rsocket.kotlin/Connection|null[0]
+    abstract suspend fun receive(): kotlinx.io/Buffer // io.rsocket.kotlin/Connection.receive|receive(){}[0]
+    abstract suspend fun send(kotlinx.io/Buffer) // io.rsocket.kotlin/Connection.send|send(kotlinx.io.Buffer){}[0]
+}
+
+abstract interface io.rsocket.kotlin/RSocket : kotlinx.coroutines/CoroutineScope { // io.rsocket.kotlin/RSocket|null[0]
+    open fun requestChannel(io.rsocket.kotlin.payload/Payload, kotlinx.coroutines.flow/Flow<io.rsocket.kotlin.payload/Payload>): kotlinx.coroutines.flow/Flow<io.rsocket.kotlin.payload/Payload> // io.rsocket.kotlin/RSocket.requestChannel|requestChannel(io.rsocket.kotlin.payload.Payload;kotlinx.coroutines.flow.Flow<io.rsocket.kotlin.payload.Payload>){}[0]
+    open fun requestStream(io.rsocket.kotlin.payload/Payload): kotlinx.coroutines.flow/Flow<io.rsocket.kotlin.payload/Payload> // io.rsocket.kotlin/RSocket.requestStream|requestStream(io.rsocket.kotlin.payload.Payload){}[0]
+    open suspend fun fireAndForget(io.rsocket.kotlin.payload/Payload) // io.rsocket.kotlin/RSocket.fireAndForget|fireAndForget(io.rsocket.kotlin.payload.Payload){}[0]
+    open suspend fun metadataPush(kotlinx.io/Buffer) // io.rsocket.kotlin/RSocket.metadataPush|metadataPush(kotlinx.io.Buffer){}[0]
+    open suspend fun requestResponse(io.rsocket.kotlin.payload/Payload): io.rsocket.kotlin.payload/Payload // io.rsocket.kotlin/RSocket.requestResponse|requestResponse(io.rsocket.kotlin.payload.Payload){}[0]
+}
+
+abstract interface io.rsocket.kotlin/RequestStrategy : kotlin.coroutines/CoroutineContext.Element { // io.rsocket.kotlin/RequestStrategy|null[0]
+    open val key // io.rsocket.kotlin/RequestStrategy.key|{}key[0]
+        open fun <get-key>(): kotlin.coroutines/CoroutineContext.Key<*> // io.rsocket.kotlin/RequestStrategy.key.<get-key>|<get-key>(){}[0]
+
+    abstract fun provide(): io.rsocket.kotlin/RequestStrategy.Element // io.rsocket.kotlin/RequestStrategy.provide|provide(){}[0]
+
+    abstract interface Element { // io.rsocket.kotlin/RequestStrategy.Element|null[0]
+        abstract suspend fun firstRequest(): kotlin/Int // io.rsocket.kotlin/RequestStrategy.Element.firstRequest|firstRequest(){}[0]
+        abstract suspend fun nextRequest(): kotlin/Int // io.rsocket.kotlin/RequestStrategy.Element.nextRequest|nextRequest(){}[0]
+    }
+
+    final object Key : kotlin.coroutines/CoroutineContext.Key<io.rsocket.kotlin/RequestStrategy> // io.rsocket.kotlin/RequestStrategy.Key|null[0]
+}
+
+sealed interface <#A: io.rsocket.kotlin.metadata.security/AuthMetadata> io.rsocket.kotlin.metadata.security/AuthMetadataReader : io.rsocket.kotlin.metadata/MetadataReader<#A> { // io.rsocket.kotlin.metadata.security/AuthMetadataReader|null[0]
+    open val mimeType // io.rsocket.kotlin.metadata.security/AuthMetadataReader.mimeType|{}mimeType[0]
+        open fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata.security/AuthMetadataReader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+
+    abstract fun (kotlinx.io/Source).readContent(io.rsocket.kotlin.metadata.security/AuthType): #A // io.rsocket.kotlin.metadata.security/AuthMetadataReader.readContent|readContent@kotlinx.io.Source(io.rsocket.kotlin.metadata.security.AuthType){}[0]
+    open fun (kotlinx.io/Source).read(): #A // io.rsocket.kotlin.metadata.security/AuthMetadataReader.read|read@kotlinx.io.Source(){}[0]
+}
+
+sealed interface io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.core/MimeType|null[0]
+
+sealed interface io.rsocket.kotlin.core/MimeTypeWithId : io.rsocket.kotlin.core/MimeType { // io.rsocket.kotlin.core/MimeTypeWithId|null[0]
+    abstract val identifier // io.rsocket.kotlin.core/MimeTypeWithId.identifier|{}identifier[0]
+        abstract fun <get-identifier>(): kotlin/Byte // io.rsocket.kotlin.core/MimeTypeWithId.identifier.<get-identifier>|<get-identifier>(){}[0]
+}
+
+sealed interface io.rsocket.kotlin.core/MimeTypeWithName : io.rsocket.kotlin.core/MimeType { // io.rsocket.kotlin.core/MimeTypeWithName|null[0]
+    abstract val text // io.rsocket.kotlin.core/MimeTypeWithName.text|{}text[0]
+        abstract fun <get-text>(): kotlin/String // io.rsocket.kotlin.core/MimeTypeWithName.text.<get-text>|<get-text>(){}[0]
+}
+
+sealed interface io.rsocket.kotlin.metadata.security/AuthMetadata : io.rsocket.kotlin.metadata/Metadata { // io.rsocket.kotlin.metadata.security/AuthMetadata|null[0]
+    abstract val type // io.rsocket.kotlin.metadata.security/AuthMetadata.type|{}type[0]
+        abstract fun <get-type>(): io.rsocket.kotlin.metadata.security/AuthType // io.rsocket.kotlin.metadata.security/AuthMetadata.type.<get-type>|<get-type>(){}[0]
+    open val mimeType // io.rsocket.kotlin.metadata.security/AuthMetadata.mimeType|{}mimeType[0]
+        open fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata.security/AuthMetadata.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+
+    abstract fun (kotlinx.io/Sink).writeContent() // io.rsocket.kotlin.metadata.security/AuthMetadata.writeContent|writeContent@kotlinx.io.Sink(){}[0]
+    open fun (kotlinx.io/Sink).writeSelf() // io.rsocket.kotlin.metadata.security/AuthMetadata.writeSelf|writeSelf@kotlinx.io.Sink(){}[0]
+}
+
+sealed interface io.rsocket.kotlin.metadata.security/AuthType // io.rsocket.kotlin.metadata.security/AuthType|null[0]
+
+sealed interface io.rsocket.kotlin.metadata.security/AuthTypeWithId : io.rsocket.kotlin.metadata.security/AuthType { // io.rsocket.kotlin.metadata.security/AuthTypeWithId|null[0]
+    abstract val identifier // io.rsocket.kotlin.metadata.security/AuthTypeWithId.identifier|{}identifier[0]
+        abstract fun <get-identifier>(): kotlin/Byte // io.rsocket.kotlin.metadata.security/AuthTypeWithId.identifier.<get-identifier>|<get-identifier>(){}[0]
+}
+
+sealed interface io.rsocket.kotlin.metadata.security/AuthTypeWithName : io.rsocket.kotlin.metadata.security/AuthType { // io.rsocket.kotlin.metadata.security/AuthTypeWithName|null[0]
+    abstract val text // io.rsocket.kotlin.metadata.security/AuthTypeWithName.text|{}text[0]
+        abstract fun <get-text>(): kotlin/String // io.rsocket.kotlin.metadata.security/AuthTypeWithName.text.<get-text>|<get-text>(){}[0]
+}
+
+sealed interface io.rsocket.kotlin.metadata/CompositeMetadata : io.rsocket.kotlin.metadata/Metadata { // io.rsocket.kotlin.metadata/CompositeMetadata|null[0]
+    abstract val entries // io.rsocket.kotlin.metadata/CompositeMetadata.entries|{}entries[0]
+        abstract fun <get-entries>(): kotlin.collections/List<io.rsocket.kotlin.metadata/CompositeMetadata.Entry> // io.rsocket.kotlin.metadata/CompositeMetadata.entries.<get-entries>|<get-entries>(){}[0]
+    open val mimeType // io.rsocket.kotlin.metadata/CompositeMetadata.mimeType|{}mimeType[0]
+        open fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/CompositeMetadata.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+
+    open fun (kotlinx.io/Sink).writeSelf() // io.rsocket.kotlin.metadata/CompositeMetadata.writeSelf|writeSelf@kotlinx.io.Sink(){}[0]
+    open fun close() // io.rsocket.kotlin.metadata/CompositeMetadata.close|close(){}[0]
+
+    final class Entry { // io.rsocket.kotlin.metadata/CompositeMetadata.Entry|null[0]
+        constructor <init>(io.rsocket.kotlin.core/MimeType, kotlinx.io/Buffer) // io.rsocket.kotlin.metadata/CompositeMetadata.Entry.<init>|<init>(io.rsocket.kotlin.core.MimeType;kotlinx.io.Buffer){}[0]
+        constructor <init>(io.rsocket.kotlin.metadata/Metadata) // io.rsocket.kotlin.metadata/CompositeMetadata.Entry.<init>|<init>(io.rsocket.kotlin.metadata.Metadata){}[0]
+
+        final val content // io.rsocket.kotlin.metadata/CompositeMetadata.Entry.content|{}content[0]
+            final fun <get-content>(): kotlinx.io/Buffer // io.rsocket.kotlin.metadata/CompositeMetadata.Entry.content.<get-content>|<get-content>(){}[0]
+        final val mimeType // io.rsocket.kotlin.metadata/CompositeMetadata.Entry.mimeType|{}mimeType[0]
+            final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/CompositeMetadata.Entry.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+    }
+
+    final object Reader : io.rsocket.kotlin.metadata/MetadataReader<io.rsocket.kotlin.metadata/CompositeMetadata> { // io.rsocket.kotlin.metadata/CompositeMetadata.Reader|null[0]
+        final val mimeType // io.rsocket.kotlin.metadata/CompositeMetadata.Reader.mimeType|{}mimeType[0]
+            final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/CompositeMetadata.Reader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+
+        final fun (kotlinx.io/Source).read(): io.rsocket.kotlin.metadata/CompositeMetadata // io.rsocket.kotlin.metadata/CompositeMetadata.Reader.read|read@kotlinx.io.Source(){}[0]
+    }
+}
+
+sealed interface io.rsocket.kotlin.metadata/CompositeMetadataBuilder : kotlin/AutoCloseable { // io.rsocket.kotlin.metadata/CompositeMetadataBuilder|null[0]
+    abstract fun add(io.rsocket.kotlin.core/MimeType, kotlinx.io/Buffer) // io.rsocket.kotlin.metadata/CompositeMetadataBuilder.add|add(io.rsocket.kotlin.core.MimeType;kotlinx.io.Buffer){}[0]
+    abstract fun add(io.rsocket.kotlin.metadata/Metadata) // io.rsocket.kotlin.metadata/CompositeMetadataBuilder.add|add(io.rsocket.kotlin.metadata.Metadata){}[0]
+}
+
+sealed interface io.rsocket.kotlin.payload/Payload : kotlin/AutoCloseable { // io.rsocket.kotlin.payload/Payload|null[0]
+    abstract val data // io.rsocket.kotlin.payload/Payload.data|{}data[0]
+        abstract fun <get-data>(): kotlinx.io/Buffer // io.rsocket.kotlin.payload/Payload.data.<get-data>|<get-data>(){}[0]
+    abstract val metadata // io.rsocket.kotlin.payload/Payload.metadata|{}metadata[0]
+        abstract fun <get-metadata>(): kotlinx.io/Buffer? // io.rsocket.kotlin.payload/Payload.metadata.<get-metadata>|<get-metadata>(){}[0]
+
+    open fun close() // io.rsocket.kotlin.payload/Payload.close|close(){}[0]
+    open fun copy(): io.rsocket.kotlin.payload/Payload // io.rsocket.kotlin.payload/Payload.copy|copy(){}[0]
+
+    final object Companion { // io.rsocket.kotlin.payload/Payload.Companion|null[0]
+        final val Empty // io.rsocket.kotlin.payload/Payload.Companion.Empty|{}Empty[0]
+            final fun <get-Empty>(): io.rsocket.kotlin.payload/Payload // io.rsocket.kotlin.payload/Payload.Companion.Empty.<get-Empty>|<get-Empty>(){}[0]
+    }
+}
+
+sealed interface io.rsocket.kotlin.payload/PayloadBuilder : kotlin/AutoCloseable { // io.rsocket.kotlin.payload/PayloadBuilder|null[0]
+    abstract fun data(kotlinx.io/Buffer) // io.rsocket.kotlin.payload/PayloadBuilder.data|data(kotlinx.io.Buffer){}[0]
+    abstract fun metadata(kotlinx.io/Buffer) // io.rsocket.kotlin.payload/PayloadBuilder.metadata|metadata(kotlinx.io.Buffer){}[0]
+}
+
+sealed interface io.rsocket.kotlin.transport/RSocketConnection : kotlinx.coroutines/CoroutineScope // io.rsocket.kotlin.transport/RSocketConnection|null[0]
+
+abstract class <#A: io.rsocket.kotlin.transport/RSocketTransport, #B: io.rsocket.kotlin.transport/RSocketTransportBuilder<#A>> io.rsocket.kotlin.transport/RSocketTransportFactory { // io.rsocket.kotlin.transport/RSocketTransportFactory|null[0]
+    constructor <init>(kotlin/Function0<#B>) // io.rsocket.kotlin.transport/RSocketTransportFactory.<init>|<init>(kotlin.Function0<1:1>){}[0]
+
+    final val createBuilder // io.rsocket.kotlin.transport/RSocketTransportFactory.createBuilder|{}createBuilder[0]
+        final fun <get-createBuilder>(): kotlin/Function0<#B> // io.rsocket.kotlin.transport/RSocketTransportFactory.createBuilder.<get-createBuilder>|<get-createBuilder>(){}[0]
+
+    final inline fun invoke(kotlin.coroutines/CoroutineContext, kotlin/Function1<#B, kotlin/Unit> = ...): #A // io.rsocket.kotlin.transport/RSocketTransportFactory.invoke|invoke(kotlin.coroutines.CoroutineContext;kotlin.Function1<1:1,kotlin.Unit>){}[0]
+}
+
+final class io.rsocket.kotlin.core/CustomMimeType : io.rsocket.kotlin.core/MimeTypeWithName { // io.rsocket.kotlin.core/CustomMimeType|null[0]
+    constructor <init>(kotlin/String) // io.rsocket.kotlin.core/CustomMimeType.<init>|<init>(kotlin.String){}[0]
+
+    final val text // io.rsocket.kotlin.core/CustomMimeType.text|{}text[0]
+        final fun <get-text>(): kotlin/String // io.rsocket.kotlin.core/CustomMimeType.text.<get-text>|<get-text>(){}[0]
+
+    final fun component1(): kotlin/String // io.rsocket.kotlin.core/CustomMimeType.component1|component1(){}[0]
+    final fun copy(kotlin/String = ...): io.rsocket.kotlin.core/CustomMimeType // io.rsocket.kotlin.core/CustomMimeType.copy|copy(kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.rsocket.kotlin.core/CustomMimeType.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.rsocket.kotlin.core/CustomMimeType.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.rsocket.kotlin.core/CustomMimeType.toString|toString(){}[0]
+}
+
+final class io.rsocket.kotlin.core/InterceptorsBuilder { // io.rsocket.kotlin.core/InterceptorsBuilder|null[0]
+    final fun forAcceptor(io.rsocket.kotlin.core/Interceptor<io.rsocket.kotlin/ConnectionAcceptor>) // io.rsocket.kotlin.core/InterceptorsBuilder.forAcceptor|forAcceptor(io.rsocket.kotlin.core.Interceptor<io.rsocket.kotlin.ConnectionAcceptor>){}[0]
+    final fun forConnection(io.rsocket.kotlin.core/Interceptor<io.rsocket.kotlin/Connection>) // io.rsocket.kotlin.core/InterceptorsBuilder.forConnection|forConnection(io.rsocket.kotlin.core.Interceptor<io.rsocket.kotlin.Connection>){}[0]
+    final fun forRequester(io.rsocket.kotlin.core/Interceptor<io.rsocket.kotlin/RSocket>) // io.rsocket.kotlin.core/InterceptorsBuilder.forRequester|forRequester(io.rsocket.kotlin.core.Interceptor<io.rsocket.kotlin.RSocket>){}[0]
+    final fun forResponder(io.rsocket.kotlin.core/Interceptor<io.rsocket.kotlin/RSocket>) // io.rsocket.kotlin.core/InterceptorsBuilder.forResponder|forResponder(io.rsocket.kotlin.core.Interceptor<io.rsocket.kotlin.RSocket>){}[0]
+}
+
+final class io.rsocket.kotlin.core/RSocketConnector { // io.rsocket.kotlin.core/RSocketConnector|null[0]
+    final suspend fun connect(io.rsocket.kotlin.transport/ClientTransport): io.rsocket.kotlin/RSocket // io.rsocket.kotlin.core/RSocketConnector.connect|connect(io.rsocket.kotlin.transport.ClientTransport){}[0]
+    final suspend fun connect(io.rsocket.kotlin.transport/RSocketClientTarget): io.rsocket.kotlin/RSocket // io.rsocket.kotlin.core/RSocketConnector.connect|connect(io.rsocket.kotlin.transport.RSocketClientTarget){}[0]
+}
+
+final class io.rsocket.kotlin.core/RSocketConnectorBuilder { // io.rsocket.kotlin.core/RSocketConnectorBuilder|null[0]
+    final var loggerFactory // io.rsocket.kotlin.core/RSocketConnectorBuilder.loggerFactory|{}loggerFactory[0]
+        final fun <get-loggerFactory>(): io.rsocket.kotlin.logging/LoggerFactory // io.rsocket.kotlin.core/RSocketConnectorBuilder.loggerFactory.<get-loggerFactory>|<get-loggerFactory>(){}[0]
+        final fun <set-loggerFactory>(io.rsocket.kotlin.logging/LoggerFactory) // io.rsocket.kotlin.core/RSocketConnectorBuilder.loggerFactory.<set-loggerFactory>|<set-loggerFactory>(io.rsocket.kotlin.logging.LoggerFactory){}[0]
+    final var maxFragmentSize // io.rsocket.kotlin.core/RSocketConnectorBuilder.maxFragmentSize|{}maxFragmentSize[0]
+        final fun <get-maxFragmentSize>(): kotlin/Int // io.rsocket.kotlin.core/RSocketConnectorBuilder.maxFragmentSize.<get-maxFragmentSize>|<get-maxFragmentSize>(){}[0]
+        final fun <set-maxFragmentSize>(kotlin/Int) // io.rsocket.kotlin.core/RSocketConnectorBuilder.maxFragmentSize.<set-maxFragmentSize>|<set-maxFragmentSize>(kotlin.Int){}[0]
+
+    final fun acceptor(io.rsocket.kotlin/ConnectionAcceptor?) // io.rsocket.kotlin.core/RSocketConnectorBuilder.acceptor|acceptor(io.rsocket.kotlin.ConnectionAcceptor?){}[0]
+    final fun connectionConfig(kotlin/Function1<io.rsocket.kotlin.core/RSocketConnectorBuilder.ConnectionConfigBuilder, kotlin/Unit>) // io.rsocket.kotlin.core/RSocketConnectorBuilder.connectionConfig|connectionConfig(kotlin.Function1<io.rsocket.kotlin.core.RSocketConnectorBuilder.ConnectionConfigBuilder,kotlin.Unit>){}[0]
+    final fun interceptors(kotlin/Function1<io.rsocket.kotlin.core/InterceptorsBuilder, kotlin/Unit>) // io.rsocket.kotlin.core/RSocketConnectorBuilder.interceptors|interceptors(kotlin.Function1<io.rsocket.kotlin.core.InterceptorsBuilder,kotlin.Unit>){}[0]
+    final fun reconnectable(kotlin.coroutines/SuspendFunction2<kotlin/Throwable, kotlin/Long, kotlin/Boolean>) // io.rsocket.kotlin.core/RSocketConnectorBuilder.reconnectable|reconnectable(kotlin.coroutines.SuspendFunction2<kotlin.Throwable,kotlin.Long,kotlin.Boolean>){}[0]
+    final fun reconnectable(kotlin/Long, kotlin.coroutines/SuspendFunction1<kotlin/Throwable, kotlin/Boolean> = ...) // io.rsocket.kotlin.core/RSocketConnectorBuilder.reconnectable|reconnectable(kotlin.Long;kotlin.coroutines.SuspendFunction1<kotlin.Throwable,kotlin.Boolean>){}[0]
+
+    final class ConnectionConfigBuilder { // io.rsocket.kotlin.core/RSocketConnectorBuilder.ConnectionConfigBuilder|null[0]
+        final var keepAlive // io.rsocket.kotlin.core/RSocketConnectorBuilder.ConnectionConfigBuilder.keepAlive|{}keepAlive[0]
+            final fun <get-keepAlive>(): io.rsocket.kotlin.keepalive/KeepAlive // io.rsocket.kotlin.core/RSocketConnectorBuilder.ConnectionConfigBuilder.keepAlive.<get-keepAlive>|<get-keepAlive>(){}[0]
+            final fun <set-keepAlive>(io.rsocket.kotlin.keepalive/KeepAlive) // io.rsocket.kotlin.core/RSocketConnectorBuilder.ConnectionConfigBuilder.keepAlive.<set-keepAlive>|<set-keepAlive>(io.rsocket.kotlin.keepalive.KeepAlive){}[0]
+        final var payloadMimeType // io.rsocket.kotlin.core/RSocketConnectorBuilder.ConnectionConfigBuilder.payloadMimeType|{}payloadMimeType[0]
+            final fun <get-payloadMimeType>(): io.rsocket.kotlin.payload/PayloadMimeType // io.rsocket.kotlin.core/RSocketConnectorBuilder.ConnectionConfigBuilder.payloadMimeType.<get-payloadMimeType>|<get-payloadMimeType>(){}[0]
+            final fun <set-payloadMimeType>(io.rsocket.kotlin.payload/PayloadMimeType) // io.rsocket.kotlin.core/RSocketConnectorBuilder.ConnectionConfigBuilder.payloadMimeType.<set-payloadMimeType>|<set-payloadMimeType>(io.rsocket.kotlin.payload.PayloadMimeType){}[0]
+
+        final fun setupPayload(io.rsocket.kotlin.payload/Payload) // io.rsocket.kotlin.core/RSocketConnectorBuilder.ConnectionConfigBuilder.setupPayload|setupPayload(io.rsocket.kotlin.payload.Payload){}[0]
+        final fun setupPayload(kotlin/Function0<io.rsocket.kotlin.payload/Payload>?) // io.rsocket.kotlin.core/RSocketConnectorBuilder.ConnectionConfigBuilder.setupPayload|setupPayload(kotlin.Function0<io.rsocket.kotlin.payload.Payload>?){}[0]
+    }
+}
+
+final class io.rsocket.kotlin.core/RSocketServer { // io.rsocket.kotlin.core/RSocketServer|null[0]
+    final fun <#A1: kotlin/Any?> bind(io.rsocket.kotlin.transport/ServerTransport<#A1>, io.rsocket.kotlin/ConnectionAcceptor): #A1 // io.rsocket.kotlin.core/RSocketServer.bind|bind(io.rsocket.kotlin.transport.ServerTransport<0:0>;io.rsocket.kotlin.ConnectionAcceptor){0§<kotlin.Any?>}[0]
+    final fun <#A1: kotlin/Any?> bindIn(kotlinx.coroutines/CoroutineScope, io.rsocket.kotlin.transport/ServerTransport<#A1>, io.rsocket.kotlin/ConnectionAcceptor): #A1 // io.rsocket.kotlin.core/RSocketServer.bindIn|bindIn(kotlinx.coroutines.CoroutineScope;io.rsocket.kotlin.transport.ServerTransport<0:0>;io.rsocket.kotlin.ConnectionAcceptor){0§<kotlin.Any?>}[0]
+    final fun acceptConnection(io.rsocket.kotlin/ConnectionAcceptor, io.rsocket.kotlin.transport/RSocketConnection) // io.rsocket.kotlin.core/RSocketServer.acceptConnection|acceptConnection(io.rsocket.kotlin.ConnectionAcceptor;io.rsocket.kotlin.transport.RSocketConnection){}[0]
+    final suspend fun <#A1: io.rsocket.kotlin.transport/RSocketServerInstance> startServer(io.rsocket.kotlin.transport/RSocketServerTarget<#A1>, io.rsocket.kotlin/ConnectionAcceptor): #A1 // io.rsocket.kotlin.core/RSocketServer.startServer|startServer(io.rsocket.kotlin.transport.RSocketServerTarget<0:0>;io.rsocket.kotlin.ConnectionAcceptor){0§<io.rsocket.kotlin.transport.RSocketServerInstance>}[0]
+}
+
+final class io.rsocket.kotlin.core/RSocketServerBuilder { // io.rsocket.kotlin.core/RSocketServerBuilder|null[0]
+    final var loggerFactory // io.rsocket.kotlin.core/RSocketServerBuilder.loggerFactory|{}loggerFactory[0]
+        final fun <get-loggerFactory>(): io.rsocket.kotlin.logging/LoggerFactory // io.rsocket.kotlin.core/RSocketServerBuilder.loggerFactory.<get-loggerFactory>|<get-loggerFactory>(){}[0]
+        final fun <set-loggerFactory>(io.rsocket.kotlin.logging/LoggerFactory) // io.rsocket.kotlin.core/RSocketServerBuilder.loggerFactory.<set-loggerFactory>|<set-loggerFactory>(io.rsocket.kotlin.logging.LoggerFactory){}[0]
+    final var maxFragmentSize // io.rsocket.kotlin.core/RSocketServerBuilder.maxFragmentSize|{}maxFragmentSize[0]
+        final fun <get-maxFragmentSize>(): kotlin/Int // io.rsocket.kotlin.core/RSocketServerBuilder.maxFragmentSize.<get-maxFragmentSize>|<get-maxFragmentSize>(){}[0]
+        final fun <set-maxFragmentSize>(kotlin/Int) // io.rsocket.kotlin.core/RSocketServerBuilder.maxFragmentSize.<set-maxFragmentSize>|<set-maxFragmentSize>(kotlin.Int){}[0]
+
+    final fun interceptors(kotlin/Function1<io.rsocket.kotlin.core/InterceptorsBuilder, kotlin/Unit>) // io.rsocket.kotlin.core/RSocketServerBuilder.interceptors|interceptors(kotlin.Function1<io.rsocket.kotlin.core.InterceptorsBuilder,kotlin.Unit>){}[0]
+}
+
+final class io.rsocket.kotlin.core/ReservedMimeType : io.rsocket.kotlin.core/MimeTypeWithId { // io.rsocket.kotlin.core/ReservedMimeType|null[0]
+    constructor <init>(kotlin/Byte) // io.rsocket.kotlin.core/ReservedMimeType.<init>|<init>(kotlin.Byte){}[0]
+
+    final val identifier // io.rsocket.kotlin.core/ReservedMimeType.identifier|{}identifier[0]
+        final fun <get-identifier>(): kotlin/Byte // io.rsocket.kotlin.core/ReservedMimeType.identifier.<get-identifier>|<get-identifier>(){}[0]
+
+    final fun component1(): kotlin/Byte // io.rsocket.kotlin.core/ReservedMimeType.component1|component1(){}[0]
+    final fun copy(kotlin/Byte = ...): io.rsocket.kotlin.core/ReservedMimeType // io.rsocket.kotlin.core/ReservedMimeType.copy|copy(kotlin.Byte){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.rsocket.kotlin.core/ReservedMimeType.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.rsocket.kotlin.core/ReservedMimeType.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.rsocket.kotlin.core/ReservedMimeType.toString|toString(){}[0]
+}
+
+final class io.rsocket.kotlin.keepalive/KeepAlive { // io.rsocket.kotlin.keepalive/KeepAlive|null[0]
+    constructor <init>(kotlin/Int = ..., kotlin/Int = ...) // io.rsocket.kotlin.keepalive/KeepAlive.<init>|<init>(kotlin.Int;kotlin.Int){}[0]
+
+    final val intervalMillis // io.rsocket.kotlin.keepalive/KeepAlive.intervalMillis|{}intervalMillis[0]
+        final fun <get-intervalMillis>(): kotlin/Int // io.rsocket.kotlin.keepalive/KeepAlive.intervalMillis.<get-intervalMillis>|<get-intervalMillis>(){}[0]
+    final val maxLifetimeMillis // io.rsocket.kotlin.keepalive/KeepAlive.maxLifetimeMillis|{}maxLifetimeMillis[0]
+        final fun <get-maxLifetimeMillis>(): kotlin/Int // io.rsocket.kotlin.keepalive/KeepAlive.maxLifetimeMillis.<get-maxLifetimeMillis>|<get-maxLifetimeMillis>(){}[0]
+}
+
+final class io.rsocket.kotlin.logging/PrintLogger : io.rsocket.kotlin.logging/Logger { // io.rsocket.kotlin.logging/PrintLogger|null[0]
+    constructor <init>(kotlin/String, io.rsocket.kotlin.logging/LoggingLevel = ...) // io.rsocket.kotlin.logging/PrintLogger.<init>|<init>(kotlin.String;io.rsocket.kotlin.logging.LoggingLevel){}[0]
+
+    final val tag // io.rsocket.kotlin.logging/PrintLogger.tag|{}tag[0]
+        final fun <get-tag>(): kotlin/String // io.rsocket.kotlin.logging/PrintLogger.tag.<get-tag>|<get-tag>(){}[0]
+
+    final fun isLoggable(io.rsocket.kotlin.logging/LoggingLevel): kotlin/Boolean // io.rsocket.kotlin.logging/PrintLogger.isLoggable|isLoggable(io.rsocket.kotlin.logging.LoggingLevel){}[0]
+    final fun rawLog(io.rsocket.kotlin.logging/LoggingLevel, kotlin/Throwable?, kotlin/Any?) // io.rsocket.kotlin.logging/PrintLogger.rawLog|rawLog(io.rsocket.kotlin.logging.LoggingLevel;kotlin.Throwable?;kotlin.Any?){}[0]
+
+    final object Companion : io.rsocket.kotlin.logging/LoggerFactory { // io.rsocket.kotlin.logging/PrintLogger.Companion|null[0]
+        final fun logger(kotlin/String): io.rsocket.kotlin.logging/Logger // io.rsocket.kotlin.logging/PrintLogger.Companion.logger|logger(kotlin.String){}[0]
+        final fun withLevel(io.rsocket.kotlin.logging/LoggingLevel): io.rsocket.kotlin.logging/LoggerFactory // io.rsocket.kotlin.logging/PrintLogger.Companion.withLevel|withLevel(io.rsocket.kotlin.logging.LoggingLevel){}[0]
+    }
+}
+
+final class io.rsocket.kotlin.metadata.security/BearerAuthMetadata : io.rsocket.kotlin.metadata.security/AuthMetadata { // io.rsocket.kotlin.metadata.security/BearerAuthMetadata|null[0]
+    constructor <init>(kotlin/String) // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.<init>|<init>(kotlin.String){}[0]
+
+    final val token // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.token|{}token[0]
+        final fun <get-token>(): kotlin/String // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.token.<get-token>|<get-token>(){}[0]
+    final val type // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.type|{}type[0]
+        final fun <get-type>(): io.rsocket.kotlin.metadata.security/AuthType // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.type.<get-type>|<get-type>(){}[0]
+
+    final fun (kotlinx.io/Sink).writeContent() // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.writeContent|writeContent@kotlinx.io.Sink(){}[0]
+    final fun close() // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.close|close(){}[0]
+
+    final object Reader : io.rsocket.kotlin.metadata.security/AuthMetadataReader<io.rsocket.kotlin.metadata.security/BearerAuthMetadata> { // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.Reader|null[0]
+        final fun (kotlinx.io/Source).readContent(io.rsocket.kotlin.metadata.security/AuthType): io.rsocket.kotlin.metadata.security/BearerAuthMetadata // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.Reader.readContent|readContent@kotlinx.io.Source(io.rsocket.kotlin.metadata.security.AuthType){}[0]
+    }
+}
+
+final class io.rsocket.kotlin.metadata.security/CustomAuthType : io.rsocket.kotlin.metadata.security/AuthTypeWithName { // io.rsocket.kotlin.metadata.security/CustomAuthType|null[0]
+    constructor <init>(kotlin/String) // io.rsocket.kotlin.metadata.security/CustomAuthType.<init>|<init>(kotlin.String){}[0]
+
+    final val text // io.rsocket.kotlin.metadata.security/CustomAuthType.text|{}text[0]
+        final fun <get-text>(): kotlin/String // io.rsocket.kotlin.metadata.security/CustomAuthType.text.<get-text>|<get-text>(){}[0]
+
+    final fun component1(): kotlin/String // io.rsocket.kotlin.metadata.security/CustomAuthType.component1|component1(){}[0]
+    final fun copy(kotlin/String = ...): io.rsocket.kotlin.metadata.security/CustomAuthType // io.rsocket.kotlin.metadata.security/CustomAuthType.copy|copy(kotlin.String){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.rsocket.kotlin.metadata.security/CustomAuthType.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.rsocket.kotlin.metadata.security/CustomAuthType.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.rsocket.kotlin.metadata.security/CustomAuthType.toString|toString(){}[0]
+}
+
+final class io.rsocket.kotlin.metadata.security/RawAuthMetadata : io.rsocket.kotlin.metadata.security/AuthMetadata { // io.rsocket.kotlin.metadata.security/RawAuthMetadata|null[0]
+    constructor <init>(io.rsocket.kotlin.metadata.security/AuthType, kotlinx.io/Source) // io.rsocket.kotlin.metadata.security/RawAuthMetadata.<init>|<init>(io.rsocket.kotlin.metadata.security.AuthType;kotlinx.io.Source){}[0]
+
+    final val content // io.rsocket.kotlin.metadata.security/RawAuthMetadata.content|{}content[0]
+        final fun <get-content>(): kotlinx.io/Source // io.rsocket.kotlin.metadata.security/RawAuthMetadata.content.<get-content>|<get-content>(){}[0]
+    final val type // io.rsocket.kotlin.metadata.security/RawAuthMetadata.type|{}type[0]
+        final fun <get-type>(): io.rsocket.kotlin.metadata.security/AuthType // io.rsocket.kotlin.metadata.security/RawAuthMetadata.type.<get-type>|<get-type>(){}[0]
+
+    final fun (kotlinx.io/Sink).writeContent() // io.rsocket.kotlin.metadata.security/RawAuthMetadata.writeContent|writeContent@kotlinx.io.Sink(){}[0]
+    final fun close() // io.rsocket.kotlin.metadata.security/RawAuthMetadata.close|close(){}[0]
+
+    final object Reader : io.rsocket.kotlin.metadata.security/AuthMetadataReader<io.rsocket.kotlin.metadata.security/RawAuthMetadata> { // io.rsocket.kotlin.metadata.security/RawAuthMetadata.Reader|null[0]
+        final fun (kotlinx.io/Source).readContent(io.rsocket.kotlin.metadata.security/AuthType): io.rsocket.kotlin.metadata.security/RawAuthMetadata // io.rsocket.kotlin.metadata.security/RawAuthMetadata.Reader.readContent|readContent@kotlinx.io.Source(io.rsocket.kotlin.metadata.security.AuthType){}[0]
+    }
+}
+
+final class io.rsocket.kotlin.metadata.security/ReservedAuthType : io.rsocket.kotlin.metadata.security/AuthTypeWithId { // io.rsocket.kotlin.metadata.security/ReservedAuthType|null[0]
+    constructor <init>(kotlin/Byte) // io.rsocket.kotlin.metadata.security/ReservedAuthType.<init>|<init>(kotlin.Byte){}[0]
+
+    final val identifier // io.rsocket.kotlin.metadata.security/ReservedAuthType.identifier|{}identifier[0]
+        final fun <get-identifier>(): kotlin/Byte // io.rsocket.kotlin.metadata.security/ReservedAuthType.identifier.<get-identifier>|<get-identifier>(){}[0]
+
+    final fun component1(): kotlin/Byte // io.rsocket.kotlin.metadata.security/ReservedAuthType.component1|component1(){}[0]
+    final fun copy(kotlin/Byte = ...): io.rsocket.kotlin.metadata.security/ReservedAuthType // io.rsocket.kotlin.metadata.security/ReservedAuthType.copy|copy(kotlin.Byte){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // io.rsocket.kotlin.metadata.security/ReservedAuthType.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // io.rsocket.kotlin.metadata.security/ReservedAuthType.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // io.rsocket.kotlin.metadata.security/ReservedAuthType.toString|toString(){}[0]
+}
+
+final class io.rsocket.kotlin.metadata.security/SimpleAuthMetadata : io.rsocket.kotlin.metadata.security/AuthMetadata { // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata|null[0]
+    constructor <init>(kotlin/String, kotlin/String) // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+    final val password // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.password|{}password[0]
+        final fun <get-password>(): kotlin/String // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.password.<get-password>|<get-password>(){}[0]
+    final val type // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.type|{}type[0]
+        final fun <get-type>(): io.rsocket.kotlin.metadata.security/AuthType // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.type.<get-type>|<get-type>(){}[0]
+    final val username // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.username|{}username[0]
+        final fun <get-username>(): kotlin/String // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.username.<get-username>|<get-username>(){}[0]
+
+    final fun (kotlinx.io/Sink).writeContent() // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.writeContent|writeContent@kotlinx.io.Sink(){}[0]
+    final fun close() // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.close|close(){}[0]
+
+    final object Reader : io.rsocket.kotlin.metadata.security/AuthMetadataReader<io.rsocket.kotlin.metadata.security/SimpleAuthMetadata> { // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.Reader|null[0]
+        final fun (kotlinx.io/Source).readContent(io.rsocket.kotlin.metadata.security/AuthType): io.rsocket.kotlin.metadata.security/SimpleAuthMetadata // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.Reader.readContent|readContent@kotlinx.io.Source(io.rsocket.kotlin.metadata.security.AuthType){}[0]
+    }
+}
+
+final class io.rsocket.kotlin.metadata/CompositeMetadataFromBuilder : io.rsocket.kotlin.metadata/CompositeMetadata, io.rsocket.kotlin.metadata/CompositeMetadataBuilder { // io.rsocket.kotlin.metadata/CompositeMetadataFromBuilder|null[0]
+    constructor <init>() // io.rsocket.kotlin.metadata/CompositeMetadataFromBuilder.<init>|<init>(){}[0]
+
+    final val entries // io.rsocket.kotlin.metadata/CompositeMetadataFromBuilder.entries|{}entries[0]
+        final fun <get-entries>(): kotlin.collections/List<io.rsocket.kotlin.metadata/CompositeMetadata.Entry> // io.rsocket.kotlin.metadata/CompositeMetadataFromBuilder.entries.<get-entries>|<get-entries>(){}[0]
+
+    final fun add(io.rsocket.kotlin.core/MimeType, kotlinx.io/Buffer) // io.rsocket.kotlin.metadata/CompositeMetadataFromBuilder.add|add(io.rsocket.kotlin.core.MimeType;kotlinx.io.Buffer){}[0]
+    final fun add(io.rsocket.kotlin.metadata/Metadata) // io.rsocket.kotlin.metadata/CompositeMetadataFromBuilder.add|add(io.rsocket.kotlin.metadata.Metadata){}[0]
+}
+
+final class io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata : io.rsocket.kotlin.metadata/Metadata { // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata|null[0]
+    constructor <init>(kotlin.collections/List<io.rsocket.kotlin.core/MimeType>) // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.<init>|<init>(kotlin.collections.List<io.rsocket.kotlin.core.MimeType>){}[0]
+
+    final val mimeType // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.mimeType|{}mimeType[0]
+        final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+    final val types // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.types|{}types[0]
+        final fun <get-types>(): kotlin.collections/List<io.rsocket.kotlin.core/MimeType> // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.types.<get-types>|<get-types>(){}[0]
+
+    final fun (kotlinx.io/Sink).writeSelf() // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.writeSelf|writeSelf@kotlinx.io.Sink(){}[0]
+    final fun close() // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.close|close(){}[0]
+
+    final object Reader : io.rsocket.kotlin.metadata/MetadataReader<io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata> { // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.Reader|null[0]
+        final val mimeType // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.Reader.mimeType|{}mimeType[0]
+            final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.Reader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+
+        final fun (kotlinx.io/Source).read(): io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.Reader.read|read@kotlinx.io.Source(){}[0]
+    }
+}
+
+final class io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata : io.rsocket.kotlin.metadata/Metadata { // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata|null[0]
+    constructor <init>(io.rsocket.kotlin.core/MimeType) // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.<init>|<init>(io.rsocket.kotlin.core.MimeType){}[0]
+
+    final val mimeType // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.mimeType|{}mimeType[0]
+        final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+    final val type // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.type|{}type[0]
+        final fun <get-type>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.type.<get-type>|<get-type>(){}[0]
+
+    final fun (kotlinx.io/Sink).writeSelf() // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.writeSelf|writeSelf@kotlinx.io.Sink(){}[0]
+    final fun close() // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.close|close(){}[0]
+
+    final object Reader : io.rsocket.kotlin.metadata/MetadataReader<io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata> { // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.Reader|null[0]
+        final val mimeType // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.Reader.mimeType|{}mimeType[0]
+            final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.Reader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+
+        final fun (kotlinx.io/Source).read(): io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.Reader.read|read@kotlinx.io.Source(){}[0]
+    }
+}
+
+final class io.rsocket.kotlin.metadata/RawMetadata : io.rsocket.kotlin.metadata/Metadata { // io.rsocket.kotlin.metadata/RawMetadata|null[0]
+    constructor <init>(io.rsocket.kotlin.core/MimeType, kotlinx.io/Source) // io.rsocket.kotlin.metadata/RawMetadata.<init>|<init>(io.rsocket.kotlin.core.MimeType;kotlinx.io.Source){}[0]
+
+    final val content // io.rsocket.kotlin.metadata/RawMetadata.content|{}content[0]
+        final fun <get-content>(): kotlinx.io/Source // io.rsocket.kotlin.metadata/RawMetadata.content.<get-content>|<get-content>(){}[0]
+    final val mimeType // io.rsocket.kotlin.metadata/RawMetadata.mimeType|{}mimeType[0]
+        final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/RawMetadata.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+
+    final fun (kotlinx.io/Sink).writeSelf() // io.rsocket.kotlin.metadata/RawMetadata.writeSelf|writeSelf@kotlinx.io.Sink(){}[0]
+    final fun close() // io.rsocket.kotlin.metadata/RawMetadata.close|close(){}[0]
+
+    final object Companion { // io.rsocket.kotlin.metadata/RawMetadata.Companion|null[0]
+        final fun reader(io.rsocket.kotlin.core/MimeType): io.rsocket.kotlin.metadata/MetadataReader<io.rsocket.kotlin.metadata/RawMetadata> // io.rsocket.kotlin.metadata/RawMetadata.Companion.reader|reader(io.rsocket.kotlin.core.MimeType){}[0]
+    }
+}
+
+final class io.rsocket.kotlin.metadata/RoutingMetadata : io.rsocket.kotlin.metadata/Metadata { // io.rsocket.kotlin.metadata/RoutingMetadata|null[0]
+    constructor <init>(kotlin.collections/List<kotlin/String>) // io.rsocket.kotlin.metadata/RoutingMetadata.<init>|<init>(kotlin.collections.List<kotlin.String>){}[0]
+
+    final val mimeType // io.rsocket.kotlin.metadata/RoutingMetadata.mimeType|{}mimeType[0]
+        final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/RoutingMetadata.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+    final val tags // io.rsocket.kotlin.metadata/RoutingMetadata.tags|{}tags[0]
+        final fun <get-tags>(): kotlin.collections/List<kotlin/String> // io.rsocket.kotlin.metadata/RoutingMetadata.tags.<get-tags>|<get-tags>(){}[0]
+
+    final fun (kotlinx.io/Sink).writeSelf() // io.rsocket.kotlin.metadata/RoutingMetadata.writeSelf|writeSelf@kotlinx.io.Sink(){}[0]
+    final fun close() // io.rsocket.kotlin.metadata/RoutingMetadata.close|close(){}[0]
+
+    final object Reader : io.rsocket.kotlin.metadata/MetadataReader<io.rsocket.kotlin.metadata/RoutingMetadata> { // io.rsocket.kotlin.metadata/RoutingMetadata.Reader|null[0]
+        final val mimeType // io.rsocket.kotlin.metadata/RoutingMetadata.Reader.mimeType|{}mimeType[0]
+            final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/RoutingMetadata.Reader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+
+        final fun (kotlinx.io/Source).read(): io.rsocket.kotlin.metadata/RoutingMetadata // io.rsocket.kotlin.metadata/RoutingMetadata.Reader.read|read@kotlinx.io.Source(){}[0]
+    }
+}
+
+final class io.rsocket.kotlin.metadata/ZipkinTracingMetadata : io.rsocket.kotlin.metadata/Metadata { // io.rsocket.kotlin.metadata/ZipkinTracingMetadata|null[0]
+    final val extendedTraceId // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.extendedTraceId|{}extendedTraceId[0]
+        final fun <get-extendedTraceId>(): kotlin/Boolean // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.extendedTraceId.<get-extendedTraceId>|<get-extendedTraceId>(){}[0]
+    final val hasIds // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.hasIds|{}hasIds[0]
+        final fun <get-hasIds>(): kotlin/Boolean // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.hasIds.<get-hasIds>|<get-hasIds>(){}[0]
+    final val hasParentSpanId // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.hasParentSpanId|{}hasParentSpanId[0]
+        final fun <get-hasParentSpanId>(): kotlin/Boolean // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.hasParentSpanId.<get-hasParentSpanId>|<get-hasParentSpanId>(){}[0]
+    final val kind // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.kind|{}kind[0]
+        final fun <get-kind>(): io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.kind.<get-kind>|<get-kind>(){}[0]
+    final val mimeType // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.mimeType|{}mimeType[0]
+        final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+    final val parentSpanId // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.parentSpanId|{}parentSpanId[0]
+        final fun <get-parentSpanId>(): kotlin/Long // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.parentSpanId.<get-parentSpanId>|<get-parentSpanId>(){}[0]
+    final val spanId // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.spanId|{}spanId[0]
+        final fun <get-spanId>(): kotlin/Long // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.spanId.<get-spanId>|<get-spanId>(){}[0]
+    final val traceId // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.traceId|{}traceId[0]
+        final fun <get-traceId>(): kotlin/Long // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.traceId.<get-traceId>|<get-traceId>(){}[0]
+    final val traceIdHigh // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.traceIdHigh|{}traceIdHigh[0]
+        final fun <get-traceIdHigh>(): kotlin/Long // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.traceIdHigh.<get-traceIdHigh>|<get-traceIdHigh>(){}[0]
+
+    final fun (kotlinx.io/Sink).writeSelf() // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.writeSelf|writeSelf@kotlinx.io.Sink(){}[0]
+    final fun close() // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.close|close(){}[0]
+
+    final enum class Kind : kotlin/Enum<io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind> { // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind|null[0]
+        enum entry Debug // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind.Debug|null[0]
+        enum entry NotSampled // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind.NotSampled|null[0]
+        enum entry Sample // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind.Sample|null[0]
+        enum entry Unspecified // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind.Unspecified|null[0]
+
+        final val entries // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind.entries|#static{}entries[0]
+            final fun <get-entries>(): kotlin.enums/EnumEntries<io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind> // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind.entries.<get-entries>|<get-entries>#static(){}[0]
+
+        final fun valueOf(kotlin/String): io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind.valueOf|valueOf#static(kotlin.String){}[0]
+        final fun values(): kotlin/Array<io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind> // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind.values|values#static(){}[0]
+    }
+
+    final object Reader : io.rsocket.kotlin.metadata/MetadataReader<io.rsocket.kotlin.metadata/ZipkinTracingMetadata> { // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Reader|null[0]
+        final val mimeType // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Reader.mimeType|{}mimeType[0]
+            final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Reader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
+
+        final fun (kotlinx.io/Source).read(): io.rsocket.kotlin.metadata/ZipkinTracingMetadata // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Reader.read|read@kotlinx.io.Source(){}[0]
+    }
+}
+
+final class io.rsocket.kotlin.payload/PayloadFromBuilder : io.rsocket.kotlin.payload/Payload, io.rsocket.kotlin.payload/PayloadBuilder { // io.rsocket.kotlin.payload/PayloadFromBuilder|null[0]
+    constructor <init>() // io.rsocket.kotlin.payload/PayloadFromBuilder.<init>|<init>(){}[0]
+
+    final var data // io.rsocket.kotlin.payload/PayloadFromBuilder.data|{}data[0]
+        final fun <get-data>(): kotlinx.io/Buffer // io.rsocket.kotlin.payload/PayloadFromBuilder.data.<get-data>|<get-data>(){}[0]
+    final var metadata // io.rsocket.kotlin.payload/PayloadFromBuilder.metadata|{}metadata[0]
+        final fun <get-metadata>(): kotlinx.io/Buffer? // io.rsocket.kotlin.payload/PayloadFromBuilder.metadata.<get-metadata>|<get-metadata>(){}[0]
+
+    final fun build(): io.rsocket.kotlin.payload/Payload // io.rsocket.kotlin.payload/PayloadFromBuilder.build|build(){}[0]
+    final fun data(kotlinx.io/Buffer) // io.rsocket.kotlin.payload/PayloadFromBuilder.data|data(kotlinx.io.Buffer){}[0]
+    final fun metadata(kotlinx.io/Buffer) // io.rsocket.kotlin.payload/PayloadFromBuilder.metadata|metadata(kotlinx.io.Buffer){}[0]
+}
+
+final class io.rsocket.kotlin.payload/PayloadMimeType { // io.rsocket.kotlin.payload/PayloadMimeType|null[0]
+    constructor <init>(kotlin/String, kotlin/String) // io.rsocket.kotlin.payload/PayloadMimeType.<init>|<init>(kotlin.String;kotlin.String){}[0]
+
+    final val data // io.rsocket.kotlin.payload/PayloadMimeType.data|{}data[0]
+        final fun <get-data>(): kotlin/String // io.rsocket.kotlin.payload/PayloadMimeType.data.<get-data>|<get-data>(){}[0]
+    final val metadata // io.rsocket.kotlin.payload/PayloadMimeType.metadata|{}metadata[0]
+        final fun <get-metadata>(): kotlin/String // io.rsocket.kotlin.payload/PayloadMimeType.metadata.<get-metadata>|<get-metadata>(){}[0]
+}
+
+final class io.rsocket.kotlin.transport.internal/PrioritizationFrameQueue { // io.rsocket.kotlin.transport.internal/PrioritizationFrameQueue|null[0]
+    constructor <init>() // io.rsocket.kotlin.transport.internal/PrioritizationFrameQueue.<init>|<init>(){}[0]
+
+    final val isClosedForSend // io.rsocket.kotlin.transport.internal/PrioritizationFrameQueue.isClosedForSend|{}isClosedForSend[0]
+        final fun <get-isClosedForSend>(): kotlin/Boolean // io.rsocket.kotlin.transport.internal/PrioritizationFrameQueue.isClosedForSend.<get-isClosedForSend>|<get-isClosedForSend>(){}[0]
+
+    final fun cancel() // io.rsocket.kotlin.transport.internal/PrioritizationFrameQueue.cancel|cancel(){}[0]
+    final fun close() // io.rsocket.kotlin.transport.internal/PrioritizationFrameQueue.close|close(){}[0]
+    final fun tryDequeueFrame(): kotlinx.io/Buffer? // io.rsocket.kotlin.transport.internal/PrioritizationFrameQueue.tryDequeueFrame|tryDequeueFrame(){}[0]
+    final suspend fun dequeueFrame(): kotlinx.io/Buffer? // io.rsocket.kotlin.transport.internal/PrioritizationFrameQueue.dequeueFrame|dequeueFrame(){}[0]
+    final suspend fun enqueueFrame(kotlin/Int, kotlinx.io/Buffer) // io.rsocket.kotlin.transport.internal/PrioritizationFrameQueue.enqueueFrame|enqueueFrame(kotlin.Int;kotlinx.io.Buffer){}[0]
+}
+
+final class io.rsocket.kotlin/ChannelStrategy : io.rsocket.kotlin/RequestStrategy, io.rsocket.kotlin/RequestStrategy.Element { // io.rsocket.kotlin/ChannelStrategy|null[0]
+    constructor <init>(kotlinx.coroutines.channels/ReceiveChannel<kotlin/Int>) // io.rsocket.kotlin/ChannelStrategy.<init>|<init>(kotlinx.coroutines.channels.ReceiveChannel<kotlin.Int>){}[0]
+
+    final fun provide(): io.rsocket.kotlin/RequestStrategy.Element // io.rsocket.kotlin/ChannelStrategy.provide|provide(){}[0]
+    final suspend fun firstRequest(): kotlin/Int // io.rsocket.kotlin/ChannelStrategy.firstRequest|firstRequest(){}[0]
+    final suspend fun nextRequest(): kotlin/Int // io.rsocket.kotlin/ChannelStrategy.nextRequest|nextRequest(){}[0]
+}
+
+final class io.rsocket.kotlin/ConnectionAcceptorContext { // io.rsocket.kotlin/ConnectionAcceptorContext|null[0]
+    final val config // io.rsocket.kotlin/ConnectionAcceptorContext.config|{}config[0]
+        final fun <get-config>(): io.rsocket.kotlin/ConnectionConfig // io.rsocket.kotlin/ConnectionAcceptorContext.config.<get-config>|<get-config>(){}[0]
+    final val requester // io.rsocket.kotlin/ConnectionAcceptorContext.requester|{}requester[0]
+        final fun <get-requester>(): io.rsocket.kotlin/RSocket // io.rsocket.kotlin/ConnectionAcceptorContext.requester.<get-requester>|<get-requester>(){}[0]
+}
+
+final class io.rsocket.kotlin/ConnectionConfig { // io.rsocket.kotlin/ConnectionConfig|null[0]
+    final val keepAlive // io.rsocket.kotlin/ConnectionConfig.keepAlive|{}keepAlive[0]
+        final fun <get-keepAlive>(): io.rsocket.kotlin.keepalive/KeepAlive // io.rsocket.kotlin/ConnectionConfig.keepAlive.<get-keepAlive>|<get-keepAlive>(){}[0]
+    final val payloadMimeType // io.rsocket.kotlin/ConnectionConfig.payloadMimeType|{}payloadMimeType[0]
+        final fun <get-payloadMimeType>(): io.rsocket.kotlin.payload/PayloadMimeType // io.rsocket.kotlin/ConnectionConfig.payloadMimeType.<get-payloadMimeType>|<get-payloadMimeType>(){}[0]
+    final val setupPayload // io.rsocket.kotlin/ConnectionConfig.setupPayload|{}setupPayload[0]
+        final fun <get-setupPayload>(): io.rsocket.kotlin.payload/Payload // io.rsocket.kotlin/ConnectionConfig.setupPayload.<get-setupPayload>|<get-setupPayload>(){}[0]
+}
+
+final class io.rsocket.kotlin/PrefetchStrategy : io.rsocket.kotlin/RequestStrategy { // io.rsocket.kotlin/PrefetchStrategy|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int) // io.rsocket.kotlin/PrefetchStrategy.<init>|<init>(kotlin.Int;kotlin.Int){}[0]
+
+    final fun provide(): io.rsocket.kotlin/RequestStrategy.Element // io.rsocket.kotlin/PrefetchStrategy.provide|provide(){}[0]
+}
+
+final class io.rsocket.kotlin/RSocketRequestHandlerBuilder { // io.rsocket.kotlin/RSocketRequestHandlerBuilder|null[0]
+    final fun fireAndForget(kotlin.coroutines/SuspendFunction2<io.rsocket.kotlin/RSocket, io.rsocket.kotlin.payload/Payload, kotlin/Unit>) // io.rsocket.kotlin/RSocketRequestHandlerBuilder.fireAndForget|fireAndForget(kotlin.coroutines.SuspendFunction2<io.rsocket.kotlin.RSocket,io.rsocket.kotlin.payload.Payload,kotlin.Unit>){}[0]
+    final fun metadataPush(kotlin.coroutines/SuspendFunction2<io.rsocket.kotlin/RSocket, kotlinx.io/Source, kotlin/Unit>) // io.rsocket.kotlin/RSocketRequestHandlerBuilder.metadataPush|metadataPush(kotlin.coroutines.SuspendFunction2<io.rsocket.kotlin.RSocket,kotlinx.io.Source,kotlin.Unit>){}[0]
+    final fun requestChannel(kotlin.coroutines/SuspendFunction3<io.rsocket.kotlin/RSocket, io.rsocket.kotlin.payload/Payload, kotlinx.coroutines.flow/Flow<io.rsocket.kotlin.payload/Payload>, kotlinx.coroutines.flow/Flow<io.rsocket.kotlin.payload/Payload>>) // io.rsocket.kotlin/RSocketRequestHandlerBuilder.requestChannel|requestChannel(kotlin.coroutines.SuspendFunction3<io.rsocket.kotlin.RSocket,io.rsocket.kotlin.payload.Payload,kotlinx.coroutines.flow.Flow<io.rsocket.kotlin.payload.Payload>,kotlinx.coroutines.flow.Flow<io.rsocket.kotlin.payload.Payload>>){}[0]
+    final fun requestResponse(kotlin.coroutines/SuspendFunction2<io.rsocket.kotlin/RSocket, io.rsocket.kotlin.payload/Payload, io.rsocket.kotlin.payload/Payload>) // io.rsocket.kotlin/RSocketRequestHandlerBuilder.requestResponse|requestResponse(kotlin.coroutines.SuspendFunction2<io.rsocket.kotlin.RSocket,io.rsocket.kotlin.payload.Payload,io.rsocket.kotlin.payload.Payload>){}[0]
+    final fun requestStream(kotlin.coroutines/SuspendFunction2<io.rsocket.kotlin/RSocket, io.rsocket.kotlin.payload/Payload, kotlinx.coroutines.flow/Flow<io.rsocket.kotlin.payload/Payload>>) // io.rsocket.kotlin/RSocketRequestHandlerBuilder.requestStream|requestStream(kotlin.coroutines.SuspendFunction2<io.rsocket.kotlin.RSocket,io.rsocket.kotlin.payload.Payload,kotlinx.coroutines.flow.Flow<io.rsocket.kotlin.payload.Payload>>){}[0]
+}
+
+sealed class io.rsocket.kotlin/RSocketError : kotlin/Throwable { // io.rsocket.kotlin/RSocketError|null[0]
+    final val errorCode // io.rsocket.kotlin/RSocketError.errorCode|{}errorCode[0]
+        final fun <get-errorCode>(): kotlin/Int // io.rsocket.kotlin/RSocketError.errorCode.<get-errorCode>|<get-errorCode>(){}[0]
+
+    final class ApplicationError : io.rsocket.kotlin/RSocketError { // io.rsocket.kotlin/RSocketError.ApplicationError|null[0]
+        constructor <init>(kotlin/String) // io.rsocket.kotlin/RSocketError.ApplicationError.<init>|<init>(kotlin.String){}[0]
+    }
+
+    final class Canceled : io.rsocket.kotlin/RSocketError { // io.rsocket.kotlin/RSocketError.Canceled|null[0]
+        constructor <init>(kotlin/String) // io.rsocket.kotlin/RSocketError.Canceled.<init>|<init>(kotlin.String){}[0]
+    }
+
+    final class ConnectionClose : io.rsocket.kotlin/RSocketError { // io.rsocket.kotlin/RSocketError.ConnectionClose|null[0]
+        constructor <init>(kotlin/String) // io.rsocket.kotlin/RSocketError.ConnectionClose.<init>|<init>(kotlin.String){}[0]
+    }
+
+    final class ConnectionError : io.rsocket.kotlin/RSocketError { // io.rsocket.kotlin/RSocketError.ConnectionError|null[0]
+        constructor <init>(kotlin/String) // io.rsocket.kotlin/RSocketError.ConnectionError.<init>|<init>(kotlin.String){}[0]
+    }
+
+    final class Custom : io.rsocket.kotlin/RSocketError { // io.rsocket.kotlin/RSocketError.Custom|null[0]
+        constructor <init>(kotlin/Int, kotlin/String) // io.rsocket.kotlin/RSocketError.Custom.<init>|<init>(kotlin.Int;kotlin.String){}[0]
+
+        final object Companion { // io.rsocket.kotlin/RSocketError.Custom.Companion|null[0]
+            final const val MaxAllowedCode // io.rsocket.kotlin/RSocketError.Custom.Companion.MaxAllowedCode|{}MaxAllowedCode[0]
+                final fun <get-MaxAllowedCode>(): kotlin/Int // io.rsocket.kotlin/RSocketError.Custom.Companion.MaxAllowedCode.<get-MaxAllowedCode>|<get-MaxAllowedCode>(){}[0]
+            final const val MinAllowedCode // io.rsocket.kotlin/RSocketError.Custom.Companion.MinAllowedCode|{}MinAllowedCode[0]
+                final fun <get-MinAllowedCode>(): kotlin/Int // io.rsocket.kotlin/RSocketError.Custom.Companion.MinAllowedCode.<get-MinAllowedCode>|<get-MinAllowedCode>(){}[0]
+
+            final fun checkCodeInAllowedRange(kotlin/Int): kotlin/Boolean // io.rsocket.kotlin/RSocketError.Custom.Companion.checkCodeInAllowedRange|checkCodeInAllowedRange(kotlin.Int){}[0]
+        }
+    }
+
+    final class Invalid : io.rsocket.kotlin/RSocketError { // io.rsocket.kotlin/RSocketError.Invalid|null[0]
+        constructor <init>(kotlin/String) // io.rsocket.kotlin/RSocketError.Invalid.<init>|<init>(kotlin.String){}[0]
+    }
+
+    final class Rejected : io.rsocket.kotlin/RSocketError { // io.rsocket.kotlin/RSocketError.Rejected|null[0]
+        constructor <init>(kotlin/String) // io.rsocket.kotlin/RSocketError.Rejected.<init>|<init>(kotlin.String){}[0]
+    }
+
+    final class RejectedResume : io.rsocket.kotlin/RSocketError { // io.rsocket.kotlin/RSocketError.RejectedResume|null[0]
+        constructor <init>(kotlin/String) // io.rsocket.kotlin/RSocketError.RejectedResume.<init>|<init>(kotlin.String){}[0]
+    }
+
+    sealed class Setup : io.rsocket.kotlin/RSocketError { // io.rsocket.kotlin/RSocketError.Setup|null[0]
+        final class Invalid : io.rsocket.kotlin/RSocketError.Setup { // io.rsocket.kotlin/RSocketError.Setup.Invalid|null[0]
+            constructor <init>(kotlin/String) // io.rsocket.kotlin/RSocketError.Setup.Invalid.<init>|<init>(kotlin.String){}[0]
+        }
+
+        final class Rejected : io.rsocket.kotlin/RSocketError.Setup { // io.rsocket.kotlin/RSocketError.Setup.Rejected|null[0]
+            constructor <init>(kotlin/String) // io.rsocket.kotlin/RSocketError.Setup.Rejected.<init>|<init>(kotlin.String){}[0]
+        }
+
+        final class Unsupported : io.rsocket.kotlin/RSocketError.Setup { // io.rsocket.kotlin/RSocketError.Setup.Unsupported|null[0]
+            constructor <init>(kotlin/String) // io.rsocket.kotlin/RSocketError.Setup.Unsupported.<init>|<init>(kotlin.String){}[0]
+        }
+    }
+}
+
+final object io.rsocket.kotlin.logging/NoopLogger : io.rsocket.kotlin.logging/Logger, io.rsocket.kotlin.logging/LoggerFactory { // io.rsocket.kotlin.logging/NoopLogger|null[0]
+    final val tag // io.rsocket.kotlin.logging/NoopLogger.tag|{}tag[0]
+        final fun <get-tag>(): kotlin/String // io.rsocket.kotlin.logging/NoopLogger.tag.<get-tag>|<get-tag>(){}[0]
+
+    final fun isLoggable(io.rsocket.kotlin.logging/LoggingLevel): kotlin/Boolean // io.rsocket.kotlin.logging/NoopLogger.isLoggable|isLoggable(io.rsocket.kotlin.logging.LoggingLevel){}[0]
+    final fun logger(kotlin/String): io.rsocket.kotlin.logging/Logger // io.rsocket.kotlin.logging/NoopLogger.logger|logger(kotlin.String){}[0]
+    final fun rawLog(io.rsocket.kotlin.logging/LoggingLevel, kotlin/Throwable?, kotlin/Any?) // io.rsocket.kotlin.logging/NoopLogger.rawLog|rawLog(io.rsocket.kotlin.logging.LoggingLevel;kotlin.Throwable?;kotlin.Any?){}[0]
+}
+
+final fun (io.rsocket.kotlin.metadata.security/RawAuthMetadata).io.rsocket.kotlin.metadata.security/hasAuthTypeOf(io.rsocket.kotlin.metadata.security/AuthMetadataReader<*>): kotlin/Boolean // io.rsocket.kotlin.metadata.security/hasAuthTypeOf|hasAuthTypeOf@io.rsocket.kotlin.metadata.security.RawAuthMetadata(io.rsocket.kotlin.metadata.security.AuthMetadataReader<*>){}[0]
+final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/contains(io.rsocket.kotlin.core/MimeType): kotlin/Boolean // io.rsocket.kotlin.metadata/contains|contains@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.core.MimeType){}[0]
+final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/contains(io.rsocket.kotlin.metadata/MetadataReader<*>): kotlin/Boolean // io.rsocket.kotlin.metadata/contains|contains@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.metadata.MetadataReader<*>){}[0]
+final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/get(io.rsocket.kotlin.core/MimeType): kotlinx.io/Source // io.rsocket.kotlin.metadata/get|get@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.core.MimeType){}[0]
+final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/getOrNull(io.rsocket.kotlin.core/MimeType): kotlinx.io/Source? // io.rsocket.kotlin.metadata/getOrNull|getOrNull@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.core.MimeType){}[0]
+final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/list(io.rsocket.kotlin.core/MimeType): kotlin.collections/List<kotlinx.io/Source> // io.rsocket.kotlin.metadata/list|list@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.core.MimeType){}[0]
+final fun (io.rsocket.kotlin.metadata/CompositeMetadata.Entry).io.rsocket.kotlin.metadata/hasMimeTypeOf(io.rsocket.kotlin.metadata/MetadataReader<*>): kotlin/Boolean // io.rsocket.kotlin.metadata/hasMimeTypeOf|hasMimeTypeOf@io.rsocket.kotlin.metadata.CompositeMetadata.Entry(io.rsocket.kotlin.metadata.MetadataReader<*>){}[0]
+final fun (io.rsocket.kotlin.metadata/Metadata).io.rsocket.kotlin.metadata/toBuffer(): kotlinx.io/Buffer // io.rsocket.kotlin.metadata/toBuffer|toBuffer@io.rsocket.kotlin.metadata.Metadata(){}[0]
+final fun (io.rsocket.kotlin.payload/PayloadBuilder).io.rsocket.kotlin.metadata/metadata(io.rsocket.kotlin.metadata/Metadata) // io.rsocket.kotlin.metadata/metadata|metadata@io.rsocket.kotlin.payload.PayloadBuilder(io.rsocket.kotlin.metadata.Metadata){}[0]
+final fun (io.rsocket.kotlin.payload/PayloadBuilder).io.rsocket.kotlin.payload/data(kotlin/ByteArray) // io.rsocket.kotlin.payload/data|data@io.rsocket.kotlin.payload.PayloadBuilder(kotlin.ByteArray){}[0]
+final fun (io.rsocket.kotlin.payload/PayloadBuilder).io.rsocket.kotlin.payload/data(kotlin/String) // io.rsocket.kotlin.payload/data|data@io.rsocket.kotlin.payload.PayloadBuilder(kotlin.String){}[0]
+final fun (io.rsocket.kotlin.payload/PayloadBuilder).io.rsocket.kotlin.payload/metadata(kotlin/ByteArray) // io.rsocket.kotlin.payload/metadata|metadata@io.rsocket.kotlin.payload.PayloadBuilder(kotlin.ByteArray){}[0]
+final fun (io.rsocket.kotlin.payload/PayloadBuilder).io.rsocket.kotlin.payload/metadata(kotlin/String) // io.rsocket.kotlin.payload/metadata|metadata@io.rsocket.kotlin.payload.PayloadBuilder(kotlin.String){}[0]
+final fun <#A: io.rsocket.kotlin.metadata.security/AuthMetadata> (io.rsocket.kotlin.metadata.security/RawAuthMetadata).io.rsocket.kotlin.metadata.security/read(io.rsocket.kotlin.metadata.security/AuthMetadataReader<#A>): #A // io.rsocket.kotlin.metadata.security/read|read@io.rsocket.kotlin.metadata.security.RawAuthMetadata(io.rsocket.kotlin.metadata.security.AuthMetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.security.AuthMetadata>}[0]
+final fun <#A: io.rsocket.kotlin.metadata.security/AuthMetadata> (io.rsocket.kotlin.metadata.security/RawAuthMetadata).io.rsocket.kotlin.metadata.security/readOrNull(io.rsocket.kotlin.metadata.security/AuthMetadataReader<#A>): #A? // io.rsocket.kotlin.metadata.security/readOrNull|readOrNull@io.rsocket.kotlin.metadata.security.RawAuthMetadata(io.rsocket.kotlin.metadata.security.AuthMetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.security.AuthMetadata>}[0]
+final fun <#A: io.rsocket.kotlin.metadata/Metadata> (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/get(io.rsocket.kotlin.metadata/MetadataReader<#A>): #A // io.rsocket.kotlin.metadata/get|get@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.metadata.MetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.Metadata>}[0]
+final fun <#A: io.rsocket.kotlin.metadata/Metadata> (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/getOrNull(io.rsocket.kotlin.metadata/MetadataReader<#A>): #A? // io.rsocket.kotlin.metadata/getOrNull|getOrNull@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.metadata.MetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.Metadata>}[0]
+final fun <#A: io.rsocket.kotlin.metadata/Metadata> (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/list(io.rsocket.kotlin.metadata/MetadataReader<#A>): kotlin.collections/List<#A> // io.rsocket.kotlin.metadata/list|list@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.metadata.MetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.Metadata>}[0]
+final fun <#A: io.rsocket.kotlin.metadata/Metadata> (io.rsocket.kotlin.metadata/CompositeMetadata.Entry).io.rsocket.kotlin.metadata/read(io.rsocket.kotlin.metadata/MetadataReader<#A>): #A // io.rsocket.kotlin.metadata/read|read@io.rsocket.kotlin.metadata.CompositeMetadata.Entry(io.rsocket.kotlin.metadata.MetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.Metadata>}[0]
+final fun <#A: io.rsocket.kotlin.metadata/Metadata> (io.rsocket.kotlin.metadata/CompositeMetadata.Entry).io.rsocket.kotlin.metadata/readOrNull(io.rsocket.kotlin.metadata/MetadataReader<#A>): #A? // io.rsocket.kotlin.metadata/readOrNull|readOrNull@io.rsocket.kotlin.metadata.CompositeMetadata.Entry(io.rsocket.kotlin.metadata.MetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.Metadata>}[0]
+final fun <#A: io.rsocket.kotlin.metadata/Metadata> (kotlinx.io/Source).io.rsocket.kotlin.metadata/read(io.rsocket.kotlin.metadata/MetadataReader<#A>): #A // io.rsocket.kotlin.metadata/read|read@kotlinx.io.Source(io.rsocket.kotlin.metadata.MetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.Metadata>}[0]
+final fun io.rsocket.kotlin.core/RSocketConnector(kotlin/Function1<io.rsocket.kotlin.core/RSocketConnectorBuilder, kotlin/Unit> = ...): io.rsocket.kotlin.core/RSocketConnector // io.rsocket.kotlin.core/RSocketConnector|RSocketConnector(kotlin.Function1<io.rsocket.kotlin.core.RSocketConnectorBuilder,kotlin.Unit>){}[0]
+final fun io.rsocket.kotlin.core/RSocketServer(kotlin/Function1<io.rsocket.kotlin.core/RSocketServerBuilder, kotlin/Unit> = ...): io.rsocket.kotlin.core/RSocketServer // io.rsocket.kotlin.core/RSocketServer|RSocketServer(kotlin.Function1<io.rsocket.kotlin.core.RSocketServerBuilder,kotlin.Unit>){}[0]
+final fun io.rsocket.kotlin.keepalive/KeepAlive(kotlin.time/Duration = ..., kotlin.time/Duration = ...): io.rsocket.kotlin.keepalive/KeepAlive // io.rsocket.kotlin.keepalive/KeepAlive|KeepAlive(kotlin.time.Duration;kotlin.time.Duration){}[0]
+final fun io.rsocket.kotlin.metadata/CompositeMetadata(kotlin.collections/List<io.rsocket.kotlin.metadata/Metadata>): io.rsocket.kotlin.metadata/CompositeMetadata // io.rsocket.kotlin.metadata/CompositeMetadata|CompositeMetadata(kotlin.collections.List<io.rsocket.kotlin.metadata.Metadata>){}[0]
+final fun io.rsocket.kotlin.metadata/CompositeMetadata(kotlin/Array<out io.rsocket.kotlin.metadata/Metadata>...): io.rsocket.kotlin.metadata/CompositeMetadata // io.rsocket.kotlin.metadata/CompositeMetadata|CompositeMetadata(kotlin.Array<out|io.rsocket.kotlin.metadata.Metadata>...){}[0]
+final fun io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata(kotlin/Array<out io.rsocket.kotlin.core/MimeType>...): io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata|PerStreamAcceptableDataMimeTypesMetadata(kotlin.Array<out|io.rsocket.kotlin.core.MimeType>...){}[0]
+final fun io.rsocket.kotlin.metadata/RoutingMetadata(kotlin/Array<out kotlin/String>...): io.rsocket.kotlin.metadata/RoutingMetadata // io.rsocket.kotlin.metadata/RoutingMetadata|RoutingMetadata(kotlin.Array<out|kotlin.String>...){}[0]
+final fun io.rsocket.kotlin.metadata/ZipkinTracingMetadata(io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind): io.rsocket.kotlin.metadata/ZipkinTracingMetadata // io.rsocket.kotlin.metadata/ZipkinTracingMetadata|ZipkinTracingMetadata(io.rsocket.kotlin.metadata.ZipkinTracingMetadata.Kind){}[0]
+final fun io.rsocket.kotlin.metadata/ZipkinTracingMetadata(io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind, kotlin/Long, kotlin/Long): io.rsocket.kotlin.metadata/ZipkinTracingMetadata // io.rsocket.kotlin.metadata/ZipkinTracingMetadata|ZipkinTracingMetadata(io.rsocket.kotlin.metadata.ZipkinTracingMetadata.Kind;kotlin.Long;kotlin.Long){}[0]
+final fun io.rsocket.kotlin.metadata/ZipkinTracingMetadata(io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind, kotlin/Long, kotlin/Long, kotlin/Long): io.rsocket.kotlin.metadata/ZipkinTracingMetadata // io.rsocket.kotlin.metadata/ZipkinTracingMetadata|ZipkinTracingMetadata(io.rsocket.kotlin.metadata.ZipkinTracingMetadata.Kind;kotlin.Long;kotlin.Long;kotlin.Long){}[0]
+final fun io.rsocket.kotlin.metadata/ZipkinTracingMetadata128(io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind, kotlin/Long, kotlin/Long, kotlin/Long): io.rsocket.kotlin.metadata/ZipkinTracingMetadata // io.rsocket.kotlin.metadata/ZipkinTracingMetadata128|ZipkinTracingMetadata128(io.rsocket.kotlin.metadata.ZipkinTracingMetadata.Kind;kotlin.Long;kotlin.Long;kotlin.Long){}[0]
+final fun io.rsocket.kotlin.metadata/ZipkinTracingMetadata128(io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Kind, kotlin/Long, kotlin/Long, kotlin/Long, kotlin/Long): io.rsocket.kotlin.metadata/ZipkinTracingMetadata // io.rsocket.kotlin.metadata/ZipkinTracingMetadata128|ZipkinTracingMetadata128(io.rsocket.kotlin.metadata.ZipkinTracingMetadata.Kind;kotlin.Long;kotlin.Long;kotlin.Long;kotlin.Long){}[0]
+final fun io.rsocket.kotlin.payload/Payload(kotlinx.io/Buffer, kotlinx.io/Buffer? = ...): io.rsocket.kotlin.payload/Payload // io.rsocket.kotlin.payload/Payload|Payload(kotlinx.io.Buffer;kotlinx.io.Buffer?){}[0]
+final fun io.rsocket.kotlin.payload/PayloadMimeType(io.rsocket.kotlin.core/MimeTypeWithName, io.rsocket.kotlin.core/MimeTypeWithName): io.rsocket.kotlin.payload/PayloadMimeType // io.rsocket.kotlin.payload/PayloadMimeType|PayloadMimeType(io.rsocket.kotlin.core.MimeTypeWithName;io.rsocket.kotlin.core.MimeTypeWithName){}[0]
+final fun io.rsocket.kotlin.transport/ClientTransport(kotlin.coroutines/CoroutineContext, io.rsocket.kotlin.transport/ClientTransport): io.rsocket.kotlin.transport/ClientTransport // io.rsocket.kotlin.transport/ClientTransport|ClientTransport(kotlin.coroutines.CoroutineContext;io.rsocket.kotlin.transport.ClientTransport){}[0]
+final fun io.rsocket.kotlin/RSocketRequestHandler(kotlin.coroutines/CoroutineContext = ..., kotlin/Function1<io.rsocket.kotlin/RSocketRequestHandlerBuilder, kotlin/Unit>): io.rsocket.kotlin/RSocket // io.rsocket.kotlin/RSocketRequestHandler|RSocketRequestHandler(kotlin.coroutines.CoroutineContext;kotlin.Function1<io.rsocket.kotlin.RSocketRequestHandlerBuilder,kotlin.Unit>){}[0]
+final inline fun (io.rsocket.kotlin.logging/Logger).io.rsocket.kotlin.logging/debug(kotlin/Throwable? = ..., kotlin/Function0<kotlin/Any?>) // io.rsocket.kotlin.logging/debug|debug@io.rsocket.kotlin.logging.Logger(kotlin.Throwable?;kotlin.Function0<kotlin.Any?>){}[0]
+final inline fun (io.rsocket.kotlin.logging/Logger).io.rsocket.kotlin.logging/error(kotlin/Throwable? = ..., kotlin/Function0<kotlin/Any?>) // io.rsocket.kotlin.logging/error|error@io.rsocket.kotlin.logging.Logger(kotlin.Throwable?;kotlin.Function0<kotlin.Any?>){}[0]
+final inline fun (io.rsocket.kotlin.logging/Logger).io.rsocket.kotlin.logging/info(kotlin/Throwable? = ..., kotlin/Function0<kotlin/Any?>) // io.rsocket.kotlin.logging/info|info@io.rsocket.kotlin.logging.Logger(kotlin.Throwable?;kotlin.Function0<kotlin.Any?>){}[0]
+final inline fun (io.rsocket.kotlin.logging/Logger).io.rsocket.kotlin.logging/log(io.rsocket.kotlin.logging/LoggingLevel, kotlin/Throwable? = ..., kotlin/Function0<kotlin/Any?>) // io.rsocket.kotlin.logging/log|log@io.rsocket.kotlin.logging.Logger(io.rsocket.kotlin.logging.LoggingLevel;kotlin.Throwable?;kotlin.Function0<kotlin.Any?>){}[0]
+final inline fun (io.rsocket.kotlin.logging/Logger).io.rsocket.kotlin.logging/trace(kotlin/Throwable? = ..., kotlin/Function0<kotlin/Any?>) // io.rsocket.kotlin.logging/trace|trace@io.rsocket.kotlin.logging.Logger(kotlin.Throwable?;kotlin.Function0<kotlin.Any?>){}[0]
+final inline fun (io.rsocket.kotlin.logging/Logger).io.rsocket.kotlin.logging/warn(kotlin/Throwable? = ..., kotlin/Function0<kotlin/Any?>) // io.rsocket.kotlin.logging/warn|warn@io.rsocket.kotlin.logging.Logger(kotlin.Throwable?;kotlin.Function0<kotlin.Any?>){}[0]
+final inline fun (io.rsocket.kotlin.payload/PayloadBuilder).io.rsocket.kotlin.metadata/compositeMetadata(kotlin/Function1<io.rsocket.kotlin.metadata/CompositeMetadataBuilder, kotlin/Unit>) // io.rsocket.kotlin.metadata/compositeMetadata|compositeMetadata@io.rsocket.kotlin.payload.PayloadBuilder(kotlin.Function1<io.rsocket.kotlin.metadata.CompositeMetadataBuilder,kotlin.Unit>){}[0]
+final inline fun (io.rsocket.kotlin.payload/PayloadBuilder).io.rsocket.kotlin.payload/data(kotlin/Function1<kotlinx.io/Sink, kotlin/Unit>) // io.rsocket.kotlin.payload/data|data@io.rsocket.kotlin.payload.PayloadBuilder(kotlin.Function1<kotlinx.io.Sink,kotlin.Unit>){}[0]
+final inline fun (io.rsocket.kotlin.payload/PayloadBuilder).io.rsocket.kotlin.payload/metadata(kotlin/Function1<kotlinx.io/Sink, kotlin/Unit>) // io.rsocket.kotlin.payload/metadata|metadata@io.rsocket.kotlin.payload.PayloadBuilder(kotlin.Function1<kotlinx.io.Sink,kotlin.Unit>){}[0]
+final inline fun io.rsocket.kotlin.metadata/buildCompositeMetadata(kotlin/Function1<io.rsocket.kotlin.metadata/CompositeMetadataBuilder, kotlin/Unit>): io.rsocket.kotlin.metadata/CompositeMetadata // io.rsocket.kotlin.metadata/buildCompositeMetadata|buildCompositeMetadata(kotlin.Function1<io.rsocket.kotlin.metadata.CompositeMetadataBuilder,kotlin.Unit>){}[0]
+final inline fun io.rsocket.kotlin.payload/buildPayload(kotlin/Function1<io.rsocket.kotlin.payload/PayloadBuilder, kotlin/Unit>): io.rsocket.kotlin.payload/Payload // io.rsocket.kotlin.payload/buildPayload|buildPayload(kotlin.Function1<io.rsocket.kotlin.payload.PayloadBuilder,kotlin.Unit>){}[0]
+final suspend fun <#A: kotlin/AutoCloseable> (kotlinx.coroutines.flow/FlowCollector<#A>).io.rsocket.kotlin/emitOrClose(#A) // io.rsocket.kotlin/emitOrClose|emitOrClose@kotlinx.coroutines.flow.FlowCollector<0:0>(0:0){0§<kotlin.AutoCloseable>}[0]

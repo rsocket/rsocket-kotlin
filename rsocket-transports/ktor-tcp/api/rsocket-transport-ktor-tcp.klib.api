@@ -1,0 +1,48 @@
+// Klib ABI Dump
+// Targets: [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86, iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64, mingwX64, tvosArm64, tvosSimulatorArm64, tvosX64, wasmJs, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64, watchosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.rsocket.kotlin:rsocket-transport-ktor-tcp>
+sealed interface io.rsocket.kotlin.transport.ktor.tcp/KtorTcpClientTransport : io.rsocket.kotlin.transport/RSocketTransport { // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpClientTransport|null[0]
+    abstract fun target(io.ktor.network.sockets/SocketAddress): io.rsocket.kotlin.transport/RSocketClientTarget // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpClientTransport.target|target(io.ktor.network.sockets.SocketAddress){}[0]
+    abstract fun target(kotlin/String, kotlin/Int): io.rsocket.kotlin.transport/RSocketClientTarget // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpClientTransport.target|target(kotlin.String;kotlin.Int){}[0]
+
+    final object Factory : io.rsocket.kotlin.transport/RSocketTransportFactory<io.rsocket.kotlin.transport.ktor.tcp/KtorTcpClientTransport, io.rsocket.kotlin.transport.ktor.tcp/KtorTcpClientTransportBuilder> // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpClientTransport.Factory|null[0]
+}
+
+sealed interface io.rsocket.kotlin.transport.ktor.tcp/KtorTcpClientTransportBuilder : io.rsocket.kotlin.transport/RSocketTransportBuilder<io.rsocket.kotlin.transport.ktor.tcp/KtorTcpClientTransport> { // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpClientTransportBuilder|null[0]
+    abstract fun selectorManager(io.ktor.network.selector/SelectorManager, kotlin/Boolean) // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpClientTransportBuilder.selectorManager|selectorManager(io.ktor.network.selector.SelectorManager;kotlin.Boolean){}[0]
+    abstract fun socketOptions(kotlin/Function1<io.ktor.network.sockets/SocketOptions.TCPClientSocketOptions, kotlin/Unit>) // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpClientTransportBuilder.socketOptions|socketOptions(kotlin.Function1<io.ktor.network.sockets.SocketOptions.TCPClientSocketOptions,kotlin.Unit>){}[0]
+}
+
+sealed interface io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerInstance : io.rsocket.kotlin.transport/RSocketServerInstance { // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerInstance|null[0]
+    abstract val localAddress // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerInstance.localAddress|{}localAddress[0]
+        abstract fun <get-localAddress>(): io.ktor.network.sockets/SocketAddress // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerInstance.localAddress.<get-localAddress>|<get-localAddress>(){}[0]
+}
+
+sealed interface io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerTransport : io.rsocket.kotlin.transport/RSocketTransport { // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerTransport|null[0]
+    abstract fun target(io.ktor.network.sockets/SocketAddress? = ...): io.rsocket.kotlin.transport/RSocketServerTarget<io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerInstance> // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerTransport.target|target(io.ktor.network.sockets.SocketAddress?){}[0]
+    abstract fun target(kotlin/String = ..., kotlin/Int = ...): io.rsocket.kotlin.transport/RSocketServerTarget<io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerInstance> // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerTransport.target|target(kotlin.String;kotlin.Int){}[0]
+
+    final object Factory : io.rsocket.kotlin.transport/RSocketTransportFactory<io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerTransport, io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerTransportBuilder> // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerTransport.Factory|null[0]
+}
+
+sealed interface io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerTransportBuilder : io.rsocket.kotlin.transport/RSocketTransportBuilder<io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerTransport> { // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerTransportBuilder|null[0]
+    abstract fun selectorManager(io.ktor.network.selector/SelectorManager, kotlin/Boolean) // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerTransportBuilder.selectorManager|selectorManager(io.ktor.network.selector.SelectorManager;kotlin.Boolean){}[0]
+    abstract fun socketOptions(kotlin/Function1<io.ktor.network.sockets/SocketOptions.AcceptorOptions, kotlin/Unit>) // io.rsocket.kotlin.transport.ktor.tcp/KtorTcpServerTransportBuilder.socketOptions|socketOptions(kotlin.Function1<io.ktor.network.sockets.SocketOptions.AcceptorOptions,kotlin.Unit>){}[0]
+}
+
+final class io.rsocket.kotlin.transport.ktor.tcp/TcpServer { // io.rsocket.kotlin.transport.ktor.tcp/TcpServer|null[0]
+    final val handlerJob // io.rsocket.kotlin.transport.ktor.tcp/TcpServer.handlerJob|{}handlerJob[0]
+        final fun <get-handlerJob>(): kotlinx.coroutines/Job // io.rsocket.kotlin.transport.ktor.tcp/TcpServer.handlerJob.<get-handlerJob>|<get-handlerJob>(){}[0]
+    final val serverSocket // io.rsocket.kotlin.transport.ktor.tcp/TcpServer.serverSocket|{}serverSocket[0]
+        final fun <get-serverSocket>(): kotlinx.coroutines/Deferred<io.ktor.network.sockets/ServerSocket> // io.rsocket.kotlin.transport.ktor.tcp/TcpServer.serverSocket.<get-serverSocket>|<get-serverSocket>(){}[0]
+}
+
+final fun io.rsocket.kotlin.transport.ktor.tcp/TcpClientTransport(io.ktor.network.sockets/InetSocketAddress, kotlin.coroutines/CoroutineContext = ..., kotlin/Function1<io.ktor.network.sockets/Socket, io.ktor.network.sockets/Socket> = ..., kotlin/Function1<io.ktor.network.sockets/SocketOptions.TCPClientSocketOptions, kotlin/Unit> = ...): io.rsocket.kotlin.transport/ClientTransport // io.rsocket.kotlin.transport.ktor.tcp/TcpClientTransport|TcpClientTransport(io.ktor.network.sockets.InetSocketAddress;kotlin.coroutines.CoroutineContext;kotlin.Function1<io.ktor.network.sockets.Socket,io.ktor.network.sockets.Socket>;kotlin.Function1<io.ktor.network.sockets.SocketOptions.TCPClientSocketOptions,kotlin.Unit>){}[0]
+final fun io.rsocket.kotlin.transport.ktor.tcp/TcpClientTransport(kotlin/String, kotlin/Int, kotlin.coroutines/CoroutineContext = ..., kotlin/Function1<io.ktor.network.sockets/Socket, io.ktor.network.sockets/Socket> = ..., kotlin/Function1<io.ktor.network.sockets/SocketOptions.TCPClientSocketOptions, kotlin/Unit> = ...): io.rsocket.kotlin.transport/ClientTransport // io.rsocket.kotlin.transport.ktor.tcp/TcpClientTransport|TcpClientTransport(kotlin.String;kotlin.Int;kotlin.coroutines.CoroutineContext;kotlin.Function1<io.ktor.network.sockets.Socket,io.ktor.network.sockets.Socket>;kotlin.Function1<io.ktor.network.sockets.SocketOptions.TCPClientSocketOptions,kotlin.Unit>){}[0]
+final fun io.rsocket.kotlin.transport.ktor.tcp/TcpServerTransport(io.ktor.network.sockets/InetSocketAddress? = ..., kotlin/Function1<io.ktor.network.sockets/SocketOptions.AcceptorOptions, kotlin/Unit> = ...): io.rsocket.kotlin.transport/ServerTransport<io.rsocket.kotlin.transport.ktor.tcp/TcpServer> // io.rsocket.kotlin.transport.ktor.tcp/TcpServerTransport|TcpServerTransport(io.ktor.network.sockets.InetSocketAddress?;kotlin.Function1<io.ktor.network.sockets.SocketOptions.AcceptorOptions,kotlin.Unit>){}[0]
+final fun io.rsocket.kotlin.transport.ktor.tcp/TcpServerTransport(kotlin/String = ..., kotlin/Int = ..., kotlin/Function1<io.ktor.network.sockets/SocketOptions.AcceptorOptions, kotlin/Unit> = ...): io.rsocket.kotlin.transport/ServerTransport<io.rsocket.kotlin.transport.ktor.tcp/TcpServer> // io.rsocket.kotlin.transport.ktor.tcp/TcpServerTransport|TcpServerTransport(kotlin.String;kotlin.Int;kotlin.Function1<io.ktor.network.sockets.SocketOptions.AcceptorOptions,kotlin.Unit>){}[0]

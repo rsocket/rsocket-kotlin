@@ -1,0 +1,29 @@
+// Klib ABI Dump
+// Targets: [js]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.rsocket.kotlin:rsocket-transport-nodejs-tcp>
+final class io.rsocket.kotlin.transport.nodejs.tcp/TcpClientTransport : io.rsocket.kotlin.transport/ClientTransport { // io.rsocket.kotlin.transport.nodejs.tcp/TcpClientTransport|null[0]
+    constructor <init>(kotlin/Int, kotlin/String, kotlin.coroutines/CoroutineContext = ...) // io.rsocket.kotlin.transport.nodejs.tcp/TcpClientTransport.<init>|<init>(kotlin.Int;kotlin.String;kotlin.coroutines.CoroutineContext){}[0]
+
+    final val coroutineContext // io.rsocket.kotlin.transport.nodejs.tcp/TcpClientTransport.coroutineContext|{}coroutineContext[0]
+        final fun <get-coroutineContext>(): kotlin.coroutines/CoroutineContext // io.rsocket.kotlin.transport.nodejs.tcp/TcpClientTransport.coroutineContext.<get-coroutineContext>|<get-coroutineContext>(){}[0]
+
+    final suspend fun connect(): io.rsocket.kotlin/Connection // io.rsocket.kotlin.transport.nodejs.tcp/TcpClientTransport.connect|connect(){}[0]
+}
+
+final class io.rsocket.kotlin.transport.nodejs.tcp/TcpServer { // io.rsocket.kotlin.transport.nodejs.tcp/TcpServer|null[0]
+    final val job // io.rsocket.kotlin.transport.nodejs.tcp/TcpServer.job|{}job[0]
+        final fun <get-job>(): kotlinx.coroutines/Job // io.rsocket.kotlin.transport.nodejs.tcp/TcpServer.job.<get-job>|<get-job>(){}[0]
+
+    final suspend fun close() // io.rsocket.kotlin.transport.nodejs.tcp/TcpServer.close|close(){}[0]
+}
+
+final class io.rsocket.kotlin.transport.nodejs.tcp/TcpServerTransport : io.rsocket.kotlin.transport/ServerTransport<io.rsocket.kotlin.transport.nodejs.tcp/TcpServer> { // io.rsocket.kotlin.transport.nodejs.tcp/TcpServerTransport|null[0]
+    constructor <init>(kotlin/Int, kotlin/String) // io.rsocket.kotlin.transport.nodejs.tcp/TcpServerTransport.<init>|<init>(kotlin.Int;kotlin.String){}[0]
+
+    final fun (kotlinx.coroutines/CoroutineScope).start(kotlin.coroutines/SuspendFunction2<kotlinx.coroutines/CoroutineScope, io.rsocket.kotlin/Connection, kotlin/Unit>): io.rsocket.kotlin.transport.nodejs.tcp/TcpServer // io.rsocket.kotlin.transport.nodejs.tcp/TcpServerTransport.start|start@kotlinx.coroutines.CoroutineScope(kotlin.coroutines.SuspendFunction2<kotlinx.coroutines.CoroutineScope,io.rsocket.kotlin.Connection,kotlin.Unit>){}[0]
+}

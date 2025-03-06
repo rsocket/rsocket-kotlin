@@ -1,0 +1,20 @@
+// Klib ABI Dump
+// Targets: [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86, iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64, mingwX64, tvosArm64, tvosSimulatorArm64, tvosX64, wasmJs, wasmWasi, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64, watchosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.rsocket.kotlin:rsocket-internal-io>
+final val io.rsocket.kotlin.internal.io/IoCompatible // io.rsocket.kotlin.internal.io/IoCompatible|@kotlinx.coroutines.Dispatchers{}IoCompatible[0]
+    final fun (kotlinx.coroutines/Dispatchers).<get-IoCompatible>(): kotlinx.coroutines/CoroutineDispatcher // io.rsocket.kotlin.internal.io/IoCompatible.<get-IoCompatible>|<get-IoCompatible>@kotlinx.coroutines.Dispatchers(){}[0]
+
+final fun (kotlin.coroutines/CoroutineContext).io.rsocket.kotlin.internal.io/childContext(): kotlin.coroutines/CoroutineContext // io.rsocket.kotlin.internal.io/childContext|childContext@kotlin.coroutines.CoroutineContext(){}[0]
+final fun (kotlin.coroutines/CoroutineContext).io.rsocket.kotlin.internal.io/supervisorContext(): kotlin.coroutines/CoroutineContext // io.rsocket.kotlin.internal.io/supervisorContext|supervisorContext@kotlin.coroutines.CoroutineContext(){}[0]
+final fun (kotlinx.coroutines.channels/Channel<out kotlin/AutoCloseable>).io.rsocket.kotlin.internal.io/cancelWithCause(kotlin/Throwable?) // io.rsocket.kotlin.internal.io/cancelWithCause|cancelWithCause@kotlinx.coroutines.channels.Channel<out|kotlin.AutoCloseable>(kotlin.Throwable?){}[0]
+final fun (kotlinx.io/Sink).io.rsocket.kotlin.internal.io/writeInt24(kotlin/Int) // io.rsocket.kotlin.internal.io/writeInt24|writeInt24@kotlinx.io.Sink(kotlin.Int){}[0]
+final fun (kotlinx.io/Source).io.rsocket.kotlin.internal.io/readInt24(): kotlin/Int // io.rsocket.kotlin.internal.io/readInt24|readInt24@kotlinx.io.Source(){}[0]
+final fun <#A: kotlin/AutoCloseable> io.rsocket.kotlin.internal.io/channelForCloseable(kotlin/Int): kotlinx.coroutines.channels/Channel<#A> // io.rsocket.kotlin.internal.io/channelForCloseable|channelForCloseable(kotlin.Int){0§<kotlin.AutoCloseable>}[0]
+final fun <#A: kotlinx.coroutines/Job> (#A).io.rsocket.kotlin.internal.io/onCompletion(kotlin/Function1<kotlin/Throwable?, kotlin/Unit>): #A // io.rsocket.kotlin.internal.io/onCompletion|onCompletion@0:0(kotlin.Function1<kotlin.Throwable?,kotlin.Unit>){0§<kotlinx.coroutines.Job>}[0]
+final fun io.rsocket.kotlin.internal.io/bufferChannel(kotlin/Int): kotlinx.coroutines.channels/Channel<kotlinx.io/Buffer> // io.rsocket.kotlin.internal.io/bufferChannel|bufferChannel(kotlin.Int){}[0]
+final suspend fun <#A: kotlin/Any?> io.rsocket.kotlin.internal.io/nonCancellable(kotlin.coroutines/SuspendFunction1<kotlinx.coroutines/CoroutineScope, #A>): #A // io.rsocket.kotlin.internal.io/nonCancellable|nonCancellable(kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.CoroutineScope,0:0>){0§<kotlin.Any?>}[0]
