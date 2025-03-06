@@ -1,7 +1,7 @@
 public final class io/rsocket/kotlin/transport/netty/internal/CoroutinesKt {
-	public static final fun awaitChannel (Lio/netty/channel/ChannelFuture;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun awaitFuture (Lio/netty/util/concurrent/Future;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static final fun callOnCancellation (Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function1;)V
+	public static final fun join (Lio/netty/util/concurrent/Future;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun shutdownOnCancellation (Lkotlinx/coroutines/CoroutineScope;[Lio/netty/channel/EventLoopGroup;)V
 }
 
 public final class io/rsocket/kotlin/transport/netty/internal/IoKt {

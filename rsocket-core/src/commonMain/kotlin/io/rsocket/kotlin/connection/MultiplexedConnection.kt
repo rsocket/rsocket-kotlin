@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.rsocket.kotlin.connection
 
-import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
 import io.rsocket.kotlin.operation.*
@@ -24,32 +23,27 @@ import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.io.*
-import kotlin.coroutines.*
 
 @RSocketTransportApi
 internal class MultiplexedConnection(
     isClient: Boolean,
     frameCodec: FrameCodec,
-    requestContext: CoroutineContext,
     private val connection: RSocketMultiplexedConnection,
     private val initialStream: RSocketMultiplexedConnection.Stream,
-) : Connection2(frameCodec, requestContext) {
+    private val requestsScope: CoroutineScope,
+) : ConnectionOutbound(frameCodec) {
     private val storage = StreamDataStorage<Unit>(isClient)
 
-    override fun close() {
-        storage.clear()
+    init {
+        connection.coroutineContext.job.invokeOnCompletion {
+            storage.clear()
+        }
     }
 
-    override suspend fun establishConnection(handler: ConnectionEstablishmentHandler): ConnectionConfig {
-        return handler.establishConnection(EstablishmentContext())
-    }
+    override suspend fun sendConnectionFrameRaw(frame: Buffer): Unit = initialStream.sendFrame(frame)
+    override suspend fun receiveConnectionFrameRaw(): Buffer? = initialStream.receiveFrame()
 
-    private inner class EstablishmentContext : ConnectionEstablishmentContext(frameCodec) {
-        override suspend fun sendFrame(frame: Buffer): Unit = initialStream.sendFrame(frame)
-        override suspend fun receiveFrameRaw(): Buffer? = initialStream.receiveFrame()
-    }
-
-    override suspend fun handleConnection(inbound: ConnectionInbound) = coroutineScope {
+    override suspend fun handleConnection(inbound: ConnectionInbound): Unit = coroutineScope {
         launch {
             while (true) {
                 val frame = frameCodec.decodeFrame(
@@ -63,15 +57,11 @@ internal class MultiplexedConnection(
         while (true) if (!acceptRequest(inbound)) break
     }
 
-    override suspend fun sendConnectionFrame(frame: Buffer) {
-        initialStream.sendFrame(frame)
-    }
-
     @OptIn(DelicateCoroutinesApi::class)
     override fun launchRequest(
         requestPayload: Payload,
         operation: RequesterOperation,
-    ): Job = launch(start = CoroutineStart.ATOMIC) {
+    ): Job = requestsScope.launch(start = CoroutineStart.ATOMIC) {
         operation.handleExecutionFailure(requestPayload) {
             ensureActive() // because of atomic start
             val stream = connection.createStream()
@@ -80,7 +70,7 @@ internal class MultiplexedConnection(
                 execute(streamId, stream, requestPayload, operation)
             } finally {
                 storage.removeStream(streamId)
-                stream.close()
+                stream.cancel("Stream closed")
             }
         }
     }
@@ -89,7 +79,7 @@ internal class MultiplexedConnection(
     private fun acceptRequest(
         connectionInbound: ConnectionInbound,
         stream: RSocketMultiplexedConnection.Stream,
-    ): Job = launch(start = CoroutineStart.ATOMIC) {
+    ): Job = requestsScope.launch(start = CoroutineStart.ATOMIC) {
         try {
             ensureActive() // because of atomic start
             val (
@@ -112,7 +102,7 @@ internal class MultiplexedConnection(
                 storage.removeStream(streamId)
             }
         } finally {
-            stream.close()
+            stream.cancel("Stream closed")
         }
     }
 
@@ -226,7 +216,6 @@ internal class MultiplexedConnection(
         streamId: Int,
         private val stream: RSocketMultiplexedConnection.Stream,
     ) : OperationOutbound(streamId, frameCodec) {
-        override val isClosed: Boolean get() = stream.isClosedForSend
         override suspend fun sendFrame(frame: Buffer): Unit = stream.sendFrame(frame)
     }
 

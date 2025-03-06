@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,64 +24,73 @@ import io.rsocket.kotlin.transport.internal.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.io.*
+import kotlin.coroutines.*
 
 @RSocketTransportApi
-internal suspend fun RSocketConnectionHandler.handleKtorTcpConnection(socket: Socket): Unit = coroutineScope {
-    val outboundQueue = PrioritizationFrameQueue(Channel.BUFFERED)
-    val inbound = bufferChannel(Channel.BUFFERED)
+internal class KtorTcpConnection(
+    parentContext: CoroutineContext,
+    private val socket: Socket,
+) : RSocketSequentialConnection {
+    private val outboundQueue = PrioritizationFrameQueue()
+    private val inbound = bufferChannel(Channel.BUFFERED)
 
-    val readerJob = launch {
-        val input = socket.openReadChannel()
-        try {
-            while (true) inbound.send(input.readFrame() ?: break)
-            input.cancel(null)
-        } catch (cause: Throwable) {
-            input.cancel(cause)
-            throw cause
-        }
-    }.onCompletion { inbound.cancel() }
+    override val coroutineContext: CoroutineContext = parentContext.childContext()
 
-    val writerJob = launch {
-        val output = socket.openWriteChannel()
-        try {
-            while (true) {
-                // we write all available frames here, and only after it flush
-                // in this case, if there are several buffered frames we can send them in one go
-                // avoiding unnecessary flushes
-                output.writeFrame(outboundQueue.dequeueFrame() ?: break)
-                while (true) output.writeFrame(outboundQueue.tryDequeueFrame() ?: break)
-                output.flush()
+    init {
+        @OptIn(DelicateCoroutinesApi::class)
+        launch(start = CoroutineStart.ATOMIC) {
+            val outboundJob = launch {
+                nonCancellable {
+                    val output = socket.openWriteChannel()
+                    try {
+                        while (true) {
+                            // we write all available frames here, and only after it flush
+                            // in this case, if there are several buffered frames we can send them in one go
+                            // avoiding unnecessary flushes
+                            output.writeFrame(outboundQueue.dequeueFrame() ?: break)
+                            while (true) output.writeFrame(outboundQueue.tryDequeueFrame() ?: break)
+                            output.flush()
+                        }
+                        output.flushAndClose()
+                    } catch (cause: Throwable) {
+                        output.cancel(cause)
+                        throw cause
+                    }
+                }
+            }.onCompletion {
+                outboundQueue.cancel()
             }
-            output.close(null)
-        } catch (cause: Throwable) {
-            output.close(cause)
-            throw cause
-        }
-    }.onCompletion { outboundQueue.cancel() }
 
-    try {
-        handleConnection(KtorTcpConnection(outboundQueue, inbound))
-    } finally {
-        readerJob.cancel()
-        outboundQueue.close() // will cause `writerJob` completion
-        // even if it was cancelled, we still need to close socket and await it closure
-        withContext(NonCancellable) {
-            // await completion of read/write and then close socket
-            readerJob.join()
-            writerJob.join()
-            // close socket
-            socket.close()
-            socket.socketContext.join()
+            val inboundJob = launch {
+                val input = socket.openReadChannel()
+                try {
+                    while (true) {
+                        inbound.send(input.readFrame() ?: break)
+                    }
+                    input.cancel(null)
+                } catch (cause: Throwable) {
+                    input.cancel(cause)
+                    throw cause
+                }
+            }.onCompletion {
+                inbound.cancel()
+            }
+
+            try {
+                awaitCancellation()
+            } finally {
+                nonCancellable {
+                    outboundQueue.close()
+                    outboundJob.join()
+                    inboundJob.join()
+                    // await socket completion
+                    socket.close()
+                    socket.socketContext.join()
+                }
+            }
         }
     }
-}
 
-@RSocketTransportApi
-private class KtorTcpConnection(
-    private val outboundQueue: PrioritizationFrameQueue,
-    private val inbound: ReceiveChannel<Buffer>,
-) : RSocketSequentialConnection {
-    override val isClosedForSend: Boolean get() = outboundQueue.isClosedForSend
     override suspend fun sendFrame(streamId: Int, frame: Buffer) {
         return outboundQueue.enqueueFrame(streamId, frame)
     }
@@ -89,21 +98,21 @@ private class KtorTcpConnection(
     override suspend fun receiveFrame(): Buffer? {
         return inbound.receiveCatching().getOrNull()
     }
-}
 
-@OptIn(InternalAPI::class)
-private fun ByteWriteChannel.writeFrame(frame: Buffer) {
-    writeBuffer.writeInt24(frame.size.toInt())
-    writeBuffer.transferFrom(frame)
-}
+    @OptIn(InternalAPI::class)
+    private fun ByteWriteChannel.writeFrame(frame: Buffer) {
+        writeBuffer.writeInt24(frame.size.toInt())
+        writeBuffer.transferFrom(frame)
+    }
 
-@OptIn(InternalAPI::class)
-private suspend fun ByteReadChannel.readFrame(): Buffer? {
-    while (availableForRead < 3 && awaitContent(3)) yield()
-    if (availableForRead == 0) return null
+    @OptIn(InternalAPI::class)
+    private suspend fun ByteReadChannel.readFrame(): Buffer? {
+        while (availableForRead < 3 && awaitContent(3)) yield()
+        if (availableForRead == 0) return null
 
-    val length = readBuffer.readInt24()
-    return readBuffer(length).also {
-        it.require(length.toLong())
+        val length = readBuffer.readInt24()
+        return readBuffer(length).also {
+            it.require(length.toLong())
+        }
     }
 }

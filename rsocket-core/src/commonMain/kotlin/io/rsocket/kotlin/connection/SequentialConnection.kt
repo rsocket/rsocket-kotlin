@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,30 @@
 
 package io.rsocket.kotlin.connection
 
-import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.operation.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.io.*
-import kotlin.coroutines.*
 
 @RSocketTransportApi
 internal class SequentialConnection(
     isClient: Boolean,
     frameCodec: FrameCodec,
-    requestContext: CoroutineContext,
     private val connection: RSocketSequentialConnection,
-) : Connection2(frameCodec, requestContext) {
+    private val requestsScope: CoroutineScope,
+) : ConnectionOutbound(frameCodec) {
     private val storage = StreamDataStorage<OperationFrameHandler>(isClient)
 
-    override fun close() {
-        storage.clear().forEach { it.close() }
+    init {
+        connection.coroutineContext.job.invokeOnCompletion {
+            storage.clear().forEach { it.close() }
+        }
     }
 
-    override suspend fun establishConnection(handler: ConnectionEstablishmentHandler): ConnectionConfig {
-        return handler.establishConnection(EstablishmentContext())
-    }
-
-    private inner class EstablishmentContext : ConnectionEstablishmentContext(frameCodec) {
-        override suspend fun sendFrame(frame: Buffer): Unit = connection.sendFrame(streamId = 0, frame)
-        override suspend fun receiveFrameRaw(): Buffer? = connection.receiveFrame()
-    }
+    override suspend fun sendConnectionFrameRaw(frame: Buffer): Unit = connection.sendFrame(streamId = 0, frame)
+    override suspend fun receiveConnectionFrameRaw(): Buffer? = connection.receiveFrame()
 
     override suspend fun handleConnection(inbound: ConnectionInbound) {
         while (true) {
@@ -59,15 +53,11 @@ internal class SequentialConnection(
         }
     }
 
-    override suspend fun sendConnectionFrame(frame: Buffer) {
-        connection.sendFrame(0, frame)
-    }
-
     @OptIn(DelicateCoroutinesApi::class)
     override fun launchRequest(
         requestPayload: Payload,
         operation: RequesterOperation,
-    ): Job = launch(start = CoroutineStart.ATOMIC) {
+    ): Job = requestsScope.launch(start = CoroutineStart.ATOMIC) {
         operation.handleExecutionFailure(requestPayload) {
             ensureActive() // because of atomic start
             val streamId = storage.createStream(OperationFrameHandler(operation))
@@ -84,9 +74,9 @@ internal class SequentialConnection(
         connectionInbound: ConnectionInbound,
         operationData: ResponderOperationData,
     ): ResponderOperation {
-        val requestJob = Job(coroutineContext.job)
+        val requestJob = Job(requestsScope.coroutineContext.job)
         val operation = connectionInbound.createOperation(operationData.requestType, requestJob)
-        launch(requestJob, start = CoroutineStart.ATOMIC) {
+        requestsScope.launch(requestJob, start = CoroutineStart.ATOMIC) {
             val (
                 streamId,
                 _,
@@ -144,7 +134,6 @@ internal class SequentialConnection(
     }
 
     private inner class Outbound(streamId: Int) : OperationOutbound(streamId, frameCodec) {
-        override val isClosed: Boolean get() = !isActive || connection.isClosedForSend
         override suspend fun sendFrame(frame: Buffer): Unit = connection.sendFrame(streamId, frame)
     }
 

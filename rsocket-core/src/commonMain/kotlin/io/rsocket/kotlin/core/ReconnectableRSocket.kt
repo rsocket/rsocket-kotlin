@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,22 +87,11 @@ private class ReconnectableRSocket(
 
     suspend fun currentRSocket(): RSocket = state.value.current() ?: state.mapNotNull { it.current() }.first()
 
-    private suspend fun currentRSocket(metadata: Buffer): RSocket {
-        return try {
-            currentRSocket()
-        } catch (cause: Throwable) {
-            metadata.clear()
-            throw cause
-        }
-    }
-
-    private suspend fun currentRSocket(payload: Payload): RSocket {
-        return try {
-            currentRSocket()
-        } catch (cause: Throwable) {
-            payload.close()
-            throw cause
-        }
+    private suspend inline fun currentRSocket(onFailure: () -> Unit): RSocket = try {
+        currentRSocket()
+    } catch (cause: Throwable) {
+        onFailure()
+        throw cause
     }
 
     private fun ReconnectState.current(): RSocket? = when (this) {
@@ -112,20 +101,20 @@ private class ReconnectableRSocket(
     }
 
     override suspend fun metadataPush(metadata: Buffer): Unit =
-        currentRSocket(metadata).metadataPush(metadata)
+        currentRSocket(metadata::clear).metadataPush(metadata)
 
     override suspend fun fireAndForget(payload: Payload): Unit =
-        currentRSocket(payload).fireAndForget(payload)
+        currentRSocket(payload::close).fireAndForget(payload)
 
     override suspend fun requestResponse(payload: Payload): Payload =
-        currentRSocket(payload).requestResponse(payload)
+        currentRSocket(payload::close).requestResponse(payload)
 
     override fun requestStream(payload: Payload): Flow<Payload> = flow {
-        emitAll(currentRSocket(payload).requestStream(payload))
+        emitAll(currentRSocket(payload::close).requestStream(payload))
     }
 
     override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> = flow {
-        emitAll(currentRSocket(initPayload).requestChannel(initPayload, payloads))
+        emitAll(currentRSocket(initPayload::close).requestChannel(initPayload, payloads))
     }
 
 }

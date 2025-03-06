@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.rsocket.kotlin.keepalive
 
+import app.cash.turbine.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.test.*
@@ -100,8 +101,17 @@ class KeepAliveTest : TestWithConnection() {
     fun rSocketCanceledOnMissingKeepAliveTicks() = test {
         val rSocket = requester()
         connection.test {
-            while (rSocket.isActive) awaitFrame { it is KeepAliveFrame }
-            awaitError()
+            while (true) {
+                when (val event = awaitEvent()) {
+                    is Event.Item<*> -> assertIs<KeepAliveFrame>(event.value)
+                    is Event.Error   -> {
+                        assertIs<RSocketError.ConnectionError>(event.throwable)
+                        break
+                    }
+
+                    Event.Complete   -> error("Complete should not happen")
+                }
+            }
         }
         @OptIn(InternalCoroutinesApi::class)
         assertTrue(rSocket.coroutineContext.job.getCancellationException().cause is RSocketError.ConnectionError)

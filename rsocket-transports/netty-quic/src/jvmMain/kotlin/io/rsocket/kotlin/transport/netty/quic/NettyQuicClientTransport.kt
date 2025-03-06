@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ private class NettyQuicClientTransportBuilderImpl : NettyQuicClientTransportBuil
     private var bootstrap: (Bootstrap.() -> Unit)? = null
     private var codec: (QuicClientCodecBuilder.() -> Unit)? = null
     private var ssl: (QuicSslContextBuilder.() -> Unit)? = null
-    private var quicBootstrap: (QuicChannelBootstrap.() -> Unit)? = null
+    private var quicBootstrap: QuicChannelBootstrap.() -> Unit = { }
 
     override fun channel(cls: KClass<out DatagramChannel>) {
         this.channelFactory = ReflectiveChannelFactory(cls.java)
@@ -114,24 +114,18 @@ private class NettyQuicClientTransportBuilderImpl : NettyQuicClientTransportBuil
         return NettyQuicClientTransportImpl(
             coroutineContext = context.supervisorContext() + bootstrap.config().group().asCoroutineDispatcher(),
             bootstrap = bootstrap,
-            quicBootstrap = quicBootstrap,
-            manageBootstrap = manageEventLoopGroup
-        )
+            quicBootstrap = quicBootstrap
+        ).also {
+            if (manageEventLoopGroup) it.shutdownOnCancellation(bootstrap.config().group())
+        }
     }
 }
 
 private class NettyQuicClientTransportImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: Bootstrap,
-    private val quicBootstrap: (QuicChannelBootstrap.() -> Unit)?,
-    manageBootstrap: Boolean,
+    private val quicBootstrap: QuicChannelBootstrap.() -> Unit,
 ) : NettyQuicClientTransport {
-    init {
-        if (manageBootstrap) callOnCancellation {
-            bootstrap.config().group().shutdownGracefully().awaitFuture()
-        }
-    }
-
     override fun target(remoteAddress: InetSocketAddress): NettyQuicClientTargetImpl = NettyQuicClientTargetImpl(
         coroutineContext = coroutineContext.supervisorContext(),
         bootstrap = bootstrap,
@@ -146,14 +140,29 @@ private class NettyQuicClientTransportImpl(
 private class NettyQuicClientTargetImpl(
     override val coroutineContext: CoroutineContext,
     private val bootstrap: Bootstrap,
-    private val quicBootstrap: (QuicChannelBootstrap.() -> Unit)?,
+    private val quicBootstrap: QuicChannelBootstrap.() -> Unit,
     private val remoteAddress: SocketAddress,
 ) : RSocketClientTarget {
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
-        QuicChannel.newBootstrap(bootstrap.bind().awaitChannel()).also { quicBootstrap?.invoke(it) }
+    override suspend fun connectClient(): RSocketConnection {
+        currentCoroutineContext().ensureActive()
+        coroutineContext.ensureActive()
+
+        val channel = QuicChannel.newBootstrap(
+            bootstrap.bind().awaitChannel()
+        )
+            .apply(quicBootstrap)
             .handler(
-                NettyQuicConnectionInitializer(handler, coroutineContext, isClient = true)
-            ).remoteAddress(remoteAddress).connect().awaitFuture()
+                NettyQuicConnectionInitializer(
+                    parentContext = coroutineContext,
+                    onConnection = null
+                )
+            )
+            .streamHandler(NettyQuicStreamInitializer)
+            .remoteAddress(remoteAddress)
+            .connect()
+            .awaitFuture()
+
+        return channel.attr(NettyQuicConnection.ATTRIBUTE).get()
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,30 +46,28 @@ public class RSocketServer internal constructor(
         scope: CoroutineScope,
         transport: ServerTransport<T>,
         acceptor: ConnectionAcceptor,
-    ): T {
-        val handler = createHandler(acceptor)
-        return with(transport) {
-            scope.start {
-                handler.handleConnection(interceptors.wrapConnection(it))
-            }
+    ): T = with(transport) {
+        scope.start {
+            acceptConnection(acceptor, OldConnection(interceptors.wrapConnection(it)))
+            awaitCancellation()
         }
     }
 
     public suspend fun <T : RSocketServerInstance> startServer(
         transport: RSocketServerTarget<T>,
         acceptor: ConnectionAcceptor,
-    ): T = transport.startServer(createHandler(acceptor))
+    ): T = transport.startServer { acceptConnection(acceptor, it) }
 
     @RSocketTransportApi
-    public fun createHandler(acceptor: ConnectionAcceptor): RSocketConnectionHandler =
-        AcceptConnection(acceptor).logging(frameLogger)
+    public fun acceptConnection(acceptor: ConnectionAcceptor, connection: RSocketConnection) {
+        AcceptConnection(acceptor).launchInitializer(connection.logging(frameLogger))
+    }
 
-    private inner class AcceptConnection(acceptor: ConnectionAcceptor) : ConnectionEstablishmentHandler(
+    private inner class AcceptConnection(acceptor: ConnectionAcceptor) : ConnectionInitializer(
         isClient = false,
         frameCodec = FrameCodec(maxFragmentSize),
         connectionAcceptor = acceptor,
-        interceptors = interceptors,
-        requesterDeferred = null
+        interceptors = interceptors
     ) {
         override suspend fun establishConnection(context: ConnectionEstablishmentContext): ConnectionConfig {
             val setupFrame = context.receiveFrame()

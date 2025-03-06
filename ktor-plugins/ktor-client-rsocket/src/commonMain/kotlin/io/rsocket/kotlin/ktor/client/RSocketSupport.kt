@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.transport.*
 import io.rsocket.kotlin.transport.ktor.websocket.internal.*
-import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
 private val RSocketSupportConfigKey = AttributeKey<RSocketSupportConfig.Internal>("RSocketSupportConfig")
@@ -66,9 +65,7 @@ private class RSocketSupportTarget(
     override val coroutineContext: CoroutineContext get() = client.coroutineContext
 
     @RSocketTransportApi
-    override fun connectClient(handler: RSocketConnectionHandler): Job = launch {
-        client.webSocket(request) {
-            handler.handleKtorWebSocketConnection(this)
-        }
+    override suspend fun connectClient(): RSocketConnection {
+        return KtorWebSocketConnection(client.webSocketSession(request))
     }
 }

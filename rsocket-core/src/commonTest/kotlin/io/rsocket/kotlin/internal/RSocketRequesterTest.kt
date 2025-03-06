@@ -411,11 +411,10 @@ class RSocketRequesterTest : TestWithConnection() {
     fun cancelRequesterToCloseConnection() = test {
         val request = requester.requestStream(Payload.Empty).produceIn(GlobalScope)
         connection.test {
-            awaitFrame { frame ->
-                assertTrue(frame is RequestFrame)
-            }
+            awaitFrame { assertIs<RequestFrame>(it) }
             requester.cancel() //cancel requester
-            awaitFrame { assertTrue(it is ErrorFrame) }
+            awaitFrame { assertIs<CancelFrame>(it) } // cancelled stream
+            awaitFrame { assertIs<ErrorFrame>(it) } // error on connection
             awaitError()
         }
         delay(100)

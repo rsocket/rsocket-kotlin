@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.keepalive
+package io.rsocket.kotlin.connection
 
 import io.rsocket.kotlin.*
-import io.rsocket.kotlin.connection.*
 import io.rsocket.kotlin.frame.io.*
-import io.rsocket.kotlin.transport.*
+import io.rsocket.kotlin.keepalive.*
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.*
 import kotlinx.io.*
 import kotlin.time.*
 
-@RSocketTransportApi
 internal class KeepAliveHandler(
     private val keepAlive: KeepAlive,
-    private val connection2: Connection2,
+    private val outbound: ConnectionOutbound,
     private val connectionScope: CoroutineScope,
 ) {
     private val initial = TimeSource.Monotonic.markNow()
@@ -44,7 +42,7 @@ internal class KeepAliveHandler(
                 if (currentDelayMillis() - lastMark.value >= keepAlive.maxLifetimeMillis)
                     throw RSocketError.ConnectionError("No keep-alive for ${keepAlive.maxLifetimeMillis} ms")
 
-                connection2.sendKeepAlive(true, EmptyBuffer, 0)
+                outbound.sendKeepAlive(true, EmptyBuffer, 0)
             }
         }
     }
@@ -53,7 +51,7 @@ internal class KeepAliveHandler(
         lastMark.value = currentDelayMillis()
         // in most cases it will be possible to not suspend at all
         if (respond) connectionScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            connection2.sendKeepAlive(false, data, 0)
+            outbound.sendKeepAlive(false, data, 0)
         }
     }
 }

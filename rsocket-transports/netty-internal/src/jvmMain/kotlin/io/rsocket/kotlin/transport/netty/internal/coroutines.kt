@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.rsocket.kotlin.transport.netty.internal
 
 import io.netty.channel.*
 import io.netty.util.concurrent.*
+import io.rsocket.kotlin.internal.io.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
@@ -34,25 +35,24 @@ public suspend inline fun <T> Future<T>.awaitFuture(): T = suspendCancellableCor
     }
 }
 
-public suspend fun ChannelFuture.awaitChannel(): Channel {
-    awaitFuture()
-    return channel()
+public suspend inline fun Future<*>.join(): Unit = suspendCancellableCoroutine { cont ->
+    addListener { cont.resume(Unit) }
+    cont.invokeOnCancellation { cancel(true) }
 }
 
-// it should be used only for cleanup and so should not really block, only suspend
-public inline fun CoroutineScope.callOnCancellation(crossinline block: suspend () -> Unit) {
+public suspend inline fun <reified T : Channel> ChannelFuture.awaitChannel(): T {
+    awaitFuture()
+    return channel() as T
+}
+
+public fun CoroutineScope.shutdownOnCancellation(vararg groups: EventLoopGroup) {
     launch(Dispatchers.Unconfined) {
         try {
             awaitCancellation()
-        } catch (cause: Throwable) {
-            withContext(NonCancellable) {
-                try {
-                    block()
-                } catch (suppressed: Throwable) {
-                    cause.addSuppressed(suppressed)
-                }
+        } finally {
+            nonCancellable {
+                groups.forEach { it.shutdownGracefully().join() }
             }
-            throw cause
         }
     }
 }

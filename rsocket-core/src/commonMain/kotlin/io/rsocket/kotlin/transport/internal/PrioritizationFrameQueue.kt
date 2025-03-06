@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import kotlinx.io.*
 private val selectFrame: suspend (ChannelResult<Buffer>) -> ChannelResult<Buffer> = { it }
 
 @RSocketTransportApi
-public class PrioritizationFrameQueue(buffersCapacity: Int) {
-    private val priorityFrames = bufferChannel(buffersCapacity)
-    private val normalFrames = bufferChannel(buffersCapacity)
+public class PrioritizationFrameQueue {
+    private val priorityFrames = bufferChannel(Channel.BUFFERED)
+    private val normalFrames = bufferChannel(Channel.BUFFERED)
 
     private val priorityOnReceive = priorityFrames.onReceiveCatching
     private val normalOnReceive = normalFrames.onReceiveCatching

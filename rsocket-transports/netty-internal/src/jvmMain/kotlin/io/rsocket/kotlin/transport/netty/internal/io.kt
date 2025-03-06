@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,13 @@ public fun ByteBuf.toBuffer(): Buffer {
             toRead
         }
     }
+    release()
     return buffer
 }
 
 @OptIn(UnsafeIoApi::class)
 public fun Buffer.toByteBuf(allocator: ByteBufAllocator): ByteBuf {
-    val nettyBuffer = allocator.buffer(size.toInt()) // TODO: length
+    val nettyBuffer = allocator.directBuffer(size.toInt()) // TODO: length
     while (!exhausted()) {
         UnsafeBufferOperations.readFromHead(this) { bytes, start, end ->
             nettyBuffer.writeBytes(bytes, start, end - start)
