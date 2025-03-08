@@ -33,3 +33,16 @@ kotlin {
         }
     }
 }
+
+publishing.publications.withType<MavenPublication>().configureEach {
+    val newArtifactId = provider {
+        artifactId.replace("rsocket-ktor-client", "ktor-client-rsocket")
+    }
+    pom {
+        distributionManagement {
+            relocation {
+                artifactId = newArtifactId
+            }
+        }
+    }
+}
