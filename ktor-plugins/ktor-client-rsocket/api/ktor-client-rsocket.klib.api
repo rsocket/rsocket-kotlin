@@ -1,0 +1,19 @@
+// Klib ABI Dump
+// Targets: [androidNativeArm32, androidNativeArm64, androidNativeX64, androidNativeX86, iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64, mingwX64, tvosArm64, tvosSimulatorArm64, tvosX64, wasmJs, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64, watchosX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.rsocket.kotlin:ktor-client-rsocket>
+final class io.rsocket.kotlin.ktor.client/RSocketSupportConfig { // io.rsocket.kotlin.ktor.client/RSocketSupportConfig|null[0]
+    final fun connector(io.rsocket.kotlin.core/RSocketConnector) // io.rsocket.kotlin.ktor.client/RSocketSupportConfig.connector|connector(io.rsocket.kotlin.core.RSocketConnector){}[0]
+    final fun connector(kotlin/Function1<io.rsocket.kotlin.core/RSocketConnectorBuilder, kotlin/Unit>) // io.rsocket.kotlin.ktor.client/RSocketSupportConfig.connector|connector(kotlin.Function1<io.rsocket.kotlin.core.RSocketConnectorBuilder,kotlin.Unit>){}[0]
+}
+
+final val io.rsocket.kotlin.ktor.client/RSocketSupport // io.rsocket.kotlin.ktor.client/RSocketSupport|{}RSocketSupport[0]
+    final fun <get-RSocketSupport>(): io.ktor.client.plugins.api/ClientPlugin<io.rsocket.kotlin.ktor.client/RSocketSupportConfig> // io.rsocket.kotlin.ktor.client/RSocketSupport.<get-RSocketSupport>|<get-RSocketSupport>(){}[0]
+
+final suspend fun (io.ktor.client/HttpClient).io.rsocket.kotlin.ktor.client/rSocket(kotlin/Function1<io.ktor.client.request/HttpRequestBuilder, kotlin/Unit>): io.rsocket.kotlin/RSocket // io.rsocket.kotlin.ktor.client/rSocket|rSocket@io.ktor.client.HttpClient(kotlin.Function1<io.ktor.client.request.HttpRequestBuilder,kotlin.Unit>){}[0]
+final suspend fun (io.ktor.client/HttpClient).io.rsocket.kotlin.ktor.client/rSocket(kotlin/String, kotlin/Boolean = ..., kotlin/Function1<io.ktor.client.request/HttpRequestBuilder, kotlin/Unit> = ...): io.rsocket.kotlin/RSocket // io.rsocket.kotlin.ktor.client/rSocket|rSocket@io.ktor.client.HttpClient(kotlin.String;kotlin.Boolean;kotlin.Function1<io.ktor.client.request.HttpRequestBuilder,kotlin.Unit>){}[0]
+final suspend fun (io.ktor.client/HttpClient).io.rsocket.kotlin.ktor.client/rSocket(kotlin/String? = ..., kotlin/Int? = ..., kotlin/String? = ..., kotlin/Boolean = ..., kotlin/Function1<io.ktor.client.request/HttpRequestBuilder, kotlin/Unit> = ...): io.rsocket.kotlin/RSocket // io.rsocket.kotlin.ktor.client/rSocket|rSocket@io.ktor.client.HttpClient(kotlin.String?;kotlin.Int?;kotlin.String?;kotlin.Boolean;kotlin.Function1<io.ktor.client.request.HttpRequestBuilder,kotlin.Unit>){}[0]
