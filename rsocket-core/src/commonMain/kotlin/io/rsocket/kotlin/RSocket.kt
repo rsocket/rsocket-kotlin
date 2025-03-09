@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,8 @@
 
 package io.rsocket.kotlin
 
-import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 import kotlinx.io.*
 
@@ -57,6 +55,11 @@ private fun notImplemented(operation: String): Nothing = throw NotImplementedErr
  * Tries to emit [value], if emit failed, f.e. due cancellation, calls [Closeable.close] on [value].
  * Better to use it instead of [FlowCollector.emit] with [Payload] or [ByteReadPacket] to avoid leaks of dropped elements.
  */
+@Deprecated(
+    message = "Will be removed in next release",
+    level = DeprecationLevel.ERROR,
+    replaceWith = ReplaceWith("emit(value)")
+)
 public suspend fun <C : AutoCloseable> FlowCollector<C>.emitOrClose(value: C) {
     try {
         return emit(value)

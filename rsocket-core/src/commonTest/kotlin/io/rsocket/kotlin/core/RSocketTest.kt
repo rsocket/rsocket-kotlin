@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,14 +95,14 @@ abstract class RSocketTest(
                 requestResponse { it }
                 requestStream {
                     it.close()
-                    flow { repeat(10) { emitOrClose(payload("server got -> [$it]")) } }
+                    flow { repeat(10) { emit(payload("server got -> [$it]")) } }
                 }
                 requestChannel { init, payloads ->
                     init.close()
                     flow {
                         coroutineScope {
                             payloads.onEach { it.close() }.launchIn(this)
-                            repeat(10) { emitOrClose(payload("server got -> [$it]")) }
+                            repeat(10) { emit(payload("server got -> [$it]")) }
                         }
                     }
                 }

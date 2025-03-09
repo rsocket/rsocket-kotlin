@@ -65,7 +65,7 @@ class WebSocketConnectionTest : SuspendTest {
                         flow {
                             var i = 0
                             while (true) {
-                                emitOrClose(buildPayload { data((++i).toString()) })
+                                emit(buildPayload { data((++i).toString()) })
                                 delay(1000)
                             }
                         }

@@ -194,7 +194,7 @@ abstract class TransportTest : SuspendTest {
     @Test
     fun requestChannel500NoLeak() = test {
         val request = flow {
-            repeat(10_000) { emitOrClose(payload(3)) }
+            repeat(10_000) { emit(payload(3)) }
         }
         val count =
             client
@@ -317,13 +317,13 @@ abstract class TransportTest : SuspendTest {
         override fun requestStream(payload: Payload): Flow<Payload> = flow {
             payload.close()
             repeat(8192) {
-                emitOrClose(Payload(packet(responderData), packet(responderMetadata)))
+                emit(Payload(packet(responderData), packet(responderMetadata)))
             }
         }
 
         override fun requestChannel(initPayload: Payload, payloads: Flow<Payload>): Flow<Payload> = flow {
             initPayload.close()
-            payloads.collect { emitOrClose(it) }
+            payloads.collect { emit(it) }
         }
     }
 
