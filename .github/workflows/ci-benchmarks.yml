@@ -1,0 +1,163 @@
+name: Benchmarks CI
+on: [ workflow_dispatch ]
+
+jobs:
+  benchmark-local:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-gradle
+
+      - run: >
+          ./gradlew
+          localRequestResponseBenchmark
+          localRequestStreamBenchmark
+          localRequestChannelBenchmark
+          -Prsocketbuild.skipBenchmarkTasks=true
+          --no-daemon
+
+      - run: >
+          ./gradlew
+          localRequestResponseBenchmark
+          --no-parallel
+          --max-workers=1
+          --no-daemon
+          --continue
+
+      - run: >
+          ./gradlew
+          localRequestStreamBenchmark
+          --no-parallel
+          --max-workers=1
+          --no-daemon
+          --continue
+
+      - run: >
+          ./gradlew
+          localRequestChannelBenchmark
+          --no-parallel
+          --max-workers=1
+          --no-daemon
+          --continue
+
+      - if: always() && !cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-reports-local-${{ matrix.os }}
+          path: "rsocket-transport-benchmarks/**/build/reports/benchmarks/**/*.csv"
+          retention-days: 7
+
+  benchmark-network-rr:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-gradle
+
+      - run: >
+          ./gradlew
+          ktorTcpRequestResponseBenchmark
+          ktorWsRequestResponseBenchmark
+          nettyTcpRequestResponseBenchmark
+          nettyQuicRequestResponseBenchmark
+          -Prsocketbuild.skipBenchmarkTasks=true
+          --no-daemon
+
+      - run: >
+          ./gradlew
+          ktorTcpRequestResponseBenchmark
+          ktorWsRequestResponseBenchmark
+          nettyTcpRequestResponseBenchmark
+          nettyQuicRequestResponseBenchmark
+          --no-parallel
+          --max-workers=1
+          --no-daemon
+          --continue
+
+      - if: always() && !cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-reports-network-rr-${{ matrix.os }}
+          path: "rsocket-transport-benchmarks/**/build/reports/benchmarks/**/*.csv"
+          retention-days: 7
+
+  benchmark-network-rs:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-gradle
+
+      - run: >
+          ./gradlew
+          ktorTcpRequestStreamBenchmark
+          ktorWsRequestStreamBenchmark
+          nettyTcpRequestStreamBenchmark
+          nettyQuicRequestStreamBenchmark
+          -Prsocketbuild.skipBenchmarkTasks=true
+          --no-daemon
+
+      - run: >
+          ./gradlew
+          ktorTcpRequestStreamBenchmark
+          ktorWsRequestStreamBenchmark
+          nettyTcpRequestStreamBenchmark
+          nettyQuicRequestStreamBenchmark
+          --no-parallel
+          --max-workers=1
+          --no-daemon
+          --continue
+
+      - if: always() && !cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-reports-network-rs-${{ matrix.os }}
+          path: "rsocket-transport-benchmarks/**/build/reports/benchmarks/**/*.csv"
+          retention-days: 7
+
+  benchmark-network-rc:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-gradle
+
+      - run: >
+          ./gradlew
+          ktorTcpRequestChannelBenchmark
+          ktorWsRequestChannelBenchmark
+          nettyTcpRequestChannelBenchmark
+          nettyQuicRequestChannelBenchmark
+          -Prsocketbuild.skipBenchmarkTasks=true
+          --no-daemon
+
+      - run: >
+          ./gradlew
+          ktorTcpRequestChannelBenchmark
+          ktorWsRequestChannelBenchmark
+          nettyTcpRequestChannelBenchmark
+          nettyQuicRequestChannelBenchmark
+          --no-parallel
+          --max-workers=1
+          --no-daemon
+          --continue
+
+      - if: always() && !cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-reports-network-rc-${{ matrix.os }}
+          path: "rsocket-transport-benchmarks/**/build/reports/benchmarks/**/*.csv"
+          retention-days: 7

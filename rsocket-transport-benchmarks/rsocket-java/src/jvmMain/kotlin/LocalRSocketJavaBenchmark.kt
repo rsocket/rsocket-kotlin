@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnstableApiUsage")
+package io.rsocket.kotlin.transport.benchmarks.java
 
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
+import io.rsocket.transport.*
+import io.rsocket.transport.local.*
 
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
+class LocalRSocketJavaBenchmark : RSocketJavaBenchmark() {
+    override val serverTransport: ServerTransport<*> = LocalServerTransport.create("local")
+    override val clientTransport: ClientTransport = LocalClientTransport.create("local")
 }

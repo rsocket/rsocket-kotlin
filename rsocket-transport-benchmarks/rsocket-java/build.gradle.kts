@@ -14,18 +14,30 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnstableApiUsage")
+import kotlinx.benchmark.gradle.*
+import rsocketbuild.*
 
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
+plugins {
+    id("rsocketbuild.multiplatform-benchmarks")
+}
+
+kotlin {
+    jvmTarget()
+
+    sourceSets {
+        jvmMain.dependencies {
+            implementation(projects.rsocketTransportBenchmarksBase)
+            implementation(libs.kotlinx.coroutines.reactor)
+
+            implementation("io.rsocket:rsocket-transport-local:1.1.5")
+            implementation("io.rsocket:rsocket-transport-netty:1.1.5")
+        }
     }
 }
 
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
+benchmark {
+    targets {
+        register("jvm")
     }
+    registerTransportBenchmarks("RSocketJava", listOf("local", "nettyTcp"))
 }

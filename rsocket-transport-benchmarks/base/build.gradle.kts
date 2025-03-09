@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnstableApiUsage")
+import rsocketbuild.*
 
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
+plugins {
+    id("rsocketbuild.multiplatform-base")
 }
 
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
+kotlin {
+    jvmTarget()
+
+    macosX64()
+    macosArm64()
+    linuxX64()
+
+    sourceSets {
+        commonMain.dependencies {
+            api(libs.kotlinx.coroutines.core)
+            api(libs.kotlinx.benchmark)
+        }
     }
 }
