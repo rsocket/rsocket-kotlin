@@ -1,7 +1,7 @@
 # rsocket-kotlin
 
 RSocket Kotlin multi-platform implementation based on
-[kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines) and [ktor-io](https://github.com/ktorio/ktor).
+[kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines) and [kotlinx-io](https://github.com/Kotlin/kotlinx-io).
 
 RSocket is a binary application protocol providing Reactive Streams semantics for use on byte stream transports such as
 TCP, WebSockets, QUIC and Aeron.
@@ -15,27 +15,13 @@ It enables the following symmetric interaction models via async message passing 
 
 Learn more at http://rsocket.io
 
-## Supported platforms and transports :
+## Supported platforms and transports:
 
-Local (in memory) transport is supported on all targets.
-Most of other transports are implemented using [ktor](https://github.com/ktorio/ktor) to ensure Kotlin multiplatform.
-So it depends on `ktor` client/server engines for available transports and platforms.
-
-### Client transports:
-
-|                             | TCP                                     | WebSocket  |
-|-----------------------------|-----------------------------------------|------------|
-| JVM                         | ✅ via ktor                              | ✅ via ktor |
-| JS                          | ✅ via nodeJS (not supported in browser) | ✅ via ktor |
-| Native<br/>(except windows) | ✅ via ktor                              | ✅ via ktor |
-
-### Server transports:
-
-|                             | TCP                                     | WebSocket  |
-|-----------------------------|-----------------------------------------|------------|
-| JVM                         | ✅ via ktor                              | ✅ via ktor |
-| JS                          | ✅ via nodeJS (not supported in browser) | ❌          |
-| Native<br/>(except windows) | ✅ via ktor                              | ✅ via ktor |
+Local (in memory) transport is supported for all targets.
+Starting from [Ktor 3.1 release](https://blog.jetbrains.com/kotlin/2025/02/ktor-3-1-0-release/),
+all ktor-client, ktor-server and ktor-network modules are supported for all targets.
+So all Ktor related transports (TCP and WebSocket) are supported by rsocket-kotlin for all targets.
+Additionally, there is experimental JVM-only support for Netty TCP and QUIC transpots.
 
 ## Using in your projects
 
@@ -49,18 +35,18 @@ repositories {
 
 ### Ktor plugins
 
-rsocket-kotlin provides [client](https://ktor.io/docs/http-client-plugins.html)
-and [server](https://ktor.io/docs/plugins.html) plugins for [ktor](https://ktor.io)
+rsocket-kotlin provides [client](https://ktor.io/docs/client-plugins.html)
+and [server](https://ktor.io/docs/server-plugins.html) plugins for [ktor](https://ktor.io)
 
 Dependencies:
 
 ```kotlin
 dependencies {
-    //for client
-    implementation("io.rsocket.kotlin:rsocket-ktor-client:0.16.0")
+    // for client
+    implementation("io.rsocket.kotlin:ktor-client-rsocket:0.20.0")
 
-    //for server
-    implementation("io.rsocket.kotlin:rsocket-ktor-server:0.16.0")
+    // for server
+    implementation("io.rsocket.kotlin:ktor-server-rsocket:0.20.0")
 }
 ```
 
@@ -69,37 +55,23 @@ Example of client plugin usage:
 ```kotlin
 //create ktor client
 val client = HttpClient {
-    install(WebSockets) //rsocket requires websockets plugin installed
+    install(WebSockets) // rsocket requires websockets plugin installed
     install(RSocketSupport) {
-        //configure rSocket connector (all values have defaults)
+        // configure rSocket connector (all values have defaults)
         connector {
-            maxFragmentSize = 1024
-
             connectionConfig {
-                keepAlive = KeepAlive(
-                    interval = 30.seconds,
-                    maxLifetime = 2.minutes
-                )
-
-                //payload for setup frame
+                // payload for setup frame
                 setupPayload {
                     buildPayload {
                         data("""{ "data": "setup" }""")
                     }
                 }
 
-                //mime types
+                // mime types
                 payloadMimeType = PayloadMimeType(
                     data = WellKnownMimeType.ApplicationJson,
                     metadata = WellKnownMimeType.MessageRSocketCompositeMetadata
                 )
-            }
-
-            //optional acceptor for server requests
-            acceptor {
-                RSocketRequestHandler {
-                    requestResponse { it } //echo request payload
-                }
             }
         }
     }
@@ -126,27 +98,16 @@ Example of server plugin usage:
 ```kotlin
 //create ktor server
 embeddedServer(CIO) {
-    install(WebSockets) //rsocket requires websockets plugin installed
+    install(WebSockets) // rsocket requires websockets plugin installed
     install(RSocketSupport) {
-        //configure rSocket server (all values have defaults)
-
-        server {
-            maxFragmentSize = 1024
-
-            //install interceptors
-            interceptors {
-                forConnection(::SomeConnectionInterceptor)
-            }
-        }
+        // optionally configure rSocket server
     }
-    //configure routing
     routing {
-        //configure route `/rsocket`
         rSocket("rsocket") {
             println(config.setupPayload.data.readString()) //print setup payload data
 
             RSocketRequestHandler {
-                //handler for request/response
+                // handler for request/response
                 requestResponse { request: Payload ->
                     println(request.data.readString()) //print request payload data
                     delay(500) // work emulation
@@ -154,9 +115,9 @@ embeddedServer(CIO) {
                         data("""{ "data": "Server response" }""")
                     }
                 }
-                //handler for request/stream      
+                // handler for request/stream      
                 requestStream { request: Payload ->
-                    println(request.data.readString()) //print request payload data
+                    println(request.data.readString()) // print request payload data
                     flow {
                         repeat(10) { i ->
                             emit(
@@ -181,45 +142,49 @@ Dependencies:
 
 ```kotlin
 dependencies {
-    implementation("io.rsocket.kotlin:rsocket-core:0.16.0")
+    implementation("io.rsocket.kotlin:rsocket-core:0.20.0")
 
     // TCP ktor client/server transport
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:0.16.0")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:0.20.0")
 
     // WS ktor client transport
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-client:0.16.0")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-client:0.20.0")
 
     // WS ktor server transport
-    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:0.16.0")
+    implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:0.20.0")
 
-    // TCP nodeJS client/server transport
-    implementation("io.rsocket.kotlin:rsocket-transport-nodejs-tcp:0.16.0")
+    // Netty TCP client/server transport
+    implementation("io.rsocket.kotlin:rsocket-transport-netty-tcp:0.20.0")
 }
 ```
 
-Example of usage standalone client transport:
+Example of usage standalone TCP ktor client transport:
 
 ```kotlin
-
-val transport = TcpClientTransport("0.0.0.0", 8080)
+val parentContext = Job()
+val target = KtorTcpClientTransport(parentContext) {
+    // optional configuration
+}.target("127.0.0.1", 8080)
 val connector = RSocketConnector {
     //configuration goes here
 }
-val rsocket: RSocket = connector.connect(transport)
+val rsocket: RSocket = connector.connect(target)
 //use rsocket to do request
 val response = rsocket.requestResponse(buildPayload { data("""{ "data": "hello world" }""") })
 println(response.data.readString())
 ```
 
-Example of usage standalone server transport:
+Example of usage standalone TCP ktor server transport:
 
 ```kotlin
-
-val transport = TcpServerTransport("0.0.0.0", 8080)
-val connector = RSocketServer {
+val parentContext = Job()
+val target = KtorTcpServerTransport(parentContext) {
+    // optional configuration
+}.target("127.0.0.1", 8080)
+val server = RSocketServer {
     //configuration goes here
 }
-val server: TcpServer = server.bind(transport) {
+val serverInstance = server.startServer(target) {
     RSocketRequestHandler {
         //handler for request/response
         requestResponse { request: Payload ->
@@ -231,7 +196,7 @@ val server: TcpServer = server.bind(transport) {
         }
     }
 }
-server.handlerJob.join() //wait for server to finish
+serverInstance.coroutineContext.job.join() // wait for server to finish
 ```
 
 ### More samples:
