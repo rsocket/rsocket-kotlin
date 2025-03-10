@@ -51,7 +51,6 @@ public class PrioritizationFrameQueue {
         return null
     }
 
-    // TODO: recheck, that it works fine in case priority channel is closed, but normal channel has other frames to send
     public suspend fun dequeueFrame(): Buffer? {
         tryDequeueFrame()?.let { return it }
         return select {
@@ -60,7 +59,6 @@ public class PrioritizationFrameQueue {
         }.getOrNull()
     }
 
-    // TODO: document
     public fun close() {
         priorityFrames.close()
         normalFrames.close()

@@ -20,13 +20,16 @@ import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.io.*
+import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 
+@RSocketLoggingApi
 @RSocketTransportApi
 internal abstract class ConnectionInitializer(
     private val isClient: Boolean,
     private val frameCodec: FrameCodec,
+    private val frameLogger: Logger,
     private val connectionAcceptor: ConnectionAcceptor,
     private val interceptors: Interceptors,
 ) {
@@ -42,11 +45,11 @@ internal abstract class ConnectionInitializer(
                 else     -> connection.acceptStream() ?: error("Initial stream should be received")
             }
             initialStream.setSendPriority(0)
-            MultiplexedConnection(isClient, frameCodec, connection, initialStream, requestsScope)
+            MultiplexedConnection(isClient, frameCodec, frameLogger, connection, initialStream, requestsScope)
         }
 
         is RSocketSequentialConnection  -> {
-            SequentialConnection(isClient, frameCodec, connection, requestsScope)
+            SequentialConnection(isClient, frameCodec, frameLogger, connection, requestsScope)
         }
     }
 

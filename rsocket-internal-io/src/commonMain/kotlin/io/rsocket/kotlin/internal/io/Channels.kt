@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ private val onUndeliveredBuffer: (Buffer) -> Unit = Buffer::clear
 
 public fun bufferChannel(capacity: Int): Channel<Buffer> = Channel(capacity, onUndeliveredElement = onUndeliveredBuffer)
 
-// TODO: may be drop it?
 public fun <E : AutoCloseable> channelForCloseable(capacity: Int): Channel<E> =
     Channel(capacity, onUndeliveredElement = onUndeliveredCloseable)
 

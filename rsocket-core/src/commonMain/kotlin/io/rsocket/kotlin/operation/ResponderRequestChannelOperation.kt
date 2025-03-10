@@ -72,7 +72,7 @@ internal class ResponderRequestChannelOperation(
         frameType === FrameType.Cancel || when {
             requestPayloads.isActive -> frameType === FrameType.Payload || frameType === FrameType.Error
             else                     -> false
-        } || frameType === FrameType.RequestN // TODO
+        } || frameType === FrameType.RequestN
 
     override fun receiveRequestNFrame(requestN: Int) {
         limiter.updateRequests(requestN)

@@ -37,7 +37,7 @@ public fun ByteBuf.toBuffer(): Buffer {
 
 @OptIn(UnsafeIoApi::class)
 public fun Buffer.toByteBuf(allocator: ByteBufAllocator): ByteBuf {
-    val nettyBuffer = allocator.directBuffer(size.toInt()) // TODO: length
+    val nettyBuffer = allocator.directBuffer(size.toInt())
     while (!exhausted()) {
         UnsafeBufferOperations.readFromHead(this) { bytes, start, end ->
             nettyBuffer.writeBytes(bytes, start, end - start)

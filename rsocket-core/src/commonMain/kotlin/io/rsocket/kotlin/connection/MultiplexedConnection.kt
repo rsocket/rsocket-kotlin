@@ -16,18 +16,22 @@
 
 package io.rsocket.kotlin.connection
 
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.operation.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.io.*
 
+@RSocketLoggingApi
 @RSocketTransportApi
 internal class MultiplexedConnection(
     isClient: Boolean,
     frameCodec: FrameCodec,
+    private val frameLogger: Logger,
     private val connection: RSocketMultiplexedConnection,
     private val initialStream: RSocketMultiplexedConnection.Stream,
     private val requestsScope: CoroutineScope,
@@ -146,7 +150,7 @@ internal class MultiplexedConnection(
                         // request is cancelled during fragmentation
                         is CancelFrame  -> error("Request was cancelled by remote party")
                         is RequestFrame -> {
-                            // TODO: extract assembly logic?
+                            // TODO[fragmentation]: extract assembly logic?
                             when {
                                 // for RC, it could contain the complete flag
                                 // complete+follows=complete, "complete" overrides "follows" flag
@@ -194,7 +198,7 @@ internal class MultiplexedConnection(
     ): Unit = coroutineScope {
         val outbound = Outbound(streamId, stream)
         val receiveJob = launch {
-            val handler = OperationFrameHandler(operation)
+            val handler = OperationFrameHandler(operation, frameLogger)
             try {
                 while (true) {
                     val frame = frameCodec.decodeFrame(

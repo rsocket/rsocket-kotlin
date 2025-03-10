@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,8 @@ internal sealed class Frame : AutoCloseable {
     }
 
     internal fun dump(length: Long): String = buildString {
-        append("\n").append(type).append(" frame -> Stream Id: ").append(streamId).append(" Length: ").append(length)
+        append("\n").append(type).append(" frame -> Stream Id: ").append(streamId)
+        if (length != -1L) append(" Length: ").append(length)
         append("\nFlags: 0b").append(flags.toBinaryString()).append(" (").apply { appendFlags() }.append(")")
         appendSelf()
     }

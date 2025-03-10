@@ -31,7 +31,7 @@ internal abstract class OperationOutbound(
     protected val streamId: Int,
     private val frameCodec: FrameCodec,
 ) {
-    // TODO: decide on it
+    // TODO[fragmentation]: decide on it
     // private var firstRequestFrameSent: Boolean = false
 
     protected abstract suspend fun sendFrame(frame: Buffer)
@@ -71,8 +71,7 @@ internal abstract class OperationOutbound(
         return sendRequestPayload(type, payload, complete, initialRequest)
     }
 
-    // TODO rework/simplify later
-    // TODO release on fail ?
+    // TODO[fragmentation] rework/simplify later, release on fail ?
     private suspend fun sendRequestPayload(type: FrameType, payload: Payload, complete: Boolean, initialRequest: Int) {
         if (!payload.isFragmentable(type.hasInitialRequest)) {
             return sendFrame(RequestFrame(type, streamId, false, complete, true, initialRequest, payload))

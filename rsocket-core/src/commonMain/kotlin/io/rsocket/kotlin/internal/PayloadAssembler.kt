@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,8 @@ import io.rsocket.kotlin.frame.io.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.io.*
 
-// TODO: make metadata should be fully transmitted before data
+// TODO[fragmentation]: make metadata should be fully transmitted before data
 internal class PayloadAssembler : AutoCloseable {
-    // TODO: better name
     val hasPayload: Boolean
         get() = data != null
 

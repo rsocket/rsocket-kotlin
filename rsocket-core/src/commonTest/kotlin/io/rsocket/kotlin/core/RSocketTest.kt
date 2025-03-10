@@ -293,8 +293,6 @@ abstract class RSocketTest(
     fun testStreamRequestN() = test {
         start(RSocketRequestHandler {
             requestStream {
-                // TODO: we should really call close here - 
-                it.close()
                 (0..9).asFlow().map { payload(it.toString()) }
             }
         })
@@ -508,7 +506,7 @@ abstract class RSocketTest(
         delay(100)
         assertFalse(requesterChannel.isClosedForSend, "requesterChannel.isClosedForSend=false")
         assertFalse(responderChannel.isClosedForReceive, "responderChannel.isClosedForReceive=false")
-        payloads.forEach { requesterChannel.send(it.copy()) } //TODO?
+        payloads.forEach { requesterChannel.send(it.copy()) }
         payloads.forEach { responderChannel.checkReceived(it) }
     }
 

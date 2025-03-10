@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 
 internal class PayloadChannel {
-    // TODO: capacity should be configurable
     private val payloads = channelForCloseable<Payload>(Channel.UNLIMITED)
     private val requestNs = Channel<Int>(Channel.UNLIMITED)
 
@@ -39,7 +38,6 @@ internal class PayloadChannel {
 
     @ExperimentalStreamsApi
     suspend fun consumeInto(collector: FlowCollector<Payload>, strategy: RequestStrategy.Element): Throwable? {
-        // TODO: requestNs should be cancelled on success path?
         payloads.consume {
             while (true) {
                 payloads

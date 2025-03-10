@@ -66,6 +66,7 @@ public class RSocketConnector internal constructor(
     private inner class SetupConnection() : ConnectionInitializer(
         isClient = true,
         frameCodec = FrameCodec(maxFragmentSize),
+        frameLogger = frameLogger,
         connectionAcceptor = acceptor,
         interceptors = interceptors
     ) {

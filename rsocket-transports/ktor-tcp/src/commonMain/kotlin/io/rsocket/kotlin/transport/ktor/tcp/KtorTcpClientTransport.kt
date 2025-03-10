@@ -36,7 +36,6 @@ public sealed interface KtorTcpClientTransport : RSocketTransport {
 public sealed interface KtorTcpClientTransportBuilder : RSocketTransportBuilder<KtorTcpClientTransport> {
     public fun selectorManager(manager: SelectorManager, manage: Boolean)
     public fun socketOptions(block: SocketOptions.TCPClientSocketOptions.() -> Unit)
-    //TODO: TLS support
 }
 
 private class KtorTcpClientTransportBuilderImpl : KtorTcpClientTransportBuilder {

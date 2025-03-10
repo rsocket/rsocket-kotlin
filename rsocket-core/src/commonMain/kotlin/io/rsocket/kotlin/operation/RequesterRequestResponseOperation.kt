@@ -35,7 +35,6 @@ internal class RequesterRequestResponseOperation(
             )
             responseDeferred.join()
         } catch (cause: Throwable) {
-            // TODO: we don't need to send cancel if we have sent no frames
             nonCancellable { outbound.sendCancel() }
             throw cause
         }
