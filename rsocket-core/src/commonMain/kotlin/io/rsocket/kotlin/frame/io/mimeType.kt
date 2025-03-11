@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ internal fun Sink.writeMimeType(type: MimeType) {
     }
 }
 
-internal fun Source.readMimeType(): MimeType = readType(
+internal fun Buffer.readMimeType(): MimeType = readType(
     { WellKnownMimeType(it) ?: ReservedMimeType(it) },
     { WellKnownMimeType(it) ?: CustomMimeType(it) }
 )
@@ -40,7 +40,7 @@ internal fun Sink.writeAuthType(type: AuthType) {
     }
 }
 
-internal fun Source.readAuthType(): AuthType = readType(
+internal fun Buffer.readAuthType(): AuthType = readType(
     { WellKnowAuthType(it) ?: ReservedAuthType(it) },
     { WellKnowAuthType(it) ?: CustomAuthType(it) }
 )
@@ -62,7 +62,7 @@ private fun Sink.writeIdentifier(identifier: Byte) {
     writeByte(identifier or KnownTypeFlag)
 }
 
-private inline fun <T> Source.readType(
+private inline fun <T> Buffer.readType(
     fromIdentifier: (Byte) -> T,
     fromText: (String) -> T,
 ): T {

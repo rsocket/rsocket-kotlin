@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ internal class RequestNFrame(
     }
 }
 
-internal fun Source.readRequestN(streamId: Int): RequestNFrame {
+internal fun Buffer.readRequestN(streamId: Int): RequestNFrame {
     val requestN = readInt()
     return RequestNFrame(streamId, requestN)
 }

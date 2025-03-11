@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class SimpleAuthMetadata(
     override fun close(): Unit = Unit
 
     public companion object Reader : AuthMetadataReader<SimpleAuthMetadata> {
-        override fun Source.readContent(type: AuthType): SimpleAuthMetadata {
+        override fun Buffer.readContent(type: AuthType): SimpleAuthMetadata {
             require(type == WellKnowAuthType.Simple) { "Metadata auth type should be 'simple'" }
             val length = readShort().toLong()
             val username = readString(length)

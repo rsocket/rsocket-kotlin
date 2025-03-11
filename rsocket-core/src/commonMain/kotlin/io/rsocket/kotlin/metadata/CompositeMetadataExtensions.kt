@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,17 +47,17 @@ public operator fun CompositeMetadata.contains(mimeType: MimeType): Boolean {
 }
 
 @ExperimentalMetadataApi
-public operator fun CompositeMetadata.get(mimeType: MimeType): Source {
+public operator fun CompositeMetadata.get(mimeType: MimeType): Buffer {
     return entries.first { it.mimeType == mimeType }.content
 }
 
 @ExperimentalMetadataApi
-public fun CompositeMetadata.getOrNull(mimeType: MimeType): Source? {
+public fun CompositeMetadata.getOrNull(mimeType: MimeType): Buffer? {
     return entries.find { it.mimeType == mimeType }?.content
 }
 
 @ExperimentalMetadataApi
-public fun CompositeMetadata.list(mimeType: MimeType): List<Source> {
+public fun CompositeMetadata.list(mimeType: MimeType): List<Buffer> {
     return entries.mapNotNull { if (it.mimeType == mimeType) it.content else null }
 }
 

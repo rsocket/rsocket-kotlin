@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import kotlinx.io.*
 @ExperimentalMetadataApi
 public class RawMetadata(
     override val mimeType: MimeType,
-    public val content: Source,
+    public val content: Buffer,
 ) : Metadata {
     override fun Sink.writeSelf() {
         transferFrom(content)
@@ -35,7 +35,7 @@ public class RawMetadata(
     }
 
     private class Reader(override val mimeType: MimeType) : MetadataReader<RawMetadata> {
-        override fun Source.read(): RawMetadata =
+        override fun Buffer.read(): RawMetadata =
             RawMetadata(mimeType, readBuffer())
     }
 

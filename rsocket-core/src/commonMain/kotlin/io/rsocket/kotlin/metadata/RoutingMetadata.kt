@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class RoutingMetadata(public val tags: List<String>) : Metadata {
 
     public companion object Reader : MetadataReader<RoutingMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketRouting
-        override fun Source.read(): RoutingMetadata {
+        override fun Buffer.read(): RoutingMetadata {
             val list = mutableListOf<String>()
             while (!exhausted()) {
                 val length = readByte().toLong() and 0xFF
