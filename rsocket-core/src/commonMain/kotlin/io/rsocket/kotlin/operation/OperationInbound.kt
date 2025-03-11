@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package io.rsocket.kotlin.operation
 
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
 import io.rsocket.kotlin.internal.*
+import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.payload.*
 
 internal interface OperationInbound {
@@ -33,8 +35,11 @@ internal interface OperationInbound {
     fun receiveDone() {}
 }
 
-// TODO: merge into OperationInbound?
-internal class OperationFrameHandler(private val inbound: OperationInbound) {
+@RSocketLoggingApi
+internal class OperationFrameHandler(
+    private val inbound: OperationInbound,
+    private val frameLogger: Logger,
+) {
     private val assembler = PayloadAssembler()
 
     fun close() {
@@ -47,8 +52,7 @@ internal class OperationFrameHandler(private val inbound: OperationInbound) {
 
     fun handleFrame(frame: Frame) {
         if (!inbound.shouldReceiveFrame(frame.type)) {
-            // TODO: replace with logging
-            println("unexpected frame: $frame")
+            frameLogger.debug { "Received unexpected frame: ${frame.dump(-1)}" }
             return frame.close()
         }
 
@@ -57,14 +61,13 @@ internal class OperationFrameHandler(private val inbound: OperationInbound) {
             is ErrorFrame    -> inbound.receiveErrorFrame(frame.throwable)
             is RequestNFrame -> inbound.receiveRequestNFrame(frame.requestN)
             is RequestFrame  -> {
-                // TODO: split frames
                 if (frame.initialRequest != 0) inbound.receiveRequestNFrame(frame.initialRequest)
 
                 val payload = when {
                     // complete+follows=complete
                     frame.complete -> when {
                         frame.next -> assembler.assemblePayload(frame.payload)
-                        // TODO - what if we previously received fragment?
+                        // TODO[fragmentation] - what if we previously received fragment?
                         else       -> {
                             check(!assembler.hasPayload) { "wrong combination of frames" }
                             null
@@ -85,11 +88,9 @@ internal class OperationFrameHandler(private val inbound: OperationInbound) {
                 }
 
                 inbound.receivePayloadFrame(payload, frame.complete)
-//
-//
-//                // TODO: recheck notes
-//                // TODO: if there are no fragments saved and there are no following - we can ignore going through buffer
-//                // TODO: really, fragment could be NULL when `complete` is true, but `next` is false
+
+//                // TODO[fragmentation]: if there are no fragments saved and there are no following - we can ignore going through buffer
+//                // TODO[fragmentation]: really, fragment could be NULL when `complete` is true, but `next` is false
 //                if (frame.next || frame.type.isRequestType) appendFragment(frame.payload)
 //                if (frame.complete) inbound.receivePayloadFrame(assemblePayload(), complete = true)
 //                else if (!frame.follows) inbound.receivePayloadFrame(assemblePayload(), complete = false)

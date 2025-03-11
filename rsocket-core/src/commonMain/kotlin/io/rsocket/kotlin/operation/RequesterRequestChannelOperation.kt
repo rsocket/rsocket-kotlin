@@ -77,7 +77,6 @@ internal class RequesterRequestChannelOperation(
         responsePayloads.isActive -> frameType == FrameType.Payload || frameType == FrameType.Error
         else                      -> false
     } || when {
-        // TODO: handle cancel, when `senderJob` is not started
         senderJob == null || senderJob?.isActive == true -> frameType == FrameType.RequestN || frameType == FrameType.Cancel
         else                                             -> false
     }

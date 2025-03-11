@@ -16,17 +16,21 @@
 
 package io.rsocket.kotlin.connection
 
+import io.rsocket.kotlin.*
 import io.rsocket.kotlin.frame.*
+import io.rsocket.kotlin.logging.*
 import io.rsocket.kotlin.operation.*
 import io.rsocket.kotlin.payload.*
 import io.rsocket.kotlin.transport.*
 import kotlinx.coroutines.*
 import kotlinx.io.*
 
+@RSocketLoggingApi
 @RSocketTransportApi
 internal class SequentialConnection(
     isClient: Boolean,
     frameCodec: FrameCodec,
+    private val frameLogger: Logger,
     private val connection: RSocketSequentialConnection,
     private val requestsScope: CoroutineScope,
 ) : ConnectionOutbound(frameCodec) {
@@ -60,7 +64,7 @@ internal class SequentialConnection(
     ): Job = requestsScope.launch(start = CoroutineStart.ATOMIC) {
         operation.handleExecutionFailure(requestPayload) {
             ensureActive() // because of atomic start
-            val streamId = storage.createStream(OperationFrameHandler(operation))
+            val streamId = storage.createStream(OperationFrameHandler(operation, frameLogger))
             try {
                 operation.execute(Outbound(streamId), requestPayload)
             } finally {
@@ -116,7 +120,8 @@ internal class SequentialConnection(
                     when {
                         frame.follows -> ResponderInboundWrapper(connectionInbound, operationData)
                         else          -> acceptRequest(connectionInbound, operationData)
-                    }
+                    },
+                    frameLogger
                 )
                 if (storage.acceptStream(streamId, handler)) {
                     // for fragmentation
@@ -159,7 +164,7 @@ internal class SequentialConnection(
                     )
                 )
                 // close old handler
-                storage.replaceStream(operationData.streamId, OperationFrameHandler(operation))?.close()
+                storage.replaceStream(operationData.streamId, OperationFrameHandler(operation, frameLogger))?.close()
             } else {
                 // should not happen really
                 storage.removeStream(operationData.streamId)?.close()

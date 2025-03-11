@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ internal fun Source.readRequest(
     return RequestFrame(type, streamId, fragmentFollows, complete, next, initialRequest, payload)
 }
 
-//TODO rename or remove on fragmentation implementation
+//TODO[fragmentation] rename or remove on fragmentation implementation
 internal fun RequestFireAndForgetFrame(streamId: Int, payload: Payload): RequestFrame =
     RequestFrame(FrameType.RequestFnF, streamId, false, false, false, 0, payload)
 

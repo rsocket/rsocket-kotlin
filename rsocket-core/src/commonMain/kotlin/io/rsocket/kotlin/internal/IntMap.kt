@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,6 @@ private fun safeFindNextPositivePowerOfTwo(value: Int): Int = when {
     else                -> 1 shl 32 - (value - 1).countLeadingZeroBits()
 }
 
-// TODO: may be move to `internal-io` (and rename to just `rsocket-internal`)
-//  and use in prioritization queue to support more granular prioritization for streams
-//
-// TODO decide, is it needed, or can be replaced by simple map, or concurrent map on JVM?
-//  do benchmarks
 /**
  * IntMap implementation based on Netty IntObjectHashMap.
  */

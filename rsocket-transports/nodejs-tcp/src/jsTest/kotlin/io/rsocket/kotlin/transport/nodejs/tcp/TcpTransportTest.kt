@@ -17,7 +17,6 @@
 package io.rsocket.kotlin.transport.nodejs.tcp
 
 import io.rsocket.kotlin.transport.tests.*
-import kotlinx.coroutines.*
 import kotlin.test.*
 
 @Suppress("DEPRECATION_ERROR")
@@ -32,7 +31,6 @@ class TcpTransportTest : TransportTest() {
     }
 
     override suspend fun after() {
-        delay(100) //TODO close race
         super.after()
         server.close()
     }

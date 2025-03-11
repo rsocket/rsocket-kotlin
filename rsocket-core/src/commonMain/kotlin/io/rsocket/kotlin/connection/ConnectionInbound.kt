@@ -54,7 +54,7 @@ internal class ConnectionInbound(
     }
 
     private fun receiveError(cause: Throwable) {
-        throw cause // TODO?
+        throw cause
     }
 
     fun createOperation(type: FrameType, requestJob: Job): ResponderOperation = when (type) {
