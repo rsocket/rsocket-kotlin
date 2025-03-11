@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package io.rsocket.kotlin.samples.chat.api
 
-import io.ktor.utils.io.core.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.metadata.*
 import io.rsocket.kotlin.payload.*
+import kotlinx.io.*
 import kotlinx.serialization.*
 import kotlinx.serialization.protobuf.*
 import kotlin.jvm.*
@@ -29,7 +29,7 @@ import kotlin.jvm.*
 val ConfiguredProtoBuf = ProtoBuf
 
 @ExperimentalSerializationApi
-inline fun <reified T> ProtoBuf.decodeFromPayload(payload: Payload): T = decodeFromByteArray(payload.data.readBytes())
+inline fun <reified T> ProtoBuf.decodeFromPayload(payload: Payload): T = decodeFromByteArray(payload.data.readByteArray())
 
 @ExperimentalSerializationApi
 @OptIn(ExperimentalMetadataApi::class)
@@ -55,8 +55,8 @@ inline fun <reified I> ProtoBuf.decoding(payload: Payload, block: (I) -> Unit): 
 }
 
 @OptIn(ExperimentalMetadataApi::class)
-fun Payload(route: String, packet: ByteReadPacket = ByteReadPacket.Empty): Payload = buildPayload {
-    data(packet)
+fun Payload(route: String, data: Buffer = Buffer()): Payload = buildPayload {
+    data(data)
     metadata(RoutingMetadata(route))
 }
 

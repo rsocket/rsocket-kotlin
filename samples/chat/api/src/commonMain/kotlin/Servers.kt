@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,29 +21,24 @@ enum class TransportType { TCP, WS }
 data class ServerAddress(val port: Int, val type: TransportType)
 
 object Servers {
-    object JVM {
-        val TCP = ServerAddress(port = 8001, type = TransportType.TCP)
-        val WS = ServerAddress(port = 8002, type = TransportType.WS)
-    }
-
-    object JS {
-        val TCP = ServerAddress(port = 7001, type = TransportType.TCP)
-    }
-
-    object Native {
-        val TCP = ServerAddress(port = 9001, type = TransportType.TCP)
-        val WS = ServerAddress(port = 9002, type = TransportType.WS)
-    }
-
-    val WS = setOf(
-        JVM.WS,
-        Native.WS
-    )
-    val TCP = setOf(
-        JVM.TCP,
-        JS.TCP,
-        Native.TCP
+    val JVM = listOf(
+        ServerAddress(port = 9011, type = TransportType.TCP),
+        ServerAddress(port = 9012, type = TransportType.WS),
     )
 
-    val ALL = WS + TCP
+    val JS = listOf(
+        ServerAddress(port = 9051, type = TransportType.TCP),
+        ServerAddress(port = 9052, type = TransportType.WS),
+    )
+
+    val WasmJS = listOf(
+        ServerAddress(port = 9061, type = TransportType.TCP),
+        ServerAddress(port = 9062, type = TransportType.WS),
+    )
+
+    val Native = listOf(
+        ServerAddress(port = 9041, type = TransportType.TCP),
+        ServerAddress(port = 9042, type = TransportType.WS),
+    )
+    val ALL = JVM + JS + WasmJS + Native
 }

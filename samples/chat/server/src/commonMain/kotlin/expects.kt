@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package io.rsocket.kotlin.samples.chat.server
 
 import io.ktor.util.collections.*
+import kotlinx.atomicfu.*
 
-expect class Counter() {
-    fun next(): Int
+class Counter() {
+    private val value = atomic(0)
+    fun next(): Int = value.addAndGet(1)
 }
-
-expect fun currentMillis(): Long
 
 class Storage<T : Any> {
     private val map: MutableMap<Int, T> = ConcurrentMap()

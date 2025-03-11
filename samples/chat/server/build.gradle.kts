@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,10 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.*
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    application
 }
 
 val rsocketVersion: String by rootProject
 val ktorVersion: String by rootProject
-
-application {
-    mainClass.set("io.rsocket.kotlin.samples.chat.server.AppKt")
-}
 
 kotlin {
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
@@ -36,15 +31,24 @@ kotlin {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
     jvm {
-        withJava()
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        mainRun {
+            mainClass.set("io.rsocket.kotlin.samples.chat.server.AppKt")
+        }
     }
     js {
+        nodejs()
+        binaries.executable()
+    }
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
         nodejs()
         binaries.executable()
     }
     linuxX64()
     macosX64()
     macosArm64()
+    mingwX64()
     targets.withType<KotlinNativeTarget>().configureEach {
         binaries {
             executable {
@@ -57,20 +61,13 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":api"))
 
+            implementation("org.jetbrains.kotlinx:atomicfu:0.27.0") // for Atomic (drop after Kotlin 2.2)
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2") // for Instant (drop after Kotlin 2.2)
             implementation("io.ktor:ktor-utils:$ktorVersion") //for concurrent map implementation and shared list
-        }
-        jvmMain.dependencies {
+
             implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
             implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:$rsocketVersion")
             implementation("io.ktor:ktor-server-cio:$ktorVersion")
-        }
-        nativeMain.dependencies {
-            implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
-            implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-server:$rsocketVersion")
-            implementation("io.ktor:ktor-server-cio:$ktorVersion")
-        }
-        jsMain.dependencies {
-            implementation("io.rsocket.kotlin:rsocket-transport-nodejs-tcp:$rsocketVersion")
         }
     }
 }

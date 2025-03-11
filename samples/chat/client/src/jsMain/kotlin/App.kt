@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,7 @@
 package io.rsocket.kotlin.samples.chat.client
 
 import io.rsocket.kotlin.samples.chat.api.*
-import kotlinx.coroutines.*
 
-suspend fun main(): Unit = coroutineScope {
-    // only WS is supported on browser JS
-    Servers.WS.forEach {
-        val client = ApiClient(it, "Kolya")
-        launch {
-            client.use(it, "RSocket is awesome! (from js)")
-        }
-    }
+suspend fun main() {
+    runClient(Servers.ALL, "Kolya", "JS")
 }
