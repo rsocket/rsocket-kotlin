@@ -61,7 +61,7 @@ class PrioritizationFrameQueueTest : SuspendTest {
 
     @Test
     fun testAsyncReceive() = test {
-        val deferred = CompletableDeferred<Source?>()
+        val deferred = CompletableDeferred<Buffer?>()
         launch(Dispatchers.IoCompatible) {
             deferred.complete(queue.dequeueFrame())
         }

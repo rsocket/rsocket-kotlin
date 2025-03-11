@@ -156,7 +156,7 @@ abstract interface <#A: io.rsocket.kotlin.metadata/Metadata> io.rsocket.kotlin.m
     abstract val mimeType // io.rsocket.kotlin.metadata/MetadataReader.mimeType|{}mimeType[0]
         abstract fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/MetadataReader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
 
-    abstract fun (kotlinx.io/Source).read(): #A // io.rsocket.kotlin.metadata/MetadataReader.read|read@kotlinx.io.Source(){}[0]
+    abstract fun (kotlinx.io/Buffer).read(): #A // io.rsocket.kotlin.metadata/MetadataReader.read|read@kotlinx.io.Buffer(){}[0]
 }
 
 abstract interface <#A: io.rsocket.kotlin.transport/RSocketServerInstance> io.rsocket.kotlin.transport/RSocketServerTarget : kotlinx.coroutines/CoroutineScope { // io.rsocket.kotlin.transport/RSocketServerTarget|null[0]
@@ -237,8 +237,8 @@ sealed interface <#A: io.rsocket.kotlin.metadata.security/AuthMetadata> io.rsock
     open val mimeType // io.rsocket.kotlin.metadata.security/AuthMetadataReader.mimeType|{}mimeType[0]
         open fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata.security/AuthMetadataReader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
 
-    abstract fun (kotlinx.io/Source).readContent(io.rsocket.kotlin.metadata.security/AuthType): #A // io.rsocket.kotlin.metadata.security/AuthMetadataReader.readContent|readContent@kotlinx.io.Source(io.rsocket.kotlin.metadata.security.AuthType){}[0]
-    open fun (kotlinx.io/Source).read(): #A // io.rsocket.kotlin.metadata.security/AuthMetadataReader.read|read@kotlinx.io.Source(){}[0]
+    abstract fun (kotlinx.io/Buffer).readContent(io.rsocket.kotlin.metadata.security/AuthType): #A // io.rsocket.kotlin.metadata.security/AuthMetadataReader.readContent|readContent@kotlinx.io.Buffer(io.rsocket.kotlin.metadata.security.AuthType){}[0]
+    open fun (kotlinx.io/Buffer).read(): #A // io.rsocket.kotlin.metadata.security/AuthMetadataReader.read|read@kotlinx.io.Buffer(){}[0]
 }
 
 sealed interface io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.core/MimeType|null[0]
@@ -298,7 +298,7 @@ sealed interface io.rsocket.kotlin.metadata/CompositeMetadata : io.rsocket.kotli
         final val mimeType // io.rsocket.kotlin.metadata/CompositeMetadata.Reader.mimeType|{}mimeType[0]
             final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/CompositeMetadata.Reader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
 
-        final fun (kotlinx.io/Source).read(): io.rsocket.kotlin.metadata/CompositeMetadata // io.rsocket.kotlin.metadata/CompositeMetadata.Reader.read|read@kotlinx.io.Source(){}[0]
+        final fun (kotlinx.io/Buffer).read(): io.rsocket.kotlin.metadata/CompositeMetadata // io.rsocket.kotlin.metadata/CompositeMetadata.Reader.read|read@kotlinx.io.Buffer(){}[0]
     }
 }
 
@@ -457,7 +457,7 @@ final class io.rsocket.kotlin.metadata.security/BearerAuthMetadata : io.rsocket.
     final fun close() // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.close|close(){}[0]
 
     final object Reader : io.rsocket.kotlin.metadata.security/AuthMetadataReader<io.rsocket.kotlin.metadata.security/BearerAuthMetadata> { // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.Reader|null[0]
-        final fun (kotlinx.io/Source).readContent(io.rsocket.kotlin.metadata.security/AuthType): io.rsocket.kotlin.metadata.security/BearerAuthMetadata // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.Reader.readContent|readContent@kotlinx.io.Source(io.rsocket.kotlin.metadata.security.AuthType){}[0]
+        final fun (kotlinx.io/Buffer).readContent(io.rsocket.kotlin.metadata.security/AuthType): io.rsocket.kotlin.metadata.security/BearerAuthMetadata // io.rsocket.kotlin.metadata.security/BearerAuthMetadata.Reader.readContent|readContent@kotlinx.io.Buffer(io.rsocket.kotlin.metadata.security.AuthType){}[0]
     }
 }
 
@@ -475,10 +475,10 @@ final class io.rsocket.kotlin.metadata.security/CustomAuthType : io.rsocket.kotl
 }
 
 final class io.rsocket.kotlin.metadata.security/RawAuthMetadata : io.rsocket.kotlin.metadata.security/AuthMetadata { // io.rsocket.kotlin.metadata.security/RawAuthMetadata|null[0]
-    constructor <init>(io.rsocket.kotlin.metadata.security/AuthType, kotlinx.io/Source) // io.rsocket.kotlin.metadata.security/RawAuthMetadata.<init>|<init>(io.rsocket.kotlin.metadata.security.AuthType;kotlinx.io.Source){}[0]
+    constructor <init>(io.rsocket.kotlin.metadata.security/AuthType, kotlinx.io/Buffer) // io.rsocket.kotlin.metadata.security/RawAuthMetadata.<init>|<init>(io.rsocket.kotlin.metadata.security.AuthType;kotlinx.io.Buffer){}[0]
 
     final val content // io.rsocket.kotlin.metadata.security/RawAuthMetadata.content|{}content[0]
-        final fun <get-content>(): kotlinx.io/Source // io.rsocket.kotlin.metadata.security/RawAuthMetadata.content.<get-content>|<get-content>(){}[0]
+        final fun <get-content>(): kotlinx.io/Buffer // io.rsocket.kotlin.metadata.security/RawAuthMetadata.content.<get-content>|<get-content>(){}[0]
     final val type // io.rsocket.kotlin.metadata.security/RawAuthMetadata.type|{}type[0]
         final fun <get-type>(): io.rsocket.kotlin.metadata.security/AuthType // io.rsocket.kotlin.metadata.security/RawAuthMetadata.type.<get-type>|<get-type>(){}[0]
 
@@ -486,7 +486,7 @@ final class io.rsocket.kotlin.metadata.security/RawAuthMetadata : io.rsocket.kot
     final fun close() // io.rsocket.kotlin.metadata.security/RawAuthMetadata.close|close(){}[0]
 
     final object Reader : io.rsocket.kotlin.metadata.security/AuthMetadataReader<io.rsocket.kotlin.metadata.security/RawAuthMetadata> { // io.rsocket.kotlin.metadata.security/RawAuthMetadata.Reader|null[0]
-        final fun (kotlinx.io/Source).readContent(io.rsocket.kotlin.metadata.security/AuthType): io.rsocket.kotlin.metadata.security/RawAuthMetadata // io.rsocket.kotlin.metadata.security/RawAuthMetadata.Reader.readContent|readContent@kotlinx.io.Source(io.rsocket.kotlin.metadata.security.AuthType){}[0]
+        final fun (kotlinx.io/Buffer).readContent(io.rsocket.kotlin.metadata.security/AuthType): io.rsocket.kotlin.metadata.security/RawAuthMetadata // io.rsocket.kotlin.metadata.security/RawAuthMetadata.Reader.readContent|readContent@kotlinx.io.Buffer(io.rsocket.kotlin.metadata.security.AuthType){}[0]
     }
 }
 
@@ -517,7 +517,7 @@ final class io.rsocket.kotlin.metadata.security/SimpleAuthMetadata : io.rsocket.
     final fun close() // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.close|close(){}[0]
 
     final object Reader : io.rsocket.kotlin.metadata.security/AuthMetadataReader<io.rsocket.kotlin.metadata.security/SimpleAuthMetadata> { // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.Reader|null[0]
-        final fun (kotlinx.io/Source).readContent(io.rsocket.kotlin.metadata.security/AuthType): io.rsocket.kotlin.metadata.security/SimpleAuthMetadata // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.Reader.readContent|readContent@kotlinx.io.Source(io.rsocket.kotlin.metadata.security.AuthType){}[0]
+        final fun (kotlinx.io/Buffer).readContent(io.rsocket.kotlin.metadata.security/AuthType): io.rsocket.kotlin.metadata.security/SimpleAuthMetadata // io.rsocket.kotlin.metadata.security/SimpleAuthMetadata.Reader.readContent|readContent@kotlinx.io.Buffer(io.rsocket.kotlin.metadata.security.AuthType){}[0]
     }
 }
 
@@ -546,7 +546,7 @@ final class io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata 
         final val mimeType // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.Reader.mimeType|{}mimeType[0]
             final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.Reader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
 
-        final fun (kotlinx.io/Source).read(): io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.Reader.read|read@kotlinx.io.Source(){}[0]
+        final fun (kotlinx.io/Buffer).read(): io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata // io.rsocket.kotlin.metadata/PerStreamAcceptableDataMimeTypesMetadata.Reader.read|read@kotlinx.io.Buffer(){}[0]
     }
 }
 
@@ -565,15 +565,15 @@ final class io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata : io.rsocke
         final val mimeType // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.Reader.mimeType|{}mimeType[0]
             final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.Reader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
 
-        final fun (kotlinx.io/Source).read(): io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.Reader.read|read@kotlinx.io.Source(){}[0]
+        final fun (kotlinx.io/Buffer).read(): io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata // io.rsocket.kotlin.metadata/PerStreamDataMimeTypeMetadata.Reader.read|read@kotlinx.io.Buffer(){}[0]
     }
 }
 
 final class io.rsocket.kotlin.metadata/RawMetadata : io.rsocket.kotlin.metadata/Metadata { // io.rsocket.kotlin.metadata/RawMetadata|null[0]
-    constructor <init>(io.rsocket.kotlin.core/MimeType, kotlinx.io/Source) // io.rsocket.kotlin.metadata/RawMetadata.<init>|<init>(io.rsocket.kotlin.core.MimeType;kotlinx.io.Source){}[0]
+    constructor <init>(io.rsocket.kotlin.core/MimeType, kotlinx.io/Buffer) // io.rsocket.kotlin.metadata/RawMetadata.<init>|<init>(io.rsocket.kotlin.core.MimeType;kotlinx.io.Buffer){}[0]
 
     final val content // io.rsocket.kotlin.metadata/RawMetadata.content|{}content[0]
-        final fun <get-content>(): kotlinx.io/Source // io.rsocket.kotlin.metadata/RawMetadata.content.<get-content>|<get-content>(){}[0]
+        final fun <get-content>(): kotlinx.io/Buffer // io.rsocket.kotlin.metadata/RawMetadata.content.<get-content>|<get-content>(){}[0]
     final val mimeType // io.rsocket.kotlin.metadata/RawMetadata.mimeType|{}mimeType[0]
         final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/RawMetadata.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
 
@@ -600,7 +600,7 @@ final class io.rsocket.kotlin.metadata/RoutingMetadata : io.rsocket.kotlin.metad
         final val mimeType // io.rsocket.kotlin.metadata/RoutingMetadata.Reader.mimeType|{}mimeType[0]
             final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/RoutingMetadata.Reader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
 
-        final fun (kotlinx.io/Source).read(): io.rsocket.kotlin.metadata/RoutingMetadata // io.rsocket.kotlin.metadata/RoutingMetadata.Reader.read|read@kotlinx.io.Source(){}[0]
+        final fun (kotlinx.io/Buffer).read(): io.rsocket.kotlin.metadata/RoutingMetadata // io.rsocket.kotlin.metadata/RoutingMetadata.Reader.read|read@kotlinx.io.Buffer(){}[0]
     }
 }
 
@@ -644,7 +644,7 @@ final class io.rsocket.kotlin.metadata/ZipkinTracingMetadata : io.rsocket.kotlin
         final val mimeType // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Reader.mimeType|{}mimeType[0]
             final fun <get-mimeType>(): io.rsocket.kotlin.core/MimeType // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Reader.mimeType.<get-mimeType>|<get-mimeType>(){}[0]
 
-        final fun (kotlinx.io/Source).read(): io.rsocket.kotlin.metadata/ZipkinTracingMetadata // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Reader.read|read@kotlinx.io.Source(){}[0]
+        final fun (kotlinx.io/Buffer).read(): io.rsocket.kotlin.metadata/ZipkinTracingMetadata // io.rsocket.kotlin.metadata/ZipkinTracingMetadata.Reader.read|read@kotlinx.io.Buffer(){}[0]
     }
 }
 
@@ -715,7 +715,7 @@ final class io.rsocket.kotlin/PrefetchStrategy : io.rsocket.kotlin/RequestStrate
 
 final class io.rsocket.kotlin/RSocketRequestHandlerBuilder { // io.rsocket.kotlin/RSocketRequestHandlerBuilder|null[0]
     final fun fireAndForget(kotlin.coroutines/SuspendFunction2<io.rsocket.kotlin/RSocket, io.rsocket.kotlin.payload/Payload, kotlin/Unit>) // io.rsocket.kotlin/RSocketRequestHandlerBuilder.fireAndForget|fireAndForget(kotlin.coroutines.SuspendFunction2<io.rsocket.kotlin.RSocket,io.rsocket.kotlin.payload.Payload,kotlin.Unit>){}[0]
-    final fun metadataPush(kotlin.coroutines/SuspendFunction2<io.rsocket.kotlin/RSocket, kotlinx.io/Source, kotlin/Unit>) // io.rsocket.kotlin/RSocketRequestHandlerBuilder.metadataPush|metadataPush(kotlin.coroutines.SuspendFunction2<io.rsocket.kotlin.RSocket,kotlinx.io.Source,kotlin.Unit>){}[0]
+    final fun metadataPush(kotlin.coroutines/SuspendFunction2<io.rsocket.kotlin/RSocket, kotlinx.io/Buffer, kotlin/Unit>) // io.rsocket.kotlin/RSocketRequestHandlerBuilder.metadataPush|metadataPush(kotlin.coroutines.SuspendFunction2<io.rsocket.kotlin.RSocket,kotlinx.io.Buffer,kotlin.Unit>){}[0]
     final fun requestChannel(kotlin.coroutines/SuspendFunction3<io.rsocket.kotlin/RSocket, io.rsocket.kotlin.payload/Payload, kotlinx.coroutines.flow/Flow<io.rsocket.kotlin.payload/Payload>, kotlinx.coroutines.flow/Flow<io.rsocket.kotlin.payload/Payload>>) // io.rsocket.kotlin/RSocketRequestHandlerBuilder.requestChannel|requestChannel(kotlin.coroutines.SuspendFunction3<io.rsocket.kotlin.RSocket,io.rsocket.kotlin.payload.Payload,kotlinx.coroutines.flow.Flow<io.rsocket.kotlin.payload.Payload>,kotlinx.coroutines.flow.Flow<io.rsocket.kotlin.payload.Payload>>){}[0]
     final fun requestResponse(kotlin.coroutines/SuspendFunction2<io.rsocket.kotlin/RSocket, io.rsocket.kotlin.payload/Payload, io.rsocket.kotlin.payload/Payload>) // io.rsocket.kotlin/RSocketRequestHandlerBuilder.requestResponse|requestResponse(kotlin.coroutines.SuspendFunction2<io.rsocket.kotlin.RSocket,io.rsocket.kotlin.payload.Payload,io.rsocket.kotlin.payload.Payload>){}[0]
     final fun requestStream(kotlin.coroutines/SuspendFunction2<io.rsocket.kotlin/RSocket, io.rsocket.kotlin.payload/Payload, kotlinx.coroutines.flow/Flow<io.rsocket.kotlin.payload/Payload>>) // io.rsocket.kotlin/RSocketRequestHandlerBuilder.requestStream|requestStream(kotlin.coroutines.SuspendFunction2<io.rsocket.kotlin.RSocket,io.rsocket.kotlin.payload.Payload,kotlinx.coroutines.flow.Flow<io.rsocket.kotlin.payload.Payload>>){}[0]
@@ -793,9 +793,9 @@ final object io.rsocket.kotlin.logging/NoopLogger : io.rsocket.kotlin.logging/Lo
 final fun (io.rsocket.kotlin.metadata.security/RawAuthMetadata).io.rsocket.kotlin.metadata.security/hasAuthTypeOf(io.rsocket.kotlin.metadata.security/AuthMetadataReader<*>): kotlin/Boolean // io.rsocket.kotlin.metadata.security/hasAuthTypeOf|hasAuthTypeOf@io.rsocket.kotlin.metadata.security.RawAuthMetadata(io.rsocket.kotlin.metadata.security.AuthMetadataReader<*>){}[0]
 final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/contains(io.rsocket.kotlin.core/MimeType): kotlin/Boolean // io.rsocket.kotlin.metadata/contains|contains@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.core.MimeType){}[0]
 final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/contains(io.rsocket.kotlin.metadata/MetadataReader<*>): kotlin/Boolean // io.rsocket.kotlin.metadata/contains|contains@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.metadata.MetadataReader<*>){}[0]
-final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/get(io.rsocket.kotlin.core/MimeType): kotlinx.io/Source // io.rsocket.kotlin.metadata/get|get@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.core.MimeType){}[0]
-final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/getOrNull(io.rsocket.kotlin.core/MimeType): kotlinx.io/Source? // io.rsocket.kotlin.metadata/getOrNull|getOrNull@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.core.MimeType){}[0]
-final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/list(io.rsocket.kotlin.core/MimeType): kotlin.collections/List<kotlinx.io/Source> // io.rsocket.kotlin.metadata/list|list@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.core.MimeType){}[0]
+final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/get(io.rsocket.kotlin.core/MimeType): kotlinx.io/Buffer // io.rsocket.kotlin.metadata/get|get@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.core.MimeType){}[0]
+final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/getOrNull(io.rsocket.kotlin.core/MimeType): kotlinx.io/Buffer? // io.rsocket.kotlin.metadata/getOrNull|getOrNull@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.core.MimeType){}[0]
+final fun (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/list(io.rsocket.kotlin.core/MimeType): kotlin.collections/List<kotlinx.io/Buffer> // io.rsocket.kotlin.metadata/list|list@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.core.MimeType){}[0]
 final fun (io.rsocket.kotlin.metadata/CompositeMetadata.Entry).io.rsocket.kotlin.metadata/hasMimeTypeOf(io.rsocket.kotlin.metadata/MetadataReader<*>): kotlin/Boolean // io.rsocket.kotlin.metadata/hasMimeTypeOf|hasMimeTypeOf@io.rsocket.kotlin.metadata.CompositeMetadata.Entry(io.rsocket.kotlin.metadata.MetadataReader<*>){}[0]
 final fun (io.rsocket.kotlin.metadata/Metadata).io.rsocket.kotlin.metadata/toBuffer(): kotlinx.io/Buffer // io.rsocket.kotlin.metadata/toBuffer|toBuffer@io.rsocket.kotlin.metadata.Metadata(){}[0]
 final fun (io.rsocket.kotlin.payload/PayloadBuilder).io.rsocket.kotlin.metadata/metadata(io.rsocket.kotlin.metadata/Metadata) // io.rsocket.kotlin.metadata/metadata|metadata@io.rsocket.kotlin.payload.PayloadBuilder(io.rsocket.kotlin.metadata.Metadata){}[0]
@@ -810,7 +810,7 @@ final fun <#A: io.rsocket.kotlin.metadata/Metadata> (io.rsocket.kotlin.metadata/
 final fun <#A: io.rsocket.kotlin.metadata/Metadata> (io.rsocket.kotlin.metadata/CompositeMetadata).io.rsocket.kotlin.metadata/list(io.rsocket.kotlin.metadata/MetadataReader<#A>): kotlin.collections/List<#A> // io.rsocket.kotlin.metadata/list|list@io.rsocket.kotlin.metadata.CompositeMetadata(io.rsocket.kotlin.metadata.MetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.Metadata>}[0]
 final fun <#A: io.rsocket.kotlin.metadata/Metadata> (io.rsocket.kotlin.metadata/CompositeMetadata.Entry).io.rsocket.kotlin.metadata/read(io.rsocket.kotlin.metadata/MetadataReader<#A>): #A // io.rsocket.kotlin.metadata/read|read@io.rsocket.kotlin.metadata.CompositeMetadata.Entry(io.rsocket.kotlin.metadata.MetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.Metadata>}[0]
 final fun <#A: io.rsocket.kotlin.metadata/Metadata> (io.rsocket.kotlin.metadata/CompositeMetadata.Entry).io.rsocket.kotlin.metadata/readOrNull(io.rsocket.kotlin.metadata/MetadataReader<#A>): #A? // io.rsocket.kotlin.metadata/readOrNull|readOrNull@io.rsocket.kotlin.metadata.CompositeMetadata.Entry(io.rsocket.kotlin.metadata.MetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.Metadata>}[0]
-final fun <#A: io.rsocket.kotlin.metadata/Metadata> (kotlinx.io/Source).io.rsocket.kotlin.metadata/read(io.rsocket.kotlin.metadata/MetadataReader<#A>): #A // io.rsocket.kotlin.metadata/read|read@kotlinx.io.Source(io.rsocket.kotlin.metadata.MetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.Metadata>}[0]
+final fun <#A: io.rsocket.kotlin.metadata/Metadata> (kotlinx.io/Buffer).io.rsocket.kotlin.metadata/read(io.rsocket.kotlin.metadata/MetadataReader<#A>): #A // io.rsocket.kotlin.metadata/read|read@kotlinx.io.Buffer(io.rsocket.kotlin.metadata.MetadataReader<0:0>){0§<io.rsocket.kotlin.metadata.Metadata>}[0]
 final fun io.rsocket.kotlin.core/RSocketConnector(kotlin/Function1<io.rsocket.kotlin.core/RSocketConnectorBuilder, kotlin/Unit> = ...): io.rsocket.kotlin.core/RSocketConnector // io.rsocket.kotlin.core/RSocketConnector|RSocketConnector(kotlin.Function1<io.rsocket.kotlin.core.RSocketConnectorBuilder,kotlin.Unit>){}[0]
 final fun io.rsocket.kotlin.core/RSocketServer(kotlin/Function1<io.rsocket.kotlin.core/RSocketServerBuilder, kotlin/Unit> = ...): io.rsocket.kotlin.core/RSocketServer // io.rsocket.kotlin.core/RSocketServer|RSocketServer(kotlin.Function1<io.rsocket.kotlin.core.RSocketServerBuilder,kotlin.Unit>){}[0]
 final fun io.rsocket.kotlin.keepalive/KeepAlive(kotlin.time/Duration = ..., kotlin.time/Duration = ...): io.rsocket.kotlin.keepalive/KeepAlive // io.rsocket.kotlin.keepalive/KeepAlive|KeepAlive(kotlin.time.Duration;kotlin.time.Duration){}[0]

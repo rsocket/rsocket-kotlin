@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public class PerStreamAcceptableDataMimeTypesMetadata(public val types: List<Mim
 
     public companion object Reader : MetadataReader<PerStreamAcceptableDataMimeTypesMetadata> {
         override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketAcceptMimeTypes
-        override fun Source.read(): PerStreamAcceptableDataMimeTypesMetadata {
+        override fun Buffer.read(): PerStreamAcceptableDataMimeTypesMetadata {
             val list = mutableListOf<MimeType>()
             while (!exhausted()) list.add(readMimeType())
             return PerStreamAcceptableDataMimeTypesMetadata(list.toList())

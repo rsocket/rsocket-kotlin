@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,10 +37,10 @@ public sealed interface AuthMetadata : Metadata {
 
 @ExperimentalMetadataApi
 public sealed interface AuthMetadataReader<AM : AuthMetadata> : MetadataReader<AM> {
-    public fun Source.readContent(type: AuthType): AM
+    public fun Buffer.readContent(type: AuthType): AM
 
     override val mimeType: MimeType get() = WellKnownMimeType.MessageRSocketAuthentication
-    override fun Source.read(): AM {
+    override fun Buffer.read(): AM {
         val type = readAuthType()
         return readContent(type)
     }

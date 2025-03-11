@@ -74,7 +74,7 @@ internal class SetupFrame(
     }
 }
 
-internal fun Source.readSetup(flags: Int): SetupFrame {
+internal fun Buffer.readSetup(flags: Int): SetupFrame {
     val version = readVersion()
     val keepAlive = run {
         val interval = readInt()
@@ -98,7 +98,7 @@ internal fun Source.readSetup(flags: Int): SetupFrame {
     )
 }
 
-private fun Source.readStringMimeType(): String {
+private fun Buffer.readStringMimeType(): String {
     val length = readByte().toLong()
     return readString(length)
 }

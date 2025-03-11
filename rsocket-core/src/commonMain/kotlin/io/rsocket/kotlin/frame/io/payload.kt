@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import io.rsocket.kotlin.internal.io.*
 import io.rsocket.kotlin.payload.*
 import kotlinx.io.*
 
-internal fun Source.readMetadata(): Buffer {
+internal fun Buffer.readMetadata(): Buffer {
     val length = readInt24()
     return readBuffer(length)
 }
@@ -32,7 +32,7 @@ internal fun Sink.writeMetadata(metadata: Buffer?) {
     }
 }
 
-internal fun Source.readPayload(flags: Int): Payload {
+internal fun Buffer.readPayload(flags: Int): Payload {
     val metadata = if (flags check Flags.Metadata) readMetadata() else null
     val data = readBuffer()
     return Payload(data = data, metadata = metadata)

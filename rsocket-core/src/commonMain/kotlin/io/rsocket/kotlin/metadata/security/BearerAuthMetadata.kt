@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public class BearerAuthMetadata(
     override fun close(): Unit = Unit
 
     public companion object Reader : AuthMetadataReader<BearerAuthMetadata> {
-        override fun Source.readContent(type: AuthType): BearerAuthMetadata {
+        override fun Buffer.readContent(type: AuthType): BearerAuthMetadata {
             require(type == WellKnowAuthType.Bearer) { "Metadata auth type should be 'bearer'" }
             val token = readString()
             return BearerAuthMetadata(token)

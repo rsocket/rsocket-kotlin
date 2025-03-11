@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ internal class KeepAliveFrame(
     }
 }
 
-internal fun Source.readKeepAlive(flags: Int): KeepAliveFrame {
+internal fun Buffer.readKeepAlive(flags: Int): KeepAliveFrame {
     val respond = flags check RespondFlag
     val lastPosition = readLong()
     val data = readBuffer()

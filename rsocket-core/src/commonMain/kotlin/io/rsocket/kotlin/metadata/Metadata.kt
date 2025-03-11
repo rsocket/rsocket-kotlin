@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public interface Metadata : AutoCloseable {
 @ExperimentalMetadataApi
 public interface MetadataReader<M : Metadata> {
     public val mimeType: MimeType
-    public fun Source.read(): M
+    public fun Buffer.read(): M
 }
 
 
@@ -38,7 +38,7 @@ public interface MetadataReader<M : Metadata> {
 public fun PayloadBuilder.metadata(metadata: Metadata): Unit = metadata(metadata.toBuffer())
 
 @ExperimentalMetadataApi
-public fun <M : Metadata> Source.read(
+public fun <M : Metadata> Buffer.read(
     reader: MetadataReader<M>,
 ): M = use {
     with(reader) { read() }

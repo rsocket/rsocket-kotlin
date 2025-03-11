@@ -416,8 +416,8 @@ public final class io/rsocket/kotlin/metadata/CompositeMetadata$Entry {
 
 public final class io/rsocket/kotlin/metadata/CompositeMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/CompositeMetadata;
-	public synthetic fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/CompositeMetadata;
+	public synthetic fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/Metadata;
 }
 
 public abstract interface class io/rsocket/kotlin/metadata/CompositeMetadataBuilder : java/lang/AutoCloseable {
@@ -433,9 +433,9 @@ public final class io/rsocket/kotlin/metadata/CompositeMetadataBuilderKt {
 public final class io/rsocket/kotlin/metadata/CompositeMetadataExtensionsKt {
 	public static final fun contains (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/core/MimeType;)Z
 	public static final fun contains (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/metadata/MetadataReader;)Z
-	public static final fun get (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/core/MimeType;)Lkotlinx/io/Source;
+	public static final fun get (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/core/MimeType;)Lkotlinx/io/Buffer;
 	public static final fun get (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/metadata/MetadataReader;)Lio/rsocket/kotlin/metadata/Metadata;
-	public static final fun getOrNull (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/core/MimeType;)Lkotlinx/io/Source;
+	public static final fun getOrNull (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/core/MimeType;)Lkotlinx/io/Buffer;
 	public static final fun getOrNull (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/metadata/MetadataReader;)Lio/rsocket/kotlin/metadata/Metadata;
 	public static final fun hasMimeTypeOf (Lio/rsocket/kotlin/metadata/CompositeMetadata$Entry;Lio/rsocket/kotlin/metadata/MetadataReader;)Z
 	public static final fun list (Lio/rsocket/kotlin/metadata/CompositeMetadata;Lio/rsocket/kotlin/core/MimeType;)Ljava/util/List;
@@ -463,13 +463,13 @@ public abstract interface class io/rsocket/kotlin/metadata/Metadata : java/lang/
 
 public final class io/rsocket/kotlin/metadata/MetadataKt {
 	public static final fun metadata (Lio/rsocket/kotlin/payload/PayloadBuilder;Lio/rsocket/kotlin/metadata/Metadata;)V
-	public static final fun read (Lkotlinx/io/Source;Lio/rsocket/kotlin/metadata/MetadataReader;)Lio/rsocket/kotlin/metadata/Metadata;
+	public static final fun read (Lkotlinx/io/Buffer;Lio/rsocket/kotlin/metadata/MetadataReader;)Lio/rsocket/kotlin/metadata/Metadata;
 	public static final fun toBuffer (Lio/rsocket/kotlin/metadata/Metadata;)Lkotlinx/io/Buffer;
 }
 
 public abstract interface class io/rsocket/kotlin/metadata/MetadataReader {
 	public abstract fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public abstract fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/Metadata;
+	public abstract fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/Metadata;
 }
 
 public final class io/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata : io/rsocket/kotlin/metadata/Metadata {
@@ -483,8 +483,8 @@ public final class io/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMe
 
 public final class io/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public synthetic fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/Metadata;
-	public fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata;
+	public synthetic fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/PerStreamAcceptableDataMimeTypesMetadataKt {
@@ -502,15 +502,15 @@ public final class io/rsocket/kotlin/metadata/PerStreamDataMimeTypeMetadata : io
 
 public final class io/rsocket/kotlin/metadata/PerStreamDataMimeTypeMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public synthetic fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/Metadata;
-	public fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/PerStreamDataMimeTypeMetadata;
+	public synthetic fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/PerStreamDataMimeTypeMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/RawMetadata : io/rsocket/kotlin/metadata/Metadata {
 	public static final field Companion Lio/rsocket/kotlin/metadata/RawMetadata$Companion;
-	public fun <init> (Lio/rsocket/kotlin/core/MimeType;Lkotlinx/io/Source;)V
+	public fun <init> (Lio/rsocket/kotlin/core/MimeType;Lkotlinx/io/Buffer;)V
 	public fun close ()V
-	public final fun getContent ()Lkotlinx/io/Source;
+	public final fun getContent ()Lkotlinx/io/Buffer;
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
 	public fun writeSelf (Lkotlinx/io/Sink;)V
 }
@@ -530,8 +530,8 @@ public final class io/rsocket/kotlin/metadata/RoutingMetadata : io/rsocket/kotli
 
 public final class io/rsocket/kotlin/metadata/RoutingMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public synthetic fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/Metadata;
-	public fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/RoutingMetadata;
+	public synthetic fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/RoutingMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/RoutingMetadataKt {
@@ -565,8 +565,8 @@ public final class io/rsocket/kotlin/metadata/ZipkinTracingMetadata$Kind : java/
 
 public final class io/rsocket/kotlin/metadata/ZipkinTracingMetadata$Reader : io/rsocket/kotlin/metadata/MetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public synthetic fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/Metadata;
-	public fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata;
+	public synthetic fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/ZipkinTracingMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/ZipkinTracingMetadataKt {
@@ -586,9 +586,9 @@ public abstract interface class io/rsocket/kotlin/metadata/security/AuthMetadata
 
 public abstract interface class io/rsocket/kotlin/metadata/security/AuthMetadataReader : io/rsocket/kotlin/metadata/MetadataReader {
 	public fun getMimeType ()Lio/rsocket/kotlin/core/MimeType;
-	public synthetic fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/Metadata;
-	public fun read (Lkotlinx/io/Source;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public abstract fun readContent (Lkotlinx/io/Source;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public synthetic fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/Metadata;
+	public fun read (Lkotlinx/io/Buffer;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public abstract fun readContent (Lkotlinx/io/Buffer;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
 }
 
 public abstract interface class io/rsocket/kotlin/metadata/security/AuthType {
@@ -612,8 +612,8 @@ public final class io/rsocket/kotlin/metadata/security/BearerAuthMetadata : io/r
 }
 
 public final class io/rsocket/kotlin/metadata/security/BearerAuthMetadata$Reader : io/rsocket/kotlin/metadata/security/AuthMetadataReader {
-	public synthetic fun readContent (Lkotlinx/io/Source;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public fun readContent (Lkotlinx/io/Source;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/BearerAuthMetadata;
+	public synthetic fun readContent (Lkotlinx/io/Buffer;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun readContent (Lkotlinx/io/Buffer;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/BearerAuthMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/security/CustomAuthType : io/rsocket/kotlin/metadata/security/AuthTypeWithName {
@@ -629,16 +629,16 @@ public final class io/rsocket/kotlin/metadata/security/CustomAuthType : io/rsock
 
 public final class io/rsocket/kotlin/metadata/security/RawAuthMetadata : io/rsocket/kotlin/metadata/security/AuthMetadata {
 	public static final field Reader Lio/rsocket/kotlin/metadata/security/RawAuthMetadata$Reader;
-	public fun <init> (Lio/rsocket/kotlin/metadata/security/AuthType;Lkotlinx/io/Source;)V
+	public fun <init> (Lio/rsocket/kotlin/metadata/security/AuthType;Lkotlinx/io/Buffer;)V
 	public fun close ()V
-	public final fun getContent ()Lkotlinx/io/Source;
+	public final fun getContent ()Lkotlinx/io/Buffer;
 	public fun getType ()Lio/rsocket/kotlin/metadata/security/AuthType;
 	public fun writeContent (Lkotlinx/io/Sink;)V
 }
 
 public final class io/rsocket/kotlin/metadata/security/RawAuthMetadata$Reader : io/rsocket/kotlin/metadata/security/AuthMetadataReader {
-	public synthetic fun readContent (Lkotlinx/io/Source;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public fun readContent (Lkotlinx/io/Source;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;
+	public synthetic fun readContent (Lkotlinx/io/Buffer;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun readContent (Lkotlinx/io/Buffer;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/RawAuthMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/security/RawAuthMetadataKt {
@@ -669,8 +669,8 @@ public final class io/rsocket/kotlin/metadata/security/SimpleAuthMetadata : io/r
 }
 
 public final class io/rsocket/kotlin/metadata/security/SimpleAuthMetadata$Reader : io/rsocket/kotlin/metadata/security/AuthMetadataReader {
-	public synthetic fun readContent (Lkotlinx/io/Source;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
-	public fun readContent (Lkotlinx/io/Source;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/SimpleAuthMetadata;
+	public synthetic fun readContent (Lkotlinx/io/Buffer;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/AuthMetadata;
+	public fun readContent (Lkotlinx/io/Buffer;Lio/rsocket/kotlin/metadata/security/AuthType;)Lio/rsocket/kotlin/metadata/security/SimpleAuthMetadata;
 }
 
 public final class io/rsocket/kotlin/metadata/security/WellKnowAuthType : java/lang/Enum, io/rsocket/kotlin/metadata/security/AuthTypeWithId, io/rsocket/kotlin/metadata/security/AuthTypeWithName {

@@ -63,7 +63,7 @@ internal class RequestFrame(
     }
 }
 
-internal fun Source.readRequest(
+internal fun Buffer.readRequest(
     type: FrameType,
     streamId: Int,
     flags: Int,

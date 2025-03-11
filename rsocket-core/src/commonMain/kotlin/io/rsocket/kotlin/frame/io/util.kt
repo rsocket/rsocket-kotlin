@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.rsocket.kotlin.frame.io
 
 import kotlinx.io.*
 
-internal fun Source.readResumeToken(): Buffer {
+internal fun Buffer.readResumeToken(): Buffer {
     val length = readShort().toInt() and 0xFFFF
     return readBuffer(length)
 }
@@ -30,11 +30,11 @@ internal fun Sink.writeResumeToken(resumeToken: Buffer?) {
     }
 }
 
-internal fun Source.readBuffer(): Buffer {
+internal fun Buffer.readBuffer(): Buffer {
     return Buffer().also(this::transferTo)
 }
 
-internal fun Source.readBuffer(length: Int): Buffer {
+internal fun Buffer.readBuffer(length: Int): Buffer {
     val output = Buffer()
     output.write(this, length.toLong())
     return output

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public class RSocketRequestHandlerBuilder internal constructor() {
     private var requestChannel: (suspend RSocket.(initPayload: Payload, payloads: Flow<Payload>) -> Flow<Payload>)? =
         null
 
-    public fun metadataPush(block: (suspend RSocket.(metadata: Source) -> Unit)) {
+    public fun metadataPush(block: (suspend RSocket.(metadata: Buffer) -> Unit)) {
         check(metadataPush == null) { "Metadata Push handler already configured" }
         metadataPush = block
     }
