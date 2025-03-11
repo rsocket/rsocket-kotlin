@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.rsocket.kotlin.samples.chat.server
 
 import io.rsocket.kotlin.samples.chat.api.*
+import kotlinx.datetime.*
 
 class Messages {
     private val storage = Storage<Message>()
@@ -37,7 +38,7 @@ class Messages {
 
     fun create(userId: Int, chatId: Int, content: String): Message {
         val messageId = storage.nextId()
-        val message = Message(messageId, chatId, userId, currentMillis(), content)
+        val message = Message(messageId, chatId, userId, Clock.System.now().toEpochMilliseconds(), content)
         storage.save(messageId, message)
         return message
     }

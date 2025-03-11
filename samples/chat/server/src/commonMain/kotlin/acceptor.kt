@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,36 @@
 
 package io.rsocket.kotlin.samples.chat.server
 
+import io.ktor.server.cio.*
 import io.rsocket.kotlin.*
 import io.rsocket.kotlin.core.*
 import io.rsocket.kotlin.samples.chat.api.*
+import io.rsocket.kotlin.transport.ktor.tcp.*
+import io.rsocket.kotlin.transport.ktor.websocket.server.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.io.*
 import kotlinx.serialization.*
 
-suspend fun startServer(vararg addresses: ServerAddress) {
+suspend fun startServer(addresses: List<ServerAddress>) {
     val server = RSocketServer {
 
     }
     val job = SupervisorJob()
-    val scope = CoroutineScope(
-        job + CoroutineExceptionHandler { coroutineContext, throwable ->
-            println("Error happened $coroutineContext: $throwable")
-        }
-    )
+    val context = job + CoroutineExceptionHandler { coroutineContext, throwable ->
+        println("Error happened $coroutineContext: $throwable")
+    }
     val acceptor = createAcceptor()
-    addresses.forEach {
-        println("Start server at: $it")
-        server.bindIn(scope, ServerTransport(it), acceptor)
+    addresses.forEach { address ->
+        println("Start server at: $address")
+
+        val target = when (address.type) {
+            TransportType.TCP -> KtorTcpServerTransport(context).target(host = "0.0.0.0", port = address.port)
+            TransportType.WS  -> KtorWebSocketServerTransport(context) {
+                httpEngine(CIO)
+            }.target(host = "0.0.0.0", port = address.port)
+        }
+        server.startServer(target, acceptor)
     }
     job.join()
 }
@@ -53,7 +62,7 @@ private fun createAcceptor(): ConnectionAcceptor {
     val messagesApi = MessageApiImpl(messages, chats)
 
     return ConnectionAcceptor {
-        val userName = config.setupPayload.data.readText()
+        val userName = config.setupPayload.data.readString()
         val user = users.getOrCreate(userName)
         val session = Session(user.id)
 
@@ -80,6 +89,7 @@ private fun createAcceptor(): ConnectionAcceptor {
                         "messages.send"    -> proto.decoding<SendMessage, Message>(it) { (chatId, content) ->
                             messagesApi.send(chatId, content)
                         }
+
                         "messages.history" -> proto.decoding<HistoryMessages, List<Message>>(it) { (chatId, limit) ->
                             messagesApi.history(chatId, limit)
                         }

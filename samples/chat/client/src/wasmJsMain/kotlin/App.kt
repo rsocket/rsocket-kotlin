@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,11 @@
  * limitations under the License.
  */
 
-package io.rsocket.kotlin.samples.chat.server
+package io.rsocket.kotlin.samples.chat.client
 
 import io.rsocket.kotlin.samples.chat.api.*
-import io.rsocket.kotlin.transport.*
-import io.rsocket.kotlin.transport.nodejs.tcp.*
+import kotlinx.coroutines.*
 
-actual fun serverTransport(
-    type: TransportType,
-    host: String,
-    port: Int
-): ServerTransport<*> = when (type) {
-    TransportType.TCP -> TcpServerTransport(port, host)
-    TransportType.WS  -> error("WebSocket is not supported")
+suspend fun main(): Unit = coroutineScope {
+    runClient(Servers.ALL, "Zalim", "WasmJS")
 }

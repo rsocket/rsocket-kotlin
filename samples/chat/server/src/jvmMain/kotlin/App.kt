@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,5 +19,5 @@ package io.rsocket.kotlin.samples.chat.server
 import io.rsocket.kotlin.samples.chat.api.*
 
 suspend fun main() {
-    startServer(Servers.JVM.TCP, Servers.JVM.WS)
+    startServer(Servers.JVM)
 }

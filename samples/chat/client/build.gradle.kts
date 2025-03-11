@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2024 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,33 +14,37 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
-    application
 }
 
 val rsocketVersion: String by rootProject
 val ktorVersion: String by rootProject
 
-application {
-    mainClass.set("io.rsocket.kotlin.samples.chat.client.AppKt")
-}
-
 kotlin {
     jvm {
-        withJava()
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        mainRun {
+            this.mainClass.set("io.rsocket.kotlin.samples.chat.client.AppKt")
+        }
     }
     js {
-        browser()
+        nodejs()
+        binaries.executable()
+    }
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
         nodejs()
         binaries.executable()
     }
     linuxX64()
     macosX64()
     macosArm64()
+    mingwX64()
     targets.withType<KotlinNativeTarget>().configureEach {
         binaries {
             executable {
@@ -52,18 +56,10 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":api"))
+
+            implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
             implementation("io.rsocket.kotlin:rsocket-transport-ktor-websocket-client:$rsocketVersion")
-        }
-        jvmMain.dependencies {
-            implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
             implementation("io.ktor:ktor-client-cio:$ktorVersion")
-        }
-        nativeMain.dependencies {
-            implementation("io.rsocket.kotlin:rsocket-transport-ktor-tcp:$rsocketVersion")
-            implementation("io.ktor:ktor-client-cio:$ktorVersion")
-        }
-        jsMain.dependencies {
-            implementation("io.ktor:ktor-client-js:$ktorVersion")
         }
     }
 }

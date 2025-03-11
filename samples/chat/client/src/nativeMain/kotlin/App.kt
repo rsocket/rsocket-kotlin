@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,5 @@ import io.rsocket.kotlin.samples.chat.api.*
 import kotlinx.coroutines.*
 
 fun main(): Unit = runBlocking {
-    Servers.ALL.forEach {
-        val client = ApiClient(it, "Gloria")
-        launch {
-            client.use(it, "RSocket is awesome! (from Native)")
-        }
-    }
+    runClient(Servers.ALL, "Gloria", "Native")
 }
